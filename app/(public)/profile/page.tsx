@@ -8,6 +8,7 @@ import {
   RecaptchaVerifier,
   setPersistence,
   signInWithPhoneNumber,
+  signInWithPopup,
   signInWithRedirect,
   signOut,
   User
@@ -26,7 +27,7 @@ declare global {
 
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
   const [phone, setPhone] = useState("+218");
@@ -39,9 +40,12 @@ export default function ProfilePage() {
   const recaptchaContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    setLoading(true);
+
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      console.log("Auth state changed:", currentUser);
+
       setUser(currentUser);
-      setLoading(false);
 
       if (currentUser) {
         try {
@@ -63,11 +67,13 @@ export default function ProfilePage() {
           console.error("Save user error:", error);
         }
       }
+
+      setLoading(false);
     });
 
     const timer = setTimeout(() => {
       setLoading(false);
-    }, 2500);
+    }, 3000);
 
     return () => {
       clearTimeout(timer);
@@ -119,11 +125,28 @@ export default function ProfilePage() {
   const handleGoogleLogin = async () => {
     try {
       setMessage("");
+
+      const isMobile =
+        /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(
+          navigator.userAgent
+        );
+
       await setPersistence(auth, browserSessionPersistence);
-      await signInWithRedirect(auth, googleProvider);
+
+      if (isMobile) {
+        await signInWithRedirect(auth, googleProvider);
+        return;
+      }
+
+      const result = await signInWithPopup(auth, googleProvider);
+
+      if (result.user) {
+        setUser(result.user);
+        setMessage("تم تسجيل الدخول عبر Google بنجاح.");
+      }
     } catch (error: any) {
       console.error("Google login error:", error);
-      setMessage(error?.message || "فشل بدء تسجيل الدخول عبر Google.");
+      setMessage(error?.message || "فشل تسجيل الدخول عبر Google.");
     }
   };
 
