@@ -221,3 +221,4 @@ export default function AddListingPage() {
     </section>
   );
 }
+connect add listing to firestore
