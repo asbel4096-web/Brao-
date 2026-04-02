@@ -245,3 +245,4 @@ export default function ListingsPage() {
     </section>
   );
 }
+connect listings page to firestore
