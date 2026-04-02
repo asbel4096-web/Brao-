@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import {
+  browserLocalPersistence,
   getRedirectResult,
   onAuthStateChanged,
+  setPersistence,
   signInWithRedirect,
   signOut,
   User
@@ -47,6 +49,7 @@ export default function AdminPage() {
 
   const handleGoogleLogin = async () => {
     try {
+      await setPersistence(auth, browserLocalPersistence);
       await signInWithRedirect(auth, googleProvider);
     } catch (error) {
       console.error("Login error:", error);
@@ -70,7 +73,9 @@ export default function AdminPage() {
   return (
     <section className="container py-10">
       <div className="mx-auto max-w-2xl rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="mb-6 text-4xl font-black text-slate-900">تشخيص لوحة المشرف</h1>
+        <h1 className="mb-6 text-4xl font-black text-slate-900">
+          تشخيص لوحة المشرف
+        </h1>
 
         <div className="mb-4 rounded-2xl bg-slate-50 p-4">
           <p className="text-sm text-slate-500">الحالة</p>
@@ -100,7 +105,7 @@ export default function AdminPage() {
 
         <div className="flex flex-wrap gap-3">
           <button
-            className="rounded-2xl bg-blue-600 px-5 py-3 text-white font-bold"
+            className="rounded-2xl bg-blue-600 px-5 py-3 font-bold text-white"
             onClick={handleGoogleLogin}
           >
             تسجيل الدخول عبر Google
