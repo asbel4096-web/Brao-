@@ -37,11 +37,8 @@ export default function ListingsPage() {
 
   useEffect(() => {
     const listingsRef = collection(db, "listings");
-    const listingsQuery = query(
-      listingsRef,
-      where("status", "in", ["approved", "pending"]),
-      orderBy("createdAt", "desc")
-    );
+
+const listingsQuery = query(listingsRef);
 
     const unsubscribe = onSnapshot(
       listingsQuery,
