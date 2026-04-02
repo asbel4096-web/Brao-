@@ -221,3 +221,4 @@ export default function AddListingPage() {
     </section>
   );
 }
+fix listings page syntax error
