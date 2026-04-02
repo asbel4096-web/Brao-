@@ -41,16 +41,19 @@ export default function ProfilePage() {
 
   useEffect(() => {
     let mounted = true;
-    let unsubscribe = () => {};
 
     const initAuth = async () => {
       try {
         await setPersistence(auth, browserLocalPersistence);
+        console.log("Persistence set successfully");
 
         try {
           const redirectResult = await getRedirectResult(auth);
-          if (redirectResult?.user && mounted) {
-            setMessage("تم تسجيل الدخول عبر Google بنجاح.");
+          if (redirectResult?.user) {
+            console.log("Google redirect result user:", redirectResult.user);
+            if (mounted) {
+              setMessage("تم تسجيل الدخول عبر Google بنجاح.");
+            }
           }
         } catch (error: any) {
           console.error("Google redirect result error:", error);
@@ -59,7 +62,8 @@ export default function ProfilePage() {
           }
         }
 
-        unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+          console.log("Auth state changed:", currentUser);
           if (!mounted) return;
 
           setUser(currentUser);
@@ -87,25 +91,34 @@ export default function ProfilePage() {
 
           setLoading(false);
         });
+
+        return unsubscribe;
       } catch (error: any) {
         console.error("Auth init error:", error);
         if (mounted) {
           setMessage(error?.message || "تعذر تهيئة تسجيل الدخول.");
           setLoading(false);
         }
+        return () => {};
       }
     };
 
-    initAuth();
+    let unsubscribeFn: (() => void) | undefined;
+
+    initAuth().then((unsub) => {
+      unsubscribeFn = unsub || undefined;
+    });
 
     const timer = setTimeout(() => {
-      if (mounted) setLoading(false);
+      if (mounted) {
+        setLoading(false);
+      }
     }, 8000);
 
     return () => {
       mounted = false;
       clearTimeout(timer);
-      unsubscribe();
+      if (unsubscribeFn) unsubscribeFn();
     };
   }, []);
 
@@ -154,13 +167,12 @@ export default function ProfilePage() {
   const handleGoogleLogin = async () => {
     try {
       setMessage("");
-      setLoading(true);
+      console.log("Starting Google redirect login...");
       await setPersistence(auth, browserLocalPersistence);
       await signInWithRedirect(auth, googleProvider);
     } catch (error: any) {
       console.error("Google login error:", error);
       setMessage(error?.message || "فشل تسجيل الدخول عبر Google.");
-      setLoading(false);
     }
   };
 
@@ -247,7 +259,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <section className="container py-10">
-        <div className="mx-auto max-w-3xl rounded-[2rem] border border-brand-100 bg-white/90 p-8 text-center text-slate-500 shadow-card">
+        <div className="mx-auto max-w-3xl rounded-3xl border border-slate-200 bg-white p-8 text-center text-slate-500 shadow-sm">
           جارٍ تحميل الحساب...
         </div>
       </section>
@@ -257,41 +269,41 @@ export default function ProfilePage() {
   if (!user) {
     return (
       <section className="container py-10">
-        <div className="mx-auto max-w-5xl space-y-6">
-          <div className="overflow-hidden rounded-[2rem] border border-brand-100 bg-white shadow-card">
-            <div className="bg-gradient-to-l from-brand-900 via-brand-700 to-brand-500 px-8 py-8 text-white">
-              <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-[1.5rem] bg-white/15 text-4xl ring-1 ring-white/20">
+        <div className="mx-auto max-w-4xl space-y-6">
+          <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <div className="mb-8 text-center">
+              <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-3xl bg-slate-100 text-4xl">
                 👤
               </div>
-              <h1 className="text-center text-4xl font-black">حسابي</h1>
-              <p className="mt-3 text-center text-base text-white/85">
-                سجّل الدخول عبر Google أو رقم الهاتف لإدارة حسابك وإعلاناتك داخل براتشو كار.
+              <h1 className="text-4xl font-black text-slate-900">حسابي</h1>
+              <p className="mt-3 text-lg text-slate-500">
+                سجّل الدخول عبر Google أو رقم الهاتف لإدارة حسابك وإعلاناتك.
               </p>
             </div>
 
-            <div className="grid gap-6 p-6 md:grid-cols-2 md:p-8">
-              <div className="rounded-[1.75rem] border border-orange-100 bg-gradient-to-b from-orange-50 to-white p-6 shadow-sm">
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
                 <h2 className="mb-4 text-2xl font-black text-slate-900">
                   تسجيل الدخول عبر Google
                 </h2>
                 <p className="mb-5 leading-8 text-slate-600">
-                  دخول سريع وآمن، ومناسب لإدارة الإعلانات والمفضلة والدردشة من أي جهاز.
+                  مناسب وسريع للمستخدمين، خصوصًا إذا كان الحساب مرتبطًا بالبريد.
                 </p>
                 <button
                   type="button"
-                  className="w-full rounded-2xl bg-orange-500 px-5 py-3 font-bold text-white transition hover:bg-orange-600"
+                  className="w-full rounded-2xl bg-blue-600 px-5 py-3 font-bold text-white"
                   onClick={handleGoogleLogin}
                 >
                   تسجيل الدخول عبر Google
                 </button>
               </div>
 
-              <div className="rounded-[1.75rem] border border-brand-100 bg-brand-50/50 p-6 shadow-sm">
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
                 <h2 className="mb-4 text-2xl font-black text-slate-900">
                   تسجيل الدخول برقم الهاتف
                 </h2>
 
-                <label className="mb-2 block text-sm font-bold text-slate-600">
+                <label className="mb-2 block text-sm font-bold text-slate-500">
                   رقم الهاتف
                 </label>
                 <input
@@ -304,7 +316,7 @@ export default function ProfilePage() {
 
                 <button
                   type="button"
-                  className="mb-4 w-full rounded-2xl bg-brand-700 px-5 py-3 font-bold text-white transition hover:bg-brand-800"
+                  className="mb-4 w-full rounded-2xl bg-slate-900 px-5 py-3 font-bold text-white"
                   onClick={handleSendCode}
                   disabled={sendingCode}
                 >
@@ -318,7 +330,7 @@ export default function ProfilePage() {
                   />
                 </div>
 
-                <label className="mb-2 block text-sm font-bold text-slate-600">
+                <label className="mb-2 block text-sm font-bold text-slate-500">
                   رمز التحقق
                 </label>
                 <input
@@ -331,7 +343,7 @@ export default function ProfilePage() {
 
                 <button
                   type="button"
-                  className="w-full rounded-2xl border border-orange-200 bg-orange-50 px-5 py-3 font-bold text-orange-700 transition hover:bg-orange-100"
+                  className="w-full rounded-2xl border border-blue-200 bg-blue-50 px-5 py-3 font-bold text-blue-700"
                   onClick={handleVerifyCode}
                   disabled={verifyingCode}
                 >
@@ -341,7 +353,7 @@ export default function ProfilePage() {
             </div>
 
             {message ? (
-              <div className="mx-6 mb-6 rounded-2xl bg-slate-50 px-4 py-3 text-center text-sm font-bold text-slate-700 md:mx-8 md:mb-8">
+              <div className="mt-6 rounded-2xl bg-slate-50 px-4 py-3 text-center text-sm font-bold text-slate-700">
                 {message}
               </div>
             ) : null}
@@ -353,25 +365,25 @@ export default function ProfilePage() {
 
   return (
     <section className="container py-10">
-      <div className="mx-auto max-w-5xl space-y-6">
-        <div className="overflow-hidden rounded-[2rem] border border-brand-100 bg-white shadow-card">
-          <div className="flex flex-col gap-6 bg-gradient-to-l from-brand-900 via-brand-700 to-brand-500 p-8 text-white md:flex-row md:items-center md:justify-between">
+      <div className="mx-auto max-w-4xl space-y-6">
+        <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
               {user.photoURL ? (
                 <img
                   src={user.photoURL}
                   alt="User"
-                  className="h-20 w-20 rounded-[1.5rem] object-cover ring-4 ring-white/15"
+                  className="h-20 w-20 rounded-3xl object-cover ring-4 ring-slate-100"
                 />
               ) : (
-                <div className="flex h-20 w-20 items-center justify-center rounded-[1.5rem] bg-white/15 text-3xl font-black text-white ring-1 ring-white/20">
+                <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-blue-600 text-3xl font-black text-white">
                   {firstLetter}
                 </div>
               )}
 
               <div>
-                <h1 className="text-3xl font-black">حسابي</h1>
-                <p className="mt-2 text-white/85">
+                <h1 className="text-3xl font-black text-slate-900">حسابي</h1>
+                <p className="mt-2 text-slate-500">
                   مرحبًا، {user.displayName || user.phoneNumber || "مستخدم براتشو كار"}
                 </p>
               </div>
@@ -379,7 +391,7 @@ export default function ProfilePage() {
 
             <button
               type="button"
-              className="rounded-2xl border border-white/20 bg-white/10 px-5 py-3 font-bold text-white transition hover:bg-white/20"
+              className="rounded-2xl border border-slate-300 bg-white px-5 py-3 font-bold text-slate-800"
               onClick={handleLogout}
             >
               تسجيل الخروج
@@ -388,22 +400,51 @@ export default function ProfilePage() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-card">
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="mb-5 text-2xl font-black text-slate-900">معلومات الحساب</h2>
 
             <div className="space-y-4">
-              <InfoRow label="الاسم" value={user.displayName || "غير متوفر"} />
-              <InfoRow label="البريد الإلكتروني" value={user.email || "غير متوفر"} />
-              <InfoRow label="رقم الهاتف" value={user.phoneNumber || "غير متوفر"} />
-              <InfoRow label="المعرّف" value={user.uid} small />
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-500">الاسم</label>
+                <div className="flex min-h-[52px] items-center rounded-2xl border border-slate-200 bg-slate-50 px-4">
+                  {user.displayName || "غير متوفر"}
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-500">
+                  البريد الإلكتروني
+                </label>
+                <div className="flex min-h-[52px] items-center rounded-2xl border border-slate-200 bg-slate-50 px-4">
+                  {user.email || "غير متوفر"}
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-500">
+                  رقم الهاتف
+                </label>
+                <div className="flex min-h-[52px] items-center rounded-2xl border border-slate-200 bg-slate-50 px-4">
+                  {user.phoneNumber || "غير متوفر"}
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-500">
+                  المعرّف
+                </label>
+                <div className="flex min-h-[52px] items-center rounded-2xl border border-slate-200 bg-slate-50 px-4 text-xs sm:text-sm">
+                  {user.uid}
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-card">
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="mb-5 text-2xl font-black text-slate-900">حالة الحساب</h2>
 
             <div className="space-y-4">
-              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 font-bold text-emerald-700">
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-700">
                 تم تسجيل الدخول بنجاح.
               </div>
 
@@ -416,7 +457,7 @@ export default function ProfilePage() {
                     user.providerData.map((provider, index) => (
                       <span
                         key={`${provider.providerId}-${index}`}
-                        className="rounded-full bg-orange-50 px-3 py-1 text-sm font-bold text-orange-700"
+                        className="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-700"
                       >
                         {provider.providerId}
                       </span>
@@ -439,28 +480,5 @@ export default function ProfilePage() {
         </div>
       </div>
     </section>
-  );
-}
-
-function InfoRow({
-  label,
-  value,
-  small = false
-}: {
-  label: string;
-  value: string;
-  small?: boolean;
-}) {
-  return (
-    <div>
-      <label className="mb-2 block text-sm font-bold text-slate-500">{label}</label>
-      <div
-        className={`flex min-h-[56px] items-center rounded-2xl border border-slate-200 bg-slate-50 px-4 ${
-          small ? "text-xs sm:text-sm" : "text-sm sm:text-base"
-        }`}
-      >
-        {value}
-      </div>
-    </div>
   );
 }
