@@ -80,30 +80,40 @@ export default function ProfilePage() {
   }, []);
 
   useEffect(() => {
-    if (!recaptchaContainerRef.current || typeof window === "undefined") return;
+    if (typeof window === "undefined") return;
+    if (!recaptchaContainerRef.current) return;
 
-    if (window.recaptchaVerifier) return;
+    const timer = setTimeout(() => {
+      if (window.recaptchaVerifier) return;
 
-    auth.languageCode = "ar";
+      try {
+        auth.languageCode = "ar";
 
-    window.recaptchaVerifier = new RecaptchaVerifier(
-      auth,
-      recaptchaContainerRef.current,
-      {
-        size: "normal",
-        callback: () => {
-          console.log("reCAPTCHA solved");
-        },
-        "expired-callback": () => {
-          setMessage("انتهت صلاحية reCAPTCHA، أعد المحاولة.");
-        }
+        window.recaptchaVerifier = new RecaptchaVerifier(
+          auth,
+          "recaptcha-container",
+          {
+            size: "normal",
+            callback: () => {
+              setMessage("تم تفعيل reCAPTCHA بنجاح.");
+            },
+            "expired-callback": () => {
+              setMessage("انتهت صلاحية reCAPTCHA، أعد المحاولة.");
+            }
+          }
+        );
+
+        window.recaptchaVerifier.render().catch((error) => {
+          console.error("reCAPTCHA render error:", error);
+          setMessage("فشل تحميل reCAPTCHA.");
+        });
+      } catch (error) {
+        console.error("reCAPTCHA init error:", error);
+        setMessage("تعذر تهيئة reCAPTCHA.");
       }
-    );
+    }, 500);
 
-    window.recaptchaVerifier.render().catch((error) => {
-      console.error("reCAPTCHA render error:", error);
-      setMessage("فشل تحميل reCAPTCHA.");
-    });
+    return () => clearTimeout(timer);
   }, []);
 
   const firstLetter = useMemo(() => {
@@ -137,7 +147,7 @@ export default function ProfilePage() {
       }
 
       if (!window.recaptchaVerifier) {
-        setMessage("reCAPTCHA غير جاهز بعد، أعد تحميل الصفحة.");
+        setMessage("reCAPTCHA غير جاهز بعد. أعد تحميل الصفحة.");
         return;
       }
 
@@ -263,7 +273,13 @@ export default function ProfilePage() {
                   {sendingCode ? "جارٍ إرسال الرمز..." : "إرسال رمز التحقق"}
                 </button>
 
-                <div ref={recaptchaContainerRef} className="mb-4" />
+                <div className="mb-4">
+                  <div
+                    ref={recaptchaContainerRef}
+                    id="recaptcha-container"
+                    className="flex min-h-[78px] items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white p-2"
+                  />
+                </div>
 
                 <label className="mb-2 block text-sm font-bold text-slate-500">
                   رمز التحقق
