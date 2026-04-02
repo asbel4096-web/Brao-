@@ -10,7 +10,13 @@ import {
   query,
   updateDoc
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import {
+  onAuthStateChanged,
+  signInWithPopup,
+  signOut,
+  User
+} from "firebase/auth";
+import { auth, db, googleProvider } from "@/lib/firebase";
 
 type Listing = {
   id: string;
@@ -26,13 +32,32 @@ type Listing = {
   views?: number;
 };
 
+const ADMIN_EMAILS = ["asbel4096@gmail.com"];
+
 export default function AdminPage() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "pending" | "approved">("all");
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setAuthLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!user || !ADMIN_EMAILS.includes(user.email || "")) {
+      setListings([]);
+      setLoading(false);
+      return;
+    }
+
     const listingsRef = collection(db, "listings");
     const listingsQuery = query(listingsRef, orderBy("title", "asc"));
 
@@ -54,19 +79,36 @@ export default function AdminPage() {
     );
 
     return () => unsubscribe();
-  }, []);
+  }, [user]);
 
   const filteredListings = useMemo(() => {
     if (filter === "all") return listings;
     return listings.filter((item) => item.status === filter);
   }, [listings, filter]);
 
+  const isAdmin = ADMIN_EMAILS.includes(user?.email || "");
+
+  const handleGoogleLogin = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (error) {
+      console.error("Login error:", error);
+      alert("فشل تسجيل الدخول.");
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
   const approveListing = async (id: string) => {
     try {
       setBusyId(id);
-      await updateDoc(doc(db, "listings", id), {
-        status: "approved"
-      });
+      await updateDoc(doc(db, "listings", id), { status: "approved" });
     } catch (error) {
       console.error("Approve error:", error);
       alert("فشل اعتماد الإعلان.");
@@ -78,9 +120,7 @@ export default function AdminPage() {
   const returnToPending = async (id: string) => {
     try {
       setBusyId(id);
-      await updateDoc(doc(db, "listings", id), {
-        status: "pending"
-      });
+      await updateDoc(doc(db, "listings", id), { status: "pending" });
     } catch (error) {
       console.error("Pending error:", error);
       alert("فشل إعادة الإعلان إلى الانتظار.");
@@ -104,6 +144,45 @@ export default function AdminPage() {
     }
   };
 
+  if (authLoading) {
+    return (
+      <section className="container py-10">
+        <div className="card p-6 text-center text-slate-500">جارٍ التحقق من الدخول...</div>
+      </section>
+    );
+  }
+
+  if (!user) {
+    return (
+      <section className="container py-10">
+        <div className="mx-auto max-w-xl card p-8 text-center">
+          <h1 className="section-title">لوحة المشرف</h1>
+          <p className="section-subtitle mb-6">سجّل الدخول أولًا للمتابعة.</p>
+          <button className="btn btn-primary" onClick={handleGoogleLogin}>
+            تسجيل الدخول عبر Google
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <section className="container py-10">
+        <div className="mx-auto max-w-xl card p-8 text-center">
+          <h1 className="section-title">غير مصرح</h1>
+          <p className="section-subtitle mb-3">
+            هذا البريد ليس لديه صلاحية دخول لوحة المشرف.
+          </p>
+          <p className="mb-6 text-sm text-slate-500">{user.email}</p>
+          <button className="btn btn-secondary" onClick={handleLogout}>
+            تسجيل الخروج
+          </button>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="container py-10">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -112,9 +191,10 @@ export default function AdminPage() {
           <p className="section-subtitle">
             اعتماد الإعلانات أو إرجاعها للانتظار أو حذفها.
           </p>
+          <p className="mt-2 text-sm text-slate-500">مسجل الدخول: {user.email}</p>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             className={`rounded-2xl px-4 py-3 text-sm font-bold ${
               filter === "all"
@@ -147,6 +227,10 @@ export default function AdminPage() {
           >
             معتمد
           </button>
+
+          <button className="btn btn-secondary" onClick={handleLogout}>
+            تسجيل الخروج
+          </button>
         </div>
       </div>
 
@@ -172,13 +256,9 @@ export default function AdminPage() {
       </div>
 
       {loading ? (
-        <div className="card p-6 text-center text-slate-500">
-          جارٍ تحميل الإعلانات...
-        </div>
+        <div className="card p-6 text-center text-slate-500">جارٍ تحميل الإعلانات...</div>
       ) : filteredListings.length === 0 ? (
-        <div className="card p-6 text-center text-slate-500">
-          لا توجد إعلانات في هذا القسم.
-        </div>
+        <div className="card p-6 text-center text-slate-500">لا توجد إعلانات في هذا القسم.</div>
       ) : (
         <div className="grid gap-4">
           {filteredListings.map((item) => (
@@ -187,7 +267,6 @@ export default function AdminPage() {
                 <div className="flex-1">
                   <div className="mb-3 flex flex-wrap items-center gap-2">
                     <span className="badge">{item.category || "إعلان"}</span>
-
                     <span
                       className={`rounded-full px-3 py-1 text-xs font-bold ${
                         item.status === "approved"
