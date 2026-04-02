@@ -19,6 +19,9 @@ import { auth, db, googleProvider } from "@/lib/firebase";
 declare global {
   interface Window {
     recaptchaVerifier?: RecaptchaVerifier;
+    grecaptcha?: {
+      reset: (widgetId?: number) => void;
+    };
   }
 }
 
@@ -43,9 +46,9 @@ export default function ProfilePage() {
           setMessage("تم تسجيل الدخول عبر Google بنجاح.");
         }
       })
-      .catch((error) => {
+      .catch((error: any) => {
         console.error("Redirect result error:", error);
-        setMessage("حدث خطأ أثناء إكمال تسجيل الدخول عبر Google.");
+        setMessage(error?.message || "حدث خطأ أثناء إكمال تسجيل الدخول عبر Google.");
       });
   }, []);
 
@@ -82,38 +85,38 @@ export default function ProfilePage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!recaptchaContainerRef.current) return;
+    if (window.recaptchaVerifier) return;
 
-    const timer = setTimeout(() => {
-      if (window.recaptchaVerifier) return;
+    auth.languageCode = "ar";
 
-      try {
-        auth.languageCode = "ar";
-
-        window.recaptchaVerifier = new RecaptchaVerifier(
-          auth,
-          "recaptcha-container",
-          {
-            size: "normal",
-            callback: () => {
-              setMessage("تم تفعيل reCAPTCHA بنجاح.");
-            },
-            "expired-callback": () => {
-              setMessage("انتهت صلاحية reCAPTCHA، أعد المحاولة.");
-            }
+    try {
+      window.recaptchaVerifier = new RecaptchaVerifier(
+        auth,
+        recaptchaContainerRef.current,
+        {
+          size: "normal",
+          callback: () => {
+            setMessage("تم تفعيل reCAPTCHA بنجاح.");
+          },
+          "expired-callback": () => {
+            setMessage("انتهت صلاحية reCAPTCHA، أعد المحاولة.");
           }
-        );
+        }
+      );
 
-        window.recaptchaVerifier.render().catch((error) => {
+      window.recaptchaVerifier
+        .render()
+        .then((widgetId) => {
+          console.log("reCAPTCHA widgetId:", widgetId);
+        })
+        .catch((error: any) => {
           console.error("reCAPTCHA render error:", error);
-          setMessage("فشل تحميل reCAPTCHA.");
+          setMessage(error?.message || "فشل تحميل reCAPTCHA.");
         });
-      } catch (error) {
-        console.error("reCAPTCHA init error:", error);
-        setMessage("تعذر تهيئة reCAPTCHA.");
-      }
-    }, 500);
-
-    return () => clearTimeout(timer);
+    } catch (error: any) {
+      console.error("reCAPTCHA init error:", error);
+      setMessage(error?.message || "تعذر تهيئة reCAPTCHA.");
+    }
   }, []);
 
   const firstLetter = useMemo(() => {
@@ -130,9 +133,9 @@ export default function ProfilePage() {
       setMessage("");
       await setPersistence(auth, browserLocalPersistence);
       await signInWithRedirect(auth, googleProvider);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Google login error:", error);
-      setMessage("فشل بدء تسجيل الدخول عبر Google.");
+      setMessage(error?.message || "فشل بدء تسجيل الدخول عبر Google.");
       alert("فشل تسجيل الدخول عبر Google.");
     }
   };
@@ -162,9 +165,18 @@ export default function ProfilePage() {
 
       setConfirmationResult(result);
       setMessage("تم إرسال رمز التحقق إلى الهاتف.");
-    } catch (error) {
-      console.error("Send code error:", error);
-      setMessage("فشل إرسال رمز التحقق. تحقق من الرقم أو reCAPTCHA.");
+    } catch (error: any) {
+      console.error("Send code full error:", error);
+      setMessage(error?.message || "فشل إرسال رمز التحقق.");
+
+      try {
+        const widgetId = await window.recaptchaVerifier?.render();
+        if (window.grecaptcha && widgetId !== undefined) {
+          window.grecaptcha.reset(widgetId);
+        }
+      } catch (resetError) {
+        console.error("reCAPTCHA reset error:", resetError);
+      }
     } finally {
       setSendingCode(false);
     }
@@ -188,9 +200,9 @@ export default function ProfilePage() {
       await confirmationResult.confirm(code.trim());
       setMessage("تم تسجيل الدخول برقم الهاتف بنجاح.");
       setCode("");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Verify code error:", error);
-      setMessage("رمز التحقق غير صحيح أو انتهت صلاحيته.");
+      setMessage(error?.message || "رمز التحقق غير صحيح أو انتهت صلاحيته.");
     } finally {
       setVerifyingCode(false);
     }
@@ -202,9 +214,9 @@ export default function ProfilePage() {
       setConfirmationResult(null);
       setCode("");
       setMessage("تم تسجيل الخروج.");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Logout error:", error);
-      setMessage("فشل تسجيل الخروج.");
+      setMessage(error?.message || "فشل تسجيل الخروج.");
     }
   };
 
@@ -276,7 +288,6 @@ export default function ProfilePage() {
                 <div className="mb-4">
                   <div
                     ref={recaptchaContainerRef}
-                    id="recaptcha-container"
                     className="flex min-h-[78px] items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white p-2"
                   />
                 </div>
