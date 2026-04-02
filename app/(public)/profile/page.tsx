@@ -44,7 +44,6 @@ export default function ProfilePage() {
 
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       console.log("Auth state changed:", currentUser);
-
       setUser(currentUser);
 
       if (currentUser) {
@@ -124,6 +123,7 @@ export default function ProfilePage() {
 
   const handleGoogleLogin = async () => {
     try {
+      alert("تم الضغط على زر Google");
       setMessage("");
 
       const isMobile =
@@ -131,14 +131,20 @@ export default function ProfilePage() {
           navigator.userAgent
         );
 
+      console.log("isMobile =", isMobile);
+
       await setPersistence(auth, browserSessionPersistence);
+      console.log("Persistence set successfully");
 
       if (isMobile) {
+        console.log("Starting Google redirect login...");
         await signInWithRedirect(auth, googleProvider);
         return;
       }
 
+      console.log("Starting Google popup login...");
       const result = await signInWithPopup(auth, googleProvider);
+      console.log("Popup result =", result);
 
       if (result.user) {
         setUser(result.user);
@@ -146,6 +152,7 @@ export default function ProfilePage() {
       }
     } catch (error: any) {
       console.error("Google login error:", error);
+      alert(error?.message || "فشل تسجيل الدخول عبر Google.");
       setMessage(error?.message || "فشل تسجيل الدخول عبر Google.");
     }
   };
@@ -264,6 +271,7 @@ export default function ProfilePage() {
                   مناسب وسريع للمستخدمين، خصوصًا إذا كان الحساب مرتبطًا بالبريد.
                 </p>
                 <button
+                  type="button"
                   className="w-full rounded-2xl bg-blue-600 px-5 py-3 font-bold text-white"
                   onClick={handleGoogleLogin}
                 >
@@ -288,6 +296,7 @@ export default function ProfilePage() {
                 />
 
                 <button
+                  type="button"
                   className="mb-4 w-full rounded-2xl bg-slate-900 px-5 py-3 font-bold text-white"
                   onClick={handleSendCode}
                   disabled={sendingCode}
@@ -314,6 +323,7 @@ export default function ProfilePage() {
                 />
 
                 <button
+                  type="button"
                   className="w-full rounded-2xl border border-blue-200 bg-blue-50 px-5 py-3 font-bold text-blue-700"
                   onClick={handleVerifyCode}
                   disabled={verifyingCode}
@@ -361,6 +371,7 @@ export default function ProfilePage() {
             </div>
 
             <button
+              type="button"
               className="rounded-2xl border border-slate-300 bg-white px-5 py-3 font-bold text-slate-800"
               onClick={handleLogout}
             >
