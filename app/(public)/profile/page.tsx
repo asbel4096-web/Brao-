@@ -2,9 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  browserSessionPersistence,
   ConfirmationResult,
-  getRedirectResult,
-  inMemoryPersistence,
   onAuthStateChanged,
   RecaptchaVerifier,
   setPersistence,
@@ -27,7 +26,7 @@ declare global {
 
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
   const [phone, setPhone] = useState("+218");
@@ -38,19 +37,6 @@ export default function ProfilePage() {
     useState<ConfirmationResult | null>(null);
 
   const recaptchaContainerRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result?.user) {
-          setMessage("تم تسجيل الدخول عبر Google بنجاح.");
-        }
-      })
-      .catch((error: any) => {
-        console.error("Redirect result error:", error);
-        setMessage(error?.message || "حدث خطأ أثناء إكمال تسجيل الدخول عبر Google.");
-      });
-  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -81,7 +67,7 @@ export default function ProfilePage() {
 
     const timer = setTimeout(() => {
       setLoading(false);
-    }, 4000);
+    }, 2500);
 
     return () => {
       clearTimeout(timer);
@@ -103,23 +89,18 @@ export default function ProfilePage() {
         {
           size: "normal",
           callback: () => {
-            setMessage("تم تفعيل reCAPTCHA بنجاح.");
+            setMessage("تم تفعيل التحقق بنجاح.");
           },
           "expired-callback": () => {
-            setMessage("انتهت صلاحية reCAPTCHA، أعد المحاولة.");
+            setMessage("انتهت صلاحية التحقق. أعد المحاولة.");
           }
         }
       );
 
-      window.recaptchaVerifier
-        .render()
-        .then((widgetId) => {
-          console.log("reCAPTCHA widgetId:", widgetId);
-        })
-        .catch((error: any) => {
-          console.error("reCAPTCHA render error:", error);
-          setMessage(error?.message || "فشل تحميل reCAPTCHA.");
-        });
+      window.recaptchaVerifier.render().catch((error: any) => {
+        console.error("reCAPTCHA render error:", error);
+        setMessage(error?.message || "فشل تحميل reCAPTCHA.");
+      });
     } catch (error: any) {
       console.error("reCAPTCHA init error:", error);
       setMessage(error?.message || "تعذر تهيئة reCAPTCHA.");
@@ -138,12 +119,11 @@ export default function ProfilePage() {
   const handleGoogleLogin = async () => {
     try {
       setMessage("");
-      await setPersistence(auth, inMemoryPersistence);
+      await setPersistence(auth, browserSessionPersistence);
       await signInWithRedirect(auth, googleProvider);
     } catch (error: any) {
       console.error("Google login error:", error);
       setMessage(error?.message || "فشل بدء تسجيل الدخول عبر Google.");
-      alert("فشل تسجيل الدخول عبر Google.");
     }
   };
 
@@ -162,7 +142,7 @@ export default function ProfilePage() {
       }
 
       setSendingCode(true);
-      await setPersistence(auth, inMemoryPersistence);
+      await setPersistence(auth, browserSessionPersistence);
 
       const result = await signInWithPhoneNumber(
         auth,
