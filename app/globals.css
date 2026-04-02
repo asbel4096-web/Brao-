@@ -23,7 +23,7 @@ img { max-width: 100%; height: auto; }
 }
 
 .card {
-  @apply rounded-3xl border border-slate-200/70 bg-white shadow-soft;
+  @apply rounded-3xl border border-slate-200/70 bg-white shadow-card;
 }
 
 .badge {
