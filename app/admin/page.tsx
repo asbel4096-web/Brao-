@@ -11,8 +11,9 @@ import {
   updateDoc
 } from "firebase/firestore";
 import {
+  getRedirectResult,
   onAuthStateChanged,
-  signInWithPopup,
+  signInWithRedirect,
   signOut,
   User
 } from "firebase/auth";
@@ -89,13 +90,13 @@ export default function AdminPage() {
   const isAdmin = ADMIN_EMAILS.includes(user?.email || "");
 
   const handleGoogleLogin = async () => {
-    try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (error) {
-      console.error("Login error:", error);
-      alert("فشل تسجيل الدخول.");
-    }
-  };
+  try {
+    await signInWithRedirect(auth, googleProvider);
+  } catch (error) {
+    console.error("Login error:", error);
+    alert("فشل تسجيل الدخول.");
+  }
+};
 
   const handleLogout = async () => {
     try {
