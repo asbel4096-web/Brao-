@@ -1,53 +1,252 @@
-import Link from 'next/link';
-import { featuredListings } from '@/lib/mock-data';
+"use client";
 
-const cards = [
-  { title: 'إعلانات بانتظار المراجعة', value: '18', href: '/admin/listings' },
-  { title: 'عدد المستخدمين', value: '4,250', href: '/admin/users' },
-  { title: 'الاشتراكات النشطة', value: '312', href: '/admin/subscriptions' },
-  { title: 'بلاغات جديدة', value: '7', href: '/admin/listings' }
-];
+import { useEffect, useMemo, useState } from "react";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  orderBy,
+  query,
+  updateDoc
+} from "firebase/firestore";
+import { db } from "@/lib/firebase";
+
+type Listing = {
+  id: string;
+  title: string;
+  category: string;
+  price: number | string;
+  city: string;
+  description: string;
+  phone: string;
+  sellerName: string;
+  status: string;
+  featured?: boolean;
+  views?: number;
+};
 
 export default function AdminPage() {
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<"all" | "pending" | "approved">("all");
+
+  useEffect(() => {
+    const listingsRef = collection(db, "listings");
+    const listingsQuery = query(listingsRef, orderBy("title", "asc"));
+
+    const unsubscribe = onSnapshot(
+      listingsQuery,
+      (snapshot) => {
+        const items: Listing[] = snapshot.docs.map((item) => ({
+          id: item.id,
+          ...(item.data() as Omit<Listing, "id">)
+        }));
+
+        setListings(items);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Admin listings load error:", error);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
+
+  const filteredListings = useMemo(() => {
+    if (filter === "all") return listings;
+    return listings.filter((item) => item.status === filter);
+  }, [listings, filter]);
+
+  const approveListing = async (id: string) => {
+    try {
+      setBusyId(id);
+      await updateDoc(doc(db, "listings", id), {
+        status: "approved"
+      });
+    } catch (error) {
+      console.error("Approve error:", error);
+      alert("فشل اعتماد الإعلان.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const returnToPending = async (id: string) => {
+    try {
+      setBusyId(id);
+      await updateDoc(doc(db, "listings", id), {
+        status: "pending"
+      });
+    } catch (error) {
+      console.error("Pending error:", error);
+      alert("فشل إعادة الإعلان إلى الانتظار.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const deleteListing = async (id: string) => {
+    const confirmed = window.confirm("هل تريد حذف هذا الإعلان نهائيًا؟");
+    if (!confirmed) return;
+
+    try {
+      setBusyId(id);
+      await deleteDoc(doc(db, "listings", id));
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert("فشل حذف الإعلان.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   return (
     <section className="container py-10">
-      <div>
-        <h1 className="section-title">لوحة الإدارة</h1>
-        <p className="section-subtitle">واجهة إدارة منظمة لقبول الإعلانات، إدارة المستخدمين، الخطط، والتقارير.</p>
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="section-title">لوحة المشرف</h1>
+          <p className="section-subtitle">
+            اعتماد الإعلانات أو إرجاعها للانتظار أو حذفها.
+          </p>
+        </div>
+
+        <div className="flex gap-2">
+          <button
+            className={`rounded-2xl px-4 py-3 text-sm font-bold ${
+              filter === "all"
+                ? "bg-brand-600 text-white"
+                : "border border-slate-200 bg-white text-slate-700"
+            }`}
+            onClick={() => setFilter("all")}
+          >
+            الكل
+          </button>
+
+          <button
+            className={`rounded-2xl px-4 py-3 text-sm font-bold ${
+              filter === "pending"
+                ? "bg-brand-600 text-white"
+                : "border border-slate-200 bg-white text-slate-700"
+            }`}
+            onClick={() => setFilter("pending")}
+          >
+            بانتظار الاعتماد
+          </button>
+
+          <button
+            className={`rounded-2xl px-4 py-3 text-sm font-bold ${
+              filter === "approved"
+                ? "bg-brand-600 text-white"
+                : "border border-slate-200 bg-white text-slate-700"
+            }`}
+            onClick={() => setFilter("approved")}
+          >
+            معتمد
+          </button>
+        </div>
       </div>
-      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {cards.map((card) => (
-          <Link key={card.title} href={card.href} className="card p-6 transition hover:-translate-y-1">
-            <div className="text-sm text-slate-500">{card.title}</div>
-            <div className="mt-3 text-4xl font-black text-slate-950">{card.value}</div>
-          </Link>
-        ))}
+
+      <div className="mb-6 grid gap-4 md:grid-cols-3">
+        <div className="card p-5">
+          <p className="text-sm text-slate-500">إجمالي الإعلانات</p>
+          <p className="mt-2 text-3xl font-black">{listings.length}</p>
+        </div>
+
+        <div className="card p-5">
+          <p className="text-sm text-slate-500">بانتظار الاعتماد</p>
+          <p className="mt-2 text-3xl font-black">
+            {listings.filter((x) => x.status === "pending").length}
+          </p>
+        </div>
+
+        <div className="card p-5">
+          <p className="text-sm text-slate-500">الإعلانات المعتمدة</p>
+          <p className="mt-2 text-3xl font-black">
+            {listings.filter((x) => x.status === "approved").length}
+          </p>
+        </div>
       </div>
-      <div className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="card p-6">
-          <h2 className="text-xl font-black">آخر الإعلانات</h2>
-          <div className="mt-5 space-y-4">
-            {featuredListings.map((item) => (
-              <div key={item.id} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 p-4">
-                <div>
-                  <div className="font-black text-slate-950">{item.title}</div>
-                  <div className="mt-1 text-sm text-slate-500">{item.city} • {item.status}</div>
+
+      {loading ? (
+        <div className="card p-6 text-center text-slate-500">
+          جارٍ تحميل الإعلانات...
+        </div>
+      ) : filteredListings.length === 0 ? (
+        <div className="card p-6 text-center text-slate-500">
+          لا توجد إعلانات في هذا القسم.
+        </div>
+      ) : (
+        <div className="grid gap-4">
+          {filteredListings.map((item) => (
+            <article key={item.id} className="card p-5">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="flex-1">
+                  <div className="mb-3 flex flex-wrap items-center gap-2">
+                    <span className="badge">{item.category || "إعلان"}</span>
+
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-bold ${
+                        item.status === "approved"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-yellow-100 text-yellow-700"
+                      }`}
+                    >
+                      {item.status === "approved" ? "معتمد" : "بانتظار الاعتماد"}
+                    </span>
+                  </div>
+
+                  <h2 className="text-2xl font-black text-slate-900">
+                    {item.title || "بدون عنوان"}
+                  </h2>
+
+                  <div className="mt-4 grid gap-3 text-sm text-slate-700 md:grid-cols-2">
+                    <p><span className="font-bold">المدينة:</span> {item.city || "-"}</p>
+                    <p><span className="font-bold">السعر:</span> {item.price || "-"}</p>
+                    <p><span className="font-bold">البائع:</span> {item.sellerName || "-"}</p>
+                    <p><span className="font-bold">الهاتف:</span> {item.phone || "-"}</p>
+                  </div>
+
+                  <div className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm leading-7 text-slate-700">
+                    {item.description || "لا يوجد وصف."}
+                  </div>
                 </div>
-                <Link href={`/admin/listings`} className="btn-secondary px-4 py-2 text-xs">إدارة</Link>
+
+                <div className="flex w-full flex-col gap-3 lg:w-[220px]">
+                  {item.status !== "approved" ? (
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => approveListing(item.id)}
+                      disabled={busyId === item.id}
+                    >
+                      {busyId === item.id ? "جارٍ التنفيذ..." : "اعتماد الإعلان"}
+                    </button>
+                  ) : (
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => returnToPending(item.id)}
+                      disabled={busyId === item.id}
+                    >
+                      {busyId === item.id ? "جارٍ التنفيذ..." : "إرجاع للانتظار"}
+                    </button>
+                  )}
+
+                  <button
+                    className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700"
+                    onClick={() => deleteListing(item.id)}
+                    disabled={busyId === item.id}
+                  >
+                    {busyId === item.id ? "جارٍ التنفيذ..." : "حذف الإعلان"}
+                  </button>
+                </div>
               </div>
-            ))}
-          </div>
+            </article>
+          ))}
         </div>
-        <div className="card p-6">
-          <h2 className="text-xl font-black">ملاحظات التطوير</h2>
-          <ul className="mt-5 space-y-3 text-sm leading-7 text-slate-600">
-            <li>• ربط صلاحيات المشرف من خلال claims أو collection خاصة في Firebase.</li>
-            <li>• اعتماد الإعلان قبل النشر العام.</li>
-            <li>• منع رفع صور ضارة عبر قواعد Storage.</li>
-            <li>• إضافة تقارير وإخفاء وحظر مستخدمين لاحقًا.</li>
-          </ul>
-        </div>
-      </div>
+      )}
     </section>
   );
 }
