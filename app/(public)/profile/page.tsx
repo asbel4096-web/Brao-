@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   browserLocalPersistence,
-  browserSessionPersistence,
   ConfirmationResult,
   getRedirectResult,
   onAuthStateChanged,
@@ -41,68 +40,85 @@ export default function ProfilePage() {
   const recaptchaContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    let isMounted = true;
+    let mounted = true;
 
-    const bootstrapAuth = async () => {
-      setLoading(true);
-
+    const initAuth = async () => {
       try {
-        const redirectResult = await getRedirectResult(auth);
+        await setPersistence(auth, browserLocalPersistence);
+        console.log("Persistence set successfully");
 
-        if (redirectResult?.user && isMounted) {
-          setMessage("تم تسجيل الدخول عبر Google بنجاح.");
-        }
-      } catch (error: any) {
-        console.error("Redirect result error:", error);
-        if (isMounted) {
-          setMessage(error?.message || "حدث خطأ أثناء إكمال تسجيل الدخول عبر Google.");
-        }
-      }
-
-      const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-        console.log("Auth state changed:", currentUser);
-        if (!isMounted) return;
-
-        setUser(currentUser);
-
-        if (currentUser) {
-          try {
-            await setDoc(
-              doc(db, "users", currentUser.uid),
-              {
-                uid: currentUser.uid,
-                name: currentUser.displayName || "",
-                email: currentUser.email || "",
-                phone: currentUser.phoneNumber || "",
-                photoURL: currentUser.photoURL || "",
-                providerIds: currentUser.providerData.map((p) => p.providerId),
-                lastLoginAt: serverTimestamp(),
-                updatedAt: serverTimestamp()
-              },
-              { merge: true }
-            );
-          } catch (error) {
-            console.error("Save user error:", error);
+        try {
+          const redirectResult = await getRedirectResult(auth);
+          if (redirectResult?.user) {
+            console.log("Google redirect result user:", redirectResult.user);
+            if (mounted) {
+              setMessage("تم تسجيل الدخول عبر Google بنجاح.");
+            }
+          }
+        } catch (error: any) {
+          console.error("Google redirect result error:", error);
+          if (mounted) {
+            setMessage(error?.message || "فشل استكمال تسجيل الدخول عبر Google.");
           }
         }
 
-        if (isMounted) {
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+          console.log("Auth state changed:", currentUser);
+          if (!mounted) return;
+
+          setUser(currentUser);
+
+          if (currentUser) {
+            try {
+              await setDoc(
+                doc(db, "users", currentUser.uid),
+                {
+                  uid: currentUser.uid,
+                  name: currentUser.displayName || "",
+                  email: currentUser.email || "",
+                  phone: currentUser.phoneNumber || "",
+                  photoURL: currentUser.photoURL || "",
+                  providerIds: currentUser.providerData.map((p) => p.providerId),
+                  lastLoginAt: serverTimestamp(),
+                  updatedAt: serverTimestamp()
+                },
+                { merge: true }
+              );
+            } catch (error) {
+              console.error("Save user error:", error);
+            }
+          }
+
+          setLoading(false);
+        });
+
+        return unsubscribe;
+      } catch (error: any) {
+        console.error("Auth init error:", error);
+        if (mounted) {
+          setMessage(error?.message || "تعذر تهيئة تسجيل الدخول.");
           setLoading(false);
         }
-      });
-
-      return unsubscribe;
+        return () => {};
+      }
     };
 
-    let unsubscribe: undefined | (() => void);
+    let unsubscribeFn: (() => void) | undefined;
 
-    bootstrapAuth().then((cleanup) => {
-      unsubscribe = cleanup;
+    initAuth().then((unsub) => {
+      unsubscribeFn = unsub || undefined;
     });
 
+    const timer = setTimeout(() => {
+      if (mounted) {
+        setLoading(false);
+      }
+    }, 8000);
+
     return () => {
-      isMounted = false;
-      if (unsubscribe) unsubscribe();
+      mounted = false;
+      clearTimeout(timer);
+      if (unsubscribeFn) unsubscribeFn();
     };
   }, []);
 
@@ -110,6 +126,7 @@ export default function ProfilePage() {
     if (typeof window === "undefined") return;
     if (!recaptchaContainerRef.current) return;
     if (window.recaptchaVerifier) return;
+    if (user) return;
 
     auth.languageCode = "ar";
 
@@ -136,7 +153,7 @@ export default function ProfilePage() {
       console.error("reCAPTCHA init error:", error);
       setMessage(error?.message || "تعذر تهيئة reCAPTCHA.");
     }
-  }, []);
+  }, [user]);
 
   const firstLetter = useMemo(() => {
     return (
@@ -149,7 +166,8 @@ export default function ProfilePage() {
 
   const handleGoogleLogin = async () => {
     try {
-      setMessage("جارٍ تحويلك إلى Google...");
+      setMessage("");
+      console.log("Starting Google redirect login...");
       await setPersistence(auth, browserLocalPersistence);
       await signInWithRedirect(auth, googleProvider);
     } catch (error: any) {
@@ -173,7 +191,7 @@ export default function ProfilePage() {
       }
 
       setSendingCode(true);
-      await setPersistence(auth, browserSessionPersistence);
+      await setPersistence(auth, browserLocalPersistence);
 
       const result = await signInWithPhoneNumber(
         auth,
