@@ -82,21 +82,28 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!recaptchaContainerRef.current || typeof window === "undefined") return;
 
-    if (!window.recaptchaVerifier) {
-      auth.languageCode = "ar";
-      window.recaptchaVerifier = new RecaptchaVerifier(
-        auth,
-        recaptchaContainerRef.current,
-        {
-          size: "invisible",
-          callback: () => {}
-        }
-      );
+    if (window.recaptchaVerifier) return;
 
-      window.recaptchaVerifier.render().catch((error) => {
-        console.error("reCAPTCHA render error:", error);
-      });
-    }
+    auth.languageCode = "ar";
+
+    window.recaptchaVerifier = new RecaptchaVerifier(
+      auth,
+      recaptchaContainerRef.current,
+      {
+        size: "normal",
+        callback: () => {
+          console.log("reCAPTCHA solved");
+        },
+        "expired-callback": () => {
+          setMessage("انتهت صلاحية reCAPTCHA، أعد المحاولة.");
+        }
+      }
+    );
+
+    window.recaptchaVerifier.render().catch((error) => {
+      console.error("reCAPTCHA render error:", error);
+      setMessage("فشل تحميل reCAPTCHA.");
+    });
   }, []);
 
   const firstLetter = useMemo(() => {
@@ -130,7 +137,7 @@ export default function ProfilePage() {
       }
 
       if (!window.recaptchaVerifier) {
-        setMessage("reCAPTCHA غير جاهز بعد، جرّب مرة ثانية.");
+        setMessage("reCAPTCHA غير جاهز بعد، أعد تحميل الصفحة.");
         return;
       }
 
@@ -147,7 +154,7 @@ export default function ProfilePage() {
       setMessage("تم إرسال رمز التحقق إلى الهاتف.");
     } catch (error) {
       console.error("Send code error:", error);
-      setMessage("فشل إرسال رمز التحقق. تأكد من الرقم وإعدادات Firebase.");
+      setMessage("فشل إرسال رمز التحقق. تحقق من الرقم أو reCAPTCHA.");
     } finally {
       setSendingCode(false);
     }
@@ -256,6 +263,8 @@ export default function ProfilePage() {
                   {sendingCode ? "جارٍ إرسال الرمز..." : "إرسال رمز التحقق"}
                 </button>
 
+                <div ref={recaptchaContainerRef} className="mb-4" />
+
                 <label className="mb-2 block text-sm font-bold text-slate-500">
                   رمز التحقق
                 </label>
@@ -274,8 +283,6 @@ export default function ProfilePage() {
                 >
                   {verifyingCode ? "جارٍ التحقق..." : "تأكيد الكود وتسجيل الدخول"}
                 </button>
-
-                <div ref={recaptchaContainerRef} className="mt-4" />
               </div>
             </div>
 
@@ -338,7 +345,9 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-slate-500">البريد الإلكتروني</label>
+                <label className="mb-2 block text-sm font-bold text-slate-500">
+                  البريد الإلكتروني
+                </label>
                 <div className="flex min-h-[52px] items-center rounded-2xl border border-slate-200 bg-slate-50 px-4">
                   {user.email || "غير متوفر"}
                 </div>
