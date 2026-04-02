@@ -53,6 +53,12 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
+    getRedirectResult(auth).catch((error) => {
+      console.error("Redirect result error:", error);
+    });
+  }, []);
+
+  useEffect(() => {
     if (!user || !ADMIN_EMAILS.includes(user.email || "")) {
       setListings([]);
       setLoading(false);
@@ -90,13 +96,13 @@ export default function AdminPage() {
   const isAdmin = ADMIN_EMAILS.includes(user?.email || "");
 
   const handleGoogleLogin = async () => {
-  try {
-    await signInWithRedirect(auth, googleProvider);
-  } catch (error) {
-    console.error("Login error:", error);
-    alert("فشل تسجيل الدخول.");
-  }
-};
+    try {
+      await signInWithRedirect(auth, googleProvider);
+    } catch (error) {
+      console.error("Login error:", error);
+      alert("فشل تسجيل الدخول.");
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -109,7 +115,9 @@ export default function AdminPage() {
   const approveListing = async (id: string) => {
     try {
       setBusyId(id);
-      await updateDoc(doc(db, "listings", id), { status: "approved" });
+      await updateDoc(doc(db, "listings", id), {
+        status: "approved"
+      });
     } catch (error) {
       console.error("Approve error:", error);
       alert("فشل اعتماد الإعلان.");
@@ -121,7 +129,9 @@ export default function AdminPage() {
   const returnToPending = async (id: string) => {
     try {
       setBusyId(id);
-      await updateDoc(doc(db, "listings", id), { status: "pending" });
+      await updateDoc(doc(db, "listings", id), {
+        status: "pending"
+      });
     } catch (error) {
       console.error("Pending error:", error);
       alert("فشل إعادة الإعلان إلى الانتظار.");
@@ -148,7 +158,9 @@ export default function AdminPage() {
   if (authLoading) {
     return (
       <section className="container py-10">
-        <div className="card p-6 text-center text-slate-500">جارٍ التحقق من الدخول...</div>
+        <div className="card p-6 text-center text-slate-500">
+          جارٍ التحقق من الدخول...
+        </div>
       </section>
     );
   }
@@ -192,7 +204,9 @@ export default function AdminPage() {
           <p className="section-subtitle">
             اعتماد الإعلانات أو إرجاعها للانتظار أو حذفها.
           </p>
-          <p className="mt-2 text-sm text-slate-500">مسجل الدخول: {user.email}</p>
+          <p className="mt-2 text-sm text-slate-500">
+            مسجل الدخول: {user.email}
+          </p>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -257,9 +271,13 @@ export default function AdminPage() {
       </div>
 
       {loading ? (
-        <div className="card p-6 text-center text-slate-500">جارٍ تحميل الإعلانات...</div>
+        <div className="card p-6 text-center text-slate-500">
+          جارٍ تحميل الإعلانات...
+        </div>
       ) : filteredListings.length === 0 ? (
-        <div className="card p-6 text-center text-slate-500">لا توجد إعلانات في هذا القسم.</div>
+        <div className="card p-6 text-center text-slate-500">
+          لا توجد إعلانات في هذا القسم.
+        </div>
       ) : (
         <div className="grid gap-4">
           {filteredListings.map((item) => (
@@ -268,6 +286,7 @@ export default function AdminPage() {
                 <div className="flex-1">
                   <div className="mb-3 flex flex-wrap items-center gap-2">
                     <span className="badge">{item.category || "إعلان"}</span>
+
                     <span
                       className={`rounded-full px-3 py-1 text-xs font-bold ${
                         item.status === "approved"
@@ -284,10 +303,18 @@ export default function AdminPage() {
                   </h2>
 
                   <div className="mt-4 grid gap-3 text-sm text-slate-700 md:grid-cols-2">
-                    <p><span className="font-bold">المدينة:</span> {item.city || "-"}</p>
-                    <p><span className="font-bold">السعر:</span> {item.price || "-"}</p>
-                    <p><span className="font-bold">البائع:</span> {item.sellerName || "-"}</p>
-                    <p><span className="font-bold">الهاتف:</span> {item.phone || "-"}</p>
+                    <p>
+                      <span className="font-bold">المدينة:</span> {item.city || "-"}
+                    </p>
+                    <p>
+                      <span className="font-bold">السعر:</span> {item.price || "-"}
+                    </p>
+                    <p>
+                      <span className="font-bold">البائع:</span> {item.sellerName || "-"}
+                    </p>
+                    <p>
+                      <span className="font-bold">الهاتف:</span> {item.phone || "-"}
+                    </p>
                   </div>
 
                   <div className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm leading-7 text-slate-700">
