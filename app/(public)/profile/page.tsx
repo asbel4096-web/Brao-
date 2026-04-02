@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  browserLocalPersistence,
   ConfirmationResult,
   getRedirectResult,
+  inMemoryPersistence,
   onAuthStateChanged,
   RecaptchaVerifier,
   setPersistence,
@@ -79,7 +79,14 @@ export default function ProfilePage() {
       }
     });
 
-    return () => unsubscribe();
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 4000);
+
+    return () => {
+      clearTimeout(timer);
+      unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -131,7 +138,7 @@ export default function ProfilePage() {
   const handleGoogleLogin = async () => {
     try {
       setMessage("");
-      await setPersistence(auth, browserLocalPersistence);
+      await setPersistence(auth, inMemoryPersistence);
       await signInWithRedirect(auth, googleProvider);
     } catch (error: any) {
       console.error("Google login error:", error);
@@ -155,7 +162,7 @@ export default function ProfilePage() {
       }
 
       setSendingCode(true);
-      await setPersistence(auth, browserLocalPersistence);
+      await setPersistence(auth, inMemoryPersistence);
 
       const result = await signInWithPhoneNumber(
         auth,
@@ -381,9 +388,20 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-slate-500">رقم الهاتف</label>
+                <label className="mb-2 block text-sm font-bold text-slate-500">
+                  رقم الهاتف
+                </label>
                 <div className="flex min-h-[52px] items-center rounded-2xl border border-slate-200 bg-slate-50 px-4">
                   {user.phoneNumber || "غير متوفر"}
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-500">
+                  المعرّف
+                </label>
+                <div className="flex min-h-[52px] items-center rounded-2xl border border-slate-200 bg-slate-50 px-4 text-xs sm:text-sm">
+                  {user.uid}
                 </div>
               </div>
             </div>
@@ -393,24 +411,37 @@ export default function ProfilePage() {
             <h2 className="mb-5 text-2xl font-black text-slate-900">حالة الحساب</h2>
 
             <div className="space-y-4">
-              <div className="rounded-2xl bg-green-50 p-4">
-                <p className="text-sm text-slate-500">تسجيل الدخول</p>
-                <p className="mt-2 text-lg font-black text-green-700">مفعل</p>
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-700">
+                تم تسجيل الدخول بنجاح.
               </div>
 
-              <div className="rounded-2xl bg-slate-50 p-4">
-                <p className="text-sm text-slate-500">المعرف</p>
-                <p className="mt-2 break-all text-sm font-bold text-slate-900">
-                  {user.uid}
-                </p>
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-500">
+                  طريقة تسجيل الدخول
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {user.providerData.length ? (
+                    user.providerData.map((provider, index) => (
+                      <span
+                        key={`${provider.providerId}-${index}`}
+                        className="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-700"
+                      >
+                        {provider.providerId}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-700">
+                      غير معروفة
+                    </span>
+                  )}
+                </div>
               </div>
 
-              <div className="rounded-2xl bg-slate-50 p-4">
-                <p className="text-sm text-slate-500">الرسالة</p>
-                <p className="mt-2 text-base font-bold text-slate-800">
-                  {message || "تم تحميل الحساب بنجاح."}
-                </p>
-              </div>
+              {message ? (
+                <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700">
+                  {message}
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
