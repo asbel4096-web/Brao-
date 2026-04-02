@@ -62,8 +62,10 @@ const listingsQuery = query(listingsRef);
   }, []);
 
   const filteredListings = useMemo(() => {
-    return listings.filter((item) => {
-      const matchesSearch =
+  return listings.filter((item) => {
+    if (item.status !== "approved") return false;
+
+    const matchesSearch =
         !search.trim() ||
         item.title?.toLowerCase().includes(search.toLowerCase()) ||
         item.description?.toLowerCase().includes(search.toLowerCase()) ||
