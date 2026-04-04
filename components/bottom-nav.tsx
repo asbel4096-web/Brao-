@@ -1,47 +1,54 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Bell, CirclePlus, Home, MessageCircleMore, Newspaper, UserRound } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const items = [
-  { href: '/', label: 'الرئيسية', icon: Home },
-  { href: '/listings', label: 'الإعلانات', icon: Newspaper },
-  { href: '/add-listing', label: 'إضافة', icon: CirclePlus, accent: true },
-  { href: '/messages', label: 'الدردشة', icon: MessageCircleMore },
-  { href: '/profile', label: 'حسابي', icon: UserRound },
-  { href: '/notifications', label: 'الإشعارات', icon: Bell }
+  { href: "/", label: "الرئيسية", icon: "⌂" },
+  { href: "/listings", label: "الإعلانات", icon: "🧾" },
+  { href: "/add-listing", label: "إضافة", icon: "⊕", highlight: true },
+  { href: "/chat", label: "الدردشة", icon: "💬" },
+  { href: "/vehicle-report", label: "تقرير المركبة", icon: "📄" }
 ];
 
-export function BottomNav() {
+export default function BottomNav() {
   const pathname = usePathname();
+
   return (
-    <div className="fixed bottom-4 left-1/2 z-50 w-[calc(100%-24px)] max-w-4xl -translate-x-1/2 rounded-[30px] border border-white/60 bg-white/40 p-2 shadow-2xl backdrop-blur-2xl lg:hidden">
-      <div className="grid grid-cols-6 gap-1">
-        {items.map(({ href, label, icon: Icon, accent }) => {
-          const active = pathname === href;
+    <div className="fixed bottom-4 left-1/2 z-50 w-[min(96%,900px)] -translate-x-1/2">
+      <nav className="grid grid-cols-5 items-center rounded-[32px] border border-white/40 bg-white/65 px-2 py-2 shadow-2xl backdrop-blur-xl dark:border-slate-700/50 dark:bg-slate-900/65">
+        {items.map((item) => {
+          const active = pathname === item.href;
+
+          if (item.highlight) {
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="mx-auto flex h-20 w-20 flex-col items-center justify-center rounded-[26px] bg-orange-500 text-white shadow-lg"
+              >
+                <span className="text-3xl leading-none">{item.icon}</span>
+                <span className="mt-1 text-sm font-black">{item.label}</span>
+              </Link>
+            );
+          }
+
           return (
             <Link
-              key={href}
-              href={href}
-              className={cn(
-                'flex flex-col items-center gap-1 rounded-[22px] px-2 py-3 text-[11px] font-bold transition',
-                accent
-                  ? active
-                    ? 'bg-orange-500 text-white shadow-lg shadow-orange-200'
-                    : 'bg-orange-500/95 text-white shadow-lg shadow-orange-200'
-                  : active
-                    ? 'bg-brand-500 text-white shadow-blue'
-                    : 'text-slate-800 hover:bg-white/60'
-              )}
+              key={item.href}
+              href={item.href}
+              className={`flex flex-col items-center justify-center rounded-2xl px-2 py-3 transition ${
+                active
+                  ? "text-slate-950 dark:text-white"
+                  : "text-slate-700 dark:text-slate-200"
+              }`}
             >
-              <Icon size={18} />
-              <span>{label}</span>
+              <span className="text-3xl leading-none">{item.icon}</span>
+              <span className="mt-1 text-sm font-bold">{item.label}</span>
             </Link>
           );
         })}
-      </div>
+      </nav>
     </div>
   );
 }
