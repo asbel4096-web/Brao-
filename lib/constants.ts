@@ -1,50 +1,93 @@
-export const ADMIN_EMAILS = ['asbel4096@gmail.com'];
+export type CategoryItem = {
+  key: string;
+  label: string;
+  desc: string;
+};
 
-export const LIBYAN_CITIES = [
-  'طرابلس','بنغازي','مصراتة','الزاوية','زليتن','سبها','الخمس','سرت','البيضاء','درنة','اجدابيا','طبرق','غريان','ترهونة','صبراتة','زوارة','نالوت','يفرن','بني وليد','الكفرة','أوباري','غات','مرزق','الشاطئ','راس لانوف','البريقة','الجفرة','هون','ودان','مزدة','جالو','أوجلة','القيقب','المرج','القبة','شحات','سلوق','الكريمية','تاجوراء','عين زارة','جنزور','قصر بن غشير'
-];
+export type CategoryGroup = {
+  key: string;
+  title: string;
+  items: CategoryItem[];
+};
 
-export const CATEGORY_GROUPS = [
+export const CATEGORY_GROUPS: CategoryGroup[] = [
   {
-    title: 'المركبات',
+    key: "vehicles",
+    title: "المركبات",
     items: [
-      { key: 'cars', label: 'سيارات', desc: 'محلي، استيراد، جديد ومستعمل' },
-      { key: 'buses', label: 'حافلات', desc: 'كوسترات، حافلات صغيرة وكبيرة' },
-      { key: 'trucks', label: 'شاحنات', desc: 'خفيفة، ثقيلة ومعدات نقل' }
+      { key: "cars", label: "سيارات", desc: "سيارات جديدة ومستعملة" },
+      { key: "buses", label: "حافلات", desc: "حافلات نقل وخدمة" },
+      { key: "trucks", label: "شاحنات", desc: "شاحنات نقل ومعدات" }
     ]
   },
   {
-    title: 'الخدمات والاحتياجات',
+    key: "services_parts",
+    title: "الخدمات وقطع الغيار",
     items: [
-      { key: 'services', label: 'خدمات', desc: 'خدمات عامة تخص السيارات' },
-      { key: 'accessories', label: 'كماليات سيارات', desc: 'شاشات، زينة، أنظمة، حساسات' },
-      { key: 'oils', label: 'زيوت ومواد مضافة', desc: 'زيوت، إضافات، منظفات' },
-      { key: 'mobile-mechanic', label: 'ميكانيكي متنقل', desc: 'صيانة وفحص أينما كنت' },
-      { key: 'tires-rims', label: 'إطارات وجنوط', desc: 'جديد ومستعمل' },
-      { key: 'parts', label: 'قطع غيار سيارات وشاحنات', desc: 'أصلية وتجارية ومستعملة' },
-      { key: 'electrical-parts', label: 'قطع غيار كهربائية', desc: 'حساسات، ضفائر، كمبيوترات' }
+      { key: "services", label: "خدمات", desc: "خدمات عامة تخص السيارات" },
+      { key: "accessories", label: "كماليات سيارات", desc: "إكسسوارات وتجهيزات" },
+      { key: "oils_additives", label: "زيوت ومواد مضافة", desc: "زيوت ومحسنات" },
+      { key: "mobile_mechanic", label: "ميكانيكي متنقل", desc: "خدمة متنقلة" },
+      { key: "tires_wheels", label: "إطارات وجنوط", desc: "إطارات وجنوط متنوعة" },
+      { key: "parts_cars_trucks", label: "قطع غيار سيارات وشاحنات", desc: "قطع غيار متنوعة" },
+      { key: "electrical_parts", label: "قطع غيار كهربائية", desc: "قطع كهرباء السيارات" }
     ]
   },
   {
-    title: 'أصحاب الورش',
+    key: "workshops",
+    title: "الورش والفنيون",
     items: [
-      { key: 'body-paint', label: 'سمكرة وزواق', desc: 'ورش هيكل وطلاء' },
-      { key: 'mechanic-workshops', label: 'ورش ميكانيكا', desc: 'صيانة عامة ومحركات' },
-      { key: 'car-electrician', label: 'فني كهربائي سيارات', desc: 'فحص وبرمجة وكهرباء' }
+      { key: "body_paint", label: "سمكرة وزواق", desc: "أعمال سمكرة وطلاء" },
+      { key: "mechanic_workshops", label: "ورش ميكانيكا", desc: "ورش صيانة وإصلاح" },
+      { key: "auto_electrician", label: "فني كهربائي سيارات", desc: "كهرباء وتشخيص" }
     ]
   },
   {
-    title: 'الإنقاذ وإعادة الاستخدام',
+    key: "salvage_used",
+    title: "الحوادث والمستعمل",
     items: [
-      { key: 'accident-cars', label: 'سيارات بها حوادث', desc: 'للبيع كما هي أو للتفكيك' },
-      { key: 'used-parts', label: 'قطع غيار مستعملة', desc: 'استعمال نظيف وأسعار مناسبة' }
+      { key: "damaged_cars", label: "سيارات بها حوادث", desc: "سيارات متضررة أو مصدومة" },
+      { key: "used_parts", label: "قطع غيار مستعملة", desc: "قطع مستعملة بحالة جيدة" }
     ]
   }
-] as const;
+];
 
-export const CATEGORY_OPTIONS = CATEGORY_GROUPS.flatMap((group) => group.items);
+export const CATEGORY_OPTIONS: CategoryItem[] = CATEGORY_GROUPS.flatMap(
+  (group) => group.items
+);
 
-export const MEMBERSHIP_OPTIONS = [
-  { value: 'free', label: 'مجاني' },
-  { value: 'paid', label: 'مدفوع' }
-] as const;
+export const LIBYAN_CITIES: string[] = [
+  "طرابلس",
+  "بنغازي",
+  "مصراتة",
+  "الزاوية",
+  "زليتن",
+  "صبراتة",
+  "صرمان",
+  "جنزور",
+  "الخمس",
+  "ترهونة",
+  "غريان",
+  "يفرن",
+  "نالوت",
+  "زوارة",
+  "رقدالين",
+  "العجيلات",
+  "سرت",
+  "إجدابيا",
+  "المرج",
+  "البيضاء",
+  "درنة",
+  "طبرق",
+  "سبها",
+  "أوباري",
+  "مرزق",
+  "غات",
+  "الكفرة",
+  "هون",
+  "ودان",
+  "براك الشاطئ",
+  "بن وليد",
+  "شحات",
+  "راس لانوف"
+];
