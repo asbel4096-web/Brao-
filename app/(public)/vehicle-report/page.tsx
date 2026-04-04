@@ -1,92 +1,128 @@
 "use client";
 
-import { useState } from 'react';
-import { FileSearch, Globe2, Zap } from 'lucide-react';
+import { useState } from "react";
 
-const sources = [
-  {
-    key: 'kr',
-    title: 'السيارات الكورية',
-    desc: 'سجلات تفصيلية، المسافة المقطوعة، والتاريخ المباشر.',
-    icon: Zap
-  },
-  {
-    key: 'us-ca',
-    title: 'السيارات الأمريكية والكندية',
-    desc: 'واجهة جاهزة لربط VIN مع أي مزود بيانات لاحقًا.',
-    icon: Globe2
-  }
-] as const;
+type SourceType = "كوريا" | "أمريكا" | "كندا";
 
 export default function VehicleReportPage() {
-  const [vin, setVin] = useState('');
-  const [source, setSource] = useState<(typeof sources)[number]['key']>('kr');
-  const [message, setMessage] = useState('');
+  const [vin, setVin] = useState("");
+  const [source, setSource] = useState<SourceType>("كوريا");
+  const [submitted, setSubmitted] = useState(false);
 
-  const handleSearch = () => {
-    if (!vin.trim()) {
-      setMessage('اكتب كود المركبة أولًا.');
-      return;
-    }
-    setMessage('تم تجهيز الواجهة. الخطوة التالية هي ربط مزود بيانات فعلي للتقرير.');
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!vin.trim()) return;
+    setSubmitted(true);
   };
 
   return (
-    <section className="container py-10">
-      <div className="mx-auto max-w-4xl rounded-[2rem] bg-gradient-to-br from-slate-950 via-[#10246c] to-[#2443b1] p-6 text-white shadow-2xl md:p-10">
-        <div className="mx-auto mb-8 flex h-16 w-16 items-center justify-center rounded-3xl bg-white/10">
-          <FileSearch size={30} />
-        </div>
-        <h1 className="text-center text-4xl font-black md:text-5xl">تقرير تاريخ المركبة</h1>
-        <p className="mx-auto mt-4 max-w-2xl text-center text-lg leading-8 text-white/75">
-          اختر مصدر المركبة ثم اكتب VIN أو كود السيارة للحصول على صفحة تقرير احترافية بهوية براتشو كار.
-        </p>
+    <section className="container py-8">
+      <div className="mx-auto max-w-5xl overflow-hidden rounded-[36px] bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-900 p-6 text-white shadow-2xl md:p-10">
+        <div className="mx-auto max-w-3xl">
+          <div className="mb-8 text-center">
+            <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-[28px] bg-white/10 text-4xl backdrop-blur">
+              📄
+            </div>
+            <h1 className="text-4xl font-black md:text-5xl">تقرير المركبة</h1>
+            <p className="mt-4 text-lg text-white/75">
+              أدخل رقم الهيكل VIN أو كود السيارة، واختر المصدر للحصول على تقرير مبدئي منظم بهوية براتشو كار.
+            </p>
+          </div>
 
-        <div className="mt-10 space-y-4">
-          {sources.map((item) => {
-            const Icon = item.icon;
-            const active = source === item.key;
-            return (
+          <form
+            onSubmit={handleSubmit}
+            className="rounded-[30px] border border-white/15 bg-white/10 p-5 backdrop-blur md:p-6"
+          >
+            <div className="grid gap-4 md:grid-cols-3">
               <button
-                key={item.key}
                 type="button"
-                onClick={() => setSource(item.key)}
-                className={`flex w-full items-center justify-between rounded-[1.6rem] border px-5 py-5 text-right transition ${
-                  active ? 'border-orange-300 bg-white/12' : 'border-white/15 bg-white/5 hover:bg-white/10'
+                onClick={() => setSource("كوريا")}
+                className={`rounded-2xl px-4 py-4 text-lg font-black ${
+                  source === "كوريا"
+                    ? "bg-orange-500 text-white"
+                    : "bg-white/10 text-white"
                 }`}
               >
-                <div className="flex items-center gap-4">
-                  <div className="rounded-2xl bg-white/10 p-4">
-                    <Icon size={24} />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-black">{item.title}</div>
-                    <div className="mt-1 text-sm text-white/70">{item.desc}</div>
+                السيارات الكورية
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSource("أمريكا")}
+                className={`rounded-2xl px-4 py-4 text-lg font-black ${
+                  source === "أمريكا"
+                    ? "bg-orange-500 text-white"
+                    : "bg-white/10 text-white"
+                }`}
+              >
+                السيارات الأمريكية
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSource("كندا")}
+                className={`rounded-2xl px-4 py-4 text-lg font-black ${
+                  source === "كندا"
+                    ? "bg-orange-500 text-white"
+                    : "bg-white/10 text-white"
+                }`}
+              >
+                السيارات الكندية
+              </button>
+            </div>
+
+            <div className="mt-5">
+              <label className="mb-2 block text-sm font-bold text-white/80">
+                رقم الهيكل أو كود السيارة
+              </label>
+              <input
+                value={vin}
+                onChange={(e) => setVin(e.target.value)}
+                placeholder="مثال: KMHE341DBLA123456"
+                className="w-full rounded-2xl border border-white/15 bg-white/10 px-4 py-4 text-lg text-white outline-none placeholder:text-white/40"
+                dir="ltr"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="mt-5 w-full rounded-2xl bg-orange-500 px-5 py-4 text-xl font-black text-white shadow-lg"
+            >
+              استخراج التقرير
+            </button>
+          </form>
+
+          {submitted && (
+            <div className="mt-8 rounded-[30px] border border-white/15 bg-white/10 p-6 backdrop-blur">
+              <h2 className="mb-5 text-3xl font-black">نتيجة التقرير المبدئي</h2>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-2xl bg-white/10 p-4">
+                  <div className="text-sm text-white/60">المصدر</div>
+                  <div className="mt-2 text-2xl font-black">{source}</div>
+                </div>
+
+                <div className="rounded-2xl bg-white/10 p-4">
+                  <div className="text-sm text-white/60">الرقم المدخل</div>
+                  <div className="mt-2 text-2xl font-black break-all" dir="ltr">
+                    {vin}
                   </div>
                 </div>
-                <span className="text-3xl">‹</span>
-              </button>
-            );
-          })}
-        </div>
 
-        <div className="mt-10 rounded-[1.8rem] border border-white/15 bg-white/5 p-5">
-          <label className="mb-3 block text-sm font-bold text-white/75">VIN / كود السيارة</label>
-          <input
-            value={vin}
-            onChange={(e) => setVin(e.target.value.toUpperCase())}
-            placeholder="مثال: KMHFG41EBCA123456"
-            className="w-full rounded-2xl border border-white/15 bg-white/10 px-4 py-4 text-left text-white outline-none placeholder:text-white/35"
-            dir="ltr"
-          />
-          <button
-            type="button"
-            onClick={handleSearch}
-            className="mt-4 w-full rounded-2xl bg-orange-500 px-5 py-4 text-lg font-black text-white shadow-lg shadow-orange-500/25 hover:bg-orange-600"
-          >
-            بحث عن التقرير
-          </button>
-          {message ? <div className="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-sm font-bold">{message}</div> : null}
+                <div className="rounded-2xl bg-white/10 p-4">
+                  <div className="text-sm text-white/60">الحالة</div>
+                  <div className="mt-2 text-2xl font-black">جاهز للربط</div>
+                </div>
+
+                <div className="rounded-2xl bg-white/10 p-4">
+                  <div className="text-sm text-white/60">ملاحظة</div>
+                  <div className="mt-2 text-lg font-bold text-white/85">
+                    هذه واجهة احترافية جاهزة الآن، ويمكن ربطها لاحقًا بـ API فعلي لتقرير المركبات.
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </section>
