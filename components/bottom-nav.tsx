@@ -1,42 +1,50 @@
 "use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { FileText, Home, MessageCircle, Newspaper, PlusCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const items = [
-  { href: '/', label: 'الرئيسية', icon: Home },
-  { href: '/listings', label: 'الإعلانات', icon: Newspaper },
-  { href: '/add-listing', label: 'إضافة', icon: PlusCircle, primary: true },
-  { href: '/messages', label: 'الدردشة', icon: MessageCircle },
-  { href: '/vehicle-report', label: 'تقرير المركبة', icon: FileText }
+  { href: "/", label: "الرئيسية", icon: "⌂" },
+  { href: "/listings", label: "الإعلانات", icon: "🧾" },
+  { href: "/add-listing", label: "إضافة", icon: "⊕", highlight: true },
+  { href: "/messages", label: "الدردشة", icon: "💬" },
+  { href: "/vehicle-report", label: "تقرير المركبة", icon: "📄" }
 ];
 
-export function BottomNav() {
+export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <div className="fixed inset-x-0 bottom-4 z-50 px-4 lg:hidden">
-      <nav className="mx-auto grid max-w-3xl grid-cols-5 items-center rounded-[2rem] border border-white/60 bg-white/55 px-2 py-2 shadow-2xl backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/55">
+    <div className="fixed bottom-4 left-1/2 z-50 w-[min(96%,900px)] -translate-x-1/2">
+      <nav className="grid grid-cols-5 items-center rounded-[32px] border border-white/40 bg-white/65 px-2 py-2 shadow-2xl backdrop-blur-xl dark:border-slate-700/50 dark:bg-slate-900/65">
         {items.map((item) => {
-          const Icon = item.icon;
-          const active = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+          const active = pathname === item.href;
+
+          if (item.highlight) {
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="mx-auto flex h-20 w-20 flex-col items-center justify-center rounded-[26px] bg-orange-500 text-white shadow-lg"
+              >
+                <span className="text-3xl leading-none">{item.icon}</span>
+                <span className="mt-1 text-sm font-black">{item.label}</span>
+              </Link>
+            );
+          }
+
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={cn(
-                'flex min-h-[72px] flex-col items-center justify-center rounded-2xl px-2 py-3 text-center text-[11px] font-bold transition',
-                item.primary
-                  ? 'bg-[#ff7a18] text-white shadow-lg shadow-orange-200 hover:bg-orange-600'
-                  : active
-                    ? 'bg-white/80 text-slate-950 dark:bg-white/10 dark:text-white'
-                    : 'text-slate-900 hover:bg-white/70 dark:text-slate-100 dark:hover:bg-white/10'
-              )}
+              className={`flex flex-col items-center justify-center rounded-2xl px-2 py-3 transition ${
+                active
+                  ? "text-slate-950 dark:text-white"
+                  : "text-slate-700 dark:text-slate-200"
+              }`}
             >
-              <Icon size={20} className="mb-1" />
-              <span>{item.label}</span>
+              <span className="text-3xl leading-none">{item.icon}</span>
+              <span className="mt-1 text-sm font-bold">{item.label}</span>
             </Link>
           );
         })}
