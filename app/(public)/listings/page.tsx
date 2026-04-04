@@ -1,86 +1,288 @@
-'use client';
+"use client";
 
-import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { collection, onSnapshot, query } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { CATEGORY_OPTIONS, LIBYAN_CITIES } from '@/lib/constants';
-import { formatPrice, whatsappLink } from '@/lib/utils';
-import Link from 'next/link';
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+
+type Listing = {
+  id: string;
+  title: string;
+  category: string;
+  price: string;
+  city: string;
+  description?: string;
+  phone?: string;
+  year?: string;
+  mileage?: string;
+  fuelType?: string;
+  transmission?: string;
+  images?: string[];
+  status?: string;
+};
+
+const CATEGORY_OPTIONS = [
+  "كل الأقسام",
+  "سيارات",
+  "حافلات",
+  "شاحنات",
+  "خدمات",
+  "كماليات سيارات",
+  "زيوت ومواد مضافة",
+  "ميكانيكي متنقل",
+  "إطارات وجنوط",
+  "قطع غيار سيارات وشاحنات",
+  "قطع غيار كهربائية",
+  "سمكرة وزواق",
+  "ورش ميكانيكا",
+  "فني كهربائي سيارات",
+  "سيارات بها حوادث",
+  "قطع غيار مستعملة"
+] as const;
+
+const LIBYA_CITIES = [
+  "كل المدن",
+  "طرابلس",
+  "بنغازي",
+  "مصراتة",
+  "الزاوية",
+  "زليتن",
+  "صبراتة",
+  "صرمان",
+  "جنزور",
+  "الخمس",
+  "ترهونة",
+  "غريان",
+  "يفرن",
+  "نالوت",
+  "زوارة",
+  "رقدالين",
+  "العجيلات",
+  "سرت",
+  "إجدابيا",
+  "المرج",
+  "البيضاء",
+  "درنة",
+  "طبرق",
+  "سبها",
+  "أوباري",
+  "مرزق",
+  "غات",
+  "الكفرة",
+  "هون",
+  "ودان",
+  "براك الشاطئ",
+  "بن وليد",
+  "شحات",
+  "راس لانوف"
+] as const;
 
 export default function ListingsPage() {
-  const searchParams = useSearchParams();
-  const [items, setItems] = useState<any[]>([]);
+  const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState(searchParams.get('category') || 'كل الأقسام');
-  const [city, setCity] = useState('كل المدن');
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("كل الأقسام");
+  const [city, setCity] = useState("كل المدن");
 
-  useEffect(() => onSnapshot(query(collection(db, 'listings')), (snap) => {
-    setItems(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    setLoading(false);
-  }, () => setLoading(false)), []);
+  useEffect(() => {
+    const q = query(
+      collection(db, "listings"),
+      where("status", "==", "approved")
+    );
 
-  const filtered = useMemo(() => items.filter((item) => {
-    if (!['approved', 'featured'].includes(item.status)) return false;
-    const q = search.trim().toLowerCase();
-    const matchesSearch = !q || String(item.title || '').toLowerCase().includes(q) || String(item.description || '').toLowerCase().includes(q);
-    const matchesCategory = category === 'كل الأقسام' || item.category === category;
-    const matchesCity = city === 'كل المدن' || item.city === city;
-    return matchesSearch && matchesCategory && matchesCity;
-  }), [items, search, category, city]);
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const rows: Listing[] = snapshot.docs.map((docSnap) => ({
+          id: docSnap.id,
+          ...(docSnap.data() as Omit<Listing, "id">)
+        }));
+
+        setListings(rows);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Listings load error:", error);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
+
+  const filteredListings = useMemo(() => {
+    const keyword = search.trim().toLowerCase();
+
+    return listings.filter((item) => {
+      const matchesSearch =
+        !keyword ||
+        item.title?.toLowerCase().includes(keyword) ||
+        item.city?.toLowerCase().includes(keyword) ||
+        item.category?.toLowerCase().includes(keyword) ||
+        item.description?.toLowerCase().includes(keyword);
+
+      const matchesCategory =
+        category === "كل الأقسام" || item.category === category;
+
+      const matchesCity =
+        city === "كل المدن" || item.city === city;
+
+      return matchesSearch && matchesCategory && matchesCity;
+    });
+  }, [listings, search, category, city]);
 
   return (
-    <section className="container py-10">
-      <div className="flex flex-col gap-6 lg:flex-row">
-        <aside className="card w-full p-5 lg:w-[320px] lg:self-start">
-          <h2 className="text-xl font-black">فلترة الإعلانات</h2>
-          <div className="mt-5 space-y-4">
-            <div><label className="label">ابحث</label><input className="input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="ابحث عن سيارة أو خدمة..." /></div>
-            <div><label className="label">القسم</label><select className="input" value={category} onChange={(e) => setCategory(e.target.value)}><option>كل الأقسام</option>{CATEGORY_OPTIONS.map((opt) => <option key={opt.key}>{opt.label}</option>)}</select></div>
-            <div><label className="label">المدينة</label><select className="input" value={city} onChange={(e) => setCity(e.target.value)}><option>كل المدن</option>{LIBYAN_CITIES.map((c) => <option key={c}>{c}</option>)}</select></div>
-            <button className="btn-secondary w-full" onClick={() => { setSearch(''); setCategory('كل الأقسام'); setCity('كل المدن'); }}>إعادة التصفية</button>
+    <section className="container py-8">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-8">
+          <h1 className="text-3xl font-black text-slate-900">الإعلانات</h1>
+          <p className="mt-2 text-slate-500">تصفّح أحدث الإعلانات في براتشو كار</p>
+        </div>
+
+        <div className="mt-5 space-y-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm md:p-6">
+          <div>
+            <label className="mb-2 block text-sm font-bold text-slate-600">بحث</label>
+            <input
+              className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="ابحث عن سيارة أو مدينة أو قسم"
+            />
           </div>
-        </aside>
-        <div className="flex-1">
-          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h1 className="section-title">الإعلانات</h1>
-              <p className="section-subtitle">عرض مباشر للإعلانات المعتمدة مع بطاقات أنيقة وصور حقيقية من Firebase.</p>
-            </div>
-            <div className="rounded-[22px] border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">عدد النتائج: <span className="font-bold">{filtered.length}</span></div>
+
+          <div>
+            <label className="mb-2 block text-sm font-bold text-slate-600">القسم</label>
+            <select
+              className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            >
+              {CATEGORY_OPTIONS.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
           </div>
-          {loading ? <div className="card p-6 text-center text-slate-500">جارٍ تحميل الإعلانات...</div> : null}
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {filtered.map((item) => (
-              <article key={item.id} className="card overflow-hidden">
-                <img src={item.images?.[0] || '/icons/car-card.svg'} alt={item.title} className="h-56 w-full object-cover" />
-                <div className="p-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <span className="badge">{item.category}</span>
-                      <h3 className="mt-3 line-clamp-2 text-lg font-black text-slate-900">{item.title}</h3>
+
+          <div>
+            <label className="mb-2 block text-sm font-bold text-slate-600">المدينة</label>
+            <select
+              className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+            >
+              {LIBYA_CITIES.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            type="button"
+            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 font-bold text-slate-800"
+            onClick={() => {
+              setSearch("");
+              setCategory("كل الأقسام");
+              setCity("كل المدن");
+            }}
+          >
+            مسح الفلاتر
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-8 text-center text-slate-500 shadow-sm">
+            جارٍ تحميل الإعلانات...
+          </div>
+        ) : filteredListings.length === 0 ? (
+          <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-8 text-center text-slate-500 shadow-sm">
+            لا توجد إعلانات مطابقة حاليًا.
+          </div>
+        ) : (
+          <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {filteredListings.map((item) => {
+              const image = item.images?.[0] || "/placeholder-car.jpg";
+              const whatsappNumber = (item.phone || "").replace(/\D/g, "");
+
+              return (
+                <div
+                  key={item.id}
+                  className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm"
+                >
+                  <img
+                    src={image}
+                    alt={item.title}
+                    className="h-60 w-full object-cover"
+                  />
+
+                  <div className="space-y-4 p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h2 className="text-2xl font-black text-slate-900">{item.title}</h2>
+                        <p className="mt-1 text-slate-500">{item.city}</p>
+                      </div>
+
+                      <div className="text-left text-2xl font-black text-blue-700">
+                        {item.price}
+                      </div>
                     </div>
-                    <div className="text-lg font-black text-brand-700">{formatPrice(item.price)}</div>
-                  </div>
-                  <div className="mt-3 text-sm text-slate-500">{item.city}</div>
-                  <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-500">
-                    {item.year ? <span className="rounded-full bg-slate-100 px-3 py-1">{item.year}</span> : null}
-                    {item.mileage ? <span className="rounded-full bg-slate-100 px-3 py-1">{Number(item.mileage).toLocaleString('ar-LY')} كم</span> : null}
-                    {item.fuel ? <span className="rounded-full bg-slate-100 px-3 py-1">{item.fuel}</span> : null}
-                    {item.transmission ? <span className="rounded-full bg-slate-100 px-3 py-1">{item.transmission}</span> : null}
-                  </div>
-                  <div className="mt-5 grid grid-cols-3 gap-2">
-                    <Link href={`/listings/${item.id}`} className="btn-secondary px-3 py-2 text-xs">التفاصيل</Link>
-                    <a href={`tel:${item.sellerPhone || item.phone || ''}`} className="btn-secondary px-3 py-2 text-xs">اتصال</a>
-                    <a href={whatsappLink(item.whatsapp || item.sellerPhone || item.phone || '')} target="_blank" className="btn-primary px-3 py-2 text-xs">واتساب</a>
+
+                    <div className="flex flex-wrap gap-2 text-sm">
+                      {item.year && (
+                        <span className="rounded-full bg-slate-100 px-3 py-1 font-bold text-slate-600">
+                          {item.year}
+                        </span>
+                      )}
+                      {item.mileage && (
+                        <span className="rounded-full bg-slate-100 px-3 py-1 font-bold text-slate-600">
+                          {item.mileage}
+                        </span>
+                      )}
+                      {item.fuelType && (
+                        <span className="rounded-full bg-slate-100 px-3 py-1 font-bold text-slate-600">
+                          {item.fuelType}
+                        </span>
+                      )}
+                      {item.transmission && (
+                        <span className="rounded-full bg-slate-100 px-3 py-1 font-bold text-slate-600">
+                          {item.transmission}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3">
+                      <a
+                        href={whatsappNumber ? `https://wa.me/${whatsappNumber}` : "#"}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-2xl bg-blue-600 px-4 py-3 text-center font-bold text-white"
+                      >
+                        واتساب
+                      </a>
+
+                      <a
+                        href={item.phone ? `tel:${item.phone}` : "#"}
+                        className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-center font-bold text-slate-800"
+                      >
+                        اتصال
+                      </a>
+
+                      <Link
+                        href={`/listings/${item.id}`}
+                        className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-center font-bold text-slate-800"
+                      >
+                        التفاصيل
+                      </Link>
+                    </div>
                   </div>
                 </div>
-              </article>
-            ))}
+              );
+            })}
           </div>
-          {!loading && !filtered.length ? <div className="card mt-6 p-6 text-center text-slate-500">لا توجد إعلانات مطابقة حاليًا.</div> : null}
-        </div>
+        )}
       </div>
     </section>
   );
