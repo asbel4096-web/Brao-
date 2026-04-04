@@ -1,14 +1,27 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import {
-  getDownloadURL,
-  ref,
-  uploadBytes
-} from "firebase/storage";
-import { auth, db, storage } from "@/lib/firebase";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+
+type Listing = {
+  id: string;
+  title: string;
+  category: string;
+  price: string;
+  city: string;
+  description?: string;
+  phone?: string;
+  year?: string;
+  mileage?: string;
+  fuelType?: string;
+  transmission?: string;
+  address?: string;
+  images?: string[];
+  status?: string;
+  createdAt?: unknown;
+};
 
 type CategoryOption = {
   label: string;
@@ -16,6 +29,7 @@ type CategoryOption = {
 };
 
 const CATEGORY_OPTIONS: CategoryOption[] = [
+  { label: "كل الأقسام", value: "all" },
   { label: "سيارات", value: "cars" },
   { label: "حافلات", value: "buses" },
   { label: "شاحنات", value: "trucks" },
@@ -34,6 +48,7 @@ const CATEGORY_OPTIONS: CategoryOption[] = [
 ];
 
 const LIBYA_CITIES: string[] = [
+  "كل المدن",
   "طرابلس",
   "بنغازي",
   "مصراتة",
@@ -50,7 +65,6 @@ const LIBYA_CITIES: string[] = [
   "زوارة",
   "رقدالين",
   "العجيلات",
-  "الجبل الغربي",
   "سرت",
   "إجدابيا",
   "المرج",
@@ -65,371 +79,226 @@ const LIBYA_CITIES: string[] = [
   "هون",
   "ودان",
   "براك الشاطئ",
-  "البوانيس",
-  "الشويرف",
   "بن وليد",
-  "القيقب",
   "شحات",
-  "سلوق",
-  "توكرة",
-  "أجدابيا",
   "راس لانوف"
 ];
 
-type ListingForm = {
-  title: string;
-  category: string;
-  price: string;
-  city: string;
-  phone: string;
-  description: string;
-  year: string;
-  mileage: string;
-  fuelType: string;
-  transmission: string;
-  address: string;
-};
+export default function ListingsPage() {
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [loading, setLoading] = useState(true);
 
-const defaultForm: ListingForm = {
-  title: "",
-  category: CATEGORY_OPTIONS[0]?.label ?? "سيارات",
-  price: "",
-  city: "طرابلس",
-  phone: "",
-  description: "",
-  year: "",
-  mileage: "",
-  fuelType: "",
-  transmission: "",
-  address: ""
-};
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("كل الأقسام");
+  const [city, setCity] = useState("كل المدن");
 
-export default function AddListingPage() {
-  const router = useRouter();
-  const [form, setForm] = useState<ListingForm>(defaultForm);
-  const [images, setImages] = useState<File[]>([]);
-  const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState("");
+  useEffect(() => {
+    const q = query(
+      collection(db, "listings"),
+      where("status", "==", "approved"),
+      orderBy("createdAt", "desc")
+    );
 
-  const imagePreviews = useMemo(() => {
-    return images.map((file) => URL.createObjectURL(file));
-  }, [images]);
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const rows: Listing[] = snapshot.docs.map((docSnap) => {
+          const data = docSnap.data() as Omit<Listing, "id">;
+          return {
+            id: docSnap.id,
+            ...data
+          };
+        });
 
-  const handleChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
+        setListings(rows);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Listings load error:", error);
+        setLoading(false);
+      }
+    );
 
-  const handleImagesChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const pickedFiles = Array.from(e.target.files || []);
-    const limitedFiles = pickedFiles.slice(0, 20);
-    setImages(limitedFiles);
+    return () => unsubscribe();
+  }, []);
 
-    if (pickedFiles.length > 20) {
-      setMessage("يمكنك رفع 20 صورة كحد أقصى.");
-    } else {
-      setMessage("");
-    }
-  };
+  const filteredListings = useMemo(() => {
+    const keyword = search.trim().toLowerCase();
 
-  const uploadImages = async (ownerId: string): Promise<string[]> => {
-    if (!images.length) return [];
+    return listings.filter((item) => {
+      const matchesSearch =
+        !keyword ||
+        item.title?.toLowerCase().includes(keyword) ||
+        item.city?.toLowerCase().includes(keyword) ||
+        item.category?.toLowerCase().includes(keyword) ||
+        item.description?.toLowerCase().includes(keyword);
 
-    const uploads = images.map(async (file, index) => {
-      const fileName = `${Date.now()}-${index}-${file.name}`;
-      const storageRef = ref(storage, `listing-images/${ownerId}/${fileName}`);
-      await uploadBytes(storageRef, file);
-      return getDownloadURL(storageRef);
+      const matchesCategory =
+        category === "كل الأقسام" || item.category === category;
+
+      const matchesCity =
+        city === "كل المدن" || item.city === city;
+
+      return matchesSearch && matchesCategory && matchesCity;
     });
-
-    return Promise.all(uploads);
-  };
-
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    const currentUser = auth.currentUser;
-    if (!currentUser) {
-      setMessage("يجب تسجيل الدخول أولًا قبل إضافة الإعلان.");
-      return;
-    }
-
-    if (!form.title.trim()) {
-      setMessage("اكتب عنوان الإعلان.");
-      return;
-    }
-
-    if (!form.price.trim()) {
-      setMessage("اكتب السعر.");
-      return;
-    }
-
-    if (!form.phone.trim()) {
-      setMessage("اكتب رقم الهاتف.");
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      setMessage("جارٍ رفع الإعلان...");
-
-      const imageUrls = await uploadImages(currentUser.uid);
-
-      await addDoc(collection(db, "listings"), {
-        title: form.title.trim(),
-        category: form.category,
-        price: form.price.trim(),
-        city: form.city,
-        phone: form.phone.trim(),
-        description: form.description.trim(),
-        year: form.year.trim(),
-        mileage: form.mileage.trim(),
-        fuelType: form.fuelType.trim(),
-        transmission: form.transmission.trim(),
-        address: form.address.trim(),
-        images: imageUrls,
-        ownerId: currentUser.uid,
-        ownerEmail: currentUser.email || "",
-        ownerPhone: currentUser.phoneNumber || form.phone.trim(),
-        status: "pending",
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-
-      setMessage("تم إرسال الإعلان بنجاح، وهو الآن بانتظار اعتماد المشرف.");
-      setForm(defaultForm);
-      setImages([]);
-
-      setTimeout(() => {
-        router.push("/my-listings");
-      }, 1200);
-    } catch (error) {
-      console.error("Add listing error:", error);
-      setMessage("حدث خطأ أثناء حفظ الإعلان.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  }, [listings, search, category, city]);
 
   return (
     <section className="container py-8">
-      <div className="mx-auto max-w-4xl rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+      <div className="mx-auto max-w-6xl">
         <div className="mb-8">
-          <h1 className="text-3xl font-black text-slate-900">إضافة إعلان</h1>
+          <h1 className="text-3xl font-black text-slate-900">الإعلانات</h1>
           <p className="mt-2 text-slate-500">
-            أضف إعلانك بشكل احترافي مع صور متعددة وبيانات واضحة.
+            تصفّح أحدث الإعلانات في براتشو كار
           </p>
         </div>
 
-        <form className="space-y-6" onSubmit={handleSubmit}>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-sm font-bold text-slate-600">
-                عنوان الإعلان
-              </label>
-              <input
-                name="title"
-                value={form.title}
-                onChange={handleChange}
-                placeholder="مثال: مرسيدس E350 2014"
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-bold text-slate-600">
-                القسم
-              </label>
-              <select
-                name="category"
-                value={form.category}
-                onChange={handleChange}
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
-              >
-                {CATEGORY_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.label}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-bold text-slate-600">
-                السعر
-              </label>
-              <input
-                name="price"
-                value={form.price}
-                onChange={handleChange}
-                placeholder="مثال: 65000"
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-bold text-slate-600">
-                المدينة
-              </label>
-              <select
-                name="city"
-                value={form.city}
-                onChange={handleChange}
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
-              >
-                {LIBYA_CITIES.map((city) => (
-                  <option key={city} value={city}>
-                    {city}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-bold text-slate-600">
-                رقم الهاتف
-              </label>
-              <input
-                name="phone"
-                value={form.phone}
-                onChange={handleChange}
-                placeholder="مثال: 0912345678"
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-bold text-slate-600">
-                سنة الصنع
-              </label>
-              <input
-                name="year"
-                value={form.year}
-                onChange={handleChange}
-                placeholder="مثال: 2014"
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-bold text-slate-600">
-                العداد
-              </label>
-              <input
-                name="mileage"
-                value={form.mileage}
-                onChange={handleChange}
-                placeholder="مثال: 90000 كم"
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-bold text-slate-600">
-                نوع الوقود
-              </label>
-              <input
-                name="fuelType"
-                value={form.fuelType}
-                onChange={handleChange}
-                placeholder="مثال: بنزين"
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-bold text-slate-600">
-                ناقل الحركة
-              </label>
-              <input
-                name="transmission"
-                value={form.transmission}
-                onChange={handleChange}
-                placeholder="مثال: أوتوماتيك"
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-bold text-slate-600">
-                العنوان التفصيلي
-              </label>
-              <input
-                name="address"
-                value={form.address}
-                onChange={handleChange}
-                placeholder="مثال: طرابلس - عين زارة"
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
-              />
-            </div>
-          </div>
-
+        <div className="mt-5 space-y-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm md:p-6">
           <div>
-            <label className="mb-2 block text-sm font-bold text-slate-600">
-              وصف الإعلان
-            </label>
-            <textarea
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-              placeholder="اكتب تفاصيل الإعلان هنا"
-              rows={5}
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-bold text-slate-600">
-              صور الإعلان (حتى 20 صورة)
-            </label>
+            <label className="mb-2 block text-sm font-bold text-slate-600">بحث</label>
             <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleImagesChange}
               className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="ابحث عن سيارة أو مدينة أو قسم"
             />
-
-            {images.length > 0 ? (
-              <p className="mt-3 text-sm font-bold text-slate-600">
-                عدد الصور المختارة: {images.length}
-              </p>
-            ) : null}
-
-            {imagePreviews.length > 0 ? (
-              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-                {imagePreviews.map((src, index) => (
-                  <div
-                    key={`${src}-${index}`}
-                    className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50"
-                  >
-                    <img
-                      src={src}
-                      alt={`preview-${index}`}
-                      className="h-32 w-full object-cover"
-                    />
-                  </div>
-                ))}
-              </div>
-            ) : null}
           </div>
 
-          {message ? (
-            <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700">
-              {message}
-            </div>
-          ) : null}
+          <div>
+            <label className="mb-2 block text-sm font-bold text-slate-600">القسم</label>
+            <select
+              className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            >
+              {CATEGORY_OPTIONS.map((opt: CategoryOption) => (
+                <option key={opt.value} value={opt.label}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-bold text-slate-600">المدينة</label>
+            <select
+              className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+            >
+              {LIBYA_CITIES.map((cityName: string) => (
+                <option key={cityName} value={cityName}>
+                  {cityName}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <button
-            type="submit"
-            disabled={submitting}
-            className="w-full rounded-2xl bg-blue-600 px-5 py-4 text-lg font-black text-white disabled:opacity-60"
+            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 font-bold text-slate-800"
+            onClick={() => {
+              setSearch("");
+              setCategory("كل الأقسام");
+              setCity("كل المدن");
+            }}
           >
-            {submitting ? "جارٍ حفظ الإعلان..." : "إرسال الإعلان للموافقة"}
+            مسح الفلاتر
           </button>
-        </form>
+        </div>
+
+        {loading ? (
+          <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-8 text-center text-slate-500 shadow-sm">
+            جارٍ تحميل الإعلانات...
+          </div>
+        ) : filteredListings.length === 0 ? (
+          <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-8 text-center text-slate-500 shadow-sm">
+            لا توجد إعلانات مطابقة حاليًا.
+          </div>
+        ) : (
+          <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {filteredListings.map((item) => {
+              const image = item.images?.[0] || "/placeholder-car.jpg";
+
+              return (
+                <div
+                  key={item.id}
+                  className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm"
+                >
+                  <div className="relative">
+                    <img
+                      src={image}
+                      alt={item.title}
+                      className="h-60 w-full object-cover"
+                    />
+                  </div>
+
+                  <div className="space-y-4 p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h2 className="text-2xl font-black text-slate-900">
+                          {item.title}
+                        </h2>
+                        <p className="mt-1 text-slate-500">{item.city}</p>
+                      </div>
+
+                      <div className="text-left text-2xl font-black text-blue-700">
+                        {item.price}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 text-sm">
+                      {item.year ? (
+                        <span className="rounded-full bg-slate-100 px-3 py-1 font-bold text-slate-600">
+                          {item.year}
+                        </span>
+                      ) : null}
+                      {item.mileage ? (
+                        <span className="rounded-full bg-slate-100 px-3 py-1 font-bold text-slate-600">
+                          {item.mileage}
+                        </span>
+                      ) : null}
+                      {item.fuelType ? (
+                        <span className="rounded-full bg-slate-100 px-3 py-1 font-bold text-slate-600">
+                          {item.fuelType}
+                        </span>
+                      ) : null}
+                      {item.transmission ? (
+                        <span className="rounded-full bg-slate-100 px-3 py-1 font-bold text-slate-600">
+                          {item.transmission}
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3">
+                      <a
+                        href={item.phone ? `https://wa.me/${item.phone.replace(/\D/g, "")}` : "#"}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-2xl bg-blue-600 px-4 py-3 text-center font-bold text-white"
+                      >
+                        واتساب
+                      </a>
+
+                      <a
+                        href={item.phone ? `tel:${item.phone}` : "#"}
+                        className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-center font-bold text-slate-800"
+                      >
+                        اتصال
+                      </a>
+
+                      <Link
+                        href={`/listings/${item.id}`}
+                        className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-center font-bold text-slate-800"
+                      >
+                        التفاصيل
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );
