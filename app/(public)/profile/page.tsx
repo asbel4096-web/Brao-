@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   browserLocalPersistence,
   ConfirmationResult,
@@ -13,8 +13,9 @@ import {
   signOut,
   User
 } from "firebase/auth";
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
-import { auth, db, googleProvider } from "@/lib/firebase";
+import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { auth, db, googleProvider, storage } from "@/lib/firebase";
 
 declare global {
   interface Window {
@@ -24,6 +25,12 @@ declare global {
     };
   }
 }
+
+type ProfileData = {
+  bio: string;
+  membership: "مجاني" | "مدفوع";
+  photoURL: string;
+};
 
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
@@ -38,6 +45,12 @@ export default function ProfilePage() {
   const [confirmationResult, setConfirmationResult] =
     useState<ConfirmationResult | null>(null);
 
+  const [bio, setBio] = useState("");
+  const [membership, setMembership] = useState<"مجاني" | "مدفوع">("مجاني");
+  const [photoURL, setPhotoURL] = useState("");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [savingProfile, setSavingProfile] = useState(false);
+
   const recaptchaContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -50,22 +63,29 @@ export default function ProfilePage() {
 
       if (currentUser) {
         try {
+          const userRef = doc(db, "users", currentUser.uid);
+
           await setDoc(
-            doc(db, "users", currentUser.uid),
+            userRef,
             {
               uid: currentUser.uid,
               name: currentUser.displayName || "",
               email: currentUser.email || "",
               phone: currentUser.phoneNumber || "",
-              photoURL: currentUser.photoURL || "",
-              providerIds: currentUser.providerData.map((p) => p.providerId),
-              lastLoginAt: serverTimestamp(),
-              updatedAt: serverTimestamp()
+              updatedAt: serverTimestamp(),
+              lastLoginAt: serverTimestamp()
             },
             { merge: true }
           );
+
+          const snap = await getDoc(userRef);
+          const data = snap.data() as Partial<ProfileData> | undefined;
+
+          setBio(data?.bio || "");
+          setMembership(data?.membership === "مدفوع" ? "مدفوع" : "مجاني");
+          setPhotoURL(data?.photoURL || currentUser.photoURL || "");
         } catch (error) {
-          console.error("Save user error:", error);
+          console.error("Load user profile error:", error);
         }
       }
 
@@ -118,6 +138,11 @@ export default function ProfilePage() {
     );
   }, [user]);
 
+  const previewPhoto = useMemo(() => {
+    if (photoFile) return URL.createObjectURL(photoFile);
+    return photoURL;
+  }, [photoFile, photoURL]);
+
   const handleGoogleLogin = async () => {
     if (googleLoading) return;
 
@@ -136,7 +161,7 @@ export default function ProfilePage() {
       if (error?.code === "auth/popup-blocked") {
         setMessage("المتصفح منع نافذة Google. اسمح بالنوافذ المنبثقة ثم أعد المحاولة.");
       } else if (error?.code === "auth/cancelled-popup-request") {
-        setMessage("تم إرسال طلبين معًا. اضغط مرة واحدة فقط.");
+        setMessage("اضغط مرة واحدة فقط على تسجيل Google.");
       } else {
         setMessage(error?.message || "فشل تسجيل الدخول عبر Google.");
       }
@@ -173,15 +198,6 @@ export default function ProfilePage() {
     } catch (error: any) {
       console.error("Send code error:", error);
       setMessage(error?.message || "فشل إرسال رمز التحقق.");
-
-      try {
-        const widgetId = await window.recaptchaVerifier?.render();
-        if (window.grecaptcha && widgetId !== undefined) {
-          window.grecaptcha.reset(widgetId);
-        }
-      } catch (resetError) {
-        console.error("reCAPTCHA reset error:", resetError);
-      }
     } finally {
       setSendingCode(false);
     }
@@ -210,6 +226,53 @@ export default function ProfilePage() {
       setMessage(error?.message || "رمز التحقق غير صحيح أو انتهت صلاحيته.");
     } finally {
       setVerifyingCode(false);
+    }
+  };
+
+  const handlePhotoChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setPhotoFile(file);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+
+    try {
+      setSavingProfile(true);
+      setMessage("جارٍ حفظ بيانات الحساب...");
+
+      let finalPhotoURL = photoURL;
+
+      if (photoFile) {
+        const fileName = `${Date.now()}-${photoFile.name}`;
+        const storageRef = ref(storage, `users/${user.uid}/${fileName}`);
+        await uploadBytes(storageRef, photoFile);
+        finalPhotoURL = await getDownloadURL(storageRef);
+      }
+
+      await setDoc(
+        doc(db, "users", user.uid),
+        {
+          uid: user.uid,
+          name: user.displayName || "",
+          email: user.email || "",
+          phone: user.phoneNumber || "",
+          bio: bio.trim(),
+          membership,
+          photoURL: finalPhotoURL,
+          updatedAt: serverTimestamp()
+        },
+        { merge: true }
+      );
+
+      setPhotoURL(finalPhotoURL);
+      setPhotoFile(null);
+      setMessage("تم حفظ بيانات الحساب بنجاح.");
+    } catch (error) {
+      console.error("Save profile error:", error);
+      setMessage("حدث خطأ أثناء حفظ الحساب.");
+    } finally {
+      setSavingProfile(false);
     }
   };
 
@@ -332,13 +395,13 @@ export default function ProfilePage() {
 
   return (
     <section className="container py-10">
-      <div className="mx-auto max-w-4xl space-y-6">
+      <div className="mx-auto max-w-5xl space-y-6">
         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
-              {user.photoURL ? (
+              {previewPhoto ? (
                 <img
-                  src={user.photoURL}
+                  src={previewPhoto}
                   alt="User"
                   className="h-20 w-20 rounded-3xl object-cover ring-4 ring-slate-100"
                 />
@@ -357,15 +420,15 @@ export default function ProfilePage() {
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <Link href="/my-listings" className="btn-secondary">
+              <Link href="/my-listings" className="rounded-2xl border border-slate-300 bg-white px-4 py-3 font-bold text-slate-800">
                 إعلاناتي
               </Link>
-              <Link href="/settings" className="btn-secondary">
+              <Link href="/settings" className="rounded-2xl border border-slate-300 bg-white px-4 py-3 font-bold text-slate-800">
                 الإعدادات
               </Link>
               <button
                 type="button"
-                className="btn-secondary"
+                className="rounded-2xl border border-slate-300 bg-white px-4 py-3 font-bold text-slate-800"
                 onClick={handleLogout}
               >
                 تسجيل الخروج
@@ -375,6 +438,54 @@ export default function ProfilePage() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-5 text-2xl font-black text-slate-900">تعديل الحساب</h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-500">الصورة الشخصية</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoChange}
+                  className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-500">السيرة الذاتية</label>
+                <textarea
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  rows={5}
+                  placeholder="اكتب نبذة مختصرة عنك أو عن نشاطك"
+                  className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-500">نوع العضوية</label>
+                <select
+                  value={membership}
+                  onChange={(e) => setMembership(e.target.value as "مجاني" | "مدفوع")}
+                  className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
+                >
+                  <option value="مجاني">مجاني</option>
+                  <option value="مدفوع">مدفوع</option>
+                </select>
+              </div>
+
+              <button
+                type="button"
+                disabled={savingProfile}
+                onClick={handleSaveProfile}
+                className="w-full rounded-2xl bg-blue-600 px-5 py-4 text-lg font-black text-white disabled:opacity-60"
+              >
+                {savingProfile ? "جارٍ حفظ الحساب..." : "حفظ تعديل الحساب"}
+              </button>
+            </div>
+          </div>
+
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="mb-5 text-2xl font-black text-slate-900">معلومات الحساب</h2>
 
@@ -387,72 +498,41 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-slate-500">
-                  البريد الإلكتروني
-                </label>
+                <label className="mb-2 block text-sm font-bold text-slate-500">البريد الإلكتروني</label>
                 <div className="flex min-h-[52px] items-center rounded-2xl border border-slate-200 bg-slate-50 px-4">
                   {user.email || "غير متوفر"}
                 </div>
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-slate-500">
-                  رقم الهاتف
-                </label>
+                <label className="mb-2 block text-sm font-bold text-slate-500">رقم الهاتف</label>
                 <div className="flex min-h-[52px] items-center rounded-2xl border border-slate-200 bg-slate-50 px-4">
                   {user.phoneNumber || "غير متوفر"}
                 </div>
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-slate-500">
-                  المعرّف
-                </label>
-                <div className="flex min-h-[52px] items-center rounded-2xl border border-slate-200 bg-slate-50 px-4 text-xs sm:text-sm">
-                  {user.uid}
+                <label className="mb-2 block text-sm font-bold text-slate-500">نوع العضوية</label>
+                <div className="flex min-h-[52px] items-center rounded-2xl border border-slate-200 bg-slate-50 px-4">
+                  {membership}
                 </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-5 text-2xl font-black text-slate-900">حالة الحساب</h2>
-
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-700">
-                تم تسجيل الدخول بنجاح.
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-slate-500">
-                  طريقة تسجيل الدخول
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {user.providerData.length ? (
-                    user.providerData.map((provider, index) => (
-                      <span
-                        key={`${provider.providerId}-${index}`}
-                        className="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-700"
-                      >
-                        {provider.providerId}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-700">
-                      غير معروفة
-                    </span>
-                  )}
+                <label className="mb-2 block text-sm font-bold text-slate-500">السيرة الذاتية</label>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700">
+                  {bio || "لا توجد سيرة ذاتية بعد."}
                 </div>
               </div>
-
-              {message ? (
-                <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700">
-                  {message}
-                </div>
-              ) : null}
             </div>
           </div>
         </div>
+
+        {message ? (
+          <div className="rounded-2xl bg-slate-50 px-4 py-3 text-center text-sm font-bold text-slate-700">
+            {message}
+          </div>
+        ) : null}
       </div>
     </section>
   );
