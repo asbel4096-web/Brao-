@@ -171,7 +171,7 @@ export default function ListingsPage() {
               value={category}
               onChange={(e) => setCategory(e.target.value)}
             >
-              {CATEGORY_OPTIONS.map((opt: CategoryOption) => (
+              {CATEGORY_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.label}>
                   {opt.label}
                 </option>
@@ -186,7 +186,7 @@ export default function ListingsPage() {
               value={city}
               onChange={(e) => setCity(e.target.value)}
             >
-              {LIBYA_CITIES.map((cityName: string) => (
+              {LIBYA_CITIES.map((cityName) => (
                 <option key={cityName} value={cityName}>
                   {cityName}
                 </option>
