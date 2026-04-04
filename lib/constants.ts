@@ -10,6 +10,10 @@ export type CategoryGroup = {
   items: CategoryItem[];
 };
 
+export const ADMIN_EMAILS: string[] = [
+  "asbel4096@gmail.com"
+];
+
 export const CATEGORY_GROUPS: CategoryGroup[] = [
   {
     key: "vehicles",
