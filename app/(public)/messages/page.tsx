@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   collection,
-  doc,
   onSnapshot,
   orderBy,
   query,
@@ -39,6 +39,9 @@ type MessageItem = {
 };
 
 export default function MessagesPage() {
+  const searchParams = useSearchParams();
+  const requestedConversation = searchParams.get("conversation");
+
   const [search, setSearch] = useState("");
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [activeId, setActiveId] = useState<string>("");
@@ -76,7 +79,9 @@ export default function MessagesPage() {
 
         setConversations(rows);
 
-        if (!activeId && rows.length > 0) {
+        if (requestedConversation) {
+          setActiveId(requestedConversation);
+        } else if (!activeId && rows.length > 0) {
           setActiveId(rows[0].id);
         }
 
@@ -93,7 +98,13 @@ export default function MessagesPage() {
     );
 
     return () => unsubscribe();
-  }, [currentUser, activeId]);
+  }, [currentUser, activeId, requestedConversation]);
+
+  useEffect(() => {
+    if (requestedConversation) {
+      setActiveId(requestedConversation);
+    }
+  }, [requestedConversation]);
 
   useEffect(() => {
     if (!activeId) {
@@ -132,6 +143,7 @@ export default function MessagesPage() {
         item.participantNames?.[
           item.participantIds.find((id) => id !== currentUser?.uid) || ""
         ] || "مستخدم";
+
       return (
         otherName.includes(q) ||
         (item.listingTitle || "").includes(q) ||
@@ -276,7 +288,7 @@ export default function MessagesPage() {
                 </button>
               </div>
 
-              <div className="grid gap-3 bg-slate-50 px-4 py-5 dark:bg-slate-950 min-h-[420px]">
+              <div className="grid min-h-[420px] gap-3 bg-slate-50 px-4 py-5 dark:bg-slate-950">
                 {messages.map((msg) => (
                   <div
                     key={msg.id}
