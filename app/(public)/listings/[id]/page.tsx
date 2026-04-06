@@ -129,13 +129,12 @@ export default function ListingDetailsPage() {
                 {listing.phone}
               </a>
 
-              <Link
-                href="/messages"
-                className="flex items-center justify-center gap-3 rounded-[22px] border-2 border-slate-300 px-6 py-4 text-xl font-black text-slate-950 dark:border-slate-700 dark:text-white"
-              >
-                <MessageCircle className="h-5 w-5 text-blue-600" />
-                دردش
-              </Link>
+              <StartChatButton
+  listingId={listing.id}
+  listingTitle={listing.title}
+  sellerId={listing.seller.id}
+  sellerName={listing.seller.name}
+/>
             </div>
           </div>
         </section>
