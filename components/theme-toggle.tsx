@@ -1,33 +1,33 @@
 "use client";
 
-import { Moon, Sun } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
-export function ThemeToggle() {
+export default function ThemeToggle() {
   const [dark, setDark] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem('bratsho-theme');
-    const nextDark = stored === 'dark';
-    setDark(nextDark);
-    document.documentElement.classList.toggle('dark', nextDark);
+    const saved = localStorage.getItem("brao-theme");
+    const isDark = saved === "dark";
+    setDark(isDark);
+    document.documentElement.classList.toggle("dark", isDark);
   }, []);
 
-  const toggle = () => {
-    const nextDark = !dark;
-    setDark(nextDark);
-    document.documentElement.classList.toggle('dark', nextDark);
-    localStorage.setItem('bratsho-theme', nextDark ? 'dark' : 'light');
+  const toggleTheme = () => {
+    const next = !dark;
+    setDark(next);
+    document.documentElement.classList.toggle("dark", next);
+    localStorage.setItem("brao-theme", next ? "dark" : "light");
   };
 
   return (
     <button
       type="button"
-      onClick={toggle}
-      className="rounded-2xl border border-slate-200 bg-white/80 p-3 text-slate-700"
-      aria-label="تبديل الوضع الليلي"
+      onClick={toggleTheme}
+      className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white/70 text-2xl shadow-sm backdrop-blur-md dark:border-slate-700 dark:bg-slate-900/70"
+      aria-label="تبديل الوضع"
+      title="تبديل الوضع"
     >
-      {dark ? <Sun size={18} /> : <Moon size={18} />}
+      {dark ? "☀️" : "🌙"}
     </button>
   );
 }
