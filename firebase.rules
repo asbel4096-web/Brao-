@@ -1,0 +1,43 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function listingOwner() {
+      return signedIn() && resource.data.ownerId == request.auth.uid;
+    }
+
+    function creatingOwnListing() {
+      return signedIn() && request.resource.data.ownerId == request.auth.uid;
+    }
+
+    match /users/{userId} {
+      allow read: if true;
+      allow create, update: if isOwner(userId);
+      allow delete: if false;
+    }
+
+    match /listings/{listingId} {
+      allow read: if true;
+      allow create: if creatingOwnListing();
+      allow update, delete: if listingOwner();
+
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if signedIn();
+        allow delete: if signedIn() && (
+          resource.data.userId == request.auth.uid ||
+          request.auth.token.email == 'asbel4096@gmail.com'
+        );
+        allow update: if false;
+      }
+    }
+  }
+}
