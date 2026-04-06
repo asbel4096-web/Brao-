@@ -1,105 +1,433 @@
 "use client";
 
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useState } from "react";
 import {
-  Bell,
-  ChevronLeft,
-  CircleHelp,
-  Heart,
-  LogOut,
-  MessageCircleMore,
-  PencilLine,
-  Settings,
-  ShieldCheck,
-  UserCircle2
-} from "lucide-react";
+  browserLocalPersistence,
+  ConfirmationResult,
+  onAuthStateChanged,
+  RecaptchaVerifier,
+  setPersistence,
+  signInWithPhoneNumber,
+  signInWithPopup,
+  signOut,
+  User
+} from "firebase/auth";
+import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { auth, db, googleProvider, storage } from "@/lib/firebase";
 
-const user = {
-  name: "طه محمد",
-  phone: "0912345678",
-  city: "طرابلس",
-  bio: "مهتم بسوق السيارات وقطع الغيار والخدمات داخل ليبيا.",
-  listingsCount: 12,
-  favoritesCount: 8,
-  messagesCount: 5
+declare global {
+  interface Window {
+    recaptchaVerifier?: RecaptchaVerifier;
+    grecaptcha?: {
+      reset: (widgetId?: number) => void;
+    };
+  }
+}
+
+type ProfileData = {
+  bio: string;
+  photoURL: string;
 };
 
-const stats = [
-  { label: "إعلاناتي", value: user.listingsCount, href: "/my-listings" },
-  { label: "المفضلة", value: user.favoritesCount, href: "/favorites" },
-  { label: "الرسائل", value: user.messagesCount, href: "/messages" }
-];
-
-const menuItems = [
-  {
-    title: "إعلاناتي",
-    subtitle: "عرض وتعديل وحذف الإعلانات",
-    href: "/my-listings",
-    icon: PencilLine
-  },
-  {
-    title: "المفضلة",
-    subtitle: "الإعلانات التي قمت بحفظها",
-    href: "/favorites",
-    icon: Heart
-  },
-  {
-    title: "الدردشة",
-    subtitle: "الرسائل والمحادثات",
-    href: "/messages",
-    icon: MessageCircleMore
-  },
-  {
-    title: "الإشعارات",
-    subtitle: "تنبيهات الحساب والإعلانات",
-    href: "/notifications",
-    icon: Bell
-  },
-  {
-    title: "الإعدادات",
-    subtitle: "إعدادات التطبيق والحساب",
-    href: "/settings",
-    icon: Settings
-  },
-  {
-    title: "الدعم والمساعدة",
-    subtitle: "الأسئلة الشائعة والتواصل",
-    href: "/help",
-    icon: CircleHelp
-  }
-];
-
 export default function ProfilePage() {
-  const [loggedIn] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState("");
+  const [googleLoading, setGoogleLoading] = useState(false);
 
-  if (!loggedIn) {
+  const [phone, setPhone] = useState("+218");
+  const [code, setCode] = useState("");
+  const [sendingCode, setSendingCode] = useState(false);
+  const [verifyingCode, setVerifyingCode] = useState(false);
+  const [confirmationResult, setConfirmationResult] =
+    useState<ConfirmationResult | null>(null);
+
+  const [bio, setBio] = useState("");
+  const [photoURL, setPhotoURL] = useState("");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  const recaptchaContainerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const init = async () => {
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+          if (!mounted) return;
+
+          setUser(currentUser);
+
+          if (currentUser) {
+            try {
+              const userRef = doc(db, "users", currentUser.uid);
+
+              await setDoc(
+                userRef,
+                {
+                  uid: currentUser.uid,
+                  name: currentUser.displayName || "",
+                  email: currentUser.email || "",
+                  phone: currentUser.phoneNumber || "",
+                  photoURL: currentUser.photoURL || "",
+                  providerIds: currentUser.providerData.map((p) => p.providerId),
+                  lastLoginAt: serverTimestamp(),
+                  updatedAt: serverTimestamp()
+                },
+                { merge: true }
+              );
+
+              const snap = await getDoc(userRef);
+              const data = snap.data() as Partial<ProfileData> | undefined;
+              setBio(data?.bio || "");
+              setPhotoURL(data?.photoURL || currentUser.photoURL || "");
+            } catch (error) {
+              console.error("Save/load user error:", error);
+            }
+          }
+
+          setLoading(false);
+        });
+
+        return unsubscribe;
+      } catch (error: any) {
+        console.error("Auth init error:", error);
+        setMessage(error?.message || "تعذر تهيئة تسجيل الدخول.");
+        setLoading(false);
+        return () => {};
+      }
+    };
+
+    let unsubscribeFn: (() => void) | undefined;
+
+    init().then((unsub) => {
+      unsubscribeFn = unsub || undefined;
+    });
+
+    return () => {
+      mounted = false;
+      if (unsubscribeFn) unsubscribeFn();
+      if (window.recaptchaVerifier) {
+        try {
+          window.recaptchaVerifier.clear();
+        } catch {}
+        window.recaptchaVerifier = undefined;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!recaptchaContainerRef.current) return;
+    if (user) return;
+
+    const setupRecaptcha = async () => {
+      try {
+        if (window.recaptchaVerifier) {
+          try {
+            window.recaptchaVerifier.clear();
+          } catch {}
+          window.recaptchaVerifier = undefined;
+        }
+
+        auth.languageCode = "ar";
+
+        window.recaptchaVerifier = new RecaptchaVerifier(
+          auth,
+          recaptchaContainerRef.current!,
+          {
+            size: "normal",
+            callback: () => {
+              setMessage("تم تفعيل التحقق بنجاح.");
+            },
+            "expired-callback": () => {
+              setMessage("انتهت صلاحية التحقق. أعد المحاولة.");
+            }
+          }
+        );
+
+        await window.recaptchaVerifier.render();
+      } catch (error: any) {
+        console.error("reCAPTCHA init error:", error);
+        setMessage(error?.message || "تعذر تهيئة reCAPTCHA.");
+      }
+    };
+
+    setupRecaptcha();
+  }, [user]);
+
+  const firstLetter = useMemo(() => {
+    return (
+      user?.displayName?.trim()?.charAt(0)?.toUpperCase() ||
+      user?.email?.trim()?.charAt(0)?.toUpperCase() ||
+      user?.phoneNumber?.trim()?.charAt(0)?.toUpperCase() ||
+      "U"
+    );
+  }, [user]);
+
+  const previewPhoto = useMemo(() => {
+    if (photoFile) return URL.createObjectURL(photoFile);
+    return photoURL;
+  }, [photoFile, photoURL]);
+
+  const handleGoogleLogin = async () => {
+    if (googleLoading) return;
+
+    try {
+      setGoogleLoading(true);
+      setMessage("");
+      await setPersistence(auth, browserLocalPersistence);
+      await signInWithPopup(auth, googleProvider);
+      setMessage("تم تسجيل الدخول عبر Google بنجاح.");
+    } catch (error: any) {
+      console.error("Google login error:", error);
+
+      if (error?.code === "auth/popup-blocked") {
+        setMessage("المتصفح منع نافذة Google. اسمح بالنوافذ المنبثقة ثم أعد المحاولة.");
+      } else if (error?.code === "auth/cancelled-popup-request") {
+        setMessage("اضغط مرة واحدة فقط على تسجيل Google.");
+      } else if (error?.code === "auth/popup-closed-by-user") {
+        setMessage("تم إغلاق نافذة Google قبل إكمال تسجيل الدخول.");
+      } else {
+        setMessage(error?.message || "فشل تسجيل الدخول عبر Google.");
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleSendCode = async () => {
+    try {
+      setMessage("");
+
+      if (!phone.trim() || !phone.startsWith("+")) {
+        setMessage("اكتب رقم الهاتف بصيغة دولية مثل +2189xxxxxxxx.");
+        return;
+      }
+
+      if (!window.recaptchaVerifier) {
+        setMessage("reCAPTCHA غير جاهز بعد. أعد تحميل الصفحة وانتظر ظهوره.");
+        return;
+      }
+
+      setSendingCode(true);
+      await setPersistence(auth, browserLocalPersistence);
+
+      const result = await signInWithPhoneNumber(
+        auth,
+        phone.trim(),
+        window.recaptchaVerifier
+      );
+
+      setConfirmationResult(result);
+      setMessage("تم إرسال رمز التحقق. إذا تأخر، انتظر قليلًا ثم أعد المحاولة.");
+    } catch (error: any) {
+      console.error("Send code error:", error);
+      setMessage(
+        error?.message ||
+          "فشل إرسال رمز التحقق. تأكد من الرقم وظهور reCAPTCHA والدومين المصرح به."
+      );
+
+      try {
+        const widgetId = await window.recaptchaVerifier?.render();
+        if (window.grecaptcha && widgetId !== undefined) {
+          window.grecaptcha.reset(widgetId);
+        }
+      } catch {}
+    } finally {
+      setSendingCode(false);
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    try {
+      setMessage("");
+
+      if (!confirmationResult) {
+        setMessage("أرسل رمز التحقق أولًا.");
+        return;
+      }
+
+      if (!code.trim()) {
+        setMessage("اكتب رمز التحقق.");
+        return;
+      }
+
+      setVerifyingCode(true);
+      await confirmationResult.confirm(code.trim());
+      setMessage("تم تسجيل الدخول برقم الهاتف بنجاح.");
+      setCode("");
+    } catch (error: any) {
+      console.error("Verify code error:", error);
+      setMessage(error?.message || "رمز التحقق غير صحيح أو انتهت صلاحيته.");
+    } finally {
+      setVerifyingCode(false);
+    }
+  };
+
+  const handlePhotoChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setPhotoFile(file);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+
+    try {
+      setSavingProfile(true);
+      setMessage("جارٍ حفظ بيانات الحساب...");
+
+      let finalPhotoURL = photoURL;
+
+      if (photoFile) {
+        const fileName = `${Date.now()}-${photoFile.name}`;
+        const storageRef = ref(storage, `users/${user.uid}/${fileName}`);
+        await uploadBytes(storageRef, photoFile);
+        finalPhotoURL = await getDownloadURL(storageRef);
+      }
+
+      await setDoc(
+        doc(db, "users", user.uid),
+        {
+          uid: user.uid,
+          name: user.displayName || "",
+          email: user.email || "",
+          phone: user.phoneNumber || "",
+          bio: bio.trim(),
+          photoURL: finalPhotoURL,
+          updatedAt: serverTimestamp()
+        },
+        { merge: true }
+      );
+
+      setPhotoURL(finalPhotoURL);
+      setPhotoFile(null);
+      setMessage("تم حفظ بيانات الحساب بنجاح.");
+    } catch (error) {
+      console.error("Save profile error:", error);
+      setMessage("حدث خطأ أثناء حفظ الحساب.");
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setConfirmationResult(null);
+      setCode("");
+      setMessage("تم تسجيل الخروج.");
+    } catch (error: any) {
+      console.error("Logout error:", error);
+      setMessage(error?.message || "فشل تسجيل الخروج.");
+    }
+  };
+
+  if (loading) {
     return (
       <section className="container pb-8">
-        <div className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex flex-col items-center text-center">
-            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-              <UserCircle2 className="h-14 w-14 text-slate-500" />
+        <div className="rounded-[26px] border border-slate-200 bg-white p-8 text-center text-slate-500 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          جارٍ تحميل الحساب...
+        </div>
+      </section>
+    );
+  }
+
+  if (!user) {
+    return (
+      <section className="container pb-8">
+        <div className="grid gap-5">
+          <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="text-right">
+              <h1 className="text-3xl font-black text-slate-950 dark:text-white">
+                حسابي
+              </h1>
+              <p className="mt-2 text-base text-slate-500 dark:text-slate-300">
+                سجّل الدخول لإدارة إعلاناتك ورسائلك وحسابك.
+              </p>
             </div>
+          </section>
 
-            <h1 className="mt-4 text-3xl font-black text-slate-950 dark:text-white">
-              حسابي
-            </h1>
-
-            <p className="mt-3 max-w-md text-lg leading-8 text-slate-500 dark:text-slate-300">
-              سجّل الدخول لإدارة إعلاناتك، الرسائل، المفضلة، والإعدادات الخاصة بك.
-            </p>
-
-            <div className="mt-6 grid w-full gap-3 md:max-w-md">
-              <button className="rounded-[18px] bg-[#2F49C8] px-6 py-4 text-lg font-black text-white">
+          <section className="grid gap-5 md:grid-cols-2">
+            <div className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <h2 className="text-2xl font-black text-slate-950 dark:text-white">
                 تسجيل الدخول عبر Google
-              </button>
+              </h2>
 
-              <button className="rounded-[18px] border border-slate-300 bg-white px-6 py-4 text-lg font-black text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white">
-                تسجيل الدخول برقم الهاتف
+              <button
+                type="button"
+                className="mt-5 w-full rounded-[22px] bg-[#2F49C8] px-5 py-4 text-lg font-black text-white"
+                onClick={handleGoogleLogin}
+                disabled={googleLoading}
+              >
+                {googleLoading ? "جارٍ فتح Google..." : "تسجيل الدخول عبر Google"}
               </button>
             </div>
-          </div>
+
+            <div className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <h2 className="text-2xl font-black text-slate-950 dark:text-white">
+                تسجيل الدخول برقم الهاتف
+              </h2>
+
+              <label className="mt-5 mb-2 block text-sm font-bold text-slate-500">
+                رقم الهاتف
+              </label>
+              <input
+                className="w-full rounded-[18px] bg-slate-100 px-4 py-3 text-right outline-none dark:bg-slate-800"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+2189xxxxxxxx"
+                dir="ltr"
+              />
+
+              <button
+                type="button"
+                className="mt-4 w-full rounded-[18px] bg-slate-900 px-5 py-3 font-black text-white"
+                onClick={handleSendCode}
+                disabled={sendingCode}
+              >
+                {sendingCode ? "جارٍ إرسال الرمز..." : "إرسال رمز التحقق"}
+              </button>
+
+              <div className="mt-4">
+                <div
+                  ref={recaptchaContainerRef}
+                  className="flex min-h-[78px] items-center justify-center overflow-hidden rounded-[18px] border border-slate-200 bg-white p-2 dark:border-slate-700 dark:bg-slate-950"
+                />
+              </div>
+
+              <label className="mt-4 mb-2 block text-sm font-bold text-slate-500">
+                رمز التحقق
+              </label>
+              <input
+                className="w-full rounded-[18px] bg-slate-100 px-4 py-3 text-right outline-none dark:bg-slate-800"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder="اكتب الكود"
+                dir="ltr"
+              />
+
+              <button
+                type="button"
+                className="mt-4 w-full rounded-[18px] border border-blue-200 bg-blue-50 px-5 py-3 font-black text-blue-700"
+                onClick={handleVerifyCode}
+                disabled={verifyingCode}
+              >
+                {verifyingCode ? "جارٍ التحقق..." : "تأكيد الكود وتسجيل الدخول"}
+              </button>
+            </div>
+          </section>
+
+          {message ? (
+            <div className="rounded-[20px] bg-slate-100 px-4 py-4 text-center text-sm font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+              {message}
+            </div>
+          ) : null}
         </div>
       </section>
     );
@@ -110,145 +438,131 @@ export default function ProfilePage() {
       <div className="grid gap-5">
         <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-center justify-between gap-4">
-            <button className="rounded-2xl border border-slate-200 p-3 text-slate-700 dark:border-slate-700 dark:text-slate-200">
-              <ChevronLeft className="h-5 w-5" />
-            </button>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href="/my-listings"
+                className="rounded-[18px] border border-slate-300 bg-white px-4 py-3 text-sm font-black text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+              >
+                إعلاناتي
+              </Link>
+              <Link
+                href="/settings"
+                className="rounded-[18px] border border-slate-300 bg-white px-4 py-3 text-sm font-black text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+              >
+                الإعدادات
+              </Link>
+              <button
+                type="button"
+                className="rounded-[18px] border border-slate-300 bg-white px-4 py-3 text-sm font-black text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                onClick={handleLogout}
+              >
+                تسجيل الخروج
+              </button>
+            </div>
 
             <div className="text-right">
               <h1 className="text-3xl font-black text-slate-950 dark:text-white">
                 حسابي
               </h1>
-              <p className="mt-1 text-base text-slate-500 dark:text-slate-300">
-                إدارة الحساب والإعلانات
+              <p className="mt-2 text-base text-slate-500 dark:text-slate-300">
+                إدارة بيانات الحساب.
               </p>
             </div>
           </div>
+        </section>
 
-          <div className="mt-5 rounded-[24px] bg-slate-50 p-4 dark:bg-slate-800">
-            <div className="flex items-center justify-between gap-4">
-              <div className="text-right">
-                <div className="text-2xl font-black text-slate-950 dark:text-white">
-                  {user.name}
-                </div>
-                <div className="mt-2 text-base text-slate-500 dark:text-slate-300">
-                  {user.phone}
-                </div>
-                <div className="mt-1 text-base text-slate-500 dark:text-slate-300">
-                  {user.city}
-                </div>
+        <section className="grid gap-5 md:grid-cols-2">
+          <div className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <h2 className="text-2xl font-black text-slate-950 dark:text-white">
+              تعديل الحساب
+            </h2>
+
+            <div className="mt-5 grid gap-4">
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-500">
+                  الصورة الشخصية
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoChange}
+                  className="w-full rounded-[18px] bg-slate-100 px-4 py-3 text-right outline-none dark:bg-slate-800"
+                />
               </div>
 
-              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700">
-                <UserCircle2 className="h-14 w-14 text-slate-500 dark:text-slate-300" />
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-500">
+                  السيرة الذاتية
+                </label>
+                <textarea
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  rows={5}
+                  placeholder="اكتب نبذة مختصرة عنك أو عن نشاطك"
+                  className="w-full rounded-[20px] bg-slate-100 px-4 py-4 text-right outline-none dark:bg-slate-800"
+                />
               </div>
-            </div>
 
-            <p className="mt-4 text-base leading-8 text-slate-600 dark:text-slate-300">
-              {user.bio}
-            </p>
-
-            <div className="mt-4 flex flex-wrap gap-3">
-              <Link
-                href="/profile/edit"
-                className="rounded-[16px] bg-[#2F49C8] px-5 py-3 text-base font-black text-white"
+              <button
+                type="button"
+                disabled={savingProfile}
+                onClick={handleSaveProfile}
+                className="w-full rounded-[22px] bg-[#2F49C8] px-5 py-4 text-lg font-black text-white disabled:opacity-60"
               >
-                تعديل الحساب
-              </Link>
-
-              <button className="rounded-[16px] border border-slate-300 bg-white px-5 py-3 text-base font-black text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white">
-                مشاركة الملف
+                {savingProfile ? "جارٍ حفظ الحساب..." : "حفظ تعديل الحساب"}
               </button>
             </div>
           </div>
-        </section>
 
-        <section className="grid grid-cols-3 gap-3">
-          {stats.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className="rounded-[22px] border border-slate-200 bg-white p-4 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900"
-            >
-              <div className="text-3xl font-black text-slate-950 dark:text-white">
-                {item.value}
-              </div>
-              <div className="mt-2 text-sm font-bold text-slate-500 dark:text-slate-300">
-                {item.label}
-              </div>
-            </Link>
-          ))}
-        </section>
+          <div className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <h2 className="text-2xl font-black text-slate-950 dark:text-white">
+              معلومات الحساب
+            </h2>
 
-        <section className="rounded-[26px] border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <h2 className="mb-4 text-2xl font-black text-slate-950 dark:text-white">
-            إدارة الحساب
-          </h2>
-
-          <div className="grid gap-3">
-            {menuItems.map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <Link
-                  key={item.title}
-                  href={item.href}
-                  className="flex items-center justify-between gap-4 rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-800 dark:bg-slate-950"
-                >
-                  <ChevronLeft className="h-5 w-5 text-slate-400" />
-
-                  <div className="flex-1 text-right">
-                    <div className="text-xl font-black text-slate-950 dark:text-white">
-                      {item.title}
-                    </div>
-                    <div className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-300">
-                      {item.subtitle}
-                    </div>
+            <div className="mt-5 grid gap-4">
+              <div className="flex items-center justify-between gap-4 rounded-[22px] bg-slate-50 p-4 dark:bg-slate-800">
+                <div className="text-right">
+                  <div className="text-xl font-black text-slate-950 dark:text-white">
+                    {user.displayName || "غير متوفر"}
                   </div>
-
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800">
-                    <Icon className="h-6 w-6 text-[#2F49C8]" />
+                  <div className="mt-2 text-sm text-slate-500 dark:text-slate-300">
+                    {user.email || "غير متوفر"}
                   </div>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className="rounded-[26px] border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="grid gap-3">
-            <div className="flex items-center justify-between rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-800 dark:bg-slate-950">
-              <ChevronLeft className="h-5 w-5 text-slate-400" />
-
-              <div className="flex-1 text-right">
-                <div className="text-xl font-black text-slate-950 dark:text-white">
-                  الأمان والخصوصية
+                  <div className="mt-1 text-sm text-slate-500 dark:text-slate-300">
+                    {user.phoneNumber || "غير متوفر"}
+                  </div>
                 </div>
-                <div className="mt-1 text-sm text-slate-500 dark:text-slate-300">
-                  حماية الحساب وبياناتك
-                </div>
+
+                {previewPhoto ? (
+                  <img
+                    src={previewPhoto}
+                    alt="User"
+                    className="h-20 w-20 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#2F49C8] text-3xl font-black text-white">
+                    {firstLetter}
+                  </div>
+                )}
               </div>
 
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800">
-                <ShieldCheck className="h-6 w-6 text-[#2F49C8]" />
+              <div className="rounded-[22px] bg-slate-50 p-4 text-right dark:bg-slate-800">
+                <div className="text-sm font-bold text-slate-500 dark:text-slate-300">
+                  السيرة الذاتية
+                </div>
+                <div className="mt-3 text-base leading-8 text-slate-700 dark:text-slate-200">
+                  {bio || "لا توجد سيرة ذاتية بعد."}
+                </div>
               </div>
             </div>
-
-            <button className="flex items-center justify-between rounded-[22px] border border-red-200 bg-red-50 px-4 py-4 text-red-600 dark:border-red-900/40 dark:bg-red-950/20">
-              <ChevronLeft className="h-5 w-5" />
-
-              <div className="flex-1 text-right">
-                <div className="text-xl font-black">تسجيل الخروج</div>
-                <div className="mt-1 text-sm text-red-500">
-                  الخروج من هذا الجهاز
-                </div>
-              </div>
-
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white dark:bg-slate-900">
-                <LogOut className="h-6 w-6" />
-              </div>
-            </button>
           </div>
         </section>
+
+        {message ? (
+          <div className="rounded-[20px] bg-slate-100 px-4 py-4 text-center text-sm font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+            {message}
+          </div>
+        ) : null}
       </div>
     </section>
   );
