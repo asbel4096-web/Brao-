@@ -5,7 +5,6 @@ import {
   Fuel,
   Gauge,
   MapPin,
-  MessageCircle,
   Phone,
   Share2,
   Heart,
@@ -27,6 +26,7 @@ const listing = {
   description:
     "سيارة نظيفة وجاهزة، محرك ممتاز وصالة مرتبة، استعمال شخصي، أوراق جاهزة، والمعاينة خير دليل.",
   seller: {
+    id: "seller_uid_demo",
     name: "ابن البادية",
     joined: "05-04-2026",
     listingsCount: 1
@@ -130,11 +130,11 @@ export default function ListingDetailsPage() {
               </a>
 
               <StartChatButton
-  listingId={listing.id}
-  listingTitle={listing.title}
-  sellerId={listing.seller.id}
-  sellerName={listing.seller.name}
-/>
+                listingId={listing.id}
+                listingTitle={listing.title}
+                sellerId={listing.seller.id}
+                sellerName={listing.seller.name}
+              />
             </div>
           </div>
         </section>
