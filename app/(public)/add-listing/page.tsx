@@ -1,224 +1,498 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { ImagePlus, MapPin, Phone, Tag, FileText, CarFront } from "lucide-react";
+import { auth, db, storage } from "@/lib/firebase";
 
-type FormState = {
+type CategoryOption = {
+  label: string;
+  value: string;
+};
+
+const CATEGORY_OPTIONS: CategoryOption[] = [
+  { label: "سيارات", value: "cars" },
+  { label: "حافلات", value: "buses" },
+  { label: "شاحنات", value: "trucks" },
+  { label: "خدمات", value: "services" },
+  { label: "كماليات سيارات", value: "accessories" },
+  { label: "زيوت ومواد مضافة", value: "oils_additives" },
+  { label: "ميكانيكي متنقل", value: "mobile_mechanic" },
+  { label: "إطارات وجنوط", value: "tires_wheels" },
+  { label: "قطع غيار سيارات وشاحنات", value: "parts_cars_trucks" },
+  { label: "قطع غيار كهربائية", value: "electrical_parts" },
+  { label: "سمكرة وزواق", value: "body_paint" },
+  { label: "ورش ميكانيكا", value: "mechanic_workshops" },
+  { label: "فني كهربائي سيارات", value: "auto_electrician" },
+  { label: "سيارات بها حوادث", value: "damaged_cars" },
+  { label: "قطع غيار مستعملة", value: "used_parts" }
+];
+
+const LIBYA_CITIES = [
+  "طرابلس",
+  "بنغازي",
+  "مصراتة",
+  "الزاوية",
+  "زليتن",
+  "صبراتة",
+  "صرمان",
+  "جنزور",
+  "الخمس",
+  "ترهونة",
+  "غريان",
+  "يفرن",
+  "نالوت",
+  "زوارة",
+  "رقدالين",
+  "العجيلات",
+  "سرت",
+  "إجدابيا",
+  "المرج",
+  "البيضاء",
+  "درنة",
+  "طبرق",
+  "سبها",
+  "أوباري",
+  "مرزق",
+  "غات",
+  "الكفرة",
+  "هون",
+  "ودان",
+  "براك الشاطئ",
+  "بن وليد",
+  "شحات",
+  "راس لانوف"
+];
+
+type ListingForm = {
   title: string;
   category: string;
   price: string;
   city: string;
-  description: string;
   phone: string;
+  whatsapp: string;
   sellerName: string;
+  description: string;
+  year: string;
+  mileage: string;
+  fuel: string;
+  transmission: string;
+  address: string;
+  mapLink: string;
 };
 
-const initialState: FormState = {
+const defaultForm: ListingForm = {
   title: "",
-  category: "سيارات",
+  category: CATEGORY_OPTIONS[0]?.label ?? "سيارات",
   price: "",
   city: "طرابلس",
-  description: "",
   phone: "",
-  sellerName: ""
+  whatsapp: "",
+  sellerName: "",
+  description: "",
+  year: "",
+  mileage: "",
+  fuel: "بنزين",
+  transmission: "أوتوماتيك",
+  address: "",
+  mapLink: ""
 };
 
 export default function AddListingPage() {
-  const [form, setForm] = useState<FormState>(initialState);
-  const [loading, setLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
+  const router = useRouter();
+  const [form, setForm] = useState<ListingForm>(defaultForm);
+  const [images, setImages] = useState<File[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const previews = useMemo(() => {
+    return images.map((file) => URL.createObjectURL(file));
+  }, [images]);
 
   const handleChange = (
-    field: keyof FormState,
-    value: string
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleImagesChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const limited = files.slice(0, 20);
+    setImages(limited);
+    setMessage(files.length > 20 ? "يمكنك رفع 20 صورة كحد أقصى." : "");
+  };
+
+  const uploadImages = async (ownerId: string): Promise<string[]> => {
+    if (!images.length) return [];
+
+    const uploaded = await Promise.all(
+      images.map(async (file, index) => {
+        const fileName = `${Date.now()}-${index}-${file.name}`;
+        const storageRef = ref(storage, `listing-images/${ownerId}/${fileName}`);
+        await uploadBytes(storageRef, file);
+        return await getDownloadURL(storageRef);
+      })
+    );
+
+    return uploaded;
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setSuccessMessage("");
-    setErrorMessage("");
+
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      setMessage("يجب تسجيل الدخول أولًا.");
+      return;
+    }
 
     if (!form.title.trim()) {
-      setErrorMessage("يرجى إدخال عنوان الإعلان.");
+      setMessage("اكتب عنوان الإعلان.");
       return;
     }
 
     if (!form.price.trim()) {
-      setErrorMessage("يرجى إدخال السعر.");
+      setMessage("اكتب السعر.");
       return;
     }
 
     if (!form.phone.trim()) {
-      setErrorMessage("يرجى إدخال رقم الهاتف.");
+      setMessage("اكتب رقم الهاتف.");
       return;
     }
 
     try {
-      setLoading(true);
+      setSubmitting(true);
+      setMessage("جارٍ نشر الإعلان...");
+
+      const imageUrls = await uploadImages(currentUser.uid);
 
       await addDoc(collection(db, "listings"), {
         title: form.title.trim(),
         category: form.category,
-        price: Number(form.price) || form.price,
+        price: form.price.trim(),
         city: form.city,
-        description: form.description.trim(),
         phone: form.phone.trim(),
+        whatsapp: form.whatsapp.trim() || form.phone.trim(),
         sellerName: form.sellerName.trim(),
+        description: form.description.trim(),
+        year: form.year.trim(),
+        mileage: form.mileage.trim(),
+        fuelType: form.fuel.trim(),
+        transmission: form.transmission.trim(),
+        address: form.address.trim(),
+        mapLink: form.mapLink.trim(),
+        images: imageUrls,
+        ownerId: currentUser.uid,
+        ownerEmail: currentUser.email || "",
+        ownerPhone: currentUser.phoneNumber || form.phone.trim(),
         status: "pending",
-        featured: false,
-        views: 0,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
 
-      setForm(initialState);
-      setSuccessMessage("تم إرسال الإعلان بنجاح، وهو الآن بانتظار اعتماد المشرف.");
+      setMessage("تم نشر إعلانك بنجاح، وهو الآن بانتظار اعتماد المشرف.");
+      setForm(defaultForm);
+      setImages([]);
+
+      setTimeout(() => {
+        router.push("/my-listings");
+      }, 1200);
     } catch (error) {
-      console.error("Error adding listing:", error);
-      setErrorMessage("حدث خطأ أثناء حفظ الإعلان. تأكد من إعدادات Firebase وFirestore.");
+      console.error("Add listing error:", error);
+      setMessage("حدث خطأ أثناء حفظ الإعلان.");
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
   return (
-    <section className="container py-10">
-      <div className="mx-auto max-w-4xl">
-        <div>
-          <h1 className="section-title">إضافة إعلان جديد</h1>
-          <p className="section-subtitle">
-            النموذج منظم ليدعم لاحقًا رفع حتى 20 صورة، حفظ البيانات في Firestore،
-            واعتماد المشرف.
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="card mt-6 p-6 sm:p-8">
-          <div className="grid gap-5 md:grid-cols-2">
-            <div>
-              <label className="label">عنوان الإعلان</label>
-              <input
-                className="input"
-                placeholder="مثال: هونداي أزيرا 2012 فل الفل"
-                value={form.title}
-                onChange={(e) => handleChange("title", e.target.value)}
-              />
+    <section className="container pb-8">
+      <div className="grid gap-5">
+        <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-center justify-between gap-4">
+            <div className="text-right">
+              <h1 className="text-3xl font-black text-slate-950 dark:text-white">
+                إضافة إعلان
+              </h1>
+              <p className="mt-2 text-base text-slate-500 dark:text-slate-300">
+                أضف إعلانك بشكل مرتب وواضح للمشترين.
+              </p>
             </div>
 
-            <div>
-              <label className="label">القسم</label>
-              <select
-                className="input"
-                value={form.category}
-                onChange={(e) => handleChange("category", e.target.value)}
-              >
-                <option>سيارات</option>
-                <option>قطع غيار</option>
-                <option>كماليات</option>
-                <option>خدمات</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="label">السعر</label>
-              <input
-                className="input"
-                type="number"
-                placeholder="أدخل السعر"
-                value={form.price}
-                onChange={(e) => handleChange("price", e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className="label">المدينة</label>
-              <select
-                className="input"
-                value={form.city}
-                onChange={(e) => handleChange("city", e.target.value)}
-              >
-                <option>طرابلس</option>
-                <option>بنغازي</option>
-                <option>مصراتة</option>
-                <option>الزاوية</option>
-                <option>زليتن</option>
-                <option>سبها</option>
-                <option>الخمس</option>
-                <option>سرت</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="label">اسم البائع</label>
-              <input
-                className="input"
-                placeholder="اسم البائع"
-                value={form.sellerName}
-                onChange={(e) => handleChange("sellerName", e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className="label">رقم الهاتف</label>
-              <input
-                className="input"
-                placeholder="0910000000"
-                value={form.phone}
-                onChange={(e) => handleChange("phone", e.target.value)}
-              />
+            <div className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-[#2F49C8]/10">
+              <CarFront className="h-7 w-7 text-[#2F49C8]" />
             </div>
           </div>
+        </section>
 
-          <div className="mt-5">
-            <label className="label">الوصف</label>
-            <textarea
-              className="input min-h-[140px]"
-              placeholder="اكتب تفاصيل الإعلان هنا"
-              value={form.description}
-              onChange={(e) => handleChange("description", e.target.value)}
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="grid gap-5">
+          <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <h2 className="text-2xl font-black text-slate-950 dark:text-white">
+              المعلومات الأساسية
+            </h2>
 
-          {successMessage ? (
-            <div className="mt-5 rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-              {successMessage}
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-500">عنوان الإعلان</label>
+                <div className="flex items-center gap-3 rounded-[18px] bg-slate-100 px-4 py-3 dark:bg-slate-800">
+                  <Tag className="h-5 w-5 text-slate-500" />
+                  <input
+                    name="title"
+                    value={form.title}
+                    onChange={handleChange}
+                    placeholder="مثال: مرسيدس E350 2014"
+                    className="w-full bg-transparent text-right outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-500">القسم</label>
+                <select
+                  name="category"
+                  value={form.category}
+                  onChange={handleChange}
+                  className="w-full rounded-[18px] bg-slate-100 px-4 py-3 text-right outline-none dark:bg-slate-800"
+                >
+                  {CATEGORY_OPTIONS.map((item) => (
+                    <option key={item.value} value={item.label}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-500">السعر</label>
+                <input
+                  name="price"
+                  value={form.price}
+                  onChange={handleChange}
+                  placeholder="مثال: 65000"
+                  className="w-full rounded-[18px] bg-slate-100 px-4 py-3 text-right outline-none dark:bg-slate-800"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-500">المدينة</label>
+                <select
+                  name="city"
+                  value={form.city}
+                  onChange={handleChange}
+                  className="w-full rounded-[18px] bg-slate-100 px-4 py-3 text-right outline-none dark:bg-slate-800"
+                >
+                  {LIBYA_CITIES.map((cityName) => (
+                    <option key={cityName} value={cityName}>
+                      {cityName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-500">اسم البائع</label>
+                <input
+                  name="sellerName"
+                  value={form.sellerName}
+                  onChange={handleChange}
+                  placeholder="اسم المعلن"
+                  className="w-full rounded-[18px] bg-slate-100 px-4 py-3 text-right outline-none dark:bg-slate-800"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-500">سنة الصنع</label>
+                <input
+                  name="year"
+                  value={form.year}
+                  onChange={handleChange}
+                  placeholder="2014"
+                  className="w-full rounded-[18px] bg-slate-100 px-4 py-3 text-right outline-none dark:bg-slate-800"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-500">العداد</label>
+                <input
+                  name="mileage"
+                  value={form.mileage}
+                  onChange={handleChange}
+                  placeholder="90000 كم"
+                  className="w-full rounded-[18px] bg-slate-100 px-4 py-3 text-right outline-none dark:bg-slate-800"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-500">نوع الوقود</label>
+                <input
+                  name="fuel"
+                  value={form.fuel}
+                  onChange={handleChange}
+                  placeholder="بنزين"
+                  className="w-full rounded-[18px] bg-slate-100 px-4 py-3 text-right outline-none dark:bg-slate-800"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-500">ناقل الحركة</label>
+                <input
+                  name="transmission"
+                  value={form.transmission}
+                  onChange={handleChange}
+                  placeholder="أوتوماتيك"
+                  className="w-full rounded-[18px] bg-slate-100 px-4 py-3 text-right outline-none dark:bg-slate-800"
+                />
+              </div>
             </div>
-          ) : null}
+          </section>
 
-          {errorMessage ? (
-            <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {errorMessage}
+          <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <h2 className="text-2xl font-black text-slate-950 dark:text-white">
+              التواصل والموقع
+            </h2>
+
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-500">رقم الهاتف</label>
+                <div className="flex items-center gap-3 rounded-[18px] bg-slate-100 px-4 py-3 dark:bg-slate-800">
+                  <Phone className="h-5 w-5 text-slate-500" />
+                  <input
+                    name="phone"
+                    value={form.phone}
+                    onChange={handleChange}
+                    placeholder="0912345678"
+                    className="w-full bg-transparent text-right outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-500">واتساب</label>
+                <input
+                  name="whatsapp"
+                  value={form.whatsapp}
+                  onChange={handleChange}
+                  placeholder="0912345678"
+                  className="w-full rounded-[18px] bg-slate-100 px-4 py-3 text-right outline-none dark:bg-slate-800"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="mb-2 block text-sm font-bold text-slate-500">العنوان</label>
+                <input
+                  name="address"
+                  value={form.address}
+                  onChange={handleChange}
+                  placeholder="مثال: طرابلس - عين زارة"
+                  className="w-full rounded-[18px] bg-slate-100 px-4 py-3 text-right outline-none dark:bg-slate-800"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="mb-2 block text-sm font-bold text-slate-500">رابط موقعك من الخرائط</label>
+                <div className="flex items-center gap-3 rounded-[18px] bg-slate-100 px-4 py-3 dark:bg-slate-800">
+                  <MapPin className="h-5 w-5 text-slate-500" />
+                  <input
+                    name="mapLink"
+                    value={form.mapLink}
+                    onChange={handleChange}
+                    placeholder="الصق رابط موقعك من Google Maps"
+                    className="w-full bg-transparent text-right outline-none"
+                  />
+                </div>
+              </div>
             </div>
-          ) : null}
+          </section>
 
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={loading}
-            >
-              {loading ? "جارٍ حفظ الإعلان..." : "نشر الإعلان"}
-            </button>
+          <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <h2 className="text-2xl font-black text-slate-950 dark:text-white">
+              وصف الإعلان
+            </h2>
 
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => {
-                setForm(initialState);
-                setSuccessMessage("");
-                setErrorMessage("");
-              }}
-              disabled={loading}
-            >
-              مسح الحقول
-            </button>
-          </div>
+            <div className="mt-5">
+              <div className="mb-2 flex items-center justify-end gap-2 text-sm font-bold text-slate-500">
+                <span>اكتب التفاصيل المهمة للمشتري</span>
+                <FileText className="h-4 w-4" />
+              </div>
+
+              <textarea
+                name="description"
+                value={form.description}
+                onChange={handleChange}
+                rows={6}
+                placeholder="اكتب تفاصيل الإعلان هنا"
+                className="w-full rounded-[20px] bg-slate-100 px-4 py-4 text-right outline-none dark:bg-slate-800"
+              />
+            </div>
+          </section>
+
+          <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <h2 className="text-2xl font-black text-slate-950 dark:text-white">
+              صور الإعلان
+            </h2>
+
+            <div className="mt-5">
+              <label className="flex min-h-[120px] cursor-pointer flex-col items-center justify-center rounded-[22px] border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center dark:border-slate-700 dark:bg-slate-800">
+                <ImagePlus className="h-10 w-10 text-[#2F49C8]" />
+                <span className="mt-3 text-lg font-black text-slate-950 dark:text-white">
+                  اضغط لاختيار الصور
+                </span>
+                <span className="mt-2 text-sm text-slate-500 dark:text-slate-300">
+                  يمكنك رفع حتى 20 صورة
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImagesChange}
+                  className="hidden"
+                />
+              </label>
+
+              {images.length > 0 && (
+                <p className="mt-4 text-sm font-bold text-slate-600 dark:text-slate-300">
+                  عدد الصور المختارة: {images.length}
+                </p>
+              )}
+
+              {previews.length > 0 && (
+                <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+                  {previews.map((src, index) => (
+                    <div
+                      key={`${src}-${index}`}
+                      className="overflow-hidden rounded-[20px] border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-800"
+                    >
+                      <img
+                        src={src}
+                        alt={`preview-${index}`}
+                        className="h-32 w-full object-cover"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+
+          {message && (
+            <div className="rounded-[20px] bg-slate-100 px-4 py-4 text-center text-sm font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+              {message}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full rounded-[22px] bg-[#F58233] px-5 py-5 text-lg font-black text-white shadow-[0_14px_30px_rgba(245,130,51,0.26)] disabled:opacity-60"
+          >
+            {submitting ? "جارٍ نشر الإعلان..." : "نشر إعلانك"}
+          </button>
         </form>
       </div>
     </section>
   );
 }
-
