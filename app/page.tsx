@@ -5,8 +5,10 @@ import {
   ShieldCheck,
   Settings2,
   Truck,
-  Search
+  Search,
+  Sparkles
 } from "lucide-react";
+import ListingCard from "@/components/listing-card";
 
 const categories = [
   {
@@ -38,54 +40,73 @@ const categories = [
     desc: "شاحنات نقل ومعدات",
     href: "/listings?category=شاحنات",
     icon: Truck
+  },
+  {
+    title: "الخدمات",
+    desc: "كهرباء، صيانة، فحص، سحب",
+    href: "/listings?category=خدمات",
+    icon: Sparkles
   }
 ];
 
 const featured = [
   {
+    id: "1",
     title: "مرسيدس E350",
     price: "65,000 د.ل",
     city: "طرابلس",
-    href: "/listings"
+    year: "2014",
+    condition: "مستعمل"
   },
   {
+    id: "2",
     title: "كيا أوبتيما 2012",
     price: "28,700 د.ل",
     city: "مصراتة",
-    href: "/listings"
+    year: "2012",
+    condition: "مستعمل"
   },
   {
-    title: "قطع غيار هيونداي",
-    price: "على السوم",
+    id: "3",
+    title: "هيونداي أزيرا",
+    price: "22,800 د.ل",
     city: "بنغازي",
-    href: "/listings"
+    year: "2012",
+    condition: "مستعمل"
   }
 ];
 
 const latest = [
   {
+    id: "4",
     title: "هونداي سنتافي 2014",
     price: "51,000 د.ل",
     city: "طرابلس",
-    href: "/listings"
+    year: "2014",
+    condition: "جديد"
   },
   {
+    id: "5",
     title: "هيونداي سوناتا 2012",
     price: "9,999 د.ل",
     city: "الزاوية",
-    href: "/listings"
+    year: "2012",
+    condition: "مستعمل"
   },
   {
-    title: "كيا 2012",
-    price: "28,700 د.ل",
-    city: "زليتن",
-    href: "/listings"
-  },
-  {
+    id: "6",
     title: "تويوتا هايلوكس 1988",
     price: "40,000 د.ل",
     city: "سبها",
-    href: "/listings"
+    year: "1988",
+    condition: "مستعمل"
+  },
+  {
+    id: "7",
+    title: "قطع غيار هيونداي",
+    price: "على السوم",
+    city: "زليتن",
+    condition: "متوفر"
   }
 ];
 
@@ -93,13 +114,13 @@ export default function HomePage() {
   return (
     <section className="container pb-8">
       <div className="grid gap-6">
-        <section className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex items-center gap-3 rounded-[20px] bg-slate-100 px-4 py-4 dark:bg-slate-800">
-            <Search className="h-6 w-6 text-slate-500" />
+        <section className="rounded-[26px] border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-center gap-3 rounded-[18px] bg-slate-100 px-4 py-4 dark:bg-slate-800">
+            <Search className="h-5 w-5 text-slate-500" />
             <input
               type="text"
               placeholder="ابحث عن سيارة، قطعة، خدمة..."
-              className="w-full bg-transparent text-right text-lg outline-none placeholder:text-slate-400"
+              className="w-full bg-transparent text-right text-base outline-none placeholder:text-slate-400"
             />
           </div>
 
@@ -116,35 +137,32 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-3xl font-black text-slate-950 dark:text-white">
+        <section className="rounded-[26px] border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-2xl font-black text-slate-950 dark:text-white">
               الأقسام
             </h2>
-            <Link
-              href="/listings"
-              className="text-lg font-extrabold text-blue-600"
-            >
+            <Link href="/listings" className="text-sm font-extrabold text-blue-600">
               المزيد
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
             {categories.map((item) => {
               const Icon = item.icon;
               return (
                 <Link
                   key={item.title}
                   href={item.href}
-                  className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 text-right transition hover:-translate-y-0.5 dark:border-slate-800 dark:bg-slate-950"
+                  className="rounded-[22px] border border-slate-200 bg-slate-50 p-4 text-right transition hover:-translate-y-0.5 dark:border-slate-800 dark:bg-slate-950"
                 >
-                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-[20px] bg-slate-100 dark:bg-slate-800">
-                    <Icon className="h-8 w-8 text-blue-700" />
+                  <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-[18px] bg-slate-100 dark:bg-slate-800">
+                    <Icon className="h-7 w-7 text-[#2F49C8]" />
                   </div>
-                  <h3 className="text-2xl font-black text-slate-950 dark:text-white">
+                  <h3 className="text-xl font-black text-slate-950 dark:text-white">
                     {item.title}
                   </h3>
-                  <p className="mt-2 text-base leading-7 text-slate-500 dark:text-slate-300">
+                  <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-300">
                     {item.desc}
                   </p>
                 </Link>
@@ -153,80 +171,52 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-3xl font-black text-slate-950 dark:text-white">
+        <section className="rounded-[26px] border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-2xl font-black text-slate-950 dark:text-white">
               إعلانات مقترحة
             </h2>
-            <Link
-              href="/listings"
-              className="text-lg font-extrabold text-blue-600"
-            >
+            <Link href="/listings" className="text-sm font-extrabold text-blue-600">
               المزيد
             </Link>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
-            {featured.map((item, index) => (
-              <Link
-                key={index}
-                href={item.href}
-                className="overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950"
-              >
-                <div className="relative h-44 bg-gradient-to-br from-slate-300 to-slate-200 dark:from-slate-800 dark:to-slate-700">
-                  <div className="absolute bottom-3 right-3 rounded-xl bg-black/80 px-3 py-2 text-sm font-black text-white">
-                    {item.price}
-                  </div>
-                </div>
-
-                <div className="p-4 text-right">
-                  <h3 className="text-xl font-black text-slate-950 dark:text-white">
-                    {item.title}
-                  </h3>
-                  <p className="mt-2 text-base text-slate-500 dark:text-slate-300">
-                    {item.city}
-                  </p>
-                </div>
-              </Link>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {featured.map((listing) => (
+              <ListingCard
+                key={listing.id}
+                id={listing.id}
+                title={listing.title}
+                price={listing.price}
+                city={listing.city}
+                year={listing.year}
+                condition={listing.condition}
+              />
             ))}
           </div>
         </section>
 
-        <section className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-3xl font-black text-slate-950 dark:text-white">
+        <section className="rounded-[26px] border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-2xl font-black text-slate-950 dark:text-white">
               آخر الإعلانات
             </h2>
-            <Link
-              href="/listings"
-              className="text-lg font-extrabold text-blue-600"
-            >
+            <Link href="/listings" className="text-sm font-extrabold text-blue-600">
               المزيد
             </Link>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            {latest.map((item, index) => (
-              <Link
-                key={index}
-                href={item.href}
-                className="overflow-hidden rounded-[24px] border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950"
-              >
-                <div className="relative h-52 bg-gradient-to-br from-slate-300 to-slate-200 dark:from-slate-800 dark:to-slate-700">
-                  <div className="absolute bottom-3 right-3 rounded-xl bg-black/85 px-3 py-2 text-sm font-black text-white">
-                    {item.price}
-                  </div>
-                </div>
-
-                <div className="p-4 text-right">
-                  <h3 className="text-2xl font-black text-slate-950 dark:text-white">
-                    {item.title}
-                  </h3>
-                  <p className="mt-2 text-base text-slate-500 dark:text-slate-300">
-                    {item.city}
-                  </p>
-                </div>
-              </Link>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {latest.map((listing) => (
+              <ListingCard
+                key={listing.id}
+                id={listing.id}
+                title={listing.title}
+                price={listing.price}
+                city={listing.city}
+                year={listing.year}
+                condition={listing.condition}
+              />
             ))}
           </div>
         </section>
