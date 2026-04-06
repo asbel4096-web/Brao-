@@ -52,11 +52,7 @@ export default function ProfilePage() {
   const recaptchaContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    let mounted = true;
-
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (!mounted) return;
-
       setUser(currentUser);
 
       if (currentUser) {
@@ -90,40 +86,55 @@ export default function ProfilePage() {
     });
 
     return () => {
-      mounted = false;
       unsubscribe();
+      if (window.recaptchaVerifier) {
+        try {
+          window.recaptchaVerifier.clear();
+        } catch {}
+        window.recaptchaVerifier = undefined;
+      }
     };
   }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!recaptchaContainerRef.current) return;
-    if (window.recaptchaVerifier || user) return;
+    if (user) return;
 
-    auth.languageCode = "ar";
-
-    try {
-      window.recaptchaVerifier = new RecaptchaVerifier(
-        auth,
-        recaptchaContainerRef.current,
-        {
-          size: "normal",
-          callback: () => {
-            setMessage("تم تفعيل التحقق بنجاح.");
-          },
-          "expired-callback": () => {
-            setMessage("انتهت صلاحية التحقق. أعد المحاولة.");
-          }
+    const setup = async () => {
+      try {
+        if (window.recaptchaVerifier) {
+          try {
+            window.recaptchaVerifier.clear();
+          } catch {}
+          window.recaptchaVerifier = undefined;
         }
-      );
 
-      window.recaptchaVerifier.render().catch(() => {
-        setMessage("فشل تحميل reCAPTCHA.");
-      });
-    } catch (error) {
-      console.error("reCAPTCHA init error:", error);
-      setMessage("تعذر تهيئة reCAPTCHA.");
-    }
+        auth.languageCode = "ar";
+
+        window.recaptchaVerifier = new RecaptchaVerifier(
+          auth,
+          recaptchaContainerRef.current!,
+          {
+            size: "normal",
+            callback: () => {
+              setMessage("تم تفعيل التحقق بنجاح.");
+            },
+            "expired-callback": () => {
+              setMessage("انتهت صلاحية التحقق. أعد المحاولة.");
+            }
+          }
+        );
+
+        await window.recaptchaVerifier.render();
+        setMessage("");
+      } catch (error) {
+        console.error("reCAPTCHA init error:", error);
+        setMessage("تعذر تهيئة reCAPTCHA. أعد تحميل الصفحة.");
+      }
+    };
+
+    setup();
   }, [user]);
 
   const firstLetter = useMemo(() => {
@@ -179,7 +190,7 @@ export default function ProfilePage() {
       }
 
       if (!window.recaptchaVerifier) {
-        setMessage("reCAPTCHA غير جاهز بعد. أعد تحميل الصفحة.");
+        setMessage("reCAPTCHA غير جاهز بعد. أعد تحميل الصفحة وانتظر ظهوره.");
         return;
       }
 
@@ -198,7 +209,7 @@ export default function ProfilePage() {
       console.error("Send code error:", error);
       setMessage(
         error?.message ||
-          "فشل إرسال رمز التحقق. تأكد من الرقم، reCAPTCHA، والدومين المصرح به في Firebase."
+          "فشل إرسال رمز التحقق. تأكد من الرقم وظهور reCAPTCHA والدومين المصرح به."
       );
     } finally {
       setSendingCode(false);
