@@ -23,7 +23,7 @@ export default function BottomNav() {
 
   return (
     <div className="fixed bottom-3 left-1/2 z-50 w-[min(94%,760px)] -translate-x-1/2">
-      <nav className="grid grid-cols-5 items-end rounded-[26px] border border-white/40 bg-white/78 px-2 py-2 shadow-[0_18px_36px_rgba(15,23,42,0.14)] backdrop-blur-xl dark:border-slate-700/50 dark:bg-slate-900/75">
+      <nav className="grid grid-cols-5 items-end rounded-[28px] border border-white/10 bg-slate-950/82 px-2 py-2 shadow-[0_18px_40px_rgba(2,6,23,0.42)] backdrop-blur-xl">
         {items.map((item) => {
           const active = pathname === item.href;
           const Icon = item.icon;
@@ -33,9 +33,9 @@ export default function BottomNav() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="mx-auto flex h-[76px] w-[76px] -translate-y-2 flex-col items-center justify-center rounded-[24px] bg-orange-500 text-white shadow-[0_12px_24px_rgba(249,115,22,0.34)]"
+                className="mx-auto flex h-[82px] w-[82px] -translate-y-2 flex-col items-center justify-center rounded-[26px] bg-orange-500 text-white shadow-[0_14px_30px_rgba(249,115,22,0.38)] transition hover:scale-[1.02]"
               >
-                <Icon size={28} strokeWidth={2.4} />
+                <Icon size={30} strokeWidth={2.4} />
                 <span className="mt-1 text-[13px] font-black">{item.label}</span>
               </Link>
             );
@@ -45,10 +45,8 @@ export default function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex min-h-[64px] flex-col items-center justify-center rounded-2xl px-1 py-2 transition ${
-                active
-                  ? "text-slate-950 dark:text-white"
-                  : "text-slate-500 dark:text-slate-300"
+              className={`flex min-h-[66px] flex-col items-center justify-center rounded-2xl px-1 py-2 transition ${
+                active ? "text-white" : "text-white/70"
               }`}
             >
               <Icon size={24} strokeWidth={2.2} />
