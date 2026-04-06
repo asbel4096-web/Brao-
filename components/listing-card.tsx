@@ -1,51 +1,84 @@
-import Link from 'next/link';
-import { Heart, MapPin, MessageCircle, Phone } from 'lucide-react';
-import { Listing } from '@/lib/types';
-import { formatPrice } from '@/lib/utils';
+import Link from "next/link";
+import { Heart, MapPin, CalendarDays, BadgeCheck } from "lucide-react";
 
-export function ListingCard({ listing }: { listing: Listing }) {
+type ListingCardProps = {
+  id: string;
+  title: string;
+  price: string;
+  city: string;
+  year?: string;
+  condition?: string;
+  image?: string;
+  href?: string;
+};
+
+export default function ListingCard({
+  id,
+  title,
+  price,
+  city,
+  year,
+  condition,
+  image,
+  href
+}: ListingCardProps) {
+  const target = href ?? `/listings/${id}`;
+
   return (
-    <div className="card overflow-hidden">
-      <div className="relative h-52 bg-gradient-to-br from-brand-100 to-slate-100">
-        <img src={listing.images[0]} alt={listing.title} className="h-full w-full object-cover" />
-        <button className="absolute left-3 top-3 rounded-full bg-white/90 p-2 text-slate-700 shadow">
-          <Heart size={18} />
+    <Link
+      href={target}
+      className="group overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
+    >
+      <div className="relative h-52 overflow-hidden bg-slate-200 dark:bg-slate-800">
+        {image ? (
+          <img
+            src={image}
+            alt={title}
+            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+          />
+        ) : (
+          <div className="h-full w-full bg-gradient-to-br from-slate-300 to-slate-200 dark:from-slate-800 dark:to-slate-700" />
+        )}
+
+        <button
+          type="button"
+          className="absolute left-3 top-3 rounded-full bg-black/45 p-2 text-white backdrop-blur-sm"
+          aria-label="حفظ الإعلان"
+        >
+          <Heart className="h-6 w-6" />
         </button>
-        {listing.featured ? (
-          <span className="absolute right-3 top-3 rounded-full bg-amber-400 px-3 py-1 text-xs font-black text-amber-950">مميز</span>
-        ) : null}
-      </div>
-      <div className="p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h3 className="text-lg font-black text-slate-950">{listing.title}</h3>
-            <div className="mt-2 flex items-center gap-1 text-sm text-slate-500">
-              <MapPin size={15} />
-              {listing.city}
-            </div>
-          </div>
-          <div className="text-lg font-black text-brand-700">{formatPrice(listing.price)}</div>
-        </div>
-        <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-500">
-          {listing.year ? <span className="rounded-full bg-slate-100 px-3 py-1">{listing.year}</span> : null}
-          {listing.mileage ? <span className="rounded-full bg-slate-100 px-3 py-1">{listing.mileage.toLocaleString('ar-LY')} كم</span> : null}
-          {listing.fuel ? <span className="rounded-full bg-slate-100 px-3 py-1">{listing.fuel}</span> : null}
-          {listing.transmission ? <span className="rounded-full bg-slate-100 px-3 py-1">{listing.transmission}</span> : null}
-        </div>
-        <div className="mt-5 grid grid-cols-3 gap-2">
-          <Link href={`/listings/${listing.id}`} className="btn-secondary px-3 py-2 text-xs">
-            التفاصيل
-          </Link>
-          <a href={`tel:${listing.sellerPhone}`} className="btn-secondary gap-1 px-3 py-2 text-xs">
-            <Phone size={14} />
-            اتصال
-          </a>
-          <a href={`https://wa.me/${listing.whatsapp ?? listing.sellerPhone}`} className="btn-primary gap-1 px-3 py-2 text-xs">
-            <MessageCircle size={14} />
-            واتساب
-          </a>
+
+        <div className="absolute bottom-3 right-3 rounded-xl bg-black/85 px-3 py-2 text-base font-black text-white">
+          {price}
         </div>
       </div>
-    </div>
+
+      <div className="p-4 text-right">
+        <h3 className="line-clamp-2 text-xl font-black text-slate-950 dark:text-white">
+          {title}
+        </h3>
+
+        <div className="mt-3 flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-sm text-slate-500 dark:text-slate-300">
+          <span className="flex items-center gap-1">
+            <MapPin className="h-4 w-4" />
+            {city}
+          </span>
+
+          {year ? (
+            <span className="flex items-center gap-1">
+              <CalendarDays className="h-4 w-4" />
+              {year}
+            </span>
+          ) : null}
+
+          {condition ? (
+            <span className="flex items-center gap-1">
+              <BadgeCheck className="h-4 w-4" />
+              {condition}
+            </span>
+          ) : null}
+        </div>
+      </div>
+    </Link>
   );
 }
