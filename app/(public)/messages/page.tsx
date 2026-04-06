@@ -1,6 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  collection,
+  doc,
+  onSnapshot,
+  orderBy,
+  query,
+  where
+} from "firebase/firestore";
 import {
   Search,
   SendHorizonal,
@@ -9,90 +17,164 @@ import {
   MoreVertical,
   CircleUserRound
 } from "lucide-react";
+import { auth, db } from "@/lib/firebase";
+import { sendMessage } from "@/lib/chat";
 
-type Conversation = {
+type ConversationItem = {
   id: string;
-  name: string;
-  listingTitle: string;
-  lastMessage: string;
-  time: string;
-  unread?: number;
+  participantIds: string[];
+  participantNames?: Record<string, string>;
+  listingId?: string;
+  listingTitle?: string;
+  lastMessage?: string;
+  lastMessageAt?: any;
+  createdAt?: any;
 };
 
-type Message = {
+type MessageItem = {
   id: string;
-  sender: "me" | "other";
   text: string;
-  time: string;
-};
-
-const conversations: Conversation[] = [
-  {
-    id: "1",
-    name: "محمد علي",
-    listingTitle: "مرسيدس E350 2014",
-    lastMessage: "هل السيارة ما زالت متوفرة؟",
-    time: "10:25",
-    unread: 2
-  },
-  {
-    id: "2",
-    name: "سالم",
-    listingTitle: "هيونداي أزيرا 2012",
-    lastMessage: "وين مكان المعاينة؟",
-    time: "أمس"
-  },
-  {
-    id: "3",
-    name: "أحمد",
-    listingTitle: "قطع غيار هيونداي",
-    lastMessage: "عندك شحن للزاوية؟",
-    time: "الأحد"
-  }
-];
-
-const conversationMessages: Record<string, Message[]> = {
-  "1": [
-    { id: "m1", sender: "other", text: "السلام عليكم", time: "10:20" },
-    { id: "m2", sender: "other", text: "هل السيارة ما زالت متوفرة؟", time: "10:21" },
-    { id: "m3", sender: "me", text: "وعليكم السلام، نعم متوفرة.", time: "10:22" },
-    { id: "m4", sender: "other", text: "قداش آخر سعر؟", time: "10:25" }
-  ],
-  "2": [
-    { id: "m5", sender: "other", text: "وين مكان المعاينة؟", time: "أمس" },
-    { id: "m6", sender: "me", text: "طرابلس، أبو سليم.", time: "أمس" }
-  ],
-  "3": [
-    { id: "m7", sender: "other", text: "عندك شحن للزاوية؟", time: "الأحد" },
-    { id: "m8", sender: "me", text: "نعم متوفر حسب الاتفاق.", time: "الأحد" }
-  ]
+  senderId: string;
+  createdAt?: any;
 };
 
 export default function MessagesPage() {
   const [search, setSearch] = useState("");
-  const [activeId, setActiveId] = useState(conversations[0]?.id ?? "1");
+  const [conversations, setConversations] = useState<ConversationItem[]>([]);
+  const [activeId, setActiveId] = useState<string>("");
+  const [messages, setMessages] = useState<MessageItem[]>([]);
   const [draft, setDraft] = useState("");
+  const [loadingConversations, setLoadingConversations] = useState(true);
+  const [sending, setSending] = useState(false);
+
+  const currentUser = auth.currentUser;
+
+  useEffect(() => {
+    if (!currentUser) {
+      setLoadingConversations(false);
+      return;
+    }
+
+    const q = query(
+      collection(db, "conversations"),
+      where("participantIds", "array-contains", currentUser.uid)
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const rows: ConversationItem[] = snapshot.docs.map((docSnap) => ({
+          id: docSnap.id,
+          ...(docSnap.data() as Omit<ConversationItem, "id">)
+        }));
+
+        rows.sort((a, b) => {
+          const aTime = a.lastMessageAt?.seconds || 0;
+          const bTime = b.lastMessageAt?.seconds || 0;
+          return bTime - aTime;
+        });
+
+        setConversations(rows);
+
+        if (!activeId && rows.length > 0) {
+          setActiveId(rows[0].id);
+        }
+
+        if (rows.length === 0) {
+          setActiveId("");
+        }
+
+        setLoadingConversations(false);
+      },
+      (error) => {
+        console.error("Conversations error:", error);
+        setLoadingConversations(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [currentUser, activeId]);
+
+  useEffect(() => {
+    if (!activeId) {
+      setMessages([]);
+      return;
+    }
+
+    const q = query(
+      collection(db, "conversations", activeId, "messages"),
+      orderBy("createdAt", "asc")
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const rows: MessageItem[] = snapshot.docs.map((docSnap) => ({
+          id: docSnap.id,
+          ...(docSnap.data() as Omit<MessageItem, "id">)
+        }));
+        setMessages(rows);
+      },
+      (error) => {
+        console.error("Messages error:", error);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [activeId]);
 
   const filteredConversations = useMemo(() => {
+    const q = search.trim();
+    if (!q) return conversations;
+
     return conversations.filter((item) => {
-      const q = search.trim();
-      if (!q) return true;
+      const otherName =
+        item.participantNames?.[
+          item.participantIds.find((id) => id !== currentUser?.uid) || ""
+        ] || "مستخدم";
       return (
-        item.name.includes(q) ||
-        item.listingTitle.includes(q) ||
-        item.lastMessage.includes(q)
+        otherName.includes(q) ||
+        (item.listingTitle || "").includes(q) ||
+        (item.lastMessage || "").includes(q)
       );
     });
-  }, [search]);
+  }, [search, conversations, currentUser?.uid]);
 
   const activeConversation =
     filteredConversations.find((item) => item.id === activeId) ||
-    conversations.find((item) => item.id === activeId) ||
-    conversations[0];
+    conversations.find((item) => item.id === activeId);
 
-  const activeMessages = activeConversation
-    ? conversationMessages[activeConversation.id] || []
-    : [];
+  const otherUserId = activeConversation?.participantIds.find(
+    (id) => id !== currentUser?.uid
+  );
+
+  const otherUserName =
+    activeConversation?.participantNames?.[otherUserId || ""] || "مستخدم";
+
+  const handleSend = async () => {
+    if (!currentUser || !activeId || !draft.trim()) return;
+
+    try {
+      setSending(true);
+      await sendMessage(activeId, currentUser.uid, draft);
+      setDraft("");
+    } catch (error) {
+      console.error("Send message error:", error);
+      alert("تعذر إرسال الرسالة.");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (!currentUser) {
+    return (
+      <section className="container pb-8">
+        <div className="rounded-[26px] border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          يجب تسجيل الدخول أولًا لعرض المحادثات.
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="container pb-8">
@@ -119,13 +201,21 @@ export default function MessagesPage() {
           </div>
 
           <div className="mt-4 grid gap-3">
-            {filteredConversations.length === 0 ? (
+            {loadingConversations ? (
               <div className="rounded-[20px] bg-slate-50 px-4 py-8 text-center text-base font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
-                لا توجد محادثات مطابقة.
+                جارٍ تحميل المحادثات...
+              </div>
+            ) : filteredConversations.length === 0 ? (
+              <div className="rounded-[20px] bg-slate-50 px-4 py-8 text-center text-base font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+                لا توجد محادثات بعد.
               </div>
             ) : (
               filteredConversations.map((item) => {
                 const active = item.id === activeId;
+                const name =
+                  item.participantNames?.[
+                    item.participantIds.find((id) => id !== currentUser.uid) || ""
+                  ] || "مستخدم";
 
                 return (
                   <button
@@ -144,27 +234,18 @@ export default function MessagesPage() {
                       </div>
 
                       <div className="flex-1 text-right">
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="text-xs text-slate-400">{item.time}</span>
-                          <h2 className="text-lg font-black text-slate-950 dark:text-white">
-                            {item.name}
-                          </h2>
+                        <div className="text-lg font-black text-slate-950 dark:text-white">
+                          {name}
                         </div>
 
                         <div className="mt-1 text-sm font-bold text-[#2F49C8]">
-                          {item.listingTitle}
+                          {item.listingTitle || "بدون إعلان"}
                         </div>
 
                         <div className="mt-2 line-clamp-1 text-sm text-slate-500 dark:text-slate-300">
-                          {item.lastMessage}
+                          {item.lastMessage || "ابدأ المحادثة"}
                         </div>
                       </div>
-
-                      {item.unread ? (
-                        <div className="flex h-7 min-w-7 items-center justify-center rounded-full bg-[#F58233] px-2 text-xs font-black text-white">
-                          {item.unread}
-                        </div>
-                      ) : null}
                     </div>
                   </button>
                 );
@@ -183,10 +264,10 @@ export default function MessagesPage() {
 
                 <div className="text-right">
                   <div className="text-xl font-black text-slate-950 dark:text-white">
-                    {activeConversation.name}
+                    {otherUserName}
                   </div>
                   <div className="mt-1 text-sm text-[#2F49C8]">
-                    {activeConversation.listingTitle}
+                    {activeConversation.listingTitle || "محادثة"}
                   </div>
                 </div>
 
@@ -196,30 +277,21 @@ export default function MessagesPage() {
               </div>
 
               <div className="grid gap-3 bg-slate-50 px-4 py-5 dark:bg-slate-950 min-h-[420px]">
-                {activeMessages.map((msg) => (
+                {messages.map((msg) => (
                   <div
                     key={msg.id}
                     className={`flex ${
-                      msg.sender === "me" ? "justify-start" : "justify-end"
+                      msg.senderId === currentUser.uid ? "justify-start" : "justify-end"
                     }`}
                   >
                     <div
                       className={`max-w-[82%] rounded-[20px] px-4 py-3 text-right shadow-sm ${
-                        msg.sender === "me"
+                        msg.senderId === currentUser.uid
                           ? "bg-[#2F49C8] text-white"
                           : "bg-white text-slate-900 dark:bg-slate-800 dark:text-white"
                       }`}
                     >
                       <div className="text-base leading-8">{msg.text}</div>
-                      <div
-                        className={`mt-2 text-xs ${
-                          msg.sender === "me"
-                            ? "text-white/70"
-                            : "text-slate-400"
-                        }`}
-                      >
-                        {msg.time}
-                      </div>
                     </div>
                   </div>
                 ))}
@@ -239,7 +311,11 @@ export default function MessagesPage() {
                     className="flex-1 rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3 text-right outline-none dark:border-slate-700 dark:bg-slate-950"
                   />
 
-                  <button className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F58233] text-white shadow-[0_10px_24px_rgba(245,130,51,0.24)]">
+                  <button
+                    onClick={handleSend}
+                    disabled={sending}
+                    className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F58233] text-white shadow-[0_10px_24px_rgba(245,130,51,0.24)] disabled:opacity-60"
+                  >
                     <SendHorizonal className="h-5 w-5" />
                   </button>
                 </div>
