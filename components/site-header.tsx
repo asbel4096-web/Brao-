@@ -1,58 +1,38 @@
-import Link from 'next/link';
-import { Bell, MessageCircle, Plus, Search, Settings, UserCircle2 } from 'lucide-react';
-import { ThemeToggle } from './theme-toggle';
-
-const links = [
-  { href: '/', label: 'الرئيسية' },
-  { href: '/listings', label: 'الإعلانات' },
-  { href: '/my-listings', label: 'إعلاناتي' },
-  { href: '/messages', label: 'الدردشة' },
-  { href: '/admin/listings', label: 'لوحة الموافقة' }
-];
+import Link from "next/link";
+import ThemeToggle from "./theme-toggle";
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/85 backdrop-blur-xl dark:border-slate-700/70 dark:bg-[#08101f]/85">
-      <div className="container flex items-center justify-between gap-4 py-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-700 to-ink text-lg font-black text-white">
-            BC
-          </div>
-          <div>
-            <div className="text-2xl font-black text-slate-950 dark:text-white">براتشو كار</div>
-            <div className="text-sm text-slate-500 dark:text-slate-300">سوق السيارات وقطع الغيار في ليبيا</div>
-          </div>
-        </div>
+    <header className="container pt-2 pb-4 md:pt-3 md:pb-5">
+      <div className="mx-auto rounded-[30px] border border-slate-200 bg-white px-4 py-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 md:px-6 md:py-6">
+        <div className="flex items-center justify-between gap-4">
+          <Link href="/" className="flex min-w-0 flex-1 items-center gap-4">
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[24px] bg-blue-800 text-3xl font-black text-white shadow-sm md:h-24 md:w-24 md:text-4xl">
+              BC
+            </div>
 
-        <nav className="hidden items-center gap-6 lg:flex">
-          {links.map((link) => (
-            <Link key={link.href} href={link.href} className="text-sm font-bold text-slate-800 transition hover:text-brand-700 dark:text-slate-200">
-              {link.label}
+            <div className="min-w-0">
+              <h1 className="text-3xl font-black leading-tight text-slate-950 dark:text-white md:text-5xl">
+                براتشو كار
+              </h1>
+              <p className="mt-2 text-base leading-7 text-slate-500 dark:text-slate-300 md:text-xl">
+                سوق السيارات وقطع الغيار والخدمات في ليبيا
+              </p>
+            </div>
+          </Link>
+
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+
+            <Link
+              href="/add-listing"
+              className="flex h-[92px] w-[118px] shrink-0 flex-col items-center justify-center rounded-[24px] bg-orange-500 px-3 text-center text-white shadow-[0_12px_28px_rgba(249,115,22,0.28)] transition hover:scale-[1.02] md:h-[100px] md:w-[132px]"
+            >
+              <span className="text-3xl leading-none">⊕</span>
+              <span className="mt-2 text-xl font-black leading-none">أضف</span>
+              <span className="mt-1 text-xl font-black leading-none">إعلان</span>
             </Link>
-          ))}
-        </nav>
-
-        <div className="flex items-center gap-2">
-          <button className="hidden rounded-2xl border border-slate-200 p-3 text-slate-600 md:inline-flex dark:border-slate-700 dark:text-slate-200">
-            <Search size={18} />
-          </button>
-          <Link href="/notifications" className="hidden rounded-2xl border border-slate-200 p-3 text-slate-700 md:inline-flex dark:border-slate-700 dark:text-slate-200">
-            <Bell size={18} />
-          </Link>
-          <Link href="/messages" className="hidden rounded-2xl border border-slate-200 p-3 text-slate-700 md:inline-flex dark:border-slate-700 dark:text-slate-200">
-            <MessageCircle size={18} />
-          </Link>
-          <Link href="/settings" className="hidden rounded-2xl border border-slate-200 p-3 text-slate-700 md:inline-flex dark:border-slate-700 dark:text-slate-200">
-            <Settings size={18} />
-          </Link>
-          <ThemeToggle />
-          <Link href="/add-listing" className="btn-primary gap-2 bg-[#ff7a18] hover:bg-[#ea6d10]">
-            <Plus size={18} />
-            أضف إعلان
-          </Link>
-          <Link href="/profile" className="rounded-2xl border border-slate-200 p-3 text-slate-700 dark:border-slate-700 dark:text-slate-200">
-            <UserCircle2 size={18} />
-          </Link>
+          </div>
         </div>
       </div>
     </header>
