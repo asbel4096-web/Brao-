@@ -1,57 +1,35 @@
-import Link from 'next/link';
-import { Bell, MessageCircle, Plus, Search, Settings, UserCircle2 } from 'lucide-react';
-import { ThemeToggle } from './theme-toggle';
-
-const links = [
-  { href: '/', label: 'الرئيسية' },
-  { href: '/listings', label: 'الإعلانات' },
-  { href: '/my-listings', label: 'إعلاناتي' },
-  { href: '/messages', label: 'الدردشة' },
-  { href: '/admin/listings', label: 'لوحة الموافقة' }
-];
+import Link from "next/link";
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/85 backdrop-blur-xl dark:border-slate-700/70 dark:bg-[#08101f]/85">
-      <div className="container flex items-center justify-between gap-4 py-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-700 to-ink text-lg font-black text-white">
-            BC
-          </div>
-          <div>
-            <div className="text-2xl font-black text-slate-950 dark:text-white">براتشو كار</div>
-            <div className="text-sm text-slate-500 dark:text-slate-300">سوق السيارات وقطع الغيار في ليبيا</div>
-          </div>
-        </div>
+    <header className="container py-3">
+      <div className="mx-auto overflow-hidden rounded-[32px] border border-slate-200 bg-white px-4 py-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 md:px-6">
+        <div className="flex items-center justify-between gap-4">
+          <Link
+            href="/add-listing"
+            className="flex min-h-[88px] min-w-[150px] flex-col items-center justify-center rounded-[28px] bg-orange-500 px-5 py-4 text-center text-white shadow-lg transition hover:opacity-95"
+          >
+            <span className="text-4xl leading-none">⊕</span>
+            <span className="mt-1 text-2xl font-black">أضف</span>
+            <span className="text-2xl font-black">إعلان</span>
+          </Link>
 
-        <nav className="hidden items-center gap-6 lg:flex">
-          {links.map((link) => (
-            <Link key={link.href} href={link.href} className="text-sm font-bold text-slate-800 transition hover:text-brand-700 dark:text-slate-200">
-              {link.label}
-            </Link>
-          ))}
-        </nav>
+          <Link href="/" className="flex flex-1 items-center justify-end gap-4">
+            <div className="text-right">
+              <div className="text-4xl font-black leading-tight text-slate-950 dark:text-white md:text-6xl">
+                براتشو كار
+              </div>
+              <div className="mt-2 text-lg font-medium text-slate-500 dark:text-slate-300 md:text-2xl">
+                سوق السيارات وقطع الغيار
+              </div>
+              <div className="text-lg font-medium text-slate-500 dark:text-slate-300 md:text-2xl">
+                والخدمات في ليبيا
+              </div>
+            </div>
 
-        <div className="flex items-center gap-2">
-          <button className="hidden rounded-2xl border border-slate-200 p-3 text-slate-600 md:inline-flex dark:border-slate-700 dark:text-slate-200">
-            <Search size={18} />
-          </button>
-          <Link href="/notifications" className="hidden rounded-2xl border border-slate-200 p-3 text-slate-700 md:inline-flex dark:border-slate-700 dark:text-slate-200">
-            <Bell size={18} />
-          </Link>
-          <Link href="/messages" className="hidden rounded-2xl border border-slate-200 p-3 text-slate-700 md:inline-flex dark:border-slate-700 dark:text-slate-200">
-            <MessageCircle size={18} />
-          </Link>
-          <Link href="/settings" className="hidden rounded-2xl border border-slate-200 p-3 text-slate-700 md:inline-flex dark:border-slate-700 dark:text-slate-200">
-            <Settings size={18} />
-          </Link>
-          <ThemeToggle />
-          <Link href="/add-listing" className="btn-primary gap-2 bg-[#ff7a18] hover:bg-[#ea6d10]">
-            <Plus size={18} />
-            أضف إعلان
-          </Link>
-          <Link href="/profile" className="rounded-2xl border border-slate-200 p-3 text-slate-700 dark:border-slate-700 dark:text-slate-200">
-            <UserCircle2 size={18} />
+            <div className="flex h-24 w-24 items-center justify-center rounded-[28px] bg-blue-800 text-4xl font-black text-white shadow-md md:h-28 md:w-28 md:text-5xl">
+              BC
+            </div>
           </Link>
         </div>
       </div>
