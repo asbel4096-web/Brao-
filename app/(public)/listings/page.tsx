@@ -1,245 +1,186 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import {
-  collection,
-  onSnapshot,
-  orderBy,
-  query,
-  Timestamp,
-  where
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { useMemo, useState } from "react";
+import ListingCard from "@/components/listing-card";
+import { Search, SlidersHorizontal, MapPin } from "lucide-react";
 
-type Listing = {
-  id: string;
-  title: string;
-  category: string;
-  price: number | string;
-  city: string;
-  description: string;
-  phone: string;
-  sellerName: string;
-  status: string;
-  featured?: boolean;
-  views?: number;
-  createdAt?: Timestamp | null;
-};
+const allListings = [
+  {
+    id: "1",
+    title: "مرسيدس E350",
+    price: "65,000 د.ل",
+    city: "طرابلس",
+    year: "2014",
+    condition: "مستعمل"
+  },
+  {
+    id: "2",
+    title: "كيا أوبتيما 2012",
+    price: "28,700 د.ل",
+    city: "مصراتة",
+    year: "2012",
+    condition: "مستعمل"
+  },
+  {
+    id: "3",
+    title: "هيونداي أزيرا 2012",
+    price: "22,800 د.ل",
+    city: "بنغازي",
+    year: "2012",
+    condition: "مستعمل"
+  },
+  {
+    id: "4",
+    title: "هونداي سنتافي 2014",
+    price: "51,000 د.ل",
+    city: "طرابلس",
+    year: "2014",
+    condition: "جديد"
+  },
+  {
+    id: "5",
+    title: "هيونداي سوناتا 2012",
+    price: "9,999 د.ل",
+    city: "الزاوية",
+    year: "2012",
+    condition: "مستعمل"
+  },
+  {
+    id: "6",
+    title: "تويوتا هايلوكس 1988",
+    price: "40,000 د.ل",
+    city: "سبها",
+    year: "1988",
+    condition: "مستعمل"
+  },
+  {
+    id: "7",
+    title: "قطع غيار هيونداي",
+    price: "على السوم",
+    city: "زليتن",
+    condition: "متوفر"
+  },
+  {
+    id: "8",
+    title: "ميكانيكي متنقل",
+    price: "حسب الخدمة",
+    city: "طرابلس",
+    condition: "خدمة"
+  }
+];
+
+const cityOptions = ["الكل", "طرابلس", "بنغازي", "مصراتة", "الزاوية", "سبها", "زليتن"];
+const conditionOptions = ["الكل", "جديد", "مستعمل", "خدمة", "متوفر"];
 
 export default function ListingsPage() {
-  const [listings, setListings] = useState<Listing[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState("");
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("كل الأقسام");
-  const [city, setCity] = useState("كل المدن");
-
-  useEffect(() => {
-    const listingsRef = collection(db, "listings");
-
-const listingsQuery = query(listingsRef);
-
-    const unsubscribe = onSnapshot(
-      listingsQuery,
-      (snapshot) => {
-        const items: Listing[] = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...(doc.data() as Omit<Listing, "id">)
-        }));
-
-        setListings(items);
-        setLoading(false);
-      },
-      (error) => {
-        console.error("Error loading listings:", error);
-        setErrorMessage("حدث خطأ أثناء تحميل الإعلانات.");
-        setLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
-  }, []);
+  const [city, setCity] = useState("الكل");
+  const [condition, setCondition] = useState("الكل");
 
   const filteredListings = useMemo(() => {
-  return listings.filter((item) => {
-    if (item.status !== "approved") return false;
-
-    const matchesSearch =
+    return allListings.filter((item) => {
+      const matchesSearch =
         !search.trim() ||
-        item.title?.toLowerCase().includes(search.toLowerCase()) ||
-        item.description?.toLowerCase().includes(search.toLowerCase()) ||
-        item.sellerName?.toLowerCase().includes(search.toLowerCase());
+        item.title.includes(search) ||
+        item.city.includes(search) ||
+        item.price.includes(search);
 
-      const matchesCategory =
-        category === "كل الأقسام" || item.category === category;
+      const matchesCity = city === "الكل" || item.city === city;
+      const matchesCondition =
+        condition === "الكل" || item.condition === condition;
 
-      const matchesCity = city === "كل المدن" || item.city === city;
-
-      return matchesSearch && matchesCategory && matchesCity;
+      return matchesSearch && matchesCity && matchesCondition;
     });
-  }, [listings, search, category, city]);
+  }, [search, city, condition]);
 
   return (
-    <section className="container py-10">
-      <div className="flex flex-col gap-6 lg:flex-row">
-        <aside className="card w-full p-5 lg:w-[320px] lg:self-start">
-          <h2 className="text-xl font-black">فلترة الإعلانات</h2>
+    <section className="container pb-8">
+      <div className="grid gap-5">
+        <section className="rounded-[26px] border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="mb-4 flex items-center justify-between">
+            <h1 className="text-3xl font-black text-slate-950 dark:text-white">
+              الإعلانات
+            </h1>
 
-          <div className="mt-5 space-y-4">
-            <div>
-              <label className="label">ابحث</label>
+            <div className="flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2 text-sm font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+              <SlidersHorizontal className="h-4 w-4" />
+              فلترة
+            </div>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="flex items-center gap-3 rounded-[18px] bg-slate-100 px-4 py-4 dark:bg-slate-800">
+              <Search className="h-5 w-5 text-slate-500" />
               <input
-                className="input"
-                placeholder="ابحث عن سيارة، قطع غيار..."
+                type="text"
+                placeholder="ابحث عن سيارة أو خدمة..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                className="w-full bg-transparent text-right text-base outline-none placeholder:text-slate-400"
               />
             </div>
 
-            <div>
-              <label className="label">القسم</label>
+            <div className="flex items-center gap-3 rounded-[18px] bg-slate-100 px-4 py-4 dark:bg-slate-800">
+              <MapPin className="h-5 w-5 text-slate-500" />
               <select
-                className="input"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-              >
-                <option>كل الأقسام</option>
-                <option>سيارات</option>
-                <option>قطع غيار</option>
-                <option>كماليات</option>
-                <option>خدمات</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="label">المدينة</label>
-              <select
-                className="input"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
+                className="w-full bg-transparent text-right text-base outline-none"
               >
-                <option>كل المدن</option>
-                <option>طرابلس</option>
-                <option>بنغازي</option>
-                <option>مصراتة</option>
-                <option>الزاوية</option>
-                <option>زليتن</option>
-                <option>سبها</option>
-                <option>الخمس</option>
-                <option>سرت</option>
+                {cityOptions.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
               </select>
             </div>
 
-            <button
-              className="btn btn-primary w-full"
-              onClick={() => {
-                setSearch("");
-                setCategory("كل الأقسام");
-                setCity("كل المدن");
-              }}
-            >
-              إعادة التصفية
-            </button>
-          </div>
-        </aside>
-
-        <div className="flex-1">
-          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h1 className="section-title">الإعلانات</h1>
-              <p className="section-subtitle">
-                عرض مباشر للإعلانات المحفوظة في Firebase Firestore.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
-              عدد النتائج: <span className="font-bold">{filteredListings.length}</span>
+            <div className="rounded-[18px] bg-slate-100 px-4 py-4 dark:bg-slate-800">
+              <select
+                value={condition}
+                onChange={(e) => setCondition(e.target.value)}
+                className="w-full bg-transparent text-right text-base outline-none"
+              >
+                {conditionOptions.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
+        </section>
 
-          {loading ? (
-            <div className="card p-6 text-center text-slate-500">
-              جارٍ تحميل الإعلانات...
-            </div>
-          ) : null}
-
-          {errorMessage ? (
-            <div className="card border border-red-200 bg-red-50 p-6 text-sm text-red-700">
-              {errorMessage}
-            </div>
-          ) : null}
-
-          {!loading && !errorMessage && filteredListings.length === 0 ? (
-            <div className="card p-6 text-center text-slate-500">
-              لا توجد إعلانات مطابقة حاليًا.
-            </div>
-          ) : null}
-
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {filteredListings.map((item) => (
-              <article key={item.id} className="card overflow-hidden p-4">
-                <div className="mb-4 flex items-start justify-between gap-3">
-                  <div>
-                    <span className="badge">{item.category || "إعلان"}</span>
-                    <h3 className="mt-3 line-clamp-2 text-lg font-black text-slate-900">
-                      {item.title}
-                    </h3>
-                  </div>
-
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-bold ${
-                      item.status === "approved"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-yellow-100 text-yellow-700"
-                    }`}
-                  >
-                    {item.status === "approved" ? "معتمد" : "بانتظار الاعتماد"}
-                  </span>
-                </div>
-
-                <div className="space-y-2 text-sm text-slate-600">
-                  <p>
-                    <span className="font-bold text-slate-800">المدينة:</span>{" "}
-                    {item.city || "-"}
-                  </p>
-                  <p>
-                    <span className="font-bold text-slate-800">السعر:</span>{" "}
-                    {item.price || "-"}
-                  </p>
-                  <p>
-                    <span className="font-bold text-slate-800">البائع:</span>{" "}
-                    {item.sellerName || "-"}
-                  </p>
-                  <p>
-                    <span className="font-bold text-slate-800">الهاتف:</span>{" "}
-                    {item.phone || "-"}
-                  </p>
-                </div>
-
-                <p className="mt-4 line-clamp-4 text-sm leading-7 text-slate-600">
-                  {item.description || "لا يوجد وصف."}
-                </p>
-
-                <div className="mt-5 flex gap-3">
-                  <Link
-                    href={`/listings/${item.id}`}
-                    className="btn btn-primary flex-1 text-center"
-                  >
-                    التفاصيل
-                  </Link>
-
-                  <a
-                    href={`tel:${item.phone || ""}`}
-                    className="btn btn-secondary flex-1 text-center"
-                  >
-                    اتصال
-                  </a>
-                </div>
-              </article>
-            ))}
+        <section className="rounded-[26px] border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-2xl font-black text-slate-950 dark:text-white">
+              النتائج
+            </h2>
+            <span className="rounded-full bg-slate-100 px-4 py-2 text-sm font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+              {filteredListings.length} إعلان
+            </span>
           </div>
-        </div>
+
+          {filteredListings.length === 0 ? (
+            <div className="rounded-[22px] bg-slate-50 px-4 py-10 text-center text-lg font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+              لا توجد نتائج مطابقة الآن.
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {filteredListings.map((listing) => (
+                <ListingCard
+                  key={listing.id}
+                  id={listing.id}
+                  title={listing.title}
+                  price={listing.price}
+                  city={listing.city}
+                  year={listing.year}
+                  condition={listing.condition}
+                />
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </section>
   );
