@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   collection,
@@ -38,7 +38,7 @@ type MessageItem = {
   createdAt?: any;
 };
 
-export default function MessagesPage() {
+function MessagesPageContent() {
   const searchParams = useSearchParams();
   const requestedConversation = searchParams.get("conversation");
 
@@ -49,18 +49,26 @@ export default function MessagesPage() {
   const [draft, setDraft] = useState("");
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [sending, setSending] = useState(false);
-
-  const currentUser = auth.currentUser;
+  const [currentUid, setCurrentUid] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!currentUser) {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setCurrentUid(user?.uid || null);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!currentUid) {
       setLoadingConversations(false);
+      setConversations([]);
       return;
     }
 
     const q = query(
       collection(db, "conversations"),
-      where("participantIds", "array-contains", currentUser.uid)
+      where("participantIds", "array-contains", currentUid)
     );
 
     const unsubscribe = onSnapshot(
@@ -98,7 +106,7 @@ export default function MessagesPage() {
     );
 
     return () => unsubscribe();
-  }, [currentUser, activeId, requestedConversation]);
+  }, [currentUid, activeId, requestedConversation]);
 
   useEffect(() => {
     if (requestedConversation) {
@@ -141,7 +149,7 @@ export default function MessagesPage() {
     return conversations.filter((item) => {
       const otherName =
         item.participantNames?.[
-          item.participantIds.find((id) => id !== currentUser?.uid) || ""
+          item.participantIds.find((id) => id !== currentUid) || ""
         ] || "مستخدم";
 
       return (
@@ -150,25 +158,25 @@ export default function MessagesPage() {
         (item.lastMessage || "").includes(q)
       );
     });
-  }, [search, conversations, currentUser?.uid]);
+  }, [search, conversations, currentUid]);
 
   const activeConversation =
     filteredConversations.find((item) => item.id === activeId) ||
     conversations.find((item) => item.id === activeId);
 
   const otherUserId = activeConversation?.participantIds.find(
-    (id) => id !== currentUser?.uid
+    (id) => id !== currentUid
   );
 
   const otherUserName =
     activeConversation?.participantNames?.[otherUserId || ""] || "مستخدم";
 
   const handleSend = async () => {
-    if (!currentUser || !activeId || !draft.trim()) return;
+    if (!currentUid || !activeId || !draft.trim()) return;
 
     try {
       setSending(true);
-      await sendMessage(activeId, currentUser.uid, draft);
+      await sendMessage(activeId, currentUid, draft);
       setDraft("");
     } catch (error) {
       console.error("Send message error:", error);
@@ -178,7 +186,7 @@ export default function MessagesPage() {
     }
   };
 
-  if (!currentUser) {
+  if (!currentUid) {
     return (
       <section className="container pb-8">
         <div className="rounded-[26px] border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -226,7 +234,7 @@ export default function MessagesPage() {
                 const active = item.id === activeId;
                 const name =
                   item.participantNames?.[
-                    item.participantIds.find((id) => id !== currentUser.uid) || ""
+                    item.participantIds.find((id) => id !== currentUid) || ""
                   ] || "مستخدم";
 
                 return (
@@ -293,12 +301,12 @@ export default function MessagesPage() {
                   <div
                     key={msg.id}
                     className={`flex ${
-                      msg.senderId === currentUser.uid ? "justify-start" : "justify-end"
+                      msg.senderId === currentUid ? "justify-start" : "justify-end"
                     }`}
                   >
                     <div
                       className={`max-w-[82%] rounded-[20px] px-4 py-3 text-right shadow-sm ${
-                        msg.senderId === currentUser.uid
+                        msg.senderId === currentUid
                           ? "bg-[#2F49C8] text-white"
                           : "bg-white text-slate-900 dark:bg-slate-800 dark:text-white"
                       }`}
@@ -341,5 +349,21 @@ export default function MessagesPage() {
         </section>
       </div>
     </section>
+  );
+}
+
+export default function MessagesPage() {
+  return (
+    <Suspense
+      fallback={
+        <section className="container pb-8">
+          <div className="rounded-[26px] border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            جارٍ تحميل الدردشة...
+          </div>
+        </section>
+      }
+    >
+      <MessagesPageContent />
+    </Suspense>
   );
 }
