@@ -42,7 +42,7 @@ export async function startConversation({
       },
       listingId,
       listingTitle,
-      lastMessage: firstMessage || "",
+      lastMessage: firstMessage?.trim() || "",
       lastMessageAt: serverTimestamp(),
       createdAt: serverTimestamp()
     });
