@@ -21,7 +21,7 @@ type ListingItem = {
   ownerId?: string;
 };
 
-const ADMIN_UID = "asbel4096@gmail.com";
+const ADMIN_EMAIL = "asbel4096@gmail.com";
 
 export default function AdminListingsPage() {
   const [allowed, setAllowed] = useState(false);
@@ -30,7 +30,8 @@ export default function AdminListingsPage() {
 
   useEffect(() => {
     const unsub = auth.onAuthStateChanged((user) => {
-      setAllowed(user?.uid === ADMIN_UID);
+      const email = user?.email?.toLowerCase() || "";
+      setAllowed(email === ADMIN_EMAIL.toLowerCase());
       setLoading(false);
     });
 
@@ -67,7 +68,7 @@ export default function AdminListingsPage() {
 
   if (loading) {
     return (
-      <section className="container py-10">
+      <section className="container py-10 pb-32">
         <div className="rounded-[28px] border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
           جارٍ تحميل الصفحة...
         </div>
@@ -77,7 +78,7 @@ export default function AdminListingsPage() {
 
   if (!allowed) {
     return (
-      <section className="container py-10">
+      <section className="container py-10 pb-32">
         <div className="rounded-[28px] border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
           لا تملك صلاحية دخول هذه الصفحة.
         </div>
@@ -115,7 +116,7 @@ export default function AdminListingsPage() {
                 {item.price || "-"} | {item.city || "-"} | {item.sellerName || "مستخدم"}
               </div>
 
-              <div className="mt-2 text-sm font-bold">
+              <div className="mt-2 text-sm font-bold text-slate-700 dark:text-slate-300">
                 الحالة: {item.status || "-"}
               </div>
 
