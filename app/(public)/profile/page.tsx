@@ -1,356 +1,388 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
-  ConfirmationResult,
-  RecaptchaVerifier,
-  User,
-  browserLocalPersistence,
-  onAuthStateChanged,
-  setPersistence,
-  signInWithPhoneNumber,
-  signInWithPopup,
-  signOut
-} from "firebase/auth";
+  collection,
+  onSnapshot,
+  orderBy,
+  query,
+  where
+} from "firebase/firestore";
 import {
-  Bell,
-  CheckCircle2,
-  LogOut,
-  ShieldCheck,
-  Smartphone,
-  Sparkles,
-  UserCircle2
+  Search,
+  SendHorizonal,
+  Image as ImageIcon,
+  Phone,
+  MoreVertical,
+  CircleUserRound
 } from "lucide-react";
-import { auth, googleProvider } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import { sendMessage } from "@/lib/chat";
 
-declare global {
-  interface Window {
-    recaptchaVerifier?: RecaptchaVerifier;
-  }
-}
+type ConversationItem = {
+  id: string;
+  participantIds: string[];
+  participantNames?: Record<string, string>;
+  listingId?: string;
+  listingTitle?: string;
+  lastMessage?: string;
+  lastMessageAt?: any;
+  createdAt?: any;
+};
 
-export default function ProfilePage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+type MessageItem = {
+  id: string;
+  text: string;
+  senderId: string;
+  createdAt?: any;
+};
 
-  const [phone, setPhone] = useState("+218");
-  const [code, setCode] = useState("");
-  const [message, setMessage] = useState("");
-  const [recaptchaReady, setRecaptchaReady] = useState(false);
-  const [sendingCode, setSendingCode] = useState(false);
-  const [verifyingCode, setVerifyingCode] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [confirmationResult, setConfirmationResult] =
-    useState<ConfirmationResult | null>(null);
+function MessagesPageContent() {
+  const searchParams = useSearchParams();
+  const requestedConversation = searchParams.get("conversation");
 
-  const recaptchaRef = useRef<HTMLDivElement | null>(null);
+  const [search, setSearch] = useState("");
+  const [conversations, setConversations] = useState<ConversationItem[]>([]);
+  const [activeId, setActiveId] = useState<string>("");
+  const [messages, setMessages] = useState<MessageItem[]>([]);
+  const [draft, setDraft] = useState("");
+  const [loadingConversations, setLoadingConversations] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [currentUid, setCurrentUid] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
-      setLoading(false);
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setCurrentUid(user?.uid || null);
     });
 
-    return () => unsub();
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!recaptchaRef.current) return;
-    if (user) return;
+    if (!currentUid) {
+      setLoadingConversations(false);
+      setConversations([]);
+      return;
+    }
 
-    let cancelled = false;
+    const q = query(
+      collection(db, "conversations"),
+      where("participantIds", "array-contains", currentUid)
+    );
 
-    const initRecaptcha = async () => {
-      try {
-        setRecaptchaReady(false);
-        setMessage("");
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const rows: ConversationItem[] = snapshot.docs.map((docSnap) => ({
+          id: docSnap.id,
+          ...(docSnap.data() as Omit<ConversationItem, "id">)
+        }));
 
-        await setPersistence(auth, browserLocalPersistence);
-        auth.languageCode = "ar";
-
-        if (window.recaptchaVerifier) {
-          try {
-            window.recaptchaVerifier.clear();
-          } catch {}
-          window.recaptchaVerifier = undefined;
-        }
-
-        recaptchaRef.current!.innerHTML = "";
-
-        const verifier = new RecaptchaVerifier(auth, recaptchaRef.current!, {
-          size: "normal",
-          callback: () => {
-            if (!cancelled) {
-              setRecaptchaReady(true);
-              setMessage("تم تفعيل reCAPTCHA بنجاح.");
-            }
-          },
-          "expired-callback": () => {
-            if (!cancelled) {
-              setRecaptchaReady(false);
-              setMessage("انتهت صلاحية reCAPTCHA. أعد تحميل الصفحة.");
-            }
-          }
+        rows.sort((a, b) => {
+          const aTime = a.lastMessageAt?.seconds || 0;
+          const bTime = b.lastMessageAt?.seconds || 0;
+          return bTime - aTime;
         });
 
-        window.recaptchaVerifier = verifier;
+        setConversations(rows);
 
-        await verifier.render();
-
-        if (!cancelled) {
-          setRecaptchaReady(true);
-          setMessage("");
+        if (requestedConversation) {
+          setActiveId(requestedConversation);
+        } else if (!activeId && rows.length > 0) {
+          setActiveId(rows[0].id);
         }
-      } catch (error: any) {
-        console.error("reCAPTCHA init error:", error);
-        if (!cancelled) {
-          setRecaptchaReady(false);
-          setMessage(
-            error?.message || "تعذر تهيئة reCAPTCHA. تحقق من الدومين أو أعد تحميل الصفحة."
-          );
+
+        if (rows.length === 0) {
+          setActiveId("");
         }
+
+        setLoadingConversations(false);
+      },
+      (error) => {
+        console.error("Conversations error:", error);
+        setLoadingConversations(false);
       }
-    };
+    );
 
-    const timer = setTimeout(() => {
-      initRecaptcha();
-    }, 300);
+    return () => unsubscribe();
+  }, [currentUid, activeId, requestedConversation]);
 
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [user]);
-
-  const handleGoogleLogin = async () => {
-    try {
-      setGoogleLoading(true);
-      setMessage("");
-      await setPersistence(auth, browserLocalPersistence);
-      await signInWithPopup(auth, googleProvider);
-      setMessage("تم تسجيل الدخول عبر Google بنجاح.");
-    } catch (error: any) {
-      console.error("Google login error:", error);
-      setMessage(error?.message || "فشل تسجيل الدخول عبر Google.");
-    } finally {
-      setGoogleLoading(false);
+  useEffect(() => {
+    if (requestedConversation) {
+      setActiveId(requestedConversation);
     }
-  };
+  }, [requestedConversation]);
 
-  const handleSendCode = async () => {
-    try {
-      setMessage("");
+  useEffect(() => {
+    if (!activeId) {
+      setMessages([]);
+      return;
+    }
 
-      if (!phone.trim().startsWith("+")) {
-        setMessage("اكتب الرقم بصيغة دولية مثل +218912345678");
-        return;
+    const q = query(
+      collection(db, "conversations", activeId, "messages"),
+      orderBy("createdAt", "asc")
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const rows: MessageItem[] = snapshot.docs.map((docSnap) => ({
+          id: docSnap.id,
+          ...(docSnap.data() as Omit<MessageItem, "id">)
+        }));
+        setMessages(rows);
+      },
+      (error) => {
+        console.error("Messages error:", error);
       }
+    );
 
-      if (!window.recaptchaVerifier || !recaptchaReady) {
-        setMessage("reCAPTCHA غير جاهز بعد. انتظر قليلًا أو أعد تحميل الصفحة.");
-        return;
-      }
+    return () => unsubscribe();
+  }, [activeId]);
 
-      setSendingCode(true);
+  const filteredConversations = useMemo(() => {
+    const q = search.trim();
+    if (!q) return conversations;
 
-      const result = await signInWithPhoneNumber(
-        auth,
-        phone.trim(),
-        window.recaptchaVerifier
+    return conversations.filter((item) => {
+      const otherName =
+        item.participantNames?.[
+          item.participantIds.find((id) => id !== currentUid) || ""
+        ] || "مستخدم";
+
+      return (
+        otherName.includes(q) ||
+        (item.listingTitle || "").includes(q) ||
+        (item.lastMessage || "").includes(q)
       );
+    });
+  }, [search, conversations, currentUid]);
 
-      setConfirmationResult(result);
-      setMessage("تم إرسال رمز التحقق.");
-    } catch (error: any) {
-      console.error("Send code error:", error);
-      setMessage(
-        error?.message ||
-          "فشل إرسال الرمز. تحقق من الرقم، الدومين، وظهور reCAPTCHA."
-      );
-    } finally {
-      setSendingCode(false);
-    }
-  };
+  const activeConversation =
+    filteredConversations.find((item) => item.id === activeId) ||
+    conversations.find((item) => item.id === activeId);
 
-  const handleVerifyCode = async () => {
+  const otherUserId = activeConversation?.participantIds.find(
+    (id) => id !== currentUid
+  );
+
+  const otherUserName =
+    activeConversation?.participantNames?.[otherUserId || ""] || "مستخدم";
+
+  const handleSend = async () => {
+    if (!currentUid || !activeId || !draft.trim()) return;
+
     try {
-      setMessage("");
-
-      if (!confirmationResult) {
-        setMessage("أرسل الرمز أولًا.");
-        return;
-      }
-
-      if (!code.trim()) {
-        setMessage("اكتب رمز التحقق.");
-        return;
-      }
-
-      setVerifyingCode(true);
-      await confirmationResult.confirm(code.trim());
-      setMessage("تم تسجيل الدخول برقم الهاتف بنجاح.");
-      setCode("");
-    } catch (error: any) {
-      console.error("Verify code error:", error);
-      setMessage(error?.message || "رمز التحقق غير صحيح أو انتهت صلاحيته.");
+      setSending(true);
+      await sendMessage(activeId, currentUid, draft);
+      setDraft("");
+    } catch (error) {
+      console.error("Send message error:", error);
+      alert("تعذر إرسال الرسالة.");
     } finally {
-      setVerifyingCode(false);
+      setSending(false);
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      setMessage("تم تسجيل الخروج.");
-    } catch (error: any) {
-      setMessage(error?.message || "فشل تسجيل الخروج.");
-    }
-  };
-
-  if (loading) {
+  if (!currentUid) {
     return (
-      <section className="container pb-8">
-        <div className="rounded-[30px] border border-slate-200 bg-white p-10 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          جارٍ تحميل الحساب...
+      <section className="container pb-32">
+        <div className="rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          يجب تسجيل الدخول أولًا لعرض المحادثات.
         </div>
       </section>
     );
   }
 
-  if (!user) {
-    return (
-  <section className="container pb-32">
-    <div className="grid gap-5">
-      <section className="overflow-hidden rounded-[30px] border border-slate-200 bg-gradient-to-br from-[#04103A] via-[#071B63] to-[#233C9B] text-white shadow-[0_24px_60px_rgba(25,45,120,0.25)] dark:border-slate-800">
-        <div className="p-5 md:p-7">
-          <div className="flex items-start justify-between gap-4">
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="inline-flex items-center gap-2 rounded-[16px] border border-white/15 bg-white/10 px-4 py-3 text-sm font-black text-white backdrop-blur"
-            >
-              <LogOut className="h-4 w-4" />
-              خروج
-            </button>
+  return (
+    <section className="container pb-32">
+      <div className="grid gap-5 md:grid-cols-[340px_1fr]">
+        <section className="rounded-[30px] border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="mb-4 flex items-center justify-between">
+            <h1 className="text-2xl font-black text-slate-950 dark:text-white">
+              الدردشة
+            </h1>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+              {conversations.length}
+            </span>
+          </div>
 
-            <div className="text-right">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-bold backdrop-blur">
-                <CheckCircle2 className="h-4 w-4 text-[#F58233]" />
-                تم تسجيل الدخول
+          <div className="flex items-center gap-3 rounded-[18px] bg-slate-100 px-4 py-3 dark:bg-slate-800">
+            <Search className="h-5 w-5 text-slate-500" />
+            <input
+              type="text"
+              placeholder="ابحث في المحادثات..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-transparent text-right text-base outline-none placeholder:text-slate-400"
+            />
+          </div>
+
+          <div className="mt-4 grid gap-3">
+            {loadingConversations ? (
+              <div className="rounded-[20px] bg-slate-50 px-4 py-8 text-center text-base font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+                جارٍ تحميل المحادثات...
+              </div>
+            ) : filteredConversations.length === 0 ? (
+              <div className="rounded-[20px] bg-slate-50 px-4 py-8 text-center text-base font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+                لا توجد محادثات بعد.
+              </div>
+            ) : (
+              filteredConversations.map((item) => {
+                const active = item.id === activeId;
+                const name =
+                  item.participantNames?.[
+                    item.participantIds.find((id) => id !== currentUid) || ""
+                  ] || "مستخدم";
+
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setActiveId(item.id)}
+                    className={`rounded-[22px] border px-4 py-4 text-right transition ${
+                      active
+                        ? "border-[#2F49C8] bg-blue-50 dark:border-blue-500 dark:bg-slate-800"
+                        : "border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700">
+                        <CircleUserRound className="h-7 w-7 text-slate-500 dark:text-slate-300" />
+                      </div>
+
+                      <div className="flex-1 text-right">
+                        <div className="text-lg font-black text-slate-950 dark:text-white">
+                          {name}
+                        </div>
+
+                        <div className="mt-1 text-sm font-bold text-[#2F49C8]">
+                          {item.listingTitle || "بدون إعلان"}
+                        </div>
+
+                        <div className="mt-2 line-clamp-1 text-sm text-slate-500 dark:text-slate-300">
+                          {item.lastMessage || "ابدأ المحادثة"}
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </section>
+
+        <section className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          {activeConversation ? (
+            <>
+              <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4 dark:border-slate-800">
+                <button
+                  type="button"
+                  className="rounded-xl p-2 text-slate-500 dark:text-slate-300"
+                >
+                  <MoreVertical className="h-5 w-5" />
+                </button>
+
+                <div className="text-right">
+                  <div className="text-xl font-black text-slate-950 dark:text-white">
+                    {otherUserName}
+                  </div>
+                  <div className="mt-1 text-sm font-bold text-[#2F49C8]">
+                    {activeConversation.listingTitle || "محادثة"}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="rounded-xl p-2 text-slate-500 dark:text-slate-300"
+                >
+                  <Phone className="h-5 w-5" />
+                </button>
               </div>
 
-              <h1 className="mt-4 text-3xl font-black leading-tight md:text-4xl">
-                أهلاً بك في
-                <br />
-                براتشو كار
-              </h1>
+              <div className="grid min-h-[460px] gap-3 bg-slate-50 px-4 py-5 dark:bg-slate-950">
+                {messages.length === 0 ? (
+                  <div className="flex items-center justify-center text-center text-base font-bold text-slate-400">
+                    لا توجد رسائل بعد، ابدأ المحادثة الآن.
+                  </div>
+                ) : (
+                  messages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`flex ${
+                        msg.senderId === currentUid ? "justify-start" : "justify-end"
+                      }`}
+                    >
+                      <div
+                        className={`max-w-[82%] rounded-[20px] px-4 py-3 text-right shadow-sm ${
+                          msg.senderId === currentUid
+                            ? "bg-[#2F49C8] text-white"
+                            : "bg-white text-slate-900 dark:bg-slate-800 dark:text-white"
+                        }`}
+                      >
+                        <div className="text-base leading-8">{msg.text}</div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
 
-              <p className="mt-3 text-sm leading-7 text-white/80 md:text-base">
-                حسابك جاهز الآن لإدارة الإعلانات والرسائل والمفضلة.
-              </p>
+              <div className="border-t border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300"
+                  >
+                    <ImageIcon className="h-5 w-5" />
+                  </button>
+
+                  <input
+                    type="text"
+                    placeholder="اكتب رسالتك..."
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    className="flex-1 rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3 text-right outline-none dark:border-slate-700 dark:bg-slate-950"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={handleSend}
+                    disabled={sending}
+                    className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F58233] text-white shadow-[0_10px_24px_rgba(245,130,51,0.24)] disabled:opacity-60"
+                  >
+                    <SendHorizonal className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="flex min-h-[560px] items-center justify-center text-lg font-bold text-slate-500 dark:text-slate-300">
+              اختر محادثة لعرض الرسائل.
             </div>
-          </div>
-        </div>
-      </section>
+          )}
+        </section>
+      </div>
+    </section>
+  );
+}
 
-      <section className="rounded-[28px] border border-slate-200 bg-[#071133] p-5 text-white shadow-sm dark:border-slate-800">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/10">
-            <UserCircle2 className="h-12 w-12 text-[#3E5BFF]" />
+export default function MessagesPage() {
+  return (
+    <Suspense
+      fallback={
+        <section className="container pb-32">
+          <div className="rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            جارٍ تحميل الدردشة...
           </div>
-
-          <div className="text-right">
-            <h2 className="text-2xl font-black">
-              {user.displayName || "مستخدم براتشو"}
-            </h2>
-            <p className="mt-2 text-base text-white/75">
-              {user.email || user.phoneNumber || "لا توجد بيانات إضافية"}
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-5 grid grid-cols-3 gap-3">
-          <div className="rounded-[22px] bg-white/10 p-4 text-center">
-            <div className="text-2xl font-black text-[#3E5BFF]">حساب</div>
-            <div className="mt-1 text-xs text-white/70">موثق</div>
-          </div>
-
-          <div className="rounded-[22px] bg-white/10 p-4 text-center">
-            <div className="text-2xl font-black text-[#F58233]">جاهز</div>
-            <div className="mt-1 text-xs text-white/70">للإعلانات</div>
-          </div>
-
-          <div className="rounded-[22px] bg-white/10 p-4 text-center">
-            <div className="text-2xl font-black text-emerald-400">آمن</div>
-            <div className="mt-1 text-xs text-white/70">محفوظ</div>
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-2">
-        <a
-          href="/my-listings"
-          className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900"
-        >
-          <div className="text-right">
-            <div className="text-2xl font-black text-slate-950 dark:text-white">
-              إعلاناتي
-            </div>
-            <div className="mt-2 text-sm leading-7 text-slate-500 dark:text-slate-300">
-              إدارة كل إعلاناتك المنشورة والمعلقة من مكان واحد.
-            </div>
-          </div>
-        </a>
-
-        <a
-          href="/messages"
-          className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900"
-        >
-          <div className="text-right">
-            <div className="text-2xl font-black text-slate-950 dark:text-white">
-              الدردشة
-            </div>
-            <div className="mt-2 text-sm leading-7 text-slate-500 dark:text-slate-300">
-              راجع رسائلك ومحادثاتك مع المشترين والبائعين.
-            </div>
-          </div>
-        </a>
-
-        <a
-          href="/favorites"
-          className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900"
-        >
-          <div className="text-right">
-            <div className="text-2xl font-black text-slate-950 dark:text-white">
-              المفضلة
-            </div>
-            <div className="mt-2 text-sm leading-7 text-slate-500 dark:text-slate-300">
-              احتفظ بالإعلانات التي تريد الرجوع لها بسرعة.
-            </div>
-          </div>
-        </a>
-
-        <a
-          href="/notifications"
-          className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900"
-        >
-          <div className="text-right">
-            <div className="text-2xl font-black text-slate-950 dark:text-white">
-              الإشعارات
-            </div>
-            <div className="mt-2 text-sm leading-7 text-slate-500 dark:text-slate-300">
-              تابع آخر الرسائل وتنبيهات الإعلانات والحساب.
-            </div>
-          </div>
-        </a>
-      </section>
-
-      {message ? (
-        <div className="rounded-[22px] bg-slate-100 px-4 py-4 text-center text-sm font-black text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-          {message}
-        </div>
-      ) : null}
-    </div>
-  </section>
-);
+        </section>
+      }
+    >
+      <MessagesPageContent />
+    </Suspense>
+  );
+}
