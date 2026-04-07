@@ -36,6 +36,11 @@ export default function StartChatButton({
       return;
     }
 
+    if (!sellerId) {
+      alert("تعذر معرفة صاحب الإعلان.");
+      return;
+    }
+
     if (currentUser.uid === sellerId) {
       alert("هذا إعلانك أنت.");
       return;
@@ -61,7 +66,7 @@ export default function StartChatButton({
           currentUser.phoneNumber ||
           "مستخدم",
         recipientId: sellerId,
-        recipientName: sellerName,
+        recipientName: sellerName || "المعلن",
         firstMessage: ""
       });
 
@@ -79,7 +84,7 @@ export default function StartChatButton({
       type="button"
       onClick={handleStartChat}
       disabled={loading}
-      className="flex items-center justify-center gap-3 rounded-[22px] border-2 border-slate-300 px-6 py-4 text-xl font-black text-slate-950 dark:border-slate-700 dark:text-white disabled:opacity-60"
+      className="flex items-center justify-center gap-3 rounded-[22px] border-2 border-slate-300 bg-white px-6 py-4 text-xl font-black text-slate-950 shadow-sm transition hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-800"
     >
       <MessageCircle className="h-5 w-5 text-blue-600" />
       {loading ? "جارٍ فتح المحادثة..." : "دردش"}
