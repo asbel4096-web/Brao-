@@ -7,15 +7,17 @@ import {
   doc, getDoc, increment, serverTimestamp, setDoc, updateDoc,
 } from "firebase/firestore";
 import {
-  MapPin, MessageCircle, Phone, ShieldCheck, Calendar, Gauge, Fuel, Settings, User as UserIcon, Eye,
+  MapPin, MessageCircle, Phone, ShieldCheck, Calendar, Gauge, Fuel, Settings, User as UserIcon,
 } from "lucide-react";
-import { auth, db } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { formatPrice, normalizeLibyanPhone, timeAgo, buildChatId } from "@/lib/utils";
+import { formatPrice, normalizeLibyanPhone, buildChatId } from "@/lib/utils";
 import ListingComments from "@/components/listing-comments";
 import { ImageGallery } from "@/components/image-gallery";
 import { FavoriteButton } from "@/components/favorite-button";
 import { ShareButton } from "@/components/share-button";
+import { SafetyTipsCard } from "@/components/safety-tips-card";
+import { ListingQualityCard } from "@/components/listing-quality-card";
 import type { Listing } from "@/lib/types";
 
 export default function ListingDetailsPage() {
@@ -71,7 +73,6 @@ export default function ListingDetailsPage() {
       const existing = await getDoc(chatRef);
 
       if (!existing.exists()) {
-        // fetch seller name
         const sellerSnap = await getDoc(doc(db, "users", listing.ownerId));
         const sellerData = sellerSnap.data() as any;
 
@@ -108,7 +109,10 @@ export default function ListingDetailsPage() {
     return (
       <section className="container py-8">
         <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="skeleton h-[420px]" />
+          <div className="space-y-6">
+            <div className="skeleton aspect-[4/3] w-full" />
+            <div className="skeleton h-48" />
+          </div>
           <div className="space-y-4">
             <div className="skeleton h-32" />
             <div className="skeleton h-48" />
@@ -125,32 +129,52 @@ export default function ListingDetailsPage() {
   return (
     <section className="container py-6 sm:py-8">
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+        {/* العمود الرئيسي */}
         <div className="space-y-6">
-          <ImageGallery images={listing.images || []} alt={listing.title} />
+          {/* المعرض - مع زر مفضلة عائم في الأعلى يساراً */}
+          <div className="relative">
+            <ImageGallery images={listing.images || []} alt={listing.title} />
+            <div className="absolute left-4 top-4 z-10">
+              <FavoriteButton listing={listing} variant="icon" />
+            </div>
+          </div>
 
+          {/* بطاقة العنوان والمواصفات */}
           <div className="card p-5 sm:p-6">
+            {/* الشارات والوقت */}
             <div className="flex flex-wrap items-center gap-2">
               <span className="badge">{listing.category}</span>
               {listing.featured && <span className="badge-action">مميز</span>}
-              {typeof listing.views === "number" && (
-                <span className="inline-flex items-center gap-1 text-xs text-slate-500">
-                  <Eye size={13} /> {listing.views} مشاهدة
-                </span>
+              {listing.status === "approved" && (
+                <span className="badge-status-approved">معتمد</span>
               )}
-              <span className="text-xs text-slate-500 mr-auto">{timeAgo(listing.createdAt)}</span>
             </div>
 
-            <h1 className="mt-3 text-2xl font-black text-slate-950 dark:text-white sm:text-3xl">
-              {listing.title}
-            </h1>
+            {/* العنوان والسعر */}
+            <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-2xl font-black text-slate-950 dark:text-white sm:text-3xl">
+                  {listing.title}
+                </h1>
+                <div className="mt-2 flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-300">
+                  <MapPin size={15} />
+                  <span>
+                    {listing.city}
+                    {listing.address ? ` - ${listing.address}` : ""}
+                  </span>
+                </div>
+              </div>
 
-            <div className="mt-3 flex items-center gap-1 text-sm text-slate-600 dark:text-slate-300">
-              <MapPin size={15} />
-              {listing.city}{listing.address ? ` - ${listing.address}` : ""}
+              <div className="text-left">
+                <div className="text-xs text-slate-500 dark:text-slate-400">السعر</div>
+                <div className="text-2xl font-black text-brand-700 dark:text-brand-300 sm:text-3xl">
+                  {formatPrice(listing.price)}
+                </div>
+              </div>
             </div>
 
-            {/* Specs */}
-            <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {/* المواصفات الأساسية */}
+            <div className="mt-5 grid grid-cols-2 gap-3 border-t border-slate-100 pt-5 dark:border-slate-800 sm:grid-cols-4">
               <Spec icon={Calendar} label="السنة" value={listing.year ?? "-"} />
               <Spec
                 icon={Gauge}
@@ -161,6 +185,7 @@ export default function ListingDetailsPage() {
               <Spec icon={Settings} label="الناقل" value={listing.transmission ?? "-"} />
             </div>
 
+            {/* مواصفات إضافية */}
             {(listing.brand || listing.model || listing.color || listing.engine) && (
               <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {listing.brand && <Spec label="الماركة" value={listing.brand} />}
@@ -170,19 +195,23 @@ export default function ListingDetailsPage() {
               </div>
             )}
 
-            <div className="mt-5">
-              <h3 className="text-base font-black mb-2 dark:text-white">الوصف</h3>
-              <p className="whitespace-pre-line text-sm leading-7 text-slate-700 dark:text-slate-200">
+            {/* الوصف */}
+            <div className="mt-6 border-t border-slate-100 pt-5 dark:border-slate-800">
+              <h3 className="mb-3 text-base font-black dark:text-white">الوصف</h3>
+              <p className="whitespace-pre-line text-[15px] leading-7 text-slate-700 dark:text-slate-200">
                 {listing.description}
               </p>
             </div>
 
+            {/* المميزات والعيوب */}
             {(listing.features?.length || listing.defects?.length) ? (
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <div className="mt-6 grid gap-4 border-t border-slate-100 pt-5 dark:border-slate-800 sm:grid-cols-2">
                 {listing.features?.length ? (
                   <div>
-                    <h4 className="text-sm font-black text-emerald-700 mb-2">المميزات</h4>
-                    <ul className="space-y-1 text-sm">
+                    <h4 className="mb-3 text-sm font-black text-emerald-700 dark:text-emerald-300">
+                      المميزات
+                    </h4>
+                    <ul className="space-y-2 text-sm">
                       {listing.features.map((f) => (
                         <li key={f} className="flex items-center gap-2 dark:text-slate-200">
                           <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
@@ -194,8 +223,10 @@ export default function ListingDetailsPage() {
                 ) : null}
                 {listing.defects?.length ? (
                   <div>
-                    <h4 className="text-sm font-black text-rose-700 mb-2">عيوب وملاحظات</h4>
-                    <ul className="space-y-1 text-sm">
+                    <h4 className="mb-3 text-sm font-black text-rose-700 dark:text-rose-300">
+                      عيوب وملاحظات
+                    </h4>
+                    <ul className="space-y-2 text-sm">
                       {listing.defects.map((d) => (
                         <li key={d} className="flex items-center gap-2 dark:text-slate-200">
                           <span className="h-1.5 w-1.5 rounded-full bg-rose-600" />
@@ -209,14 +240,19 @@ export default function ListingDetailsPage() {
             ) : null}
           </div>
 
+          {/* مؤشرات الجودة */}
+          <ListingQualityCard listing={listing} />
+
+          {/* الموقع */}
           {(listing.address || listing.mapLink) && (
             <div className="card p-5 sm:p-6">
               <div className="flex items-center gap-2">
-                <MapPin size={18} className="text-brand-700" />
+                <MapPin size={18} className="text-brand-700 dark:text-brand-300" />
                 <h3 className="text-base font-black dark:text-white">الموقع</h3>
               </div>
               <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                {listing.city}{listing.address ? ` - ${listing.address}` : ""}
+                {listing.city}
+                {listing.address ? ` - ${listing.address}` : ""}
               </p>
               {listing.mapLink && (
                 <a
@@ -231,11 +267,16 @@ export default function ListingDetailsPage() {
             </div>
           )}
 
+          {/* بطاقة نصائح السلامة - تحت قسم البائع/التفاصيل كما طُلب */}
+          <SafetyTipsCard />
+
+          {/* التعليقات */}
           <ListingComments listingId={listing.id} />
         </div>
 
-        {/* Sidebar */}
+        {/* العمود الجانبي */}
         <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+          {/* بطاقة التواصل */}
           <div className="card p-5 sm:p-6">
             <div className="text-sm text-slate-500 dark:text-slate-300">السعر</div>
             <div className="mt-1 text-3xl font-black text-brand-700 dark:text-brand-300 sm:text-4xl">
@@ -274,6 +315,7 @@ export default function ListingDetailsPage() {
             </div>
           </div>
 
+          {/* بطاقة البائع */}
           <div className="card p-5 sm:p-6">
             <div className="flex items-center gap-2 text-brand-700 dark:text-brand-300">
               <ShieldCheck size={18} />
@@ -283,8 +325,8 @@ export default function ListingDetailsPage() {
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
                 <UserIcon size={20} />
               </div>
-              <div>
-                <div className="text-base font-black dark:text-white">
+              <div className="min-w-0">
+                <div className="truncate text-base font-black dark:text-white">
                   {listing.sellerName}
                 </div>
                 <div className="text-xs text-slate-500">{listing.city}</div>
@@ -306,7 +348,7 @@ export default function ListingDetailsPage() {
 function Spec({ icon: Icon, label, value }: { icon?: any; label: string; value: any }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
-      <div className="flex items-center gap-1.5 text-xs text-slate-500">
+      <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
         {Icon && <Icon size={13} />}
         {label}
       </div>

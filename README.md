@@ -1,138 +1,102 @@
-# براتشو كار - Bratsho Car
+# تحسينات صفحة تفاصيل الإعلان — Bratsho Car
 
-سوق السيارات الاحترافي في ليبيا. منصة Next.js 14 + Firebase + Tailwind RTL.
+ملفات جاهزة للوضع المباشر في مشروعك. كل المسارات تطابق هيكل مشروعك الحالي.
 
-## الميزات
+## الملفات المُسلَّمة
 
-- ✅ مصادقة Firebase (Google + هاتف SMS) عبر AuthContext موحّد
-- ✅ إعلانات سيارات/قطع/خدمات مع نظام موافقة من المشرف
-- ✅ صفحة إعلانات بفلاتر متقدّمة (URL-based)
-- ✅ معرض صور (Lightbox + Thumbnails)
-- ✅ مفضلة لكل مستخدم (Subcollection)
-- ✅ شات داخلي حقيقي مع Firestore (real-time + إشعارات)
-- ✅ نظام إشعارات كامل
-- ✅ لوحة إدارة (إحصائيات + اعتماد/رفض الإعلانات + إدارة المستخدمين)
-- ✅ وضع ليلي بدون FOUC
-- ✅ هوية بصرية: أبيض / أسود / أزرق ملكي + برتقالي للأكشن
-- ✅ تصميم Mobile-first مع Bottom Navigation
-- ✅ قواعد أمان Firestore و Storage جاهزة
+```
+components/
+├── safety-tips-card.tsx       ← جديد
+├── listing-quality-card.tsx   ← جديد
+├── image-gallery.tsx          ← مُحدَّث (aspect-[4/3])
+└── favorite-button.tsx        ← مُحدَّث (تصميم أفضل)
 
-## التشغيل
+app/(public)/listings/[id]/
+└── page.tsx                   ← مُحدَّث (تخطيط محسّن مع المكوّنات الجديدة)
+```
 
-### 1. تثبيت الحزم
+## كيفية التطبيق
+
+1. فك الضغط في جذر المشروع — الملفات ستحلّ محل الموجودة (وتضيف الجديد).
+2. **ادفع التغييرات إلى Git** وأعد النشر على Vercel.
+3. لا حاجة لتثبيت أي مكتبة جديدة — كل الأيقونات من `lucide-react` الموجود.
 
 ```bash
-npm install
+git add components/ app/
+git commit -m "feat: improve listing details page with safety tips, quality card, and 4:3 gallery"
+git push
 ```
 
-### 2. إعداد متغيرات البيئة
+---
 
-انسخ `.env.example` إلى `.env.local` واملأ القيم من Firebase Console:
+## شرح كل تغيير
 
-```bash
-cp .env.example .env.local
-```
+### 1) المفضلة — تعمل بالفعل، تحسين الواجهة فقط
+**الملف:** `components/favorite-button.tsx`
 
-ثم عبّئ:
+- ✅ المنطق الحالي يعمل بشكل ممتاز عبر `useFavorites` hook → يحفظ في `users/{uid}/favorites/{listingId}`.
+- ✅ إعادة التوجيه إلى `/login?redirect=/listings/{id}` عند عدم تسجيل الدخول — كانت موجودة بشكل عام، الآن مخصصة بالضبط للإعلان.
+- ✅ القلب يتحوّل لمملوء (filled) عند التفعيل.
+- 🎨 تصميم أفضل: زر دائري مع backdrop blur للوضع `icon`، وزر متباين مع حدود وردية للوضع `button`.
 
-```env
-NEXT_PUBLIC_FIREBASE_API_KEY=...
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
-NEXT_PUBLIC_FIREBASE_APP_ID=...
-NEXT_PUBLIC_ADMIN_EMAILS=admin@example.com
-```
+### 2) بطاقة نصائح السلامة — جديدة
+**الملف:** `components/safety-tips-card.tsx`
 
-> ⚠️ مهم: `STORAGE_BUCKET` يجب أن ينتهي بـ `.appspot.com` وليس `.firebasestorage.app`.
+- 🎨 بطاقة داكنة فاخرة مع gradient وأوهج زخرفية.
+- ⚠️ أيقونة Shield Alert في الرأس + أيقونة لكل نصيحة.
+- 📱 RTL وتخطيط ملائم للجوال.
+- النصائح الثلاث مطابقة للمتطلبات بالضبط.
 
-### 3. التشغيل
+### 3) المعرض — `aspect-[4/3]` بدلاً من ارتفاع ثابت
+**الملف:** `components/image-gallery.tsx`
 
-```bash
-npm run dev
-```
+**قبل:** `h-64 sm:h-80 lg:h-[420px]` — يتغيّر مع الشاشة بشكل غير متناسق.
+**بعد:** `aspect-[4/3]` — نسبة ثابتة، مظهر بطاقة عريضة احترافية على كل المقاسات.
 
-افتح http://localhost:3000
+تحسينات إضافية:
+- زوايا مستديرة `rounded-3xl`، `object-cover`.
+- أزرار تنقل دائرية بـ backdrop blur.
+- مصغّرات (thumbnails) منفصلة عن الصورة الرئيسية لمظهر أنظف.
+- تظليل تدريجي للأركان لإبراز الأزرار.
+- معالجة fallback (عرض أيقونة إذا لم توجد صور).
 
-## إعداد Firebase Console
+### 4) بطاقة مؤشرات الجودة — جديدة
+**الملف:** `components/listing-quality-card.tsx`
 
-### Authentication
-1. فعّل **Google** (Authentication → Sign-in method).
-2. فعّل **Phone** وأضف رقم اختبار إن أردت.
-3. في **Authorized domains** أضف `localhost` ودومين الإنتاج.
+تعرض تلقائياً:
+- حالة الإعلان (معتمد) إذا كان `status === "approved"`.
+- توفر الوثائق (إذا ذكرت في `features`).
+- وقت النشر (`timeAgo` من utils الموجودة عندك).
+- عدد المشاهدات.
 
-### Firestore
-1. أنشئ قاعدة بيانات Firestore (Production mode).
-2. انسخ محتوى `firebase.rules` إلى **Rules**.
-3. عدّل قائمة `isAdmin()` فيه ليشمل بريدك:
-   ```
-   request.auth.token.email in [
-     'your-email@example.com'
-   ]
-   ```
+تستخدم `card` class الموجودة عندك للحفاظ على هوية التصميم.
 
-### Storage
-1. أنشئ Storage Bucket (إن لم يكن موجوداً).
-2. انسخ محتوى `storage.rules` إلى **Rules**.
+### 5) صفحة التفاصيل — تخطيط محسّن
+**الملف:** `app/(public)/listings/[id]/page.tsx`
 
-### الفهارس (Indexes)
-سيطلب Firestore فهارس مركّبة عند أول تشغيل لاستعلامات:
-- `listings` بـ `status` + `createdAt desc`
-- `listings` بـ `ownerId` + `createdAt desc`
-- `chats` بـ `participants array-contains` + `lastMessageAt desc`
-- `notifications` بـ `userId` + `createdAt desc`
+تحسينات على التخطيط:
+- **العنوان والسعر** الآن في صف واحد متوازن (السعر يميناً يساراً حسب RTL).
+- **فواصل بين الأقسام** داخل البطاقة الرئيسية (`border-t pt-5`) لتنظيم بصري.
+- **مفضلة عائمة** على يسار الصورة (overlay).
+- **ترتيب الأقسام**: المعرض → التفاصيل → مؤشرات الجودة → الموقع → **نصائح السلامة** (تحت قسم البائع/التفاصيل كما طُلب) → التعليقات.
+- العمود الجانبي يبقى sticky مع البائع وأزرار التواصل.
+- skeleton مُحدَّث ليطابق `aspect-[4/3]`.
 
-اضغط الرابط في رسالة الخطأ بالكونسول لإنشائها تلقائياً.
+كل المنطق الأصلي (تحميل الإعلان، increment views، startChat) محفوظ كما هو.
 
-## كيف تصبح مشرفاً
+---
 
-طريقتان (أيّهما يكفي):
+## نقاط مهمة
 
-1. **الأسهل**: أضف بريدك إلى `NEXT_PUBLIC_ADMIN_EMAILS` في `.env.local`، ثم عدّل نفس البريد في `firebase.rules` داخل `isAdmin()`.
-2. **عبر Firestore**: حدّث وثيقة `users/{uid}` وضع `isAdmin: true`.
+- **القواعد**: لم تتغير. الـ FavoriteButton يستخدم نفس مسار Firestore الذي تسمح به قواعدك الحالية (`users/{uid}/favorites/{listingId}`).
+- **الـ hooks**: لم يتم لمس `useFavorites` — يعمل بشكل ممتاز.
+- **الهوية البصرية**: استُخدمت ألوان `brand-*` و `action-*` من `tailwind.config.ts` الخاص بك للحفاظ على هوية Bratsho Car الزرقاء الداكنة.
+- **التوافق**: كل المكوّنات تدعم الوضع الداكن (`dark:`) المُفعَّل لديك.
 
-ادخل ثم اذهب إلى `/admin`.
+## اختبار
 
-## بنية المجلدات
-
-```
-/app
-  /(public)         صفحات عامة (الرئيسية + إعلانات + شات...)
-  /admin            لوحة الإدارة (محمية)
-  layout.tsx        Root + Providers
-/components         مكوّنات قابلة لإعادة الاستخدام
-/contexts           AuthContext + ThemeContext
-/hooks              useFavorites
-/lib                firebase, types, utils, categories, plans, notifications
-firebase.rules      قواعد Firestore
-storage.rules       قواعد Storage
-```
-
-## السكريبتات
-
-```bash
-npm run dev          # تشغيل التطوير
-npm run build        # بناء للإنتاج
-npm run start        # تشغيل الإنتاج
-npm run lint         # ESLint
-npm run type-check   # TypeScript check بدون بناء
-```
-
-## النشر على Vercel
-
-1. ارفع المشروع إلى GitHub.
-2. اربطه بـ Vercel.
-3. أضف نفس متغيرات `.env.local` في Vercel → Settings → Environment Variables.
-4. أضف دومين Vercel إلى Firebase Authorized Domains.
-
-## الميزات القادمة
-
-- بوابة دفع للاشتراكات
-- ربط مع جهات تقارير المركبات الرسمية
-- تطبيق Mobile (React Native)
-- نظام تقييمات وتعليقات
-
-## الترخيص
-
-خاص - جميع الحقوق محفوظة © براتشو كار
+1. افتح أي إعلان → الصورة تظهر بنسبة 4:3 جميلة.
+2. اضغط القلب على الصورة → يتحوّل لأحمر مع تخزين فوري.
+3. اضغط القلب وأنت غير مسجّل → ينتقل إلى `/login?redirect=/listings/{id}`.
+4. انزل للأسفل → سترى بطاقة نصائح السلامة الداكنة.
+5. مؤشرات الجودة تظهر تلقائياً حسب بيانات الإعلان.

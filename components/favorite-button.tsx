@@ -15,7 +15,10 @@ interface Props {
 }
 
 export function FavoriteButton({
-  listing, className = "", size = 18, variant = "icon",
+  listing,
+  className = "",
+  size = 18,
+  variant = "icon",
 }: Props) {
   const { user } = useAuth();
   const router = useRouter();
@@ -27,7 +30,7 @@ export function FavoriteButton({
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      router.push("/login?redirect=" + encodeURIComponent(window.location.pathname));
+      router.push(`/login?redirect=/listings/${listing.id}`);
       return;
     }
     if (busy) return;
@@ -48,25 +51,51 @@ export function FavoriteButton({
         type="button"
         onClick={handle}
         disabled={busy}
-        className={`btn-secondary ${liked ? "!border-rose-300 !text-rose-600" : ""} ${className}`}
+        aria-pressed={liked}
+        className={`
+          inline-flex items-center justify-center gap-2
+          rounded-2xl border-2 px-4 py-3 text-sm font-bold
+          transition-all duration-200
+          disabled:opacity-60 disabled:cursor-not-allowed
+          ${
+            liked
+              ? "border-rose-500 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
+              : "border-slate-200 bg-white text-slate-700 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-rose-950/30"
+          }
+          ${className}
+        `}
       >
-        <Heart size={size} fill={liked ? "currentColor" : "none"} />
-        {liked ? "في المفضلة" : "أضف للمفضلة"}
+        <Heart
+          size={size}
+          className={liked ? "fill-rose-500 text-rose-500" : ""}
+        />
+        <span>{liked ? "في المفضلة" : "أضف للمفضلة"}</span>
       </button>
     );
   }
 
+  // icon variant — للأركان والصور
   return (
     <button
       type="button"
       onClick={handle}
       disabled={busy}
+      aria-pressed={liked}
       aria-label={liked ? "إزالة من المفضلة" : "إضافة للمفضلة"}
-      className={`inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/95 shadow-md backdrop-blur transition hover:scale-110 ${
-        liked ? "text-rose-600" : "text-slate-700"
-      } ${className}`}
+      className={`
+        inline-flex h-11 w-11 items-center justify-center
+        rounded-full border backdrop-blur-md
+        transition-all duration-200
+        disabled:opacity-60 disabled:cursor-not-allowed
+        ${
+          liked
+            ? "border-rose-400/60 bg-rose-500/90 text-white shadow-lg shadow-rose-500/30"
+            : "border-white/30 bg-black/40 text-white hover:bg-black/60"
+        }
+        ${className}
+      `}
     >
-      <Heart size={size} fill={liked ? "currentColor" : "none"} />
+      <Heart size={size + 2} className={liked ? "fill-white" : ""} />
     </button>
   );
 }
