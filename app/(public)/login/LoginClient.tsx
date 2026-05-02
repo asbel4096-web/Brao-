@@ -34,6 +34,7 @@ export default function LoginClient() {
   const [verifying, setVerifying] = useState(false);
   const [confirmation, setConfirmation] = useState<ConfirmationResult | null>(null);
   const [phoneAuthUnavailable, setPhoneAuthUnavailable] = useState(false);
+  const [recaptchaReady, setRecaptchaReady] = useState(false);
   const recaptchaRef = useRef<HTMLDivElement | null>(null);
 
   const redirectTo = params.get("redirect") || "/profile";
@@ -42,13 +43,26 @@ export default function LoginClient() {
     if (!loading && user) router.replace(redirectTo);
   }, [user, loading, router, redirectTo]);
 
+  // تنظيف reCAPTCHA عند مغادرة الصفحة
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!recaptchaRef.current) return;
-    if (window.recaptchaVerifier || user || phoneAuthUnavailable) return;
+    return () => {
+      try {
+        window.recaptchaVerifier?.clear();
+        window.recaptchaVerifier = undefined;
+      } catch {
+        // تجاهل
+      }
+    };
+  }, []);
+
+  // تهيئة reCAPTCHA عند الطلب فقط (lazy)
+  const ensureRecaptcha = async (): Promise<RecaptchaVerifier | null> => {
+    if (typeof window === "undefined") return null;
+    if (!recaptchaRef.current) return null;
+    if (window.recaptchaVerifier) return window.recaptchaVerifier;
 
     try {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, recaptchaRef.current, {
+      const verifier = new RecaptchaVerifier(auth, recaptchaRef.current, {
         size: "normal",
         callback: () => setMessage("تم التحقق بنجاح، اضغط إرسال الرمز."),
         "expired-callback": () => {
@@ -56,22 +70,17 @@ export default function LoginClient() {
         },
       });
 
-      window.recaptchaVerifier.render().catch(() => {
-        setError("فشل تحميل reCAPTCHA. تحقق من اتصال الإنترنت.");
-      });
+      await verifier.render();
+      window.recaptchaVerifier = verifier;
+      setRecaptchaReady(true);
+      return verifier;
     } catch (err) {
       console.error("reCAPTCHA init error:", err);
-      setError("تعذّر تهيئة reCAPTCHA.");
+      // فشل reCAPTCHA = phone auth غير متاح، لكن لا نعرض خطأ عام
+      setPhoneAuthUnavailable(true);
+      return null;
     }
-
-    return () => {
-      try {
-        window.recaptchaVerifier?.clear();
-        window.recaptchaVerifier = undefined;
-      } catch {
-      }
-    };
-  }, [user, phoneAuthUnavailable]);
+  };
 
   const handleGoogle = async () => {
     if (googleLoading) return;
@@ -114,20 +123,23 @@ export default function LoginClient() {
       return;
     }
 
-    if (!window.recaptchaVerifier) {
-      setError("reCAPTCHA غير جاهز. أعد تحميل الصفحة.");
-      return;
-    }
-
     setSendingCode(true);
 
     try {
+      // تهيئة reCAPTCHA الآن (lazy)
+      const verifier = await ensureRecaptcha();
+      if (!verifier) {
+        setError("تعذّر تهيئة reCAPTCHA. استخدم تسجيل الدخول عبر Google.");
+        setSendingCode(false);
+        return;
+      }
+
       await setPersistence(auth, browserLocalPersistence);
 
       const result = await signInWithPhoneNumber(
         auth,
         phone.trim(),
-        window.recaptchaVerifier
+        verifier
       );
 
       setConfirmation(result);
