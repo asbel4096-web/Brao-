@@ -42,6 +42,34 @@ export const findCategoryBySlug = (slug: string) =>
 export const findCategoryByName = (name: string) =>
   categories.find((c) => c.name === name);
 
+/**
+ * يحوّل أي قيمة في URL (slug إنجليزي أو اسم عربي) إلى اسم القسم العربي
+ * المخزَّن في Firestore. يُرجع نفس القيمة إذا لم يجد تطابق
+ * (للحفاظ على التوافق مع الفلاتر اليدوية).
+ */
+export function resolveCategoryName(value: string | null | undefined): string {
+  if (!value) return "";
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  // محاولة كـ slug أولاً
+  const bySlug = findCategoryBySlug(trimmed);
+  if (bySlug) return bySlug.name;
+  // محاولة كاسم عربي
+  const byName = findCategoryByName(trimmed);
+  if (byName) return byName.name;
+  // fallback - رجّع كما هو
+  return trimmed;
+}
+
+/**
+ * عكسي: من الاسم العربي إلى الـ slug للاستخدام في URLs.
+ */
+export function resolveCategorySlug(name: string | null | undefined): string {
+  if (!name) return "";
+  const found = findCategoryByName(name.trim());
+  return found?.slug || "";
+}
+
 export const marketplaceSections = [
   {
     title: "مركبات للبيع",

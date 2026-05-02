@@ -20,7 +20,7 @@ export function CategoryGrid() {
           </p>
         </div>
         <Link
-          href="/listings"
+          href="/categories"
           className="btn-ghost text-brand-700 dark:text-brand-300"
         >
           عرض الكل ←
@@ -34,7 +34,7 @@ export function CategoryGrid() {
           return (
             <Link
               key={c.slug}
-              href={`/listings?category=${encodeURIComponent(c.name)}`}
+              href={`/listings?category=${c.slug}`}
               className="shrink-0 inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
             >
               <Icon size={14} />
@@ -61,7 +61,7 @@ export function CategoryGrid() {
                   return (
                     <Link
                       key={item.slug}
-                      href={`/listings?category=${encodeURIComponent(item.name)}`}
+                      href={`/listings?category=${item.slug}`}
                       className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-bold text-slate-800 transition hover:border-brand-200 hover:bg-brand-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:border-brand-700 dark:hover:bg-slate-700"
                     >
                       <Icon size={16} className="text-brand-700 dark:text-brand-300 shrink-0" />

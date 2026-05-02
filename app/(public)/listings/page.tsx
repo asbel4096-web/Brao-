@@ -5,7 +5,12 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
 import { Filter, X } from "lucide-react";
 import { db } from "@/lib/firebase";
-import { libyaCities, listingCategories } from "@/lib/categories";
+import {
+  libyaCities,
+  listingCategories,
+  resolveCategoryName,
+  resolveCategorySlug,
+} from "@/lib/categories";
 import { ListingCard } from "@/components/listing-card";
 import type { Listing } from "@/lib/types";
 
@@ -18,7 +23,9 @@ function ListingsContent() {
   const [showFilters, setShowFilters] = useState(false);
 
   const q0 = params.get("q") || "";
-  const cat0 = params.get("category") || "";
+  // ندعم slug إنجليزي أو اسم عربي في URL ونحوّله للاسم العربي للفلترة
+  const catRaw = params.get("category") || "";
+  const cat0 = resolveCategoryName(catRaw);
   const city0 = params.get("city") || "";
   const sort0 = (params.get("sort") || "newest") as "newest" | "price_asc" | "price_desc";
   const min0 = params.get("min") || "";
@@ -31,7 +38,7 @@ function ListingsContent() {
   const [minPrice, setMinPrice] = useState(min0);
   const [maxPrice, setMaxPrice] = useState(max0);
 
-  // Sync local with URL when URL changes
+  // مزامنة الحالة المحلية مع URL
   useEffect(() => {
     setSearch(q0); setCategory(cat0); setCity(city0);
     setSort(sort0); setMinPrice(min0); setMaxPrice(max0);
@@ -79,7 +86,11 @@ function ListingsContent() {
   const applyToUrl = () => {
     const sp = new URLSearchParams();
     if (search) sp.set("q", search);
-    if (category) sp.set("category", category);
+    // نحفظ القسم في URL كـ slug للحصول على روابط نظيفة
+    if (category) {
+      const slug = resolveCategorySlug(category);
+      sp.set("category", slug || category);
+    }
     if (city) sp.set("city", city);
     if (sort && sort !== "newest") sp.set("sort", sort);
     if (minPrice) sp.set("min", minPrice);
