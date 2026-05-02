@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, memo, useEffect, useState } from "react";
 import { Bell, MessageCircle, Plus, Search, User as UserIcon, Shield } from "lucide-react";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { ThemeToggle } from "./theme-toggle";
@@ -16,7 +16,7 @@ const links = [
   { href: "/messages", label: "الدردشة" },
 ];
 
-export function SiteHeader() {
+function SiteHeaderImpl() {
   const router = useRouter();
   const { user, profile, isAdmin } = useAuth();
   const [search, setSearch] = useState("");
@@ -27,17 +27,40 @@ export function SiteHeader() {
       setUnreadNotifications(0);
       return;
     }
-    const q = query(
-      collection(db, "notifications"),
-      where("userId", "==", user.uid),
-      where("read", "==", false)
-    );
-    const unsub = onSnapshot(
-      q,
-      (snap) => setUnreadNotifications(snap.size),
-      () => setUnreadNotifications(0)
-    );
-    return () => unsub();
+
+    // ✨ تأخير الاشتراك في الإشعارات حتى المتصفح يصبح خاملاً
+    let unsub: (() => void) | null = null;
+    let cancelled = false;
+
+    const startSubscription = () => {
+      if (cancelled) return;
+      const q = query(
+        collection(db, "notifications"),
+        where("userId", "==", user.uid),
+        where("read", "==", false)
+      );
+      unsub = onSnapshot(
+        q,
+        (snap) => setUnreadNotifications(snap.size),
+        () => setUnreadNotifications(0)
+      );
+    };
+
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      const id = (window as any).requestIdleCallback(startSubscription, { timeout: 2000 });
+      return () => {
+        cancelled = true;
+        (window as any).cancelIdleCallback?.(id);
+        unsub?.();
+      };
+    } else {
+      const t = setTimeout(startSubscription, 800);
+      return () => {
+        cancelled = true;
+        clearTimeout(t);
+        unsub?.();
+      };
+    }
   }, [user]);
 
   const handleSearch = (e: FormEvent) => {
@@ -55,7 +78,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/90 backdrop-blur-xl dark:border-slate-700/70 dark:bg-slate-950/90">
       <div className="container flex items-center gap-3 py-3 sm:py-4">
-        <Link href="/" className="flex items-center gap-3 shrink-0">
+        <Link href="/" prefetch={false} className="flex items-center gap-3 shrink-0">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-700 to-ink text-base font-black text-white shadow-blue">
             BC
           </div>
@@ -87,6 +110,7 @@ export function SiteHeader() {
             <Link
               key={l.href}
               href={l.href}
+              prefetch={false}
               className="text-sm font-bold text-slate-700 hover:text-brand-700 dark:text-slate-200 dark:hover:text-brand-300"
             >
               {l.label}
@@ -95,6 +119,7 @@ export function SiteHeader() {
           {isAdmin && (
             <Link
               href="/admin"
+              prefetch={false}
               className="inline-flex items-center gap-1 text-sm font-bold text-action-700 hover:text-action-600"
             >
               <Shield size={14} /> الإدارة
@@ -105,6 +130,7 @@ export function SiteHeader() {
         <div className="flex items-center gap-2 shrink-0">
           <Link
             href="/notifications"
+            prefetch={false}
             className="relative hidden sm:inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-slate-700 dark:border-slate-700 dark:text-slate-200"
             aria-label="الإشعارات"
           >
@@ -117,6 +143,7 @@ export function SiteHeader() {
           </Link>
           <Link
             href="/messages"
+            prefetch={false}
             className="hidden sm:inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-slate-700 dark:border-slate-700 dark:text-slate-200"
             aria-label="الدردشة"
           >
@@ -126,6 +153,7 @@ export function SiteHeader() {
 
           <Link
             href="/add-listing"
+            prefetch={false}
             className="btn-action !px-3 !py-2 sm:!px-5 sm:!py-3"
           >
             <Plus size={18} />
@@ -135,6 +163,7 @@ export function SiteHeader() {
           {user ? (
             <Link
               href="/profile"
+              prefetch={false}
               aria-label="حسابي"
               className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-brand-700 text-white font-black"
             >
@@ -144,6 +173,7 @@ export function SiteHeader() {
                   src={profile.photoURL}
                   alt={profile.name || "profile"}
                   className="h-full w-full object-cover"
+                  referrerPolicy="no-referrer"
                 />
               ) : (
                 initial
@@ -152,6 +182,7 @@ export function SiteHeader() {
           ) : (
             <Link
               href="/login"
+              prefetch={false}
               className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-slate-700 dark:border-slate-700 dark:text-slate-200"
               aria-label="تسجيل الدخول"
             >
@@ -163,3 +194,5 @@ export function SiteHeader() {
     </header>
   );
 }
+
+export const SiteHeader = memo(SiteHeaderImpl);

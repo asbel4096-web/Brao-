@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { Home, LayoutGrid, Plus, MessageCircle, FileText } from "lucide-react";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -16,7 +16,7 @@ const items = [
   { href: "/vehicle-report", label: "التقارير", Icon: FileText },
 ];
 
-export default function BottomNav() {
+function BottomNavImpl() {
   const pathname = usePathname();
   const { user } = useAuth();
   const [unreadChats, setUnreadChats] = useState(0);
@@ -26,24 +26,49 @@ export default function BottomNav() {
       setUnreadChats(0);
       return;
     }
-    const q = query(
-      collection(db, "chats"),
-      where("participants", "array-contains", user.uid)
-    );
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        let count = 0;
-        snap.forEach((d) => {
-          const data = d.data() as any;
-          const c = data?.unreadCount?.[user.uid];
-          if (typeof c === "number") count += c;
-        });
-        setUnreadChats(count);
-      },
-      () => setUnreadChats(0)
-    );
-    return () => unsub();
+
+    // ✨ تحسين الأداء: نؤجّل الاشتراك حتى يصبح المتصفح خاملاً.
+    // هذا يخلّي أول render أسرع لأن الاستعلام لا يبدأ مع باقي المكوّنات.
+    let unsub: (() => void) | null = null;
+    let cancelled = false;
+
+    const startSubscription = () => {
+      if (cancelled) return;
+      const q = query(
+        collection(db, "chats"),
+        where("participants", "array-contains", user.uid)
+      );
+      unsub = onSnapshot(
+        q,
+        (snap) => {
+          let count = 0;
+          snap.forEach((d) => {
+            const data = d.data() as any;
+            const c = data?.unreadCount?.[user.uid];
+            if (typeof c === "number") count += c;
+          });
+          setUnreadChats(count);
+        },
+        () => setUnreadChats(0)
+      );
+    };
+
+    // requestIdleCallback إن وُجد، وإلا setTimeout كـ fallback
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      const id = (window as any).requestIdleCallback(startSubscription, { timeout: 2000 });
+      return () => {
+        cancelled = true;
+        (window as any).cancelIdleCallback?.(id);
+        unsub?.();
+      };
+    } else {
+      const t = setTimeout(startSubscription, 800);
+      return () => {
+        cancelled = true;
+        clearTimeout(t);
+        unsub?.();
+      };
+    }
   }, [user]);
 
   return (
@@ -58,13 +83,12 @@ export default function BottomNav() {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={false}
                 className="mx-auto flex h-16 w-16 -translate-y-3 flex-col items-center justify-center rounded-[22px] bg-action-500 text-white shadow-action transition active:scale-95"
                 aria-label={item.label}
               >
                 <Icon size={24} />
-                <span className="mt-0.5 text-[10px] font-black">
-                  {item.label}
-                </span>
+                <span className="mt-0.5 text-[10px] font-black">{item.label}</span>
               </Link>
             );
           }
@@ -73,6 +97,7 @@ export default function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={false}
               className={`relative flex flex-col items-center justify-center rounded-2xl px-2 py-2 transition ${
                 active
                   ? "text-brand-700 dark:text-brand-300"
@@ -94,3 +119,5 @@ export default function BottomNav() {
     </div>
   );
 }
+
+export default memo(BottomNavImpl);

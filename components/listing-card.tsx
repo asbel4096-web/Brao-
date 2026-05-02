@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
+import { memo } from "react";
 import { MapPin, Phone, MessageCircle, Eye, Calendar, Gauge } from "lucide-react";
 import type { Listing } from "@/lib/types";
 import { formatPrice, normalizeLibyanPhone } from "@/lib/utils";
@@ -8,7 +10,16 @@ import { FavoriteButton } from "./favorite-button";
 
 const FALLBACK = "/icons/car-card.svg";
 
-export function ListingCard({ listing }: { listing: Listing }) {
+interface ListingCardProps {
+  listing: Listing;
+  /**
+   * إذا كانت true، الصورة الأولى ستتحمل بأولوية (eager).
+   * استعملها لأول 2-3 بطاقات فوق الـ fold للحصول على LCP أفضل.
+   */
+  priority?: boolean;
+}
+
+function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
   const wa = normalizeLibyanPhone(listing.whatsapp || listing.phone || "");
   const img = listing.images?.[0] || FALLBACK;
   const isFallback = !listing.images?.length;
@@ -23,24 +34,26 @@ export function ListingCard({ listing }: { listing: Listing }) {
         dark:border-slate-700/80 dark:bg-slate-900 dark:hover:border-brand-700
       "
     >
-      {/* الصورة بنسبة 4:3 ثابتة */}
+      {/* الصورة — next/image يُحسّن الحجم/التنسيق تلقائياً */}
       <Link
         href={`/listings/${listing.id}`}
+        prefetch={false}
         className="relative block aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-800"
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={img}
           alt={listing.title}
-          loading="lazy"
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          loading={priority ? "eager" : "lazy"}
+          priority={priority}
           className={
             isFallback
-              ? "h-full w-full object-contain p-10 opacity-50"
-              : "h-full w-full object-cover transition duration-500 group-hover:scale-105"
+              ? "object-contain p-10 opacity-50"
+              : "object-cover transition duration-500 group-hover:scale-105"
           }
         />
 
-        {/* تظليل تدريجي علوي وسفلي */}
         {!isFallback && (
           <>
             <div
@@ -54,26 +67,22 @@ export function ListingCard({ listing }: { listing: Listing }) {
           </>
         )}
 
-        {/* شارة "مميز" */}
         {listing.featured && (
           <span className="absolute right-3 top-3 rounded-full bg-action-500 px-3 py-1 text-[11px] font-black text-white shadow-action">
             مميز
           </span>
         )}
 
-        {/* زر المفضلة */}
         <div className="absolute left-3 top-3">
           <FavoriteButton listing={listing} />
         </div>
 
-        {/* عداد المشاهدات */}
         {typeof listing.views === "number" && listing.views > 0 && (
           <span className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full border border-white/20 bg-black/55 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-md">
             <Eye size={12} /> {listing.views}
           </span>
         )}
 
-        {/* السعر فوق الصورة (overlay) */}
         <div className="absolute bottom-3 left-3 rounded-2xl border border-white/20 bg-brand-700/90 px-3 py-1.5 shadow-blue backdrop-blur-md">
           <span className="text-sm font-black text-white">
             {formatPrice(listing.price)}
@@ -81,21 +90,21 @@ export function ListingCard({ listing }: { listing: Listing }) {
         </div>
       </Link>
 
-      {/* محتوى البطاقة */}
       <div className="flex flex-1 flex-col p-4">
-        {/* القسم */}
         <div className="mb-2">
           <span className="badge">{listing.category || "إعلان"}</span>
         </div>
 
-        {/* العنوان */}
-        <Link href={`/listings/${listing.id}`} className="group/title">
+        <Link
+          href={`/listings/${listing.id}`}
+          prefetch={false}
+          className="group/title"
+        >
           <h3 className="line-clamp-2 min-h-[2.75rem] text-base font-black leading-snug text-slate-950 transition-colors group-hover/title:text-brand-700 dark:text-white dark:group-hover/title:text-brand-300">
             {listing.title}
           </h3>
         </Link>
 
-        {/* الموقع والمواصفات السريعة */}
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
           <span className="inline-flex items-center gap-1">
             <MapPin size={13} className="text-brand-700/70 dark:text-brand-300/70" />
@@ -115,10 +124,10 @@ export function ListingCard({ listing }: { listing: Listing }) {
           ) : null}
         </div>
 
-        {/* أزرار الإجراءات */}
         <div className="mt-auto grid grid-cols-3 gap-2 pt-4">
           <Link
             href={`/listings/${listing.id}`}
+            prefetch={false}
             className="btn-primary !py-2 !px-2 !text-xs"
           >
             التفاصيل
@@ -146,3 +155,21 @@ export function ListingCard({ listing }: { listing: Listing }) {
     </article>
   );
 }
+
+/**
+ * memo: ListingCard لا يحتاج re-render إلا عند تغيّر بيانات الإعلان نفسه.
+ * مع مقارنة سطحية على الحقول المهمة فقط (id, status, price, views) - لأن
+ * بقية الحقول لا تتغيّر بعد التحميل عملياً.
+ */
+export const ListingCard = memo(ListingCardImpl, (prev, next) => {
+  const a = prev.listing;
+  const b = next.listing;
+  return (
+    a.id === b.id &&
+    a.status === b.status &&
+    a.price === b.price &&
+    a.views === b.views &&
+    a.featured === b.featured &&
+    prev.priority === next.priority
+  );
+});

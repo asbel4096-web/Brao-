@@ -51,7 +51,7 @@ export function ListingsGrid() {
       {loading ? (
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="skeleton h-80" />
+            <div key={i} className="skeleton aspect-[4/3]" />
           ))}
         </div>
       ) : error ? (
@@ -69,8 +69,9 @@ export function ListingsGrid() {
         </div>
       ) : (
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {items.map((it) => (
-            <ListingCard key={it.id} listing={it} />
+          {items.map((it, idx) => (
+            // أول 2 بطاقتين بأولوية لتحسين LCP (largest contentful paint)
+            <ListingCard key={it.id} listing={it} priority={idx < 2} />
           ))}
         </div>
       )}

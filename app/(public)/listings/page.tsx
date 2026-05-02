@@ -1,8 +1,8 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState, useDeferredValue, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
+import { collection, limit, onSnapshot, orderBy, query, where } from "firebase/firestore";
 import { Filter, X } from "lucide-react";
 import { db } from "@/lib/firebase";
 import {
@@ -14,6 +14,9 @@ import {
 import { ListingCard } from "@/components/listing-card";
 import type { Listing } from "@/lib/types";
 
+// حد أقصى للنتائج المسحوبة من Firestore (تجنّب جلب آلاف المستندات)
+const MAX_LISTINGS = 200;
+
 function ListingsContent() {
   const params = useSearchParams();
   const router = useRouter();
@@ -23,7 +26,6 @@ function ListingsContent() {
   const [showFilters, setShowFilters] = useState(false);
 
   const q0 = params.get("q") || "";
-  // ندعم slug إنجليزي أو اسم عربي في URL ونحوّله للاسم العربي للفلترة
   const catRaw = params.get("category") || "";
   const cat0 = resolveCategoryName(catRaw);
   const city0 = params.get("city") || "";
@@ -38,17 +40,22 @@ function ListingsContent() {
   const [minPrice, setMinPrice] = useState(min0);
   const [maxPrice, setMaxPrice] = useState(max0);
 
-  // مزامنة الحالة المحلية مع URL
+  // ✨ useDeferredValue يجعل الكتابة في حقل البحث سلسة جداً
+  // (يفصل تحديث الـ input عن إعادة فلترة القائمة الكبيرة)
+  const deferredSearch = useDeferredValue(search);
+
   useEffect(() => {
     setSearch(q0); setCategory(cat0); setCity(city0);
     setSort(sort0); setMinPrice(min0); setMaxPrice(max0);
   }, [q0, cat0, city0, sort0, min0, max0]);
 
   useEffect(() => {
+    // ✨ نضيف limit في الاستعلام نفسه - يقلّل bandwidth وreads
     const qRef = query(
       collection(db, "listings"),
       where("status", "==", "approved"),
-      orderBy("createdAt", "desc")
+      orderBy("createdAt", "desc"),
+      limit(MAX_LISTINGS)
     );
     const unsub = onSnapshot(
       qRef,
@@ -64,9 +71,10 @@ function ListingsContent() {
     return () => unsub();
   }, []);
 
+  // ✨ فلترة محسّنة: تستخدم deferredSearch لمنع flicker أثناء الكتابة
   const filtered = useMemo(() => {
-    let arr = listings.slice();
-    const s = search.trim().toLowerCase();
+    let arr = listings;
+    const s = deferredSearch.trim().toLowerCase();
     if (s) {
       arr = arr.filter((it) => {
         const t = `${it.title || ""} ${it.description || ""} ${it.sellerName || ""} ${it.brand || ""} ${it.model || ""}`.toLowerCase();
@@ -75,18 +83,27 @@ function ListingsContent() {
     }
     if (category) arr = arr.filter((it) => it.category === category);
     if (city) arr = arr.filter((it) => it.city === city);
-    if (minPrice) arr = arr.filter((it) => Number(it.price) >= Number(minPrice));
-    if (maxPrice) arr = arr.filter((it) => Number(it.price) <= Number(maxPrice));
+    if (minPrice) {
+      const min = Number(minPrice);
+      arr = arr.filter((it) => Number(it.price) >= min);
+    }
+    if (maxPrice) {
+      const max = Number(maxPrice);
+      arr = arr.filter((it) => Number(it.price) <= max);
+    }
 
-    if (sort === "price_asc") arr.sort((a, b) => Number(a.price) - Number(b.price));
-    if (sort === "price_desc") arr.sort((a, b) => Number(b.price) - Number(a.price));
+    if (sort === "price_asc" || sort === "price_desc") {
+      // نسخ قبل الترتيب لتجنّب طفرات على المصفوفة الأصلية
+      arr = [...arr];
+      const factor = sort === "price_asc" ? 1 : -1;
+      arr.sort((a, b) => (Number(a.price) - Number(b.price)) * factor);
+    }
     return arr;
-  }, [listings, search, category, city, sort, minPrice, maxPrice]);
+  }, [listings, deferredSearch, category, city, sort, minPrice, maxPrice]);
 
-  const applyToUrl = () => {
+  const applyToUrl = useCallback(() => {
     const sp = new URLSearchParams();
     if (search) sp.set("q", search);
-    // نحفظ القسم في URL كـ slug للحصول على روابط نظيفة
     if (category) {
       const slug = resolveCategorySlug(category);
       sp.set("category", slug || category);
@@ -97,14 +114,14 @@ function ListingsContent() {
     if (maxPrice) sp.set("max", maxPrice);
     router.push(`/listings${sp.toString() ? "?" + sp.toString() : ""}`);
     setShowFilters(false);
-  };
+  }, [search, category, city, sort, minPrice, maxPrice, router]);
 
-  const clearAll = () => {
+  const clearAll = useCallback(() => {
     setSearch(""); setCategory(""); setCity("");
     setSort("newest"); setMinPrice(""); setMaxPrice("");
     router.push("/listings");
     setShowFilters(false);
-  };
+  }, [router]);
 
   const activeFiltersCount = [category, city, minPrice, maxPrice, search]
     .filter(Boolean).length;
@@ -140,7 +157,6 @@ function ListingsContent() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
-        {/* Filters - desktop */}
         <FilterPanel
           search={search} setSearch={setSearch}
           category={category} setCategory={setCategory}
@@ -152,7 +168,6 @@ function ListingsContent() {
           className="hidden lg:block sticky top-24 self-start"
         />
 
-        {/* Filters - mobile drawer */}
         {showFilters && (
           <div className="lg:hidden fixed inset-0 z-50 flex items-end bg-black/50">
             <div className="w-full bg-white dark:bg-slate-900 rounded-t-3xl p-5 max-h-[85vh] overflow-y-auto">
@@ -180,11 +195,10 @@ function ListingsContent() {
           </div>
         )}
 
-        {/* Results */}
         <div>
           {loading ? (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {[...Array(6)].map((_, i) => <div key={i} className="skeleton h-80" />)}
+              {[...Array(6)].map((_, i) => <div key={i} className="skeleton aspect-[4/3]" />)}
             </div>
           ) : error ? (
             <div className="card border-rose-200 bg-rose-50 p-6 text-rose-700">{error}</div>
@@ -199,8 +213,8 @@ function ListingsContent() {
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {filtered.map((it) => (
-                <ListingCard key={it.id} listing={it} />
+              {filtered.map((it, idx) => (
+                <ListingCard key={it.id} listing={it} priority={idx < 2} />
               ))}
             </div>
           )}

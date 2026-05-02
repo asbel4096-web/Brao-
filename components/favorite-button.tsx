@@ -1,9 +1,9 @@
 "use client";
 
 import { Heart } from "lucide-react";
-import { useState } from "react";
+import { memo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useFavorites } from "@/hooks/useFavorites";
+import { useFavoriteState } from "@/hooks/useFavorites";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Listing } from "@/lib/types";
 
@@ -14,7 +14,7 @@ interface Props {
   variant?: "icon" | "button";
 }
 
-export function FavoriteButton({
+function FavoriteButtonImpl({
   listing,
   className = "",
   size = 18,
@@ -22,28 +22,30 @@ export function FavoriteButton({
 }: Props) {
   const { user } = useAuth();
   const router = useRouter();
-  const { isFavorited, toggle } = useFavorites();
+  const { isFav: liked, toggle } = useFavoriteState(listing.id);
   const [busy, setBusy] = useState(false);
-  const liked = isFavorited(listing.id);
 
-  const handle = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!user) {
-      router.push(`/login?redirect=/listings/${listing.id}`);
-      return;
-    }
-    if (busy) return;
-    setBusy(true);
-    try {
-      await toggle(listing);
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error("toggle favorite", err);
-    } finally {
-      setBusy(false);
-    }
-  };
+  const handle = useCallback(
+    async (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!user) {
+        router.push(`/login?redirect=/listings/${listing.id}`);
+        return;
+      }
+      if (busy) return;
+      setBusy(true);
+      try {
+        await toggle(listing);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error("toggle favorite", err);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [user, busy, toggle, listing, router]
+  );
 
   if (variant === "button") {
     return (
@@ -74,7 +76,6 @@ export function FavoriteButton({
     );
   }
 
-  // icon variant — للأركان والصور
   return (
     <button
       type="button"
@@ -99,3 +100,16 @@ export function FavoriteButton({
     </button>
   );
 }
+
+/**
+ * memo: لا يعيد الـ render إلا عند تغيّر listing.id فعلياً.
+ * مهم في grids الكبيرة حيث 20+ FavoriteButton يُعرضون معاً.
+ */
+export const FavoriteButton = memo(FavoriteButtonImpl, (prev, next) => {
+  return (
+    prev.listing.id === next.listing.id &&
+    prev.variant === next.variant &&
+    prev.className === next.className &&
+    prev.size === next.size
+  );
+});
