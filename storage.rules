@@ -1,0 +1,31 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() { return request.auth != null; }
+    function isImage() { return request.resource.contentType.matches('image/.*'); }
+    function maxSize(mb) { return request.resource.size < mb * 1024 * 1024; }
+
+    // صور الإعلانات: المالك فقط يكتب، الجميع يقرأ
+    match /listing-images/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if signedIn()
+        && request.auth.uid == userId
+        && isImage()
+        && maxSize(10);
+    }
+
+    // صور المستخدم
+    match /users/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if signedIn()
+        && request.auth.uid == userId
+        && isImage()
+        && maxSize(5);
+    }
+
+    // افتراض: لا شيء آخر
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

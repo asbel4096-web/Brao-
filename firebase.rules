@@ -1,0 +1,101 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isMe(uid) { return signedIn() && request.auth.uid == uid; }
+
+    // ضع بريد المشرفين هنا. الأفضل مع الوقت ضبط custom claim 'admin'.
+    function isAdmin() {
+      return signedIn() && (
+        request.auth.token.admin == true ||
+        request.auth.token.email in [
+          'admin@example.com'
+        ]
+      );
+    }
+
+    // يمنع تغيير الحقول المحمية (status/featured/views/...)
+    function ownerSafeUpdate() {
+      return signedIn()
+        && resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.status == resource.data.status
+        && request.resource.data.featured == resource.data.featured
+        && request.resource.data.views == resource.data.views;
+    }
+
+    // ===== USERS =====
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if isMe(userId);
+      allow update: if isMe(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ===== LISTINGS =====
+    match /listings/{listingId} {
+      allow read: if true;
+
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.status == 'pending';
+
+      // المالك يحدّث المحتوى فقط — والإعلان المعدّل يعود pending داخل الكود
+      // الأدمن يحدّث أي شيء
+      allow update: if (signedIn() && resource.data.ownerId == request.auth.uid)
+                    || isAdmin();
+
+      allow delete: if (signedIn() && resource.data.ownerId == request.auth.uid)
+                    || isAdmin();
+
+      // ===== COMMENTS sub-collection =====
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if signedIn()
+          && request.resource.data.userId == request.auth.uid;
+        allow delete: if signedIn() && (
+          resource.data.userId == request.auth.uid || isAdmin()
+        );
+        allow update: if false;
+      }
+    }
+
+    // ===== FAVORITES (per user, doc id = listingId) =====
+    match /users/{userId}/favorites/{listingId} {
+      allow read: if isMe(userId) || isAdmin();
+      allow create, update: if isMe(userId);
+      allow delete: if isMe(userId);
+    }
+
+    // ===== CHATS =====
+    match /chats/{chatId} {
+      allow read: if signedIn() && request.auth.uid in resource.data.participants;
+      allow create: if signedIn()
+        && request.auth.uid in request.resource.data.participants
+        && request.resource.data.participants.size() == 2;
+      allow update: if signedIn()
+        && request.auth.uid in resource.data.participants;
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        allow read: if signedIn()
+          && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+        allow create: if signedIn()
+          && request.resource.data.senderId == request.auth.uid
+          && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+        allow update, delete: if false;
+      }
+    }
+
+    // ===== NOTIFICATIONS (per-user feed) =====
+    match /notifications/{notificationId} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      // أي مستخدم مسجّل يستطيع إنشاء إشعار لمستخدم آخر (مطلوب لرسائل وموافقات)
+      allow create: if signedIn();
+      // فقط صاحب الإشعار يحدّثه (لتعليمه مقروءاً)
+      allow update: if signedIn() && resource.data.userId == request.auth.uid;
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+    }
+  }
+}

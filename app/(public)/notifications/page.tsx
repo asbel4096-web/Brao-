@@ -1,0 +1,182 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  collection, deleteDoc, doc, onSnapshot, orderBy, query, updateDoc, where, writeBatch,
+} from "firebase/firestore";
+import {
+  Bell, CheckCheck, MessageCircle, Check, X, Trash2, AlertCircle,
+} from "lucide-react";
+import { db } from "@/lib/firebase";
+import { useAuth } from "@/contexts/AuthContext";
+import { timeAgo } from "@/lib/utils";
+import type { AppNotification } from "@/lib/types";
+
+export default function NotificationsPage() {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
+  const [items, setItems] = useState<AppNotification[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      router.replace("/login?redirect=/notifications");
+      return;
+    }
+    const q = query(
+      collection(db, "notifications"),
+      where("userId", "==", user.uid),
+      orderBy("createdAt", "desc")
+    );
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        setItems(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })));
+        setLoading(false);
+      },
+      () => setLoading(false)
+    );
+    return () => unsub();
+  }, [user, authLoading, router]);
+
+  const markRead = async (id: string) => {
+    try {
+      await updateDoc(doc(db, "notifications", id), { read: true });
+    } catch {/* ok */}
+  };
+
+  const remove = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, "notifications", id));
+    } catch {/* ok */}
+  };
+
+  const markAllRead = async () => {
+    if (!user) return;
+    const unread = items.filter((n) => !n.read);
+    if (!unread.length) return;
+    const batch = writeBatch(db);
+    unread.forEach((n) => batch.update(doc(db, "notifications", n.id), { read: true }));
+    try {
+      await batch.commit();
+    } catch {/* ok */}
+  };
+
+  if (authLoading || !user) {
+    return (
+      <section className="container py-10">
+        <div className="card mx-auto max-w-md p-8 text-center text-slate-500">
+          جارٍ التحميل...
+        </div>
+      </section>
+    );
+  }
+
+  const unreadCount = items.filter((n) => !n.read).length;
+
+  return (
+    <section className="container py-6 sm:py-10">
+      <div className="mx-auto max-w-3xl">
+        <div className="mb-5 flex items-end justify-between gap-3">
+          <div>
+            <h1 className="section-title flex items-center gap-2">
+              <Bell /> الإشعارات
+            </h1>
+            <p className="section-subtitle">
+              {unreadCount > 0 ? `${unreadCount} غير مقروء` : "كل الإشعارات مقروءة"}
+            </p>
+          </div>
+          {unreadCount > 0 && (
+            <button onClick={markAllRead} className="btn-secondary">
+              <CheckCheck size={16} /> تعليم الكل كمقروء
+            </button>
+          )}
+        </div>
+
+        {loading ? (
+          <div className="space-y-3">
+            {[...Array(3)].map((_, i) => <div key={i} className="skeleton h-20" />)}
+          </div>
+        ) : items.length === 0 ? (
+          <div className="card p-10 text-center">
+            <Bell size={48} className="mx-auto text-slate-300" />
+            <p className="mt-4 text-slate-600 dark:text-slate-300">
+              لا توجد إشعارات بعد.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {items.map((n) => {
+              const Icon =
+                n.type === "new_message" ? MessageCircle :
+                n.type === "listing_approved" ? Check :
+                n.type === "listing_rejected" ? X :
+                AlertCircle;
+              const tone =
+                n.type === "listing_approved" ? "text-emerald-700" :
+                n.type === "listing_rejected" ? "text-rose-700" :
+                "text-brand-700 dark:text-brand-300";
+              return (
+                <div
+                  key={n.id}
+                  className={`card p-4 transition ${
+                    !n.read ? "border-brand-300 bg-brand-50/40 dark:bg-brand-900/10" : ""
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`mt-0.5 ${tone}`}>
+                      <Icon size={20} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="text-sm font-black dark:text-white">
+                          {n.title}
+                        </h3>
+                        <span className="text-xs text-slate-500 shrink-0">
+                          {timeAgo(n.createdAt)}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                        {n.body}
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {n.link && (
+                          <Link
+                            href={n.link}
+                            onClick={() => markRead(n.id)}
+                            className="btn-ghost !px-2 !py-1 !text-xs"
+                          >
+                            فتح
+                          </Link>
+                        )}
+                        {!n.read && (
+                          <button
+                            type="button"
+                            onClick={() => markRead(n.id)}
+                            className="btn-ghost !px-2 !py-1 !text-xs"
+                          >
+                            <Check size={12} /> مقروء
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => remove(n.id)}
+                          className="btn-ghost !px-2 !py-1 !text-xs text-rose-600"
+                        >
+                          <Trash2 size={12} /> حذف
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
