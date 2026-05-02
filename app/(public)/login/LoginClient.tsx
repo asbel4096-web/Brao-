@@ -33,6 +33,7 @@ export default function LoginClient() {
   const [sendingCode, setSendingCode] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [confirmation, setConfirmation] = useState<ConfirmationResult | null>(null);
+  const [phoneAuthUnavailable, setPhoneAuthUnavailable] = useState(false);
   const recaptchaRef = useRef<HTMLDivElement | null>(null);
 
   const redirectTo = params.get("redirect") || "/profile";
@@ -44,7 +45,7 @@ export default function LoginClient() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!recaptchaRef.current) return;
-    if (window.recaptchaVerifier || user) return;
+    if (window.recaptchaVerifier || user || phoneAuthUnavailable) return;
 
     try {
       window.recaptchaVerifier = new RecaptchaVerifier(auth, recaptchaRef.current, {
@@ -68,10 +69,9 @@ export default function LoginClient() {
         window.recaptchaVerifier?.clear();
         window.recaptchaVerifier = undefined;
       } catch {
-        // ignore cleanup errors
       }
     };
-  }, [user]);
+  }, [user, phoneAuthUnavailable]);
 
   const handleGoogle = async () => {
     if (googleLoading) return;
@@ -96,9 +96,7 @@ export default function LoginClient() {
       } else if (errorCode === "auth/cancelled-popup-request") {
         setError("اضغط مرة واحدة فقط على زر Google.");
       } else if (errorCode === "auth/unauthorized-domain") {
-        setError(
-          "هذا الدومين غير مصرح به في Firebase. أضفه في Authentication > Settings > Authorized domains."
-        );
+        setError("هذا الدومين غير مصرح به في Firebase. أضفه في Authentication > Settings > Authorized domains.");
       } else {
         setError(firebaseError?.message || "فشل تسجيل الدخول عبر Google.");
       }
@@ -137,7 +135,15 @@ export default function LoginClient() {
     } catch (err: unknown) {
       console.error("Send code error:", err);
 
-      const firebaseError = err as { message?: string };
+      const firebaseError = err as { code?: string; message?: string };
+
+      if (firebaseError?.code === "auth/billing-not-enabled") {
+        setPhoneAuthUnavailable(true);
+        setConfirmation(null);
+        setError("تسجيل الدخول برقم الهاتف غير متاح حاليًا. استخدم تسجيل الدخول عبر Google.");
+        return;
+      }
+
       setError(
         firebaseError?.message ||
           "فشل إرسال الرمز. تأكد من الرقم وreCAPTCHA والدومينات المصرّح بها."
@@ -240,46 +246,54 @@ export default function LoginClient() {
               </div>
             </div>
 
-            <label className="label">رقم الهاتف</label>
-            <input
-              dir="ltr"
-              className="input mb-3"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+2189xxxxxxxx"
-            />
+            {phoneAuthUnavailable ? (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-700">
+                تسجيل الدخول برقم الهاتف غير متاح حاليًا في هذا المشروع. استخدم تسجيل الدخول عبر Google إلى أن يتم تفعيل Billing في Firebase.
+              </div>
+            ) : (
+              <>
+                <label className="label">رقم الهاتف</label>
+                <input
+                  dir="ltr"
+                  className="input mb-3"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+2189xxxxxxxx"
+                />
 
-            <div className="my-3 min-h-[78px] rounded-2xl border border-slate-200 bg-white p-2 dark:border-slate-700 dark:bg-slate-950">
-              <div ref={recaptchaRef} className="flex justify-center" />
-            </div>
+                <div className="my-3 min-h-[78px] rounded-2xl border border-slate-200 bg-white p-2 dark:border-slate-700 dark:bg-slate-950">
+                  <div ref={recaptchaRef} className="flex justify-center" />
+                </div>
 
-            <button
-              type="button"
-              onClick={handleSendCode}
-              disabled={sendingCode}
-              className="btn-secondary mb-3 w-full"
-            >
-              {sendingCode ? "جارٍ الإرسال..." : "إرسال رمز التحقق"}
-            </button>
+                <button
+                  type="button"
+                  onClick={handleSendCode}
+                  disabled={sendingCode}
+                  className="btn-secondary mb-3 w-full"
+                >
+                  {sendingCode ? "جارٍ الإرسال..." : "إرسال رمز التحقق"}
+                </button>
 
-            <label className="label">رمز التحقق</label>
-            <input
-              dir="ltr"
-              className="input mb-3"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="123456"
-              inputMode="numeric"
-            />
+                <label className="label">رمز التحقق</label>
+                <input
+                  dir="ltr"
+                  className="input mb-3"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  placeholder="123456"
+                  inputMode="numeric"
+                />
 
-            <button
-              type="button"
-              onClick={handleVerifyCode}
-              disabled={verifying || !confirmation}
-              className="btn-action w-full"
-            >
-              {verifying ? "جارٍ التحقق..." : "تأكيد الرمز ودخول"}
-            </button>
+                <button
+                  type="button"
+                  onClick={handleVerifyCode}
+                  disabled={verifying || !confirmation}
+                  className="btn-action w-full"
+                >
+                  {verifying ? "جارٍ التحقق..." : "تأكيد الرمز ودخول"}
+                </button>
+              </>
+            )}
           </div>
         </div>
 
