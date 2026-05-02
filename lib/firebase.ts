@@ -12,8 +12,17 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+// TEMP DEBUG — احذفه بعد التحقق
+if (typeof window !== "undefined") {
+  console.log("[Firebase Debug] projectId:", firebaseConfig.projectId);
+  console.log("[Firebase Debug] authDomain:", firebaseConfig.authDomain);
+  console.log(
+    "[Firebase Debug] apiKey(first 10):",
+    firebaseConfig.apiKey?.slice(0, 10)
+  );
+}
+
 if (typeof window !== "undefined" && !firebaseConfig.apiKey) {
-  // eslint-disable-next-line no-console
   console.error(
     "[Firebase] متغيرات NEXT_PUBLIC_FIREBASE_* غير مضبوطة. انسخ .env.example إلى .env.local."
   );
@@ -24,6 +33,7 @@ const app: FirebaseApp = getApps().length
   : initializeApp(firebaseConfig);
 
 export const auth: Auth = getAuth(app);
+
 if (typeof window !== "undefined") {
   auth.useDeviceLanguage();
 }
