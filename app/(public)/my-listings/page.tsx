@@ -6,18 +6,22 @@ import { useRouter } from "next/navigation";
 import {
   collection, deleteDoc, doc, onSnapshot, orderBy, query, where,
 } from "firebase/firestore";
-import { Plus, Edit2, Trash2, Eye, MessageSquare } from "lucide-react";
+import {
+  Plus, LayoutGrid, CheckCircle2, Clock, AlertCircle, Eye, FileText,
+} from "lucide-react";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { formatPrice, timeAgo } from "@/lib/utils";
+import { MyListingCard } from "@/components/my-listing-card";
 import type { Listing } from "@/lib/types";
+
+type FilterKey = "all" | "approved" | "pending" | "rejected";
 
 export default function MyListingsPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [items, setItems] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "approved" | "pending" | "rejected">("all");
+  const [filter, setFilter] = useState<FilterKey>("all");
 
   useEffect(() => {
     if (authLoading) return;
@@ -63,6 +67,8 @@ export default function MyListingsPage() {
     rejected: items.filter((i) => i.status === "rejected").length,
   };
 
+  const totalViews = items.reduce((sum, it) => sum + (it.views || 0), 0);
+
   if (authLoading || !user) {
     return (
       <section className="container py-10">
@@ -75,119 +81,154 @@ export default function MyListingsPage() {
 
   return (
     <section className="container py-6 sm:py-10">
+      {/* رأس الصفحة */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="section-title">إعلاناتي</h1>
           <p className="section-subtitle">إدارة وتعديل إعلاناتك ومتابعة حالتها.</p>
         </div>
-        <Link href="/add-listing" className="btn-action">
+        <Link href="/add-listing" className="btn-action self-start sm:self-end">
           <Plus size={18} /> إضافة إعلان جديد
         </Link>
       </div>
 
-      {/* Filter tabs */}
+      {/* بطاقات الإحصائيات */}
+      {!loading && items.length > 0 && (
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <StatCard
+            icon={LayoutGrid}
+            label="إجمالي الإعلانات"
+            value={counts.all}
+            color="brand"
+          />
+          <StatCard
+            icon={CheckCircle2}
+            label="معتمد"
+            value={counts.approved}
+            color="emerald"
+          />
+          <StatCard
+            icon={Clock}
+            label="قيد المراجعة"
+            value={counts.pending}
+            color="amber"
+          />
+          <StatCard
+            icon={Eye}
+            label="إجمالي المشاهدات"
+            value={totalViews}
+            color="brand"
+          />
+        </div>
+      )}
+
+      {/* تبويبات الفلترة */}
       <div className="mb-5 flex gap-2 overflow-x-auto no-scrollbar pb-1">
         {([
-          { key: "all", label: "الكل" },
-          { key: "approved", label: "معتمد" },
-          { key: "pending", label: "قيد المراجعة" },
-          { key: "rejected", label: "مرفوض" },
-        ] as const).map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setFilter(t.key)}
-            className={`shrink-0 rounded-2xl px-4 py-2 text-sm font-bold transition ${
-              filter === t.key
-                ? "bg-brand-700 text-white shadow-blue"
-                : "bg-white text-slate-700 border border-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-700"
-            }`}
-          >
-            {t.label} ({counts[t.key]})
-          </button>
-        ))}
+          { key: "all", label: "الكل", icon: LayoutGrid },
+          { key: "approved", label: "معتمد", icon: CheckCircle2 },
+          { key: "pending", label: "قيد المراجعة", icon: Clock },
+          { key: "rejected", label: "مرفوض", icon: AlertCircle },
+        ] as const).map((t) => {
+          const Icon = t.icon;
+          const active = filter === t.key;
+          return (
+            <button
+              key={t.key}
+              onClick={() => setFilter(t.key)}
+              className={`shrink-0 inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold transition-all ${
+                active
+                  ? "bg-brand-700 text-white shadow-blue"
+                  : "border border-slate-200 bg-white text-slate-700 hover:border-brand-300 hover:bg-brand-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-brand-700 dark:hover:bg-slate-800"
+              }`}
+            >
+              <Icon size={15} />
+              <span>{t.label}</span>
+              <span
+                className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-black ${
+                  active
+                    ? "bg-white/20 text-white"
+                    : "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200"
+                }`}
+              >
+                {counts[t.key]}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
+      {/* البطاقات */}
       {loading ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {[...Array(3)].map((_, i) => <div key={i} className="skeleton h-72" />)}
+          {[...Array(3)].map((_, i) => <div key={i} className="skeleton aspect-[4/3]" />)}
         </div>
       ) : filtered.length === 0 ? (
         <div className="card p-10 text-center">
-          <p className="text-slate-600 dark:text-slate-300">
+          <FileText size={48} className="mx-auto text-slate-400" />
+          <p className="mt-4 text-slate-600 dark:text-slate-300">
             {filter === "all"
               ? "لم تنشر أي إعلان بعد."
               : "لا توجد إعلانات في هذا التصنيف."}
           </p>
-          <Link href="/add-listing" className="btn-action mt-4 inline-flex">
-            <Plus size={16} /> أنشئ إعلانك الأول
-          </Link>
+          {filter === "all" && (
+            <Link href="/add-listing" className="btn-action mt-4 inline-flex">
+              <Plus size={16} /> أنشئ إعلانك الأول
+            </Link>
+          )}
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((it) => (
-            <article key={it.id} className="card overflow-hidden p-0">
-              <div className="relative h-44 bg-slate-100 dark:bg-slate-800">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={it.images?.[0] || "/icons/car-card.svg"}
-                  alt={it.title}
-                  className="h-full w-full object-cover"
-                />
-                <span
-                  className={`absolute top-3 right-3 ${
-                    it.status === "approved"
-                      ? "badge-status-approved"
-                      : it.status === "rejected"
-                      ? "badge-status-rejected"
-                      : "badge-status-pending"
-                  }`}
-                >
-                  {it.status === "approved" ? "معتمد" : it.status === "rejected" ? "مرفوض" : "قيد المراجعة"}
-                </span>
-              </div>
-              <div className="p-4">
-                <h3 className="line-clamp-1 text-base font-black dark:text-white">
-                  {it.title}
-                </h3>
-                <p className="mt-1 text-xs text-slate-500">
-                  {it.city} • {it.category} • {timeAgo(it.createdAt)}
-                </p>
-                <div className="mt-2 text-lg font-black text-brand-700 dark:text-brand-300">
-                  {formatPrice(it.price)}
-                </div>
-                {it.status === "rejected" && it.rejectionReason && (
-                  <div className="mt-2 rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-700">
-                    سبب الرفض: {it.rejectionReason}
-                  </div>
-                )}
-                <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                  <span className="inline-flex items-center gap-1">
-                    <Eye size={12} /> {it.views || 0}
-                  </span>
-                </div>
-                <div className="mt-4 grid grid-cols-3 gap-2">
-                  <Link href={`/listings/${it.id}`} className="btn-secondary !py-2 !px-2 !text-xs">
-                    <Eye size={14} /> عرض
-                  </Link>
-                  <Link
-                    href={`/my-listings/${it.id}/edit`}
-                    className="btn-primary !py-2 !px-2 !text-xs"
-                  >
-                    <Edit2 size={14} /> تعديل
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(it.id)}
-                    className="btn-danger !py-2 !px-2 !text-xs"
-                  >
-                    <Trash2 size={14} /> حذف
-                  </button>
-                </div>
-              </div>
-            </article>
+            <MyListingCard key={it.id} listing={it} onDelete={handleDelete} />
           ))}
         </div>
       )}
     </section>
+  );
+}
+
+interface StatCardProps {
+  icon: typeof LayoutGrid;
+  label: string;
+  value: number;
+  color: "brand" | "emerald" | "amber" | "rose";
+}
+
+const STAT_COLORS = {
+  brand: {
+    iconBg: "bg-brand-50 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300",
+    valueText: "text-brand-700 dark:text-brand-300",
+  },
+  emerald: {
+    iconBg: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
+    valueText: "text-emerald-700 dark:text-emerald-300",
+  },
+  amber: {
+    iconBg: "bg-amber-50 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+    valueText: "text-amber-700 dark:text-amber-300",
+  },
+  rose: {
+    iconBg: "bg-rose-50 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300",
+    valueText: "text-rose-700 dark:text-rose-300",
+  },
+};
+
+function StatCard({ icon: Icon, label, value, color }: StatCardProps) {
+  const c = STAT_COLORS[color];
+  return (
+    <div className="card flex items-center gap-3 p-4">
+      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${c.iconBg}`}>
+        <Icon size={20} aria-hidden="true" />
+      </div>
+      <div className="min-w-0">
+        <p className="truncate text-[11px] text-slate-500 dark:text-slate-400 sm:text-xs">
+          {label}
+        </p>
+        <p className={`text-xl font-black sm:text-2xl ${c.valueText}`}>
+          {value.toLocaleString("ar-LY")}
+        </p>
+      </div>
+    </div>
   );
 }
