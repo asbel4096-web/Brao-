@@ -25,9 +25,11 @@ export default function VehicleReportPage() {
   const [report, setReport] = useState<VehicleReportResponse | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-
+  /**
+   * منطق البحث الأساسي - مفصول عن handleSubmit ليتمكّن زر "إعادة المحاولة"
+   * من استدعائه بدون الحاجة لـ FormEvent.
+   */
+  const runSearch = async () => {
     const cleaned = normalizeVin(vin);
     const v = validateVin(cleaned);
     if (!v.valid) {
@@ -54,7 +56,6 @@ export default function VehicleReportPage() {
 
       // 404: VIN غير موجود حتى في NHTSA
       if (res.status === 404) {
-        // قد يأتي json كـ VehicleReportResponse مع status=NOT_FOUND
         if (json?.status === "NOT_FOUND") {
           setReport(json as VehicleReportResponse);
         }
@@ -104,6 +105,11 @@ export default function VehicleReportPage() {
       setErrorMsg("تعذّر الاتصال بالخدمة. تحقق من الإنترنت وحاول مجدداً.");
       toast.error("تعذّر الاتصال بالخدمة.");
     }
+  };
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    void runSearch();
   };
 
   const handleClear = () => {
@@ -219,7 +225,7 @@ export default function VehicleReportPage() {
         {state === "provider_error" && (
           <ProviderErrorState
             message={errorMsg}
-            onRetry={(e) => handleSubmit(e as unknown as FormEvent)}
+            onRetry={runSearch}
           />
         )}
 
