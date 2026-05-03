@@ -9,6 +9,7 @@ import {
 import { ArrowRight, Send, MessageCircle } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
 import { createNotification } from "@/lib/notifications";
 import { formatDateTime, timeAgo } from "@/lib/utils";
 import type { ChatMessage, ChatThread } from "@/lib/types";
@@ -17,6 +18,7 @@ export default function ChatRoomPage() {
   const params = useParams<{ chatId: string }>();
   const router = useRouter();
   const { user, profile, loading: authLoading } = useAuth();
+  const toast = useToast();
 
   const [thread, setThread] = useState<ChatThread | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -55,7 +57,7 @@ export default function ChatRoomPage() {
 
         try {
           await updateDoc(chatRef, { [`unreadCount.${user.uid}`]: 0 });
-        } catch {/* ok */}
+        } catch {/* تحديث غير المقروء ليس حرجاً */}
 
         unsubThread = onSnapshot(chatRef, (s) => {
           if (s.exists()) setThread({ id: s.id, ...(s.data() as any) });
@@ -132,9 +134,7 @@ export default function ChatRoomPage() {
 
       setText("");
     } catch (err: any) {
-      // eslint-disable-next-line no-console
-      console.error("send message", err);
-      alert(err?.message || "تعذّر إرسال الرسالة.");
+      toast.error(err?.message || "تعذّر إرسال الرسالة.");
     } finally {
       setSending(false);
     }
@@ -166,13 +166,11 @@ export default function ChatRoomPage() {
   const otherUid = thread.participants.find((p) => p !== user.uid) || "";
   const other = thread.participantsInfo?.[otherUid];
 
-  // تجميع الرسائل بفاصل تاريخي عند تغيّر اليوم
   const groupedMessages = groupMessagesByDay(messages);
 
   return (
     <section className="container py-4 sm:py-6">
       <div className="mx-auto flex max-w-3xl flex-col h-[calc(100dvh-180px)] sm:h-[calc(100dvh-160px)]">
-        {/* الرأس */}
         <div className="flex items-center gap-3 rounded-3xl rounded-b-none border border-b-0 border-slate-200/80 bg-white p-3 shadow-card dark:border-slate-700/80 dark:bg-slate-900 sm:p-4">
           <Link
             href="/messages"
@@ -187,6 +185,7 @@ export default function ChatRoomPage() {
             <img
               src={other.photoURL}
               alt={other.name}
+              referrerPolicy="no-referrer"
               className="h-11 w-11 rounded-full object-cover ring-2 ring-brand-100 dark:ring-brand-900/40"
             />
           ) : (
@@ -208,7 +207,6 @@ export default function ChatRoomPage() {
           </div>
         </div>
 
-        {/* الرسائل */}
         <div
           ref={scrollRef}
           className="flex-1 overflow-y-auto border-x border-slate-200/80 bg-slate-50 p-3 dark:border-slate-700/80 dark:bg-slate-950 sm:p-4"
@@ -226,7 +224,6 @@ export default function ChatRoomPage() {
             <div className="space-y-1">
               {groupedMessages.map((group, gIdx) => (
                 <div key={gIdx} className="space-y-1.5">
-                  {/* فاصل تاريخ */}
                   <div className="my-3 flex items-center justify-center">
                     <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-bold text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
                       {group.label}
@@ -273,7 +270,6 @@ export default function ChatRoomPage() {
           )}
         </div>
 
-        {/* محرّر الإرسال */}
         <form
           onSubmit={handleSend}
           className="flex items-end gap-2 rounded-3xl rounded-t-none border border-t-0 border-slate-200/80 bg-white p-3 shadow-card dark:border-slate-700/80 dark:bg-slate-900"
@@ -305,9 +301,6 @@ export default function ChatRoomPage() {
   );
 }
 
-/**
- * جمع الرسائل في مجموعات حسب اليوم لإظهار فواصل تاريخية.
- */
 function groupMessagesByDay(messages: ChatMessage[]) {
   const groups: { label: string; items: ChatMessage[] }[] = [];
   let lastKey = "";

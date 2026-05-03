@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
+import { useConfirm } from "@/components/confirm-dialog";
 import { MyListingCard } from "@/components/my-listing-card";
 import type { Listing } from "@/lib/types";
 
@@ -19,6 +21,8 @@ type FilterKey = "all" | "approved" | "pending" | "rejected";
 export default function MyListingsPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [items, setItems] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterKey>("all");
@@ -40,21 +44,24 @@ export default function MyListingsPage() {
         setItems(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })));
         setLoading(false);
       },
-      (err) => {
-        // eslint-disable-next-line no-console
-        console.error("my listings", err);
-        setLoading(false);
-      }
+      () => setLoading(false)
     );
     return () => unsub();
   }, [user, authLoading, router]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm("هل تريد حذف هذا الإعلان؟ هذا الإجراء لا يمكن التراجع عنه.")) return;
+    const ok = await confirm({
+      title: "حذف الإعلان؟",
+      message: "هذا الإجراء لا يمكن التراجع عنه. سيتم حذف الإعلان نهائياً.",
+      confirmLabel: "حذف",
+      tone: "danger",
+    });
+    if (!ok) return;
     try {
       await deleteDoc(doc(db, "listings", id));
+      toast.success("تم حذف الإعلان.");
     } catch (err: any) {
-      alert(err?.message || "تعذّر حذف الإعلان.");
+      toast.error(err?.message || "تعذّر حذف الإعلان.");
     }
   };
 
@@ -81,7 +88,6 @@ export default function MyListingsPage() {
 
   return (
     <section className="container py-6 sm:py-10">
-      {/* رأس الصفحة */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="section-title">إعلاناتي</h1>
@@ -92,37 +98,15 @@ export default function MyListingsPage() {
         </Link>
       </div>
 
-      {/* بطاقات الإحصائيات */}
       {!loading && items.length > 0 && (
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatCard
-            icon={LayoutGrid}
-            label="إجمالي الإعلانات"
-            value={counts.all}
-            color="brand"
-          />
-          <StatCard
-            icon={CheckCircle2}
-            label="معتمد"
-            value={counts.approved}
-            color="emerald"
-          />
-          <StatCard
-            icon={Clock}
-            label="قيد المراجعة"
-            value={counts.pending}
-            color="amber"
-          />
-          <StatCard
-            icon={Eye}
-            label="إجمالي المشاهدات"
-            value={totalViews}
-            color="brand"
-          />
+          <StatCard icon={LayoutGrid} label="إجمالي الإعلانات" value={counts.all} color="brand" />
+          <StatCard icon={CheckCircle2} label="معتمد" value={counts.approved} color="emerald" />
+          <StatCard icon={Clock} label="قيد المراجعة" value={counts.pending} color="amber" />
+          <StatCard icon={Eye} label="إجمالي المشاهدات" value={totalViews} color="brand" />
         </div>
       )}
 
-      {/* تبويبات الفلترة */}
       <div className="mb-5 flex gap-2 overflow-x-auto no-scrollbar pb-1">
         {([
           { key: "all", label: "الكل", icon: LayoutGrid },
@@ -158,7 +142,6 @@ export default function MyListingsPage() {
         })}
       </div>
 
-      {/* البطاقات */}
       {loading ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {[...Array(3)].map((_, i) => <div key={i} className="skeleton aspect-[4/3]" />)}

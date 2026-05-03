@@ -12,18 +12,14 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// TEMP DEBUG — احذفه بعد التحقق
-if (typeof window !== "undefined") {
-  console.log("[Firebase Debug] projectId:", firebaseConfig.projectId);
-  console.log("[Firebase Debug] authDomain:", firebaseConfig.authDomain);
-  console.log(
-    "[Firebase Debug] apiKey(first 10):",
-    firebaseConfig.apiKey?.slice(0, 10)
-  );
-}
-
-if (typeof window !== "undefined" && !firebaseConfig.apiKey) {
-  console.error(
+// تحذير في الـ dev فقط لو متغيرات البيئة ناقصة
+if (
+  process.env.NODE_ENV !== "production" &&
+  typeof window !== "undefined" &&
+  !firebaseConfig.apiKey
+) {
+  // eslint-disable-next-line no-console
+  console.warn(
     "[Firebase] متغيرات NEXT_PUBLIC_FIREBASE_* غير مضبوطة. انسخ .env.example إلى .env.local."
   );
 }

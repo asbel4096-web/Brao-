@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
 import { formatPrice, normalizeLibyanPhone, buildChatId } from "@/lib/utils";
 import ListingComments from "@/components/listing-comments";
 import { ImageGallery } from "@/components/image-gallery";
@@ -24,6 +25,7 @@ export default function ListingDetailsPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { user, profile } = useAuth();
+  const toast = useToast();
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
   const [missing, setMissing] = useState(false);
@@ -42,13 +44,10 @@ export default function ListingDetailsPage() {
         const data = { id: snap.id, ...(snap.data() as any) } as Listing;
         setListing(data);
         setLoading(false);
-        // increment views (silent)
         try {
           await updateDoc(ref, { views: increment(1) });
-        } catch {/* ok */}
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error("load listing", err);
+        } catch {/* عدد المشاهدات ليس حرجاً */}
+      } catch {
         setMissing(true);
         setLoading(false);
       }
@@ -63,7 +62,7 @@ export default function ListingDetailsPage() {
     }
     if (!listing) return;
     if (listing.ownerId === user.uid) {
-      alert("لا يمكنك بدء دردشة مع إعلانك الخاص.");
+      toast.warning("لا يمكنك بدء دردشة مع إعلانك الخاص.");
       return;
     }
     setChatLoading(true);
@@ -97,9 +96,7 @@ export default function ListingDetailsPage() {
       }
       router.push(`/messages/${chatId}`);
     } catch (err: any) {
-      // eslint-disable-next-line no-console
-      console.error("start chat", err);
-      alert(err?.message || "تعذّر فتح الدردشة.");
+      toast.error(err?.message || "تعذّر فتح الدردشة.");
     } finally {
       setChatLoading(false);
     }
@@ -129,9 +126,7 @@ export default function ListingDetailsPage() {
   return (
     <section className="container py-6 sm:py-8">
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        {/* العمود الرئيسي */}
         <div className="space-y-6">
-          {/* المعرض - مع زر مفضلة عائم في الأعلى يساراً */}
           <div className="relative">
             <ImageGallery images={listing.images || []} alt={listing.title} />
             <div className="absolute left-4 top-4 z-10">
@@ -139,9 +134,7 @@ export default function ListingDetailsPage() {
             </div>
           </div>
 
-          {/* بطاقة العنوان والمواصفات */}
           <div className="card p-5 sm:p-6">
-            {/* الشارات والوقت */}
             <div className="flex flex-wrap items-center gap-2">
               <span className="badge">{listing.category}</span>
               {listing.featured && <span className="badge-action">مميز</span>}
@@ -150,7 +143,6 @@ export default function ListingDetailsPage() {
               )}
             </div>
 
-            {/* العنوان والسعر */}
             <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <h1 className="text-2xl font-black text-slate-950 dark:text-white sm:text-3xl">
@@ -173,7 +165,6 @@ export default function ListingDetailsPage() {
               </div>
             </div>
 
-            {/* المواصفات الأساسية */}
             <div className="mt-5 grid grid-cols-2 gap-3 border-t border-slate-100 pt-5 dark:border-slate-800 sm:grid-cols-4">
               <Spec icon={Calendar} label="السنة" value={listing.year ?? "-"} />
               <Spec
@@ -185,7 +176,6 @@ export default function ListingDetailsPage() {
               <Spec icon={Settings} label="الناقل" value={listing.transmission ?? "-"} />
             </div>
 
-            {/* مواصفات إضافية */}
             {(listing.brand || listing.model || listing.color || listing.engine) && (
               <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {listing.brand && <Spec label="الماركة" value={listing.brand} />}
@@ -195,7 +185,6 @@ export default function ListingDetailsPage() {
               </div>
             )}
 
-            {/* الوصف */}
             <div className="mt-6 border-t border-slate-100 pt-5 dark:border-slate-800">
               <h3 className="mb-3 text-base font-black dark:text-white">الوصف</h3>
               <p className="whitespace-pre-line text-[15px] leading-7 text-slate-700 dark:text-slate-200">
@@ -203,7 +192,6 @@ export default function ListingDetailsPage() {
               </p>
             </div>
 
-            {/* المميزات والعيوب */}
             {(listing.features?.length || listing.defects?.length) ? (
               <div className="mt-6 grid gap-4 border-t border-slate-100 pt-5 dark:border-slate-800 sm:grid-cols-2">
                 {listing.features?.length ? (
@@ -240,10 +228,8 @@ export default function ListingDetailsPage() {
             ) : null}
           </div>
 
-          {/* مؤشرات الجودة */}
           <ListingQualityCard listing={listing} />
 
-          {/* الموقع */}
           {(listing.address || listing.mapLink) && (
             <div className="card p-5 sm:p-6">
               <div className="flex items-center gap-2">
@@ -267,16 +253,12 @@ export default function ListingDetailsPage() {
             </div>
           )}
 
-          {/* بطاقة نصائح السلامة - تحت قسم البائع/التفاصيل كما طُلب */}
           <SafetyTipsCard />
 
-          {/* التعليقات */}
           <ListingComments listingId={listing.id} />
         </div>
 
-        {/* العمود الجانبي */}
         <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
-          {/* بطاقة التواصل */}
           <div className="card p-5 sm:p-6">
             <div className="text-sm text-slate-500 dark:text-slate-300">السعر</div>
             <div className="mt-1 text-3xl font-black text-brand-700 dark:text-brand-300 sm:text-4xl">
@@ -315,7 +297,6 @@ export default function ListingDetailsPage() {
             </div>
           </div>
 
-          {/* بطاقة البائع */}
           <div className="card p-5 sm:p-6">
             <div className="flex items-center gap-2 text-brand-700 dark:text-brand-300">
               <ShieldCheck size={18} />

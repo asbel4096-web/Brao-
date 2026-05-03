@@ -7,10 +7,14 @@ import {
 import { Trash2, MessageSquare } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
+import { useConfirm } from "@/components/confirm-dialog";
 import { timeAgo } from "@/lib/utils";
 
 export default function ListingComments({ listingId }: { listingId: string }) {
   const { user, profile, isAdmin } = useAuth();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [comments, setComments] = useState<any[]>([]);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
@@ -34,7 +38,10 @@ export default function ListingComments({ listingId }: { listingId: string }) {
 
   const handleAdd = async (e: FormEvent) => {
     e.preventDefault();
-    if (!user) return alert("سجل الدخول أولاً لإضافة تعليق.");
+    if (!user) {
+      toast.warning("سجّل الدخول أولاً لإضافة تعليق.");
+      return;
+    }
     if (!text.trim()) return;
     setSaving(true);
     try {
@@ -47,6 +54,9 @@ export default function ListingComments({ listingId }: { listingId: string }) {
         createdAt: serverTimestamp(),
       });
       setText("");
+      toast.success("تمت إضافة التعليق.");
+    } catch (err: any) {
+      toast.error(err?.message || "تعذّر إضافة التعليق.");
     } finally {
       setSaving(false);
     }
@@ -55,8 +65,19 @@ export default function ListingComments({ listingId }: { listingId: string }) {
   const handleDelete = async (id: string, userId: string) => {
     if (!user) return;
     if (user.uid !== userId && !isAdmin) return;
-    if (!confirm("حذف التعليق؟")) return;
-    await deleteDoc(doc(db, "listings", listingId, "comments", id));
+    const ok = await confirm({
+      title: "حذف التعليق؟",
+      message: "سيتم حذف التعليق نهائياً.",
+      confirmLabel: "حذف",
+      tone: "danger",
+    });
+    if (!ok) return;
+    try {
+      await deleteDoc(doc(db, "listings", listingId, "comments", id));
+      toast.success("تم حذف التعليق.");
+    } catch (err: any) {
+      toast.error(err?.message || "تعذّر حذف التعليق.");
+    }
   };
 
   return (
@@ -114,6 +135,7 @@ export default function ListingComments({ listingId }: { listingId: string }) {
                       <img
                         src={c.userPhoto}
                         alt={c.userName}
+                        referrerPolicy="no-referrer"
                         className="h-10 w-10 rounded-full object-cover"
                       />
                     ) : (

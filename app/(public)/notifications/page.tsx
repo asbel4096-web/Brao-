@@ -11,12 +11,14 @@ import {
 } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
 import { timeAgo } from "@/lib/utils";
 import type { AppNotification } from "@/lib/types";
 
 export default function NotificationsPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const toast = useToast();
   const [items, setItems] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -45,13 +47,15 @@ export default function NotificationsPage() {
   const markRead = async (id: string) => {
     try {
       await updateDoc(doc(db, "notifications", id), { read: true });
-    } catch {/* ok */}
+    } catch {/* تحديث القراءة ليس حرجاً */}
   };
 
   const remove = async (id: string) => {
     try {
       await deleteDoc(doc(db, "notifications", id));
-    } catch {/* ok */}
+    } catch (err: any) {
+      toast.error(err?.message || "تعذّر حذف الإشعار.");
+    }
   };
 
   const markAllRead = async () => {
@@ -62,7 +66,10 @@ export default function NotificationsPage() {
     unread.forEach((n) => batch.update(doc(db, "notifications", n.id), { read: true }));
     try {
       await batch.commit();
-    } catch {/* ok */}
+      toast.success("تم تعليم كل الإشعارات كمقروءة.");
+    } catch (err: any) {
+      toast.error(err?.message || "تعذّر تحديث الإشعارات.");
+    }
   };
 
   if (authLoading || !user) {
@@ -80,17 +87,19 @@ export default function NotificationsPage() {
   return (
     <section className="container py-6 sm:py-10">
       <div className="mx-auto max-w-3xl">
-        <div className="mb-5 flex items-end justify-between gap-3">
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="section-title flex items-center gap-2">
               <Bell /> الإشعارات
             </h1>
             <p className="section-subtitle">
-              {unreadCount > 0 ? `${unreadCount} غير مقروء` : "كل الإشعارات مقروءة"}
+              {unreadCount > 0
+                ? `${unreadCount.toLocaleString("ar-LY")} غير مقروء`
+                : "كل الإشعارات مقروءة"}
             </p>
           </div>
           {unreadCount > 0 && (
-            <button onClick={markAllRead} className="btn-secondary">
+            <button onClick={markAllRead} className="btn-secondary self-start sm:self-end">
               <CheckCheck size={16} /> تعليم الكل كمقروء
             </button>
           )}
@@ -102,9 +111,14 @@ export default function NotificationsPage() {
           </div>
         ) : items.length === 0 ? (
           <div className="card p-10 text-center">
-            <Bell size={48} className="mx-auto text-slate-300" />
-            <p className="mt-4 text-slate-600 dark:text-slate-300">
-              لا توجد إشعارات بعد.
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
+              <Bell size={32} />
+            </div>
+            <p className="mt-4 text-base font-black text-slate-900 dark:text-white">
+              لا توجد إشعارات بعد
+            </p>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              ستظهر هنا التحديثات عن إعلاناتك ورسائلك.
             </p>
           </div>
         ) : (
@@ -116,26 +130,39 @@ export default function NotificationsPage() {
                 n.type === "listing_rejected" ? X :
                 AlertCircle;
               const tone =
-                n.type === "listing_approved" ? "text-emerald-700" :
-                n.type === "listing_rejected" ? "text-rose-700" :
+                n.type === "listing_approved" ? "text-emerald-700 dark:text-emerald-300" :
+                n.type === "listing_rejected" ? "text-rose-700 dark:text-rose-300" :
                 "text-brand-700 dark:text-brand-300";
+              const iconBg =
+                n.type === "listing_approved" ? "bg-emerald-50 dark:bg-emerald-900/30" :
+                n.type === "listing_rejected" ? "bg-rose-50 dark:bg-rose-900/30" :
+                "bg-brand-50 dark:bg-brand-900/30";
+
               return (
                 <div
                   key={n.id}
                   className={`card p-4 transition ${
-                    !n.read ? "border-brand-300 bg-brand-50/40 dark:bg-brand-900/10" : ""
+                    !n.read
+                      ? "border-brand-300 bg-brand-50/40 dark:border-brand-700 dark:bg-brand-900/10"
+                      : ""
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    <div className={`mt-0.5 ${tone}`}>
-                      <Icon size={20} />
+                    <div
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${iconBg} ${tone}`}
+                    >
+                      <Icon size={18} />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
-                        <h3 className="text-sm font-black dark:text-white">
+                        <h3
+                          className={`text-sm dark:text-white ${
+                            !n.read ? "font-black" : "font-bold"
+                          }`}
+                        >
                           {n.title}
                         </h3>
-                        <span className="text-xs text-slate-500 shrink-0">
+                        <span className="shrink-0 text-xs text-slate-500">
                           {timeAgo(n.createdAt)}
                         </span>
                       </div>
@@ -164,7 +191,7 @@ export default function NotificationsPage() {
                         <button
                           type="button"
                           onClick={() => remove(n.id)}
-                          className="btn-ghost !px-2 !py-1 !text-xs text-rose-600"
+                          className="btn-ghost !px-2 !py-1 !text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30"
                         >
                           <Trash2 size={12} /> حذف
                         </button>

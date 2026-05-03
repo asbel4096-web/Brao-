@@ -8,20 +8,34 @@ import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useToast } from "@/contexts/ToastContext";
+import { useConfirm } from "@/components/confirm-dialog";
 
 export default function SettingsPage() {
   const router = useRouter();
   const { user, loading, isAdmin } = useAuth();
   const { theme, toggle } = useTheme();
+  const toast = useToast();
+  const confirm = useConfirm();
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login?redirect=/settings");
   }, [user, loading, router]);
 
   const handleLogout = async () => {
-    if (!confirm("هل تريد تسجيل الخروج؟")) return;
-    await signOut(auth);
-    router.replace("/");
+    const ok = await confirm({
+      title: "تسجيل الخروج؟",
+      message: "ستحتاج لتسجيل الدخول مرة أخرى للوصول إلى حسابك.",
+      confirmLabel: "تسجيل الخروج",
+      tone: "warning",
+    });
+    if (!ok) return;
+    try {
+      await signOut(auth);
+      router.replace("/");
+    } catch (err: any) {
+      toast.error(err?.message || "تعذّر تسجيل الخروج.");
+    }
   };
 
   if (loading || !user) {
