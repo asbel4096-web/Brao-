@@ -19,6 +19,7 @@ import { FavoriteButton } from "@/components/favorite-button";
 import { ShareButton } from "@/components/share-button";
 import { SafetyTipsCard } from "@/components/safety-tips-card";
 import { ListingQualityCard } from "@/components/listing-quality-card";
+import { OwnerStatsBar } from "@/components/owner-stats-bar";
 import type { Listing } from "@/lib/types";
 
 export default function ListingDetailsPage() {
@@ -227,6 +228,14 @@ export default function ListingDetailsPage() {
               </div>
             ) : null}
           </div>
+
+          {/* شريط الإحصائيات الخاصة - يظهر للمالك فقط */}
+          <OwnerStatsBar
+            listingId={listing.id}
+            ownerId={listing.ownerId}
+            initialViews={listing.views}
+            variant="compact"
+          />
 
           <ListingQualityCard listing={listing} />
 

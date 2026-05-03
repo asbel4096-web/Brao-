@@ -7,6 +7,7 @@ import { MapPin, Phone, MessageCircle, Eye, Calendar, Gauge } from "lucide-react
 import type { Listing } from "@/lib/types";
 import { formatPrice, normalizeLibyanPhone } from "@/lib/utils";
 import { FavoriteButton } from "./favorite-button";
+import { OwnerOnly } from "./owner-only";
 
 const FALLBACK = "/icons/car-card.svg";
 
@@ -34,7 +35,6 @@ function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
         dark:border-slate-700/80 dark:bg-slate-900 dark:hover:border-brand-700
       "
     >
-      {/* الصورة — next/image يُحسّن الحجم/التنسيق تلقائياً */}
       <Link
         href={`/listings/${listing.id}`}
         prefetch={false}
@@ -77,10 +77,20 @@ function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
           <FavoriteButton listing={listing} />
         </div>
 
+        {/*
+          عداد المشاهدات يظهر فقط للمالك.
+          OwnerOnly يقارن user.uid مع listing.ownerId ويرجع null للزوار العاديين.
+          الشارة محسَّنة بشعار "خاص بك" ليفهم المالك أنها مرئية له فقط.
+        */}
         {typeof listing.views === "number" && listing.views > 0 && (
-          <span className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full border border-white/20 bg-black/55 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-md">
-            <Eye size={12} /> {listing.views}
-          </span>
+          <OwnerOnly ownerId={listing.ownerId}>
+            <span
+              className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full border border-amber-400/60 bg-amber-500/95 px-2.5 py-1 text-[11px] font-black text-white shadow-md backdrop-blur-md"
+              title="عداد المشاهدات يظهر لك فقط كمالك للإعلان"
+            >
+              <Eye size={12} /> {listing.views}
+            </span>
+          </OwnerOnly>
         )}
 
         <div className="absolute bottom-3 left-3 rounded-2xl border border-white/20 bg-brand-700/90 px-3 py-1.5 shadow-blue backdrop-blur-md">
@@ -156,11 +166,6 @@ function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
   );
 }
 
-/**
- * memo: ListingCard لا يحتاج re-render إلا عند تغيّر بيانات الإعلان نفسه.
- * مع مقارنة سطحية على الحقول المهمة فقط (id, status, price, views) - لأن
- * بقية الحقول لا تتغيّر بعد التحميل عملياً.
- */
 export const ListingCard = memo(ListingCardImpl, (prev, next) => {
   const a = prev.listing;
   const b = next.listing;
@@ -170,6 +175,7 @@ export const ListingCard = memo(ListingCardImpl, (prev, next) => {
     a.price === b.price &&
     a.views === b.views &&
     a.featured === b.featured &&
+    a.ownerId === b.ownerId &&
     prev.priority === next.priority
   );
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, ShieldCheck, Clock, Eye } from "lucide-react";
+import { CheckCircle2, ShieldCheck, Clock } from "lucide-react";
 import type { Listing } from "@/lib/types";
 import { timeAgo } from "@/lib/utils";
 
@@ -8,6 +8,12 @@ interface Props {
   listing: Listing;
 }
 
+/**
+ * مؤشرات جودة الإعلان للزوار العاديين.
+ *
+ * ملاحظة: عدد المشاهدات (views) **لم يعد** ضمن هذه البطاقة لأنه بيانات خاصة
+ * بالمالك فقط. لعرضه استخدم <OwnerStatsBar /> في صفحة التفاصيل.
+ */
 export function ListingQualityCard({ listing }: Props) {
   const indicators: Array<{
     label: string;
@@ -48,15 +54,6 @@ export function ListingQualityCard({ listing }: Props) {
     });
   }
 
-  // عدد المشاهدات
-  if (typeof listing.views === "number" && listing.views > 0) {
-    indicators.push({
-      label: "المشاهدات",
-      value: listing.views.toLocaleString("ar-LY"),
-      icon: Eye,
-    });
-  }
-
   if (indicators.length === 0) return null;
 
   return (
@@ -68,7 +65,7 @@ export function ListingQualityCard({ listing }: Props) {
         مؤشرات الجودة
       </h3>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {indicators.map(({ label, value, icon: Icon, positive }, idx) => (
           <div
             key={idx}
