@@ -1,12 +1,9 @@
 // =============================================================================
-// قواعد Firestore المقترحة لميزة "الإحصائيات الخاصة بالمالك"
+// قواعد Firestore المقترحة لميزة Stories
 // =============================================================================
 //
-// هذه قواعد مقترحة - أضفها إلى firestore.rules الحالي.
-// لا تستبدل الملف بالكامل! ادمج هذه القواعد بحذر مع قواعدك الحالية.
-//
-// الفلسفة: الـ UI يخفي البيانات الخاصة عن غير المالك (defense in depth)،
-// لكن الحماية الفعلية تكون على مستوى Firestore.
+// مهم جداً: هذه القواعد تحمي خصوصية المشاهدات.
+// ادمج هذه القواعد مع firestore.rules الحالي.
 // =============================================================================
 
 rules_version = '2';
@@ -15,55 +12,92 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ---------------------------------------------------------------------
-    // listings - قواعد القراءة الحالية تبقى كما هي
-    // (الجميع يستطيع قراءة approved listings)
+    // stories - القصص الرئيسية
+    //
+    // - الجميع يستطيع القراءة (لعرض القصص لأي زائر).
+    // - فقط المالك ينشئ بـ ownerId == uid.
+    // - viewsCount يُحدَّث عبر increment من قبل أي مستخدم مسجَّل
+    //   (لتسجيل المشاهدة) - لكن لا يستطيع تغيير الحقول الأخرى.
+    // - فقط المالك يحذف.
     // ---------------------------------------------------------------------
-    match /listings/{listingId} {
+    match /stories/{storyId} {
 
-      // قواعدك الحالية للقراءة/الكتابة...
+      // قراءة عامة - الجميع يشاهد
+      allow read: if true;
+
+      // إنشاء: المستخدم المسجَّل يكتب قصته فقط
+      allow create: if request.auth != null
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.type in ['car', 'service', 'offer']
+        && request.resource.data.imageUrl is string
+        && request.resource.data.imageUrl.size() > 0;
+
+      // تحديث: نسمح فقط بزيادة viewsCount (للمستخدمين المسجَّلين غير المالك)
+      // أو السماح للمالك بتعديل قصته.
+      allow update: if request.auth != null && (
+        // المالك يعدّل
+        resource.data.ownerId == request.auth.uid
+        ||
+        // مشاهد يزيد العدد فقط - باقي الحقول لم تتغير
+        (
+          request.resource.data.viewsCount == resource.data.viewsCount + 1
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewsCount'])
+        )
+      );
+
+      // حذف: المالك فقط
+      allow delete: if request.auth != null
+        && resource.data.ownerId == request.auth.uid;
 
       // -----------------------------------------------------------------
-      // listings/{id}/events - subcollection لتسجيل النقرات
+      // stories/{id}/viewers - قائمة المشاهدين (خصوصية!)
       //
-      // - الجميع يستطيع إنشاء event (لتسجيل النقرة).
-      // - المالك فقط يستطيع قراءة الـ events لحساب الإحصائيات.
-      // - لا أحد يستطيع التعديل أو الحذف (immutable).
+      // - المالك فقط يقرأ القائمة كاملة.
+      // - أي مستخدم مسجَّل يكتب سجل مشاهدته (مرة واحدة).
       // -----------------------------------------------------------------
-      match /events/{eventId} {
+      match /viewers/{viewerId} {
 
-        // المالك فقط يستطيع القراءة
+        // قراءة محصورة بمالك القصة
         allow read: if request.auth != null
-          && get(/databases/$(database)/documents/listings/$(listingId)).data.ownerId == request.auth.uid;
+          && get(/databases/$(database)/documents/stories/$(storyId)).data.ownerId == request.auth.uid;
 
-        // الجميع يستطيع إنشاء event (مع التحقق من النوع)
-        allow create: if request.resource.data.type in [
-          'view', 'chat_click', 'phone_click', 'whatsapp_click'
-        ];
-
-        // لا تعديل، لا حذف
-        allow update, delete: if false;
+        // كل مستخدم يكتب سجل مشاهدته فقط
+        allow write: if request.auth != null
+          && request.auth.uid == viewerId;
       }
-    }
-
-    // ---------------------------------------------------------------------
-    // favorites - قاعدة موجودة من قبل
-    //
-    // ملاحظة مهمة: لتمكين useOwnerStats من حساب favoritesCount عبر
-    // collectionGroup('favorites'), أضف فهرساً مركّباً في Firebase Console:
-    //
-    //   Collection group: favorites
-    //   Field: listingId (Ascending)
-    //   Field: __name__ (Ascending)
-    //
-    // وأضف هذه القاعدة:
-    // ---------------------------------------------------------------------
-    match /{path=**}/favorites/{favoriteId} {
-      // كل مستخدم مسجَّل يستطيع تشغيل count على collectionGroup
-      // لكن لا يستطيع قراءة بيانات المفضلين الفعلية.
-      // (count فقط لا يكشف بيانات شخصية)
-      allow list: if request.auth != null;
-
-      // قواعد get/write الحالية تبقى كما هي
     }
   }
 }
+
+// =============================================================================
+// فهرس مطلوب
+// =============================================================================
+// أنشئ هذا الفهرس في Firebase Console → Firestore → Indexes:
+//
+//   Collection: stories
+//   Fields:
+//     - expiresAt (Ascending)
+//
+// هذا يدعم استعلام useStories: where('expiresAt', '>', now) order by expiresAt
+// =============================================================================
+
+// =============================================================================
+// تنظيف القصص المنتهية (Optional: Cloud Function)
+// =============================================================================
+//
+// useStories تفلتر المنتهية في الـ frontend، لكن لتوفير storage، أنشئ
+// Cloud Function يعمل كل ساعة ويحذف القصص المنتهية:
+//
+// exports.cleanExpiredStories = functions.pubsub
+//   .schedule('every 1 hours')
+//   .onRun(async () => {
+//     const now = admin.firestore.Timestamp.now();
+//     const expired = await admin.firestore()
+//       .collection('stories')
+//       .where('expiresAt', '<=', now)
+//       .get();
+//     const batch = admin.firestore().batch();
+//     expired.forEach(d => batch.delete(d.ref));
+//     await batch.commit();
+//   });
+// =============================================================================
