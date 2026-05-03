@@ -2,19 +2,27 @@
 
 import { FormEvent, useState } from "react";
 import {
-  FileText, Search, ShieldCheck, AlertTriangle, Car, Loader2, X,
+  FileText, Search, ShieldCheck, AlertTriangle, Car, Loader2, X, Globe,
 } from "lucide-react";
 import { useToast } from "@/contexts/ToastContext";
-import { validateVin, normalizeVin, type VehicleReport } from "@/lib/vin";
+import { validateVin, normalizeVin } from "@/lib/vin";
+import type { VehicleReportResponse } from "@/lib/vehicle-report/types";
 import { VehicleReportCard } from "@/components/vehicle-report-card";
 
-type Status = "idle" | "loading" | "success" | "error" | "notfound";
+type UiState =
+  | "idle"
+  | "loading"
+  | "invalid_vin"
+  | "not_found"
+  | "decode_only"
+  | "full_report"
+  | "provider_error";
 
 export default function VehicleReportPage() {
   const toast = useToast();
   const [vin, setVin] = useState("");
-  const [status, setStatus] = useState<Status>("idle");
-  const [report, setReport] = useState<VehicleReport | null>(null);
+  const [state, setState] = useState<UiState>("idle");
+  const [report, setReport] = useState<VehicleReportResponse | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
 
   const handleSubmit = async (e: FormEvent) => {
@@ -23,11 +31,13 @@ export default function VehicleReportPage() {
     const cleaned = normalizeVin(vin);
     const v = validateVin(cleaned);
     if (!v.valid) {
+      setState("invalid_vin");
+      setErrorMsg(v.reason || "رقم الهيكل غير صالح.");
       toast.error(v.reason || "رقم الهيكل غير صالح.");
       return;
     }
 
-    setStatus("loading");
+    setState("loading");
     setReport(null);
     setErrorMsg("");
 
@@ -35,22 +45,62 @@ export default function VehicleReportPage() {
       const res = await fetch(`/api/vehicle-report?vin=${encodeURIComponent(cleaned)}`);
       const json = await res.json();
 
-      if (res.status === 404) {
-        setStatus("notfound");
-        setErrorMsg(json.error || "لم يتم العثور على بيانات لهذا الرقم.");
-        return;
-      }
-      if (!res.ok) {
-        setStatus("error");
-        setErrorMsg(json.error || "تعذّر جلب البيانات.");
-        toast.error(json.error || "تعذّر جلب البيانات.");
+      // 400: VIN غير صالح
+      if (res.status === 400) {
+        setState("invalid_vin");
+        setErrorMsg(json.error || "رقم الهيكل غير صالح.");
         return;
       }
 
-      setReport(json as VehicleReport);
-      setStatus("success");
+      // 404: VIN غير موجود حتى في NHTSA
+      if (res.status === 404) {
+        // قد يأتي json كـ VehicleReportResponse مع status=NOT_FOUND
+        if (json?.status === "NOT_FOUND") {
+          setReport(json as VehicleReportResponse);
+        }
+        setState("not_found");
+        setErrorMsg(json?.messages?.[0] || json?.error || "لم يتم العثور على بيانات.");
+        return;
+      }
+
+      // 502: مشكلة في NHTSA
+      if (res.status === 502 || (json?.status === "PROVIDER_ERROR")) {
+        setReport(json as VehicleReportResponse);
+        setState("provider_error");
+        setErrorMsg(json?.errorMessage || "تعذّر الاتصال بمزوّد البيانات.");
+        toast.error(json?.errorMessage || "تعذّر الاتصال بمزوّد البيانات.");
+        return;
+      }
+
+      if (!res.ok) {
+        setState("provider_error");
+        setErrorMsg(json?.error || "تعذّر جلب البيانات.");
+        toast.error(json?.error || "تعذّر جلب البيانات.");
+        return;
+      }
+
+      // 200 - استجابة ناجحة، نوع الحالة من status
+      const reportData = json as VehicleReportResponse;
+      setReport(reportData);
+
+      switch (reportData.status) {
+        case "FULL_REPORT":
+          setState("full_report");
+          break;
+        case "DECODE_ONLY":
+          setState("decode_only");
+          break;
+        case "NOT_FOUND":
+          setState("not_found");
+          break;
+        case "PROVIDER_ERROR":
+          setState("provider_error");
+          break;
+        default:
+          setState("decode_only");
+      }
     } catch {
-      setStatus("error");
+      setState("provider_error");
       setErrorMsg("تعذّر الاتصال بالخدمة. تحقق من الإنترنت وحاول مجدداً.");
       toast.error("تعذّر الاتصال بالخدمة.");
     }
@@ -59,11 +109,12 @@ export default function VehicleReportPage() {
   const handleClear = () => {
     setVin("");
     setReport(null);
-    setStatus("idle");
+    setState("idle");
     setErrorMsg("");
   };
 
   const inputLength = normalizeVin(vin).length;
+  const isLoading = state === "loading";
 
   return (
     <section className="container py-6 sm:py-10">
@@ -77,15 +128,13 @@ export default function VehicleReportPage() {
             تحقّق من تاريخ السيارة قبل الشراء
           </h1>
           <p className="section-subtitle mx-auto">
-            ابحث برقم الهيكل (VIN) واحصل على المواصفات الرسمية للمركبة من قاعدة بيانات NHTSA الأمريكية مجاناً.
+            ابحث برقم الهيكل (VIN) — مدعوم: الولايات المتحدة، كندا، أوروبا، كوريا الجنوبية.
           </p>
         </div>
 
         {/* نموذج البحث */}
         <form onSubmit={handleSubmit} className="card p-5 sm:p-6">
-          <label htmlFor="vin" className="label">
-            رقم الهيكل (VIN)
-          </label>
+          <label htmlFor="vin" className="label">رقم الهيكل (VIN)</label>
           <div className="relative">
             <input
               id="vin"
@@ -128,10 +177,10 @@ export default function VehicleReportPage() {
           <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
             <button
               type="submit"
-              disabled={status === "loading" || inputLength !== 17}
+              disabled={isLoading || inputLength !== 17}
               className="btn-primary w-full sm:w-auto"
             >
-              {status === "loading" ? (
+              {isLoading ? (
                 <>
                   <Loader2 size={16} className="animate-spin" />
                   جارٍ البحث...
@@ -146,36 +195,38 @@ export default function VehicleReportPage() {
           </div>
         </form>
 
-        {/* مصادر البيانات */}
-        {status === "idle" && (
-          <div className="grid gap-3 sm:grid-cols-3">
-            <SourceCard
-              title="NHTSA الأمريكية"
-              desc="قاعدة بيانات الإدارة الوطنية الأمريكية لسلامة المرور."
-              icon={ShieldCheck}
-              active
-            />
-            <SourceCard
-              title="CARFAX"
-              desc="تقارير الحوادث والملكيات السابقة. قريباً."
-              icon={AlertTriangle}
-            />
-            <SourceCard
-              title="AutoCheck"
-              desc="تقييم سلامة المركبة وقيمتها. قريباً."
-              icon={Car}
-            />
-          </div>
+        {/* بطاقات المصادر — تظهر فقط في idle */}
+        {state === "idle" && <SourcesGrid />}
+
+        {/* حالة الـ loading */}
+        {state === "loading" && <LoadingState />}
+
+        {/* حالة VIN غير صالح */}
+        {state === "invalid_vin" && (
+          <InvalidVinState message={errorMsg} onClear={handleClear} />
         )}
 
-        {/* حالات التحميل / النتيجة / الأخطاء */}
-        {status === "loading" && <LoadingState />}
+        {/* حالة لم يتم العثور */}
+        {state === "not_found" && (
+          <NotFoundState
+            message={errorMsg}
+            vin={normalizeVin(vin)}
+            onClear={handleClear}
+          />
+        )}
 
-        {status === "notfound" && <NotFoundState message={errorMsg} vin={normalizeVin(vin)} />}
+        {/* حالة خطأ من المزوّد */}
+        {state === "provider_error" && (
+          <ProviderErrorState
+            message={errorMsg}
+            onRetry={(e) => handleSubmit(e as unknown as FormEvent)}
+          />
+        )}
 
-        {status === "error" && <ErrorState message={errorMsg} onRetry={handleSubmit as any} />}
-
-        {status === "success" && report && <VehicleReportCard report={report} />}
+        {/* حالة decode فقط أو full report - كلاهما يستخدم البطاقة الكاملة */}
+        {(state === "decode_only" || state === "full_report") && report && (
+          <VehicleReportCard report={report} />
+        )}
 
         {/* CTA: شركاء البيانات */}
         <div className="card border-brand-200 bg-brand-50/40 p-5 text-sm dark:bg-brand-900/10 dark:border-brand-700/40">
@@ -195,45 +246,36 @@ export default function VehicleReportPage() {
   );
 }
 
-/* ============================================================
+/* ==========================================================================
  * المكونات الفرعية للحالات
- * ============================================================ */
+ * ========================================================================== */
 
-function SourceCard({
-  title,
-  desc,
-  icon: Icon,
-  active = false,
-}: {
-  title: string;
-  desc: string;
-  icon: typeof ShieldCheck;
-  active?: boolean;
-}) {
+function SourcesGrid() {
+  const sources = [
+    { title: "NHTSA الأمريكية", desc: "فك VIN لكل المركبات الأمريكية والمستوردة.", icon: ShieldCheck, status: "متاح" },
+    { title: "أمريكا - CARFAX", desc: "تاريخ الحوادث والملكيات السابقة.", icon: Car, status: "Demo" },
+    { title: "كندا - CARFAX Canada", desc: "تقارير المركبات الكندية.", icon: Car, status: "Demo" },
+    { title: "أوروبا - autoDNA", desc: "تقارير المركبات الأوروبية.", icon: Globe, status: "Demo" },
+    { title: "كوريا - Encar", desc: "تقارير المركبات الكورية.", icon: Globe, status: "Demo" },
+  ];
   return (
-    <div
-      className={`card p-4 text-center ${
-        active ? "border-brand-300 ring-2 ring-brand-100 dark:ring-brand-900/40" : "opacity-75"
-      }`}
-    >
-      <div
-        className={`mx-auto flex h-12 w-12 items-center justify-center rounded-2xl ${
-          active
-            ? "bg-brand-700 text-white shadow-blue"
-            : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
-        }`}
-      >
-        <Icon size={20} />
-      </div>
-      <h3 className="mt-3 text-sm font-black text-slate-900 dark:text-white">
-        {title}
-      </h3>
-      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{desc}</p>
-      {active && (
-        <span className="mt-2 inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
-          متاح الآن
-        </span>
-      )}
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {sources.map((s) => (
+        <div key={s.title} className="card p-4 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-700 text-white shadow-blue">
+            <s.icon size={20} />
+          </div>
+          <h3 className="mt-3 text-sm font-black text-slate-900 dark:text-white">
+            {s.title}
+          </h3>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            {s.desc}
+          </p>
+          <span className="mt-2 inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+            {s.status}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -249,31 +291,48 @@ function LoadingState() {
               جارٍ جلب بيانات المركبة...
             </p>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              نتواصل مع قاعدة بيانات NHTSA الرسمية.
+              نتواصل مع NHTSA ومزوّد التاريخ المناسب.
             </p>
           </div>
         </div>
       </div>
-
-      {/* skeleton */}
       <div className="skeleton h-48" />
       <div className="skeleton h-32" />
     </div>
   );
 }
 
-function NotFoundState({ message, vin }: { message: string; vin: string }) {
+function InvalidVinState({
+  message, onClear,
+}: { message: string; onClear: () => void }) {
+  return (
+    <div className="card animate-fade-in border-rose-200 bg-rose-50 p-6 text-center dark:border-rose-800 dark:bg-rose-900/20">
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">
+        <AlertTriangle size={28} />
+      </div>
+      <h3 className="mt-4 text-base font-black text-rose-900 dark:text-rose-200">
+        رقم الهيكل غير صالح
+      </h3>
+      <p className="mt-2 text-sm text-rose-700 dark:text-rose-300">{message}</p>
+      <button onClick={onClear} className="btn-secondary mt-4">
+        مسح الإدخال
+      </button>
+    </div>
+  );
+}
+
+function NotFoundState({
+  message, vin, onClear,
+}: { message: string; vin: string; onClear: () => void }) {
   return (
     <div className="card animate-fade-in p-8 text-center">
       <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
         <AlertTriangle size={32} />
       </div>
       <h3 className="mt-4 text-lg font-black text-slate-900 dark:text-white">
-        لم يتم العثور على بيانات
+        لم يتم العثور على تقرير
       </h3>
-      <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-        {message}
-      </p>
+      <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{message}</p>
       {vin && (
         <p className="mt-3 inline-block rounded-2xl border border-slate-200 bg-slate-50 px-3 py-1.5 font-mono text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
           VIN: <span dir="ltr">{vin}</span>
@@ -284,21 +343,26 @@ function NotFoundState({ message, vin }: { message: string; vin: string }) {
         <ul className="mt-2 list-disc space-y-1 pr-4">
           <li>تأكد من قراءة الرقم بدقة (17 خانة).</li>
           <li>NHTSA يغطّي أساساً المركبات المباعة في الولايات المتحدة.</li>
-          <li>المركبات الأوروبية أو الآسيوية قد لا تظهر بياناتها بشكل كامل.</li>
+          <li>المركبات الأوروبية أو الآسيوية القديمة قد لا تظهر بياناتها.</li>
         </ul>
       </div>
+      <button onClick={onClear} className="btn-secondary mt-4">
+        البحث برقم آخر
+      </button>
     </div>
   );
 }
 
-function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+function ProviderErrorState({
+  message, onRetry,
+}: { message: string; onRetry: () => void }) {
   return (
     <div className="card animate-fade-in border-rose-200 bg-rose-50 p-6 text-center dark:border-rose-800 dark:bg-rose-900/20">
       <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">
         <AlertTriangle size={28} />
       </div>
       <h3 className="mt-4 text-base font-black text-rose-900 dark:text-rose-200">
-        تعذّر جلب البيانات
+        خطأ من مزوّد البيانات
       </h3>
       <p className="mt-2 text-sm text-rose-700 dark:text-rose-300">{message}</p>
       <button onClick={onRetry} className="btn-primary mt-4 inline-flex">

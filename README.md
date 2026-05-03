@@ -1,150 +1,77 @@
-# إصلاح OTP + اسم التحقق + المفضلة — Bratsho Car
+# Multi-Provider Vehicle Report — Bratsho Car
 
-## الملفات في الـ zip
+تطوير تقرير المركبة لدعم US/CA/EU/KR.
+
+## الفلسفة
+
+NHTSA (مجاني) للـ decoding فقط. مزودات إقليمية مدفوعة للـ history.
+يضمن أن التقرير يعمل دائماً (DECODE_ONLY) حتى بدون مزود مدفوع.
+
+## الملفات (13 ملف)
 
 ```
-app/(public)/login/
-└── LoginClient.tsx              ← مُحدَّث (عداد OTP + إعادة إرسال)
+lib/
+├── vin.ts                                    ← + detectMarketFromVin
+└── vehicle-report/
+    ├── types.ts                              ← الأنواع الموحَّدة
+    ├── decoder-nhtsa.ts                      ← decoding only
+    ├── router.ts                             ← provider selection
+    └── providers/
+        ├── types.ts                          ← HistoryProvider interface
+        ├── mock-fixtures.ts
+        ├── carfax.ts                         ← US
+        ├── carfax-canada.ts                  ← CA
+        ├── europe.ts                         ← EU
+        └── encar.ts                          ← KR
+
+app/
+├── api/vehicle-report/route.ts               ← orchestration
+└── (public)/vehicle-report/page.tsx          ← 6 UI states
 
 components/
-├── bottom-nav.tsx               ← مُحدَّث (إضافة المفضلة + شارة عدد)
-├── site-header.tsx              ← مُحدَّث (أيقونة المفضلة + شارة)
-└── favorite-button.tsx          ← مُحدَّث (toast feedback عند الإضافة/الإزالة)
+└── vehicle-report-card.tsx                   ← decoded + history
+
+.env.example
 ```
+
+## الأنواع
+
+- `DecodedVehicleData` - من NHTSA (لا mileage)
+- `VehicleHistoryData` - من المزوّد (mileage, accidents, owners, ...)
+- `VehicleReportResponse` - shape موحَّد
+
+## كشف السوق
+
+من أول حرف من VIN: 1/4/5→US، 2→CA، K→KR، S-Z→EU.
+
+## Mock Mode
+
+`VEHICLE_REPORT_DEMO=true` يفعّل mocks. آخر رقمين من VIN:
+- `00` → NOT_FOUND
+- `11` → بيانات جزئية (يُظهر "المسافة المقطوعة غير متوفرة")
+- باقي → تقرير كامل
+
+## الحالات الستة
+
+idle / loading / invalid_vin / not_found / decode_only / full_report / provider_error
+
+## VINs للاختبار
+
+- `1HGBH41JXMN109186` → US كامل
+- `2T3BFREV0FW123456` → CA كامل
+- `WAUZZZ4M9KD123456` → EU كامل
+- `KMHCT5AE3GU123456` → KR كامل
+- VIN ينتهي بـ `11` → يُظهر "المسافة المقطوعة غير متوفرة"
+- VIN ينتهي بـ `00` → DECODE_ONLY
 
 ## التطبيق
 
 ```bash
-unzip otp-favorites-fixes.zip
-git add app/ components/
-git commit -m "fix: OTP countdown timer + visible favorites navigation + toast feedback"
+unzip vehicle-report-multi-provider.zip
+echo "VEHICLE_REPORT_DEMO=true" >> .env.local
+git add lib/ app/ components/ .env.example
+git commit -m "feat: multi-provider vehicle report (US, CA, EU, KR)"
 git push
 ```
 
-تم اختباره بـ `tsc --noEmit` → **0 أخطاء**. لا تبعيات جديدة.
-
----
-
-## 1) عداد ثواني OTP
-
-**الملف:** `app/(public)/login/LoginClient.tsx`
-
-**ما تم إضافته:**
-
-- ثابت `OTP_RESEND_SECONDS = 144` (يمكن تعديله بسهولة).
-- `useState` لـ `countdown` + `useRef` لـ `intervalRef`.
-- دالة `startCountdown(seconds)` تبدأ مؤقت ينقص كل ثانية.
-- تنظيف المؤقت تلقائياً عند مغادرة الصفحة (في الـ cleanup الموجود).
-- يبدأ العداد تلقائياً بعد إرسال الرمز بنجاح.
-- مكوّن جديد `OtpCountdownCard` يعرض:
-  - **أثناء العداد**: أيقونة ساعة + الوقت المتبقي بصيغة `M:SS` (مثلاً `2:24`) أو ثواني مفردة (`87 ثانية`) + شريط تقدم متحرّك بـ gradient أزرق.
-  - **بعد انتهاء العداد**: زر "إعادة الإرسال" مفعّل + رسالة "لم يصلك الرمز؟".
-- زر إعادة الإرسال **معطّل تماماً** أثناء العداد.
-- حقل رقم الهاتف يصبح disabled بعد إرسال الرمز (لمنع تعديله أثناء انتظار الرمز).
-
-**تحسينات إضافية للـ UX:**
-
-- حقل الرمز أصبح بـ `font-mono text-2xl tracking-[0.5em]` (شكل أنظف وأسهل للقراءة).
-- placeholder صار `------` بدل `123456`.
-- يقبل أرقام فقط ويقصّ تلقائياً عند 6 أرقام.
-- زر "تأكيد الرمز" معطَّل حتى يكتمل 6 أرقام.
-- دعم `autoComplete="one-time-code"` → iOS/Android يعرضان الرمز من SMS مباشرة فوق الكيبورد.
-
----
-
-## 2) اسم "CloudOTP" في شاشة التحقق
-
-⚠️ **مهم: هذا ليس في الكود، بل في إعدادات Firebase Console.**
-
-تأكدت بفحص شامل: `grep -rn "CloudOTP" .` → **0 نتائج**. الاسم يُولَّد تلقائياً من Firebase reCAPTCHA إذا لم تُحدِّد اسماً عاماً للتطبيق.
-
-**الحل خطوة بخطوة:**
-
-1. افتح [Firebase Console](https://console.firebase.google.com/) → مشروع **`bratsho-car`**.
-2. اضغط ⚙️ (الترس) بجانب اسم المشروع → **Project settings**.
-3. في تبويب **General**:
-   - انزل إلى قسم **Public-facing name**.
-   - عدّل الاسم من القيمة الحالية (التي تظهر كـ "CloudOTP" أو "project-XXXXX") إلى:
-     ```
-     Bratsho Car
-     ```
-   - أو بالعربية:
-     ```
-     براتشو كار
-     ```
-4. اضغط **Save**.
-5. (اختياري لكن موصى به) في نفس الصفحة:
-   - **Support email** → اختر بريدك الرسمي.
-6. أعد محاولة تسجيل الدخول برقم الهاتف من الموقع → ستجد الاسم الجديد في رسالة SMS وعلى شاشة reCAPTCHA.
-
-**ملاحظة:** التغيير قد يستغرق دقائق قليلة لينتشر. لو ظهر الاسم القديم، انتظر 5-10 دقائق.
-
----
-
-## 3) إصلاح زر المفضلة
-
-**التشخيص الحقيقي:**
-
-زر القلب كان **يعمل بشكل صحيح**! يحفظ في `users/{uid}/favorites/{listingId}` ويُحدِّث الأيقونة فوراً (optimistic update).
-
-**المشكلة الفعلية:** **لا يوجد رابط ظاهر لصفحة `/favorites` في الواجهة!**
-
-تأكدت بفحص:
-- `bottom-nav.tsx`: روابط الرئيسية، الإعلانات، إضافة، الدردشة، **التقارير** — لا يوجد المفضلة!
-- `site-header.tsx`: نفس الروابط، لا يوجد المفضلة في navigation الرئيسي.
-- صفحة `/favorites/page.tsx` **موجودة وتعمل** ✅
-- الرابط الوحيد كان في `site-footer.tsx` و `profile/page.tsx` — مخفية أو تحتاج تسجيل دخول.
-
-النتيجة: المستخدم يضغط القلب، الإعلان **يُحفظ فعلاً** في Firestore، لكنه لا يجد طريقاً لصفحة المفضلة لرؤيته.
-
-### الإصلاحات الثلاثة
-
-#### أ) `components/bottom-nav.tsx`
-
-- **استبدلت "التقارير"** (`/vehicle-report`) بـ **"المفضلة"** (`/favorites`) في الشريط السفلي.
-- أضفت subscription على `users/{uid}/favorites` (مؤجَّل بـ `requestIdleCallback` للأداء).
-- شارة وردية بعدد المفضلة (مثل شارة الرسائل).
-- أيقونة القلب تتلوّن وردياً عند وجود مفضلة (أو عند تنشيط الصفحة).
-
-(`/vehicle-report` ما زالت موجودة في الموقع — يمكن الوصول إليها عبر site-header أو profile.)
-
-#### ب) `components/site-header.tsx`
-
-- أضفت رابط "المفضلة" في navigation الديسكتوب (`lg:flex`).
-- **أضفت أيقونة قلب دائمة في كل المقاسات** (شغّالة على الجوال أيضاً) — بنفس نمط زر الإشعارات.
-- شارة عدد + قلب ممتلئ عند وجود مفضلة.
-
-#### ج) `components/favorite-button.tsx`
-
-أضفت feedback للمستخدم بـ toast (يستخدم `useToast` الموجود):
-- ✅ **عند الإضافة**: `toast.success("تمت الإضافة إلى المفضلة.")`
-- ℹ️ **عند الإزالة**: `toast.info("تمت الإزالة من المفضلة.")`
-- 🔐 **غير مسجَّل**: `toast.info("سجّل الدخول لحفظ الإعلانات في المفضلة.")` ثم redirect.
-- ❌ **خطأ**: `toast.error(...)`.
-
-أيضاً: أضفت `scale-105` على الزر في حالة liked → تأكيد بصري إضافي للمستخدم.
-
-### النتيجة بعد الإصلاح
-
-1. المستخدم يضغط القلب على بطاقة إعلان → القلب يتحوّل أحمر فوراً + toast "تمت الإضافة" + الشارة في الـ bottom nav تتحدّث.
-2. المستخدم يفتح **`/favorites` من شريط الجوال أو الأيقونة في الـ header** → يجد كل إعلاناته المحفوظة.
-3. الإزالة من المفضلة (إما من القلب أو من الزر في صفحة المفضلة) → toast + الشارة تنقص + البطاقة تختفي من القائمة.
-
----
-
-## التحقق
-
-```
-✓ tsc --noEmit              → 0 أخطاء
-✓ عداد OTP                  → يبدأ من 144 وينقص كل ثانية
-✓ زر إعادة الإرسال           → معطَّل أثناء العداد، مفعَّل بعده
-✓ شريط تقدم بصري             → موجود (gradient أزرق)
-✓ رابط المفضلة في bottom-nav  → نعم، مع شارة عدد
-✓ رابط المفضلة في header     → نعم، أيقونة قلب على كل المقاسات
-✓ toast feedback             → عند الإضافة/الإزالة/الخطأ/عدم تسجيل الدخول
-✓ متوافق مع المراحل السابقة   → نعم
-```
-
-## ملاحظة عن "CloudOTP"
-
-تذكير: تغيير الاسم في رسالة SMS وشاشة reCAPTCHA يتم من **Firebase Console → Project settings → Public-facing name**، **ليس** من الكود. لا يوجد ملف لتعديله في المشروع لهذا الغرض. اتبع الخطوات في القسم 2 أعلاه.
+تم اختباره بـ tsc --noEmit → 0 أخطاء.

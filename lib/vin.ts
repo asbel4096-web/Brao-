@@ -1,20 +1,16 @@
 /**
- * مكتبة التحقق من رقم الهيكل (VIN) وأنواع تقرير المركبة.
+ * مكتبة التحقق من VIN + كشف السوق من WMI (World Manufacturer Identifier).
  *
- * VIN صحيح:
- * - بطول 17 خانة بالضبط
- * - لا يحتوي على I, O, Q (لتفادي الالتباس مع 1, 0)
- * - يحتوي فقط على حروف وأرقام
- *
- * ملاحظة: لا نتحقق من check digit (الموضع 9) لأن VINs الأوروبية والآسيوية
- * لا تتبع نفس قاعدة check digit الأمريكية، وقد يرفض المستخدمين الليبيين خطأً.
+ * WMI = أول 3 أحرف من VIN. الحرف الأول يحدد المنطقة الجغرافية.
+ * المرجع: ISO 3780.
  */
+
+import type { VehicleMarket } from "./vehicle-report/types";
 
 const VIN_REGEX = /^[A-HJ-NPR-Z0-9]{17}$/;
 
 export interface VinValidationResult {
   valid: boolean;
-  /** سبب الرفض إن وجد */
   reason?: string;
 }
 
@@ -44,55 +40,58 @@ export function validateVin(input: string): VinValidationResult {
   return { valid: true };
 }
 
-/**
- * ينظّف VIN للاستخدام في API: uppercase + إزالة المسافات.
- */
 export function normalizeVin(input: string): string {
   return (input || "").trim().toUpperCase().replace(/\s+/g, "");
 }
 
 /**
- * شكل الرد الموحَّد من /api/vehicle-report
+ * يحدد السوق الجغرافي للمركبة من أول حرفين من VIN.
+ *
+ * VIN[0] = منطقة جغرافية:
+ *   1, 4, 5     → الولايات المتحدة
+ *   2           → كندا
+ *   3           → المكسيك
+ *   J           → اليابان
+ *   K           → كوريا الجنوبية (KL=GM Korea, KM=Hyundai, KN=Kia, ...)
+ *   L           → الصين
+ *   S-Z         → أوروبا (W=ألمانيا، Z=إيطاليا، V=فرنسا/إسبانيا، ...)
+ *   6, 7        → أوقيانوسيا
+ *   8, 9        → أمريكا الجنوبية
+ *
+ * المرجع: ISO 3780 / SAE J853.
  */
-export interface VehicleReport {
-  /** الـ VIN الذي بُحث عنه */
-  vin: string;
-  /** مصدر البيانات (للعرض وللمستقبل لإضافة CARFAX) */
-  source: "NHTSA" | "CARFAX" | "AUTOCHECK";
-  /** البيانات نفسها (قد تكون حقول فارغة لو NHTSA لا يعرف) */
-  data: VehicleData;
-  /** هل رمز الخطأ من NHTSA يدلّ على decode ناجح */
-  decoded: boolean;
-  /** نص خطأ من NHTSA إن وُجد */
-  errorText?: string;
+export function detectMarketFromVin(vin: string): VehicleMarket {
+  const v = normalizeVin(vin);
+  if (v.length < 1) return "UNKNOWN";
+
+  const first = v.charAt(0);
+
+  // أمريكا
+  if (first === "1" || first === "4" || first === "5") return "US";
+  // كندا
+  if (first === "2") return "CA";
+  // كوريا الجنوبية
+  if (first === "K") return "KR";
+  // اليابان (نفصلها لأنه قد يكون لها مزود مختلف لاحقاً)
+  if (first === "J") return "JP";
+  // أوروبا (S-Z يغطي ألمانيا، إيطاليا، فرنسا، إسبانيا، السويد، بريطانيا، إلخ)
+  if (first >= "S" && first <= "Z") return "EU";
+
+  return "OTHER";
 }
 
-export interface VehicleData {
-  make?: string;            // الشركة المصنعة
-  model?: string;           // الموديل
-  modelYear?: string;       // سنة الصنع
-  manufacturer?: string;    // المُصنِّع الكامل
-  vehicleType?: string;     // نوع المركبة
-  bodyClass?: string;       // فئة الهيكل
-  trim?: string;            // الفئة (تريم)
-  series?: string;          // السلسلة
-  // المحرك
-  engineModel?: string;
-  engineCylinders?: string;
-  engineDisplacementL?: string; // سعة المحرك
-  engineHP?: string;
-  fuelType?: string;
-  // الدفع/الناقل
-  driveType?: string;       // نظام الدفع (FWD/RWD/AWD/4WD)
-  transmissionStyle?: string;
-  transmissionSpeeds?: string;
-  // أبعاد ومواصفات
-  doors?: string;
-  seats?: string;
-  // التصنيع
-  plantCountry?: string;
-  plantCity?: string;
-  plantState?: string;
-  // معلومات إضافية
-  notes?: string;
+/**
+ * اسم السوق بالعربية للعرض.
+ */
+export function marketLabel(market: VehicleMarket): string {
+  switch (market) {
+    case "US": return "الولايات المتحدة";
+    case "CA": return "كندا";
+    case "EU": return "أوروبا";
+    case "KR": return "كوريا الجنوبية";
+    case "JP": return "اليابان";
+    case "OTHER": return "سوق آخر";
+    case "UNKNOWN":
+    default: return "غير محدد";
+  }
 }

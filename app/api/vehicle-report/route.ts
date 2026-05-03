@@ -1,105 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
-import { normalizeVin, validateVin, VehicleReport, VehicleData } from "@/lib/vin";
+import { detectMarketFromVin, normalizeVin, validateVin } from "@/lib/vin";
+import { decodeVinFromNhtsa } from "@/lib/vehicle-report/decoder-nhtsa";
+import { selectProvider } from "@/lib/vehicle-report/router";
+import type { VehicleReportResponse } from "@/lib/vehicle-report/types";
 
 /**
  * GET /api/vehicle-report?vin=XXXXX
  *
- * يستدعي NHTSA vPIC DecodeVinValues API ويعيد البيانات بشكل موحّد.
+ * Pipeline:
+ *   1. validate VIN
+ *   2. decode من NHTSA (مجاني، أساسيات فقط)
+ *   3. detect market من VIN WMI
+ *   4. اختر provider مناسب للسوق (إن وُجد مفعَّل)
+ *   5. fetch history من المزوّد
+ *   6. ادمج النتائج في VehicleReportResponse
  *
- * NHTSA API:
- *   https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/{vin}?format=json
- *
- * - مجاني، بدون مفتاح، بدون تسجيل.
- * - يرجع status 200 دائماً (حتى لو VIN غير معروف). نحلّل ErrorCode للتحقق.
- *
- * هذا الـ Route يعمل كـ proxy آمن:
- * - يخفي تفاصيل الـ vendor عن الواجهة (يسهّل تبديل المزوّد لاحقاً لـ CARFAX).
- * - يضيف caching على edge.
- * - يتحقق من VIN قبل إرسال الطلب.
+ * النتائج المحتملة:
+ *   - FULL_REPORT: decode + history
+ *   - DECODE_ONLY: decode فقط (لا يوجد مزوّد للسوق أو لم يجد)
+ *   - NOT_FOUND: حتى NHTSA لا يعرف الـ VIN
+ *   - PROVIDER_ERROR: NHTSA فشل
  */
 
-// ISR/edge cache — كل VIN يُكاش 24 ساعة لأن البيانات لا تتغيّر
 export const revalidate = 86400;
-
-const NHTSA_BASE = "https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues";
-
-interface NhtsaResult {
-  Make?: string;
-  Model?: string;
-  ModelYear?: string;
-  Manufacturer?: string;
-  VehicleType?: string;
-  BodyClass?: string;
-  Trim?: string;
-  Series?: string;
-  EngineModel?: string;
-  EngineCylinders?: string;
-  DisplacementL?: string;
-  EngineHP?: string;
-  FuelTypePrimary?: string;
-  DriveType?: string;
-  TransmissionStyle?: string;
-  TransmissionSpeeds?: string;
-  Doors?: string;
-  Seats?: string;
-  PlantCountry?: string;
-  PlantCity?: string;
-  PlantState?: string;
-  Note?: string;
-  ErrorCode?: string;
-  ErrorText?: string;
-  AdditionalErrorText?: string;
-}
-
-interface NhtsaResponse {
-  Count: number;
-  Message: string;
-  Results: NhtsaResult[];
-}
-
-/**
- * يحوّل قيمة قد تكون "Not Applicable" أو فارغة إلى undefined.
- */
-function clean(v?: string): string | undefined {
-  if (!v) return undefined;
-  const trimmed = v.trim();
-  if (!trimmed) return undefined;
-  if (/^not applicable$/i.test(trimmed)) return undefined;
-  return trimmed;
-}
-
-function mapToVehicleData(r: NhtsaResult): VehicleData {
-  return {
-    make: clean(r.Make),
-    model: clean(r.Model),
-    modelYear: clean(r.ModelYear),
-    manufacturer: clean(r.Manufacturer),
-    vehicleType: clean(r.VehicleType),
-    bodyClass: clean(r.BodyClass),
-    trim: clean(r.Trim),
-    series: clean(r.Series),
-    engineModel: clean(r.EngineModel),
-    engineCylinders: clean(r.EngineCylinders),
-    engineDisplacementL: clean(r.DisplacementL),
-    engineHP: clean(r.EngineHP),
-    fuelType: clean(r.FuelTypePrimary),
-    driveType: clean(r.DriveType),
-    transmissionStyle: clean(r.TransmissionStyle),
-    transmissionSpeeds: clean(r.TransmissionSpeeds),
-    doors: clean(r.Doors),
-    seats: clean(r.Seats),
-    plantCountry: clean(r.PlantCountry),
-    plantCity: clean(r.PlantCity),
-    plantState: clean(r.PlantState),
-    notes: clean(r.Note),
-  };
-}
 
 export async function GET(req: NextRequest) {
   const vinParam = req.nextUrl.searchParams.get("vin") || "";
   const vin = normalizeVin(vinParam);
 
-  // التحقق من VIN قبل أي طلب خارجي
+  // 1. التحقق من VIN
   const validation = validateVin(vin);
   if (!validation.valid) {
     return NextResponse.json(
@@ -108,67 +37,123 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  // 2. كشف السوق من WMI
+  const market = detectMarketFromVin(vin);
+
+  // 3. فك VIN من NHTSA
+  let decoderResult;
   try {
-    const url = `${NHTSA_BASE}/${encodeURIComponent(vin)}?format=json`;
-    const res = await fetch(url, {
-      // كاش على مستوى Next/edge: نفس VIN لا يُسأل API مرتين خلال 24س
-      next: { revalidate: 86400 },
-      headers: { Accept: "application/json" },
-    });
-
-    if (!res.ok) {
-      return NextResponse.json(
-        { error: `تعذّر الوصول إلى خدمة NHTSA (${res.status}).` },
-        { status: 502 }
-      );
-    }
-
-    const json = (await res.json()) as NhtsaResponse;
-    if (!json.Results?.length) {
-      return NextResponse.json(
-        { error: "لم يتم العثور على بيانات لهذا الرقم." },
-        { status: 404 }
-      );
-    }
-
-    const result = json.Results[0];
-    const data = mapToVehicleData(result);
-
-    // ErrorCode = "0" يعني decoded clean. أي رمز آخر يعني وجود مشكلة جزئية.
-    const errorCode = (result.ErrorCode || "").trim();
-    const errorText = clean(result.ErrorText) || clean(result.AdditionalErrorText);
-
-    // إذا لم يُرجع API أي بيانات أساسية، اعتبره غير موجود
-    const hasAnyData = !!(data.make || data.model || data.modelYear || data.manufacturer);
-    if (!hasAnyData) {
-      return NextResponse.json(
-        {
-          error: "رقم الهيكل غير معروف في قاعدة بيانات NHTSA. تأكد من صحة الرقم.",
-          vin,
-        },
-        { status: 404 }
-      );
-    }
-
-    const report: VehicleReport = {
+    decoderResult = await decodeVinFromNhtsa(vin);
+  } catch (err: any) {
+    const response: VehicleReportResponse = {
       vin,
-      source: "NHTSA",
-      data,
-      decoded: errorCode === "0",
-      errorText: errorCode !== "0" ? errorText : undefined,
+      status: "PROVIDER_ERROR",
+      market,
+      decoderSource: "NHTSA",
+      errorMessage: err?.message || "تعذّر الوصول إلى خدمة فك VIN.",
     };
-
-    return NextResponse.json(report, {
-      status: 200,
-      headers: {
-        // Cache على CDN لمدة يوم
-        "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=604800",
-      },
-    });
-  } catch {
-    return NextResponse.json(
-      { error: "حدث خطأ أثناء جلب البيانات. حاول مرة أخرى." },
-      { status: 500 }
-    );
+    return NextResponse.json(response, { status: 502 });
   }
+
+  // 4. لو NHTSA لم يجد أي بيانات → NOT_FOUND
+  if (!decoderResult.hasAnyData) {
+    const response: VehicleReportResponse = {
+      vin,
+      status: "NOT_FOUND",
+      market,
+      decoderSource: "NHTSA",
+      messages: ["رقم الهيكل غير معروف في قاعدة بيانات NHTSA. تأكد من صحة الرقم."],
+    };
+    return NextResponse.json(response, { status: 404 });
+  }
+
+  // 5. اختيار مزوّد التاريخ المناسب
+  const provider = selectProvider(market);
+  const messages: string[] = [];
+
+  // 6. لا يوجد مزوّد مفعَّل لهذا السوق → DECODE_ONLY
+  if (!provider) {
+    messages.push(
+      "تاريخ المركبة (الحوادث، الملاك، المسافة) غير متوفّر لهذا السوق حالياً. سيتم إضافته قريباً."
+    );
+    const response: VehicleReportResponse = {
+      vin,
+      status: "DECODE_ONLY",
+      market,
+      decoderSource: "NHTSA",
+      decoded: decoderResult.data,
+      messages,
+    };
+    return NextResponse.json(response, {
+      status: 200,
+      headers: cacheHeaders(),
+    });
+  }
+
+  // 7. جلب التاريخ من المزوّد
+  let historyResult;
+  try {
+    historyResult = await provider.fetchHistory(vin);
+  } catch (err: any) {
+    // المزوّد رمى exception - نرجع DECODE_ONLY مع رسالة
+    messages.push(`تعذّر جلب تاريخ المركبة من ${provider.name}.`);
+    const response: VehicleReportResponse = {
+      vin,
+      status: "DECODE_ONLY",
+      market,
+      decoderSource: "NHTSA",
+      decoded: decoderResult.data,
+      messages,
+      errorMessage: err?.message,
+    };
+    return NextResponse.json(response, { status: 200, headers: cacheHeaders() });
+  }
+
+  // 8. المزوّد رد بأن VIN غير موجود لديه → DECODE_ONLY
+  if (!historyResult.found || !historyResult.data) {
+    messages.push(
+      `لم يجد مزوّد التاريخ (${provider.name}) سجلاً لهذا الرقم.`
+    );
+    const response: VehicleReportResponse = {
+      vin,
+      status: "DECODE_ONLY",
+      market,
+      decoderSource: "NHTSA",
+      decoded: decoderResult.data,
+      messages,
+    };
+    return NextResponse.json(response, { status: 200, headers: cacheHeaders() });
+  }
+
+  // 9. التقرير الكامل
+  // إن لم تتوفّر mileage من المزوّد، أضف رسالة صريحة (متطلب 6)
+  if (
+    historyResult.data.mileage === undefined ||
+    historyResult.data.mileage === null
+  ) {
+    messages.push("المسافة المقطوعة غير متوفرة من المصدر.");
+  }
+
+  const response: VehicleReportResponse = {
+    vin,
+    status: "FULL_REPORT",
+    market,
+    decoderSource: "NHTSA",
+    decoded: decoderResult.data,
+    history: historyResult.data,
+    historyProvider: historyResult.provider,
+    messages: messages.length ? messages : undefined,
+  };
+
+  return NextResponse.json(response, {
+    status: 200,
+    headers: cacheHeaders(),
+  });
+}
+
+function cacheHeaders() {
+  return {
+    // كاش يومي على الـ CDN
+    "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=604800",
+  };
 }
