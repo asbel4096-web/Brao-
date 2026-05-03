@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, memo, useEffect, useState } from "react";
-import { Bell, MessageCircle, Plus, Search, User as UserIcon, Shield } from "lucide-react";
+import { Bell, MessageCircle, Plus, Search, User as UserIcon, Shield, Heart } from "lucide-react";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { ThemeToggle } from "./theme-toggle";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,6 +13,7 @@ const links = [
   { href: "/", label: "الرئيسية" },
   { href: "/listings", label: "الإعلانات" },
   { href: "/my-listings", label: "إعلاناتي" },
+  { href: "/favorites", label: "المفضلة" },
   { href: "/messages", label: "الدردشة" },
 ];
 
@@ -21,14 +22,14 @@ function SiteHeaderImpl() {
   const { user, profile, isAdmin } = useAuth();
   const [search, setSearch] = useState("");
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [favCount, setFavCount] = useState(0);
 
+  // اشتراك مؤجَّل بالإشعارات
   useEffect(() => {
     if (!user) {
       setUnreadNotifications(0);
       return;
     }
-
-    // ✨ تأخير الاشتراك في الإشعارات حتى المتصفح يصبح خاملاً
     let unsub: (() => void) | null = null;
     let cancelled = false;
 
@@ -43,6 +44,42 @@ function SiteHeaderImpl() {
         q,
         (snap) => setUnreadNotifications(snap.size),
         () => setUnreadNotifications(0)
+      );
+    };
+
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      const id = (window as any).requestIdleCallback(startSubscription, { timeout: 2000 });
+      return () => {
+        cancelled = true;
+        (window as any).cancelIdleCallback?.(id);
+        unsub?.();
+      };
+    } else {
+      const t = setTimeout(startSubscription, 800);
+      return () => {
+        cancelled = true;
+        clearTimeout(t);
+        unsub?.();
+      };
+    }
+  }, [user]);
+
+  // اشتراك مؤجَّل بالمفضلة (لإظهار العدد على الأيقونة)
+  useEffect(() => {
+    if (!user) {
+      setFavCount(0);
+      return;
+    }
+    let unsub: (() => void) | null = null;
+    let cancelled = false;
+
+    const startSubscription = () => {
+      if (cancelled) return;
+      const colRef = collection(db, "users", user.uid, "favorites");
+      unsub = onSnapshot(
+        colRef,
+        (snap) => setFavCount(snap.size),
+        () => setFavCount(0)
       );
     };
 
@@ -128,6 +165,24 @@ function SiteHeaderImpl() {
         </nav>
 
         <div className="flex items-center gap-2 shrink-0">
+          {/* أيقونة المفضلة - تظهر على الجوال أيضاً */}
+          <Link
+            href="/favorites"
+            prefetch={false}
+            className="relative inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-slate-700 transition hover:border-rose-300 hover:text-rose-600 dark:border-slate-700 dark:text-slate-200 dark:hover:border-rose-700 dark:hover:text-rose-400"
+            aria-label="المفضلة"
+          >
+            <Heart
+              size={18}
+              className={favCount > 0 ? "fill-rose-500 text-rose-500" : ""}
+            />
+            {favCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-black text-white">
+                {favCount > 9 ? "9+" : favCount}
+              </span>
+            )}
+          </Link>
+
           <Link
             href="/notifications"
             prefetch={false}

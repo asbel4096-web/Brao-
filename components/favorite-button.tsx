@@ -5,6 +5,7 @@ import { memo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useFavoriteState } from "@/hooks/useFavorites";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
 import type { Listing } from "@/lib/types";
 
 interface Props {
@@ -22,6 +23,7 @@ function FavoriteButtonImpl({
 }: Props) {
   const { user } = useAuth();
   const router = useRouter();
+  const toast = useToast();
   const { isFav: liked, toggle } = useFavoriteState(listing.id);
   const [busy, setBusy] = useState(false);
 
@@ -29,22 +31,31 @@ function FavoriteButtonImpl({
     async (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
+
+      // غير مسجّل دخول → toast + إعادة توجيه
       if (!user) {
+        toast.info("سجّل الدخول لحفظ الإعلانات في المفضلة.");
         router.push(`/login?redirect=/listings/${listing.id}`);
         return;
       }
+
       if (busy) return;
       setBusy(true);
       try {
         await toggle(listing);
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error("toggle favorite", err);
+        // tactile feedback: toast صغير عند النجاح
+        if (liked) {
+          toast.info("تمت الإزالة من المفضلة.");
+        } else {
+          toast.success("تمت الإضافة إلى المفضلة.");
+        }
+      } catch (err: any) {
+        toast.error(err?.message || "تعذّر تحديث المفضلة.");
       } finally {
         setBusy(false);
       }
     },
-    [user, busy, toggle, listing, router]
+    [user, busy, toggle, listing, router, toast, liked]
   );
 
   if (variant === "button") {
@@ -90,7 +101,7 @@ function FavoriteButtonImpl({
         disabled:opacity-60 disabled:cursor-not-allowed
         ${
           liked
-            ? "border-rose-400/60 bg-rose-500/90 text-white shadow-lg shadow-rose-500/30"
+            ? "border-rose-400/60 bg-rose-500/90 text-white shadow-lg shadow-rose-500/30 scale-105"
             : "border-white/30 bg-black/40 text-white hover:bg-black/60"
         }
         ${className}
@@ -101,10 +112,6 @@ function FavoriteButtonImpl({
   );
 }
 
-/**
- * memo: لا يعيد الـ render إلا عند تغيّر listing.id فعلياً.
- * مهم في grids الكبيرة حيث 20+ FavoriteButton يُعرضون معاً.
- */
 export const FavoriteButton = memo(FavoriteButtonImpl, (prev, next) => {
   return (
     prev.listing.id === next.listing.id &&

@@ -1,29 +1,23 @@
-# تفعيل ميزة تقرير المركبة — Bratsho Car
-
-تكامل حقيقي مع NHTSA vPIC API (مجاني، بدون مفتاح).
+# إصلاح OTP + اسم التحقق + المفضلة — Bratsho Car
 
 ## الملفات في الـ zip
 
 ```
-lib/
-└── vin.ts                                   ← جديد (التحقق من VIN + الأنواع)
-
-app/
-├── api/vehicle-report/
-│   └── route.ts                             ← جديد (API Route مع NHTSA)
-└── (public)/vehicle-report/
-    └── page.tsx                             ← مُحدَّث (تكامل حقيقي)
+app/(public)/login/
+└── LoginClient.tsx              ← مُحدَّث (عداد OTP + إعادة إرسال)
 
 components/
-└── vehicle-report-card.tsx                  ← جديد (عرض النتيجة)
+├── bottom-nav.tsx               ← مُحدَّث (إضافة المفضلة + شارة عدد)
+├── site-header.tsx              ← مُحدَّث (أيقونة المفضلة + شارة)
+└── favorite-button.tsx          ← مُحدَّث (toast feedback عند الإضافة/الإزالة)
 ```
 
 ## التطبيق
 
 ```bash
-unzip vehicle-report-feature.zip
-git add lib/ components/ app/
-git commit -m "feat: real vehicle report via NHTSA vPIC API"
+unzip otp-favorites-fixes.zip
+git add app/ components/
+git commit -m "fix: OTP countdown timer + visible favorites navigation + toast feedback"
 git push
 ```
 
@@ -31,131 +25,126 @@ git push
 
 ---
 
-## شرح الميزة
+## 1) عداد ثواني OTP
 
-### 1) `lib/vin.ts` — التحقق + الأنواع
+**الملف:** `app/(public)/login/LoginClient.tsx`
 
-- **`validateVin(input)`**: يتحقق من 17 خانة + بدون I/O/Q + حروف وأرقام إنجليزية فقط.
-- **`normalizeVin(input)`**: ينظّف ويحوّل لأحرف كبيرة.
-- **`VehicleReport` و `VehicleData`**: shape موحَّد للرد - مهم لتبديل المزوّد لاحقاً (CARFAX/AutoCheck) دون كسر الواجهة.
+**ما تم إضافته:**
 
-**ملاحظة مدروسة**: لا نتحقق من check digit (الموضع 9) لأن VINs الأوروبية والآسيوية لا تتبع نفس قاعدة US — قد يرفض المستخدمين الليبيين بشكل خاطئ.
+- ثابت `OTP_RESEND_SECONDS = 144` (يمكن تعديله بسهولة).
+- `useState` لـ `countdown` + `useRef` لـ `intervalRef`.
+- دالة `startCountdown(seconds)` تبدأ مؤقت ينقص كل ثانية.
+- تنظيف المؤقت تلقائياً عند مغادرة الصفحة (في الـ cleanup الموجود).
+- يبدأ العداد تلقائياً بعد إرسال الرمز بنجاح.
+- مكوّن جديد `OtpCountdownCard` يعرض:
+  - **أثناء العداد**: أيقونة ساعة + الوقت المتبقي بصيغة `M:SS` (مثلاً `2:24`) أو ثواني مفردة (`87 ثانية`) + شريط تقدم متحرّك بـ gradient أزرق.
+  - **بعد انتهاء العداد**: زر "إعادة الإرسال" مفعّل + رسالة "لم يصلك الرمز؟".
+- زر إعادة الإرسال **معطّل تماماً** أثناء العداد.
+- حقل رقم الهاتف يصبح disabled بعد إرسال الرمز (لمنع تعديله أثناء انتظار الرمز).
 
-### 2) `app/api/vehicle-report/route.ts` — API Route آمن
+**تحسينات إضافية للـ UX:**
 
-**Endpoint:** `GET /api/vehicle-report?vin=XXXXXXXXXXXXXXXXX`
-
-**المزايا:**
-- **Proxy آمن**: يخفي مزوّد البيانات عن الواجهة → يسهّل تبديل NHTSA بـ CARFAX لاحقاً بتعديل ملف واحد فقط.
-- **التحقق قبل الإرسال**: لا يُرسل طلب لـ NHTSA إذا كان VIN غير صالح.
-- **كاش 24 ساعة**: نفس VIN لا يُسأل API مرتين → سريع جداً + يحمي NHTSA من الحمل الزائد.
-- **معالجة أخطاء كاملة**: 400 (VIN غير صالح) / 404 (غير موجود) / 502 (مشكلة NHTSA) / 500 (خطأ شبكة).
-- **تحويل البيانات**: يحوّل الحقول الفارغة و "Not Applicable" إلى `undefined` ليسهل الفلترة في الواجهة.
-
-**استخدام NHTSA:**
-```
-GET https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/{vin}?format=json
-```
-بدون authentication، بدون rate limit مذكور.
-
-### 3) `components/vehicle-report-card.tsx` — عرض النتيجة
-
-تصميم بطاقة احترافية:
-- **Hero بـ gradient أزرق داكن** مطابق لهوية Bratsho Car (`from-[#071133] via-[#0a1d55] to-[#1c389c]`).
-- اسم السيارة كبير: `Toyota Camry 2021`.
-- شارات الحالة (مصدر البيانات + decoded clean).
-- VIN معروض بـ font monospace tracking-wider.
-- 3 hero stats (الشركة، الموديل، السنة).
-- بطاقة المواصفات التفصيلية (15+ حقل) — تعرض فقط الموجود فعلاً (ما فيش حقول فارغة).
-- ملاحظات NHTSA إن وُجدت.
-- تنبيه مرئي إذا كان decoded غير clean.
-
-**الحقول المعروضة** (كلها موجودة كما طلبت):
-- ✅ الشركة المصنعة (Make)
-- ✅ الموديل (Model)
-- ✅ سنة الصنع (ModelYear)
-- ✅ نوع المركبة (VehicleType)
-- ✅ بلد الصنع (PlantCountry)
-- ✅ المحرك (DisplacementL + EngineModel)
-- ✅ نظام الدفع (DriveType)
-- ✅ عدد الأبواب (Doors)
-- ✅ عدد الأسطوانات (EngineCylinders)
-- ✅ Fuel type (FuelTypePrimary)
-- ✅ Plant country/city/state
-- ✅ Notes
-- إضافة: قدرة المحرك، ناقل الحركة، عدد المقاعد، فئة الهيكل، السلسلة، الفئة (Trim)، المُصنِّع الكامل
-
-### 4) `app/(public)/vehicle-report/page.tsx` — الصفحة
-
-**الحالات الأربع** الكاملة:
-- **`idle`**: نموذج البحث + بطاقات المصادر (NHTSA متاح، CARFAX/AutoCheck "قريباً").
-- **`loading`**: مؤشر animation + skeleton للنتيجة المتوقعة.
-- **`success`**: عرض البطاقة الكاملة.
-- **`error`**: بطاقة وردية مع زر "إعادة المحاولة".
-- **`notfound`** (حالة منفصلة): بطاقة كهرمانية مع نصائح مخصصة لـ VINs الأجنبية.
-
-**الـ UX:**
-- input بـ `font-mono tracking-wider` لقراءة أسهل.
-- عدّاد 17/X بلون أخضر عند الاكتمال.
-- زر مسح (X) داخل الـ input.
-- زر البحث معطّل حتى يصل الـ VIN لـ 17 خانة.
-- toast عند الأخطاء (يستخدم `useToast` من المرحلة السابقة).
-- responsive كامل (single column على الجوال، 3 columns للحقول على الديسكتوب).
+- حقل الرمز أصبح بـ `font-mono text-2xl tracking-[0.5em]` (شكل أنظف وأسهل للقراءة).
+- placeholder صار `------` بدل `123456`.
+- يقبل أرقام فقط ويقصّ تلقائياً عند 6 أرقام.
+- زر "تأكيد الرمز" معطَّل حتى يكتمل 6 أرقام.
+- دعم `autoComplete="one-time-code"` → iOS/Android يعرضان الرمز من SMS مباشرة فوق الكيبورد.
 
 ---
 
-## للمستقبل: إضافة CARFAX أو AutoCheck
+## 2) اسم "CloudOTP" في شاشة التحقق
 
-هيكل الكود مُصمَّم خصيصاً لذلك:
+⚠️ **مهم: هذا ليس في الكود، بل في إعدادات Firebase Console.**
 
-1. عدّل `app/api/vehicle-report/route.ts` ليجرّب CARFAX أولاً (مع API key من env)، ثم fallback لـ NHTSA.
-2. احتفظ بنفس shape الرد `VehicleReport` — الواجهة ستعمل بدون أي تغيير.
-3. غيّر فقط `report.source` ليُظهر للمستخدم مصدر البيانات الحقيقي.
+تأكدت بفحص شامل: `grep -rn "CloudOTP" .` → **0 نتائج**. الاسم يُولَّد تلقائياً من Firebase reCAPTCHA إذا لم تُحدِّد اسماً عاماً للتطبيق.
 
-```ts
-// future: lib/vehicle-providers/carfax.ts
-export async function fetchCarfaxReport(vin: string): Promise<VehicleReport | null> {
-  const apiKey = process.env.CARFAX_API_KEY;
-  if (!apiKey) return null;
-  // ... CARFAX call
-}
+**الحل خطوة بخطوة:**
 
-// app/api/vehicle-report/route.ts (المستقبل)
-const carfaxReport = await fetchCarfaxReport(vin);
-if (carfaxReport) return NextResponse.json(carfaxReport);
-// fallback to NHTSA
-const nhtsaReport = await fetchNhtsaReport(vin);
-return NextResponse.json(nhtsaReport);
-```
+1. افتح [Firebase Console](https://console.firebase.google.com/) → مشروع **`bratsho-car`**.
+2. اضغط ⚙️ (الترس) بجانب اسم المشروع → **Project settings**.
+3. في تبويب **General**:
+   - انزل إلى قسم **Public-facing name**.
+   - عدّل الاسم من القيمة الحالية (التي تظهر كـ "CloudOTP" أو "project-XXXXX") إلى:
+     ```
+     Bratsho Car
+     ```
+   - أو بالعربية:
+     ```
+     براتشو كار
+     ```
+4. اضغط **Save**.
+5. (اختياري لكن موصى به) في نفس الصفحة:
+   - **Support email** → اختر بريدك الرسمي.
+6. أعد محاولة تسجيل الدخول برقم الهاتف من الموقع → ستجد الاسم الجديد في رسالة SMS وعلى شاشة reCAPTCHA.
+
+**ملاحظة:** التغيير قد يستغرق دقائق قليلة لينتشر. لو ظهر الاسم القديم، انتظر 5-10 دقائق.
 
 ---
 
-## VIN للاختبار
+## 3) إصلاح زر المفضلة
 
-جرّب هذه الـ VINs الحقيقية للتأكد:
+**التشخيص الحقيقي:**
 
-| VIN | المركبة المتوقعة |
-|---|---|
-| `1HGBH41JXMN109186` | Honda |
-| `1FA6P8TD5M5100001` | Ford Mustang 2021 |
-| `WA1A4AFY2J2008189` | Audi Q5 2018 |
-| `5XYKT3A12CG000000` | Kia Sorento |
+زر القلب كان **يعمل بشكل صحيح**! يحفظ في `users/{uid}/favorites/{listingId}` ويُحدِّث الأيقونة فوراً (optimistic update).
+
+**المشكلة الفعلية:** **لا يوجد رابط ظاهر لصفحة `/favorites` في الواجهة!**
+
+تأكدت بفحص:
+- `bottom-nav.tsx`: روابط الرئيسية، الإعلانات، إضافة، الدردشة، **التقارير** — لا يوجد المفضلة!
+- `site-header.tsx`: نفس الروابط، لا يوجد المفضلة في navigation الرئيسي.
+- صفحة `/favorites/page.tsx` **موجودة وتعمل** ✅
+- الرابط الوحيد كان في `site-footer.tsx` و `profile/page.tsx` — مخفية أو تحتاج تسجيل دخول.
+
+النتيجة: المستخدم يضغط القلب، الإعلان **يُحفظ فعلاً** في Firestore، لكنه لا يجد طريقاً لصفحة المفضلة لرؤيته.
+
+### الإصلاحات الثلاثة
+
+#### أ) `components/bottom-nav.tsx`
+
+- **استبدلت "التقارير"** (`/vehicle-report`) بـ **"المفضلة"** (`/favorites`) في الشريط السفلي.
+- أضفت subscription على `users/{uid}/favorites` (مؤجَّل بـ `requestIdleCallback` للأداء).
+- شارة وردية بعدد المفضلة (مثل شارة الرسائل).
+- أيقونة القلب تتلوّن وردياً عند وجود مفضلة (أو عند تنشيط الصفحة).
+
+(`/vehicle-report` ما زالت موجودة في الموقع — يمكن الوصول إليها عبر site-header أو profile.)
+
+#### ب) `components/site-header.tsx`
+
+- أضفت رابط "المفضلة" في navigation الديسكتوب (`lg:flex`).
+- **أضفت أيقونة قلب دائمة في كل المقاسات** (شغّالة على الجوال أيضاً) — بنفس نمط زر الإشعارات.
+- شارة عدد + قلب ممتلئ عند وجود مفضلة.
+
+#### ج) `components/favorite-button.tsx`
+
+أضفت feedback للمستخدم بـ toast (يستخدم `useToast` الموجود):
+- ✅ **عند الإضافة**: `toast.success("تمت الإضافة إلى المفضلة.")`
+- ℹ️ **عند الإزالة**: `toast.info("تمت الإزالة من المفضلة.")`
+- 🔐 **غير مسجَّل**: `toast.info("سجّل الدخول لحفظ الإعلانات في المفضلة.")` ثم redirect.
+- ❌ **خطأ**: `toast.error(...)`.
+
+أيضاً: أضفت `scale-105` على الزر في حالة liked → تأكيد بصري إضافي للمستخدم.
+
+### النتيجة بعد الإصلاح
+
+1. المستخدم يضغط القلب على بطاقة إعلان → القلب يتحوّل أحمر فوراً + toast "تمت الإضافة" + الشارة في الـ bottom nav تتحدّث.
+2. المستخدم يفتح **`/favorites` من شريط الجوال أو الأيقونة في الـ header** → يجد كل إعلاناته المحفوظة.
+3. الإزالة من المفضلة (إما من القلب أو من الزر في صفحة المفضلة) → toast + الشارة تنقص + البطاقة تختفي من القائمة.
 
 ---
 
 ## التحقق
 
 ```
-✓ tsc --noEmit                       → 0 أخطاء
-✓ NHTSA API call                     → GET فقط، بدون مفتاح
-✓ التحقق من VIN قبل الطلب             → نعم
-✓ كاش 24 ساعة                        → نعم (s-maxage + revalidate)
-✓ معالجة 4 حالات (idle/loading/...) → نعم
-✓ متجاوب للجوال                       → نعم (single col → 3 cols)
-✓ RTL                                → نعم
-✓ هوية Bratsho Car                   → نعم (نفس gradient الـ Hero)
-✓ متوافق مع المراحل السابقة            → نعم (يستخدم useToast)
-✓ جاهز لـ CARFAX/AutoCheck لاحقاً     → نعم (نفس shape)
+✓ tsc --noEmit              → 0 أخطاء
+✓ عداد OTP                  → يبدأ من 144 وينقص كل ثانية
+✓ زر إعادة الإرسال           → معطَّل أثناء العداد، مفعَّل بعده
+✓ شريط تقدم بصري             → موجود (gradient أزرق)
+✓ رابط المفضلة في bottom-nav  → نعم، مع شارة عدد
+✓ رابط المفضلة في header     → نعم، أيقونة قلب على كل المقاسات
+✓ toast feedback             → عند الإضافة/الإزالة/الخطأ/عدم تسجيل الدخول
+✓ متوافق مع المراحل السابقة   → نعم
 ```
 
-**الميزة جاهزة للنشر 🚀**
+## ملاحظة عن "CloudOTP"
+
+تذكير: تغيير الاسم في رسالة SMS وشاشة reCAPTCHA يتم من **Firebase Console → Project settings → Public-facing name**، **ليس** من الكود. لا يوجد ملف لتعديله في المشروع لهذا الغرض. اتبع الخطوات في القسم 2 أعلاه.
