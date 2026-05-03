@@ -10,7 +10,7 @@ import {
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import {
-  LogOut, Settings, Heart, MessageCircle, ListChecks, Shield, Bell,
+  LogOut, Settings, Heart, MessageCircle, ListChecks, Shield, Bell, FileText,
 } from "lucide-react";
 import { auth, db, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -98,7 +98,6 @@ export default function ProfilePage() {
         { merge: true }
       );
 
-      // also reflect on auth profile
       try {
         await updateProfile(user, {
           displayName: name.trim() || user.displayName || "",
@@ -113,8 +112,6 @@ export default function ProfilePage() {
       await refreshProfile();
       setMessage("تم حفظ بيانات الحساب بنجاح.");
     } catch (err: any) {
-      // eslint-disable-next-line no-console
-      console.error("Save profile error:", err);
       setError(err?.message || "حدث خطأ أثناء حفظ الحساب.");
     } finally {
       setSaving(false);
@@ -126,8 +123,6 @@ export default function ProfilePage() {
       await signOut(auth);
       router.replace("/");
     } catch (err: any) {
-      // eslint-disable-next-line no-console
-      console.error("Logout error:", err);
       setError(err?.message || "فشل تسجيل الخروج.");
     }
   };
@@ -189,8 +184,8 @@ export default function ProfilePage() {
             </button>
           </div>
 
-          {/* Quick actions */}
-          <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {/* Quick actions - 5 بطاقات */}
+          <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             <Link href="/my-listings" className="card p-4 text-center hover:border-brand-300 transition">
               <ListChecks size={22} className="mx-auto text-brand-700" />
               <div className="mt-2 text-sm font-bold dark:text-white">إعلاناتي</div>
@@ -202,6 +197,10 @@ export default function ProfilePage() {
             <Link href="/messages" className="card p-4 text-center hover:border-brand-300 transition">
               <MessageCircle size={22} className="mx-auto text-brand-700" />
               <div className="mt-2 text-sm font-bold dark:text-white">الرسائل</div>
+            </Link>
+            <Link href="/vehicle-report" className="card p-4 text-center hover:border-brand-300 transition">
+              <FileText size={22} className="mx-auto text-brand-700" />
+              <div className="mt-2 text-sm font-bold dark:text-white">تقرير المركبة</div>
             </Link>
             <Link href="/notifications" className="card p-4 text-center hover:border-action-300 transition">
               <Bell size={22} className="mx-auto text-action-600" />

@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, memo, useEffect, useState } from "react";
-import { Bell, MessageCircle, Plus, Search, User as UserIcon, Shield, Heart } from "lucide-react";
+import {
+  Bell, MessageCircle, Plus, Search, User as UserIcon, Shield, Heart, FileText,
+} from "lucide-react";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { ThemeToggle } from "./theme-toggle";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,6 +17,7 @@ const links = [
   { href: "/my-listings", label: "إعلاناتي" },
   { href: "/favorites", label: "المفضلة" },
   { href: "/messages", label: "الدردشة" },
+  { href: "/vehicle-report", label: "تقرير المركبة" },
 ];
 
 function SiteHeaderImpl() {
@@ -64,7 +67,7 @@ function SiteHeaderImpl() {
     }
   }, [user]);
 
-  // اشتراك مؤجَّل بالمفضلة (لإظهار العدد على الأيقونة)
+  // اشتراك مؤجَّل بالمفضلة
   useEffect(() => {
     if (!user) {
       setFavCount(0);
@@ -165,7 +168,18 @@ function SiteHeaderImpl() {
         </nav>
 
         <div className="flex items-center gap-2 shrink-0">
-          {/* أيقونة المفضلة - تظهر على الجوال أيضاً */}
+          {/* أيقونة تقرير المركبة - تظهر على كل المقاسات */}
+          <Link
+            href="/vehicle-report"
+            prefetch={false}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-slate-700 transition hover:border-brand-300 hover:text-brand-700 dark:border-slate-700 dark:text-slate-200 dark:hover:border-brand-700 dark:hover:text-brand-300"
+            aria-label="تقرير المركبة"
+            title="تقرير المركبة"
+          >
+            <FileText size={18} />
+          </Link>
+
+          {/* أيقونة المفضلة */}
           <Link
             href="/favorites"
             prefetch={false}
