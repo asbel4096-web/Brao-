@@ -36,6 +36,7 @@ export default function ListingDetailsPage() {
   const router = useRouter();
   const { user, profile } = useAuth();
   const toast = useToast();
+
   const [listing, setListing] = useState<Listing | null>(null);
   const [seller, setSeller] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,12 +48,18 @@ export default function ListingDetailsPage() {
       try {
         const ref = doc(db, "listings", params.id);
         const snap = await getDoc(ref);
+
         if (!snap.exists()) {
           setMissing(true);
           setLoading(false);
           return;
         }
-        const data = { id: snap.id, ...(snap.data() as any) } as Listing;
+
+        const data = {
+          ...(snap.data() as Omit<Listing, "id">),
+          id: snap.id,
+        } as Listing;
+
         setListing(data);
         setLoading(false);
 
@@ -63,7 +70,11 @@ export default function ListingDetailsPage() {
         try {
           const sellerSnap = await getDoc(doc(db, "users", data.ownerId));
           if (sellerSnap.exists()) {
-            setSeller({ uid: sellerSnap.id, ...(sellerSnap.data() as UserProfile) });
+            const sellerData = sellerSnap.data() as UserProfile;
+            setSeller({
+              ...sellerData,
+              uid: sellerSnap.id,
+            });
           }
         } catch {}
       } catch {
@@ -71,6 +82,7 @@ export default function ListingDetailsPage() {
         setLoading(false);
       }
     };
+
     if (params.id) void load();
   }, [params.id]);
 
@@ -84,12 +96,16 @@ export default function ListingDetailsPage() {
       router.push(`/login?redirect=/listings/${params.id}`);
       return;
     }
+
     if (!listing) return;
+
     if (listing.ownerId === user.uid) {
       toast.warning("لا يمكنك بدء دردشة مع إعلانك الخاص.");
       return;
     }
+
     setChatLoading(true);
+
     try {
       const chatId = buildChatId(user.uid, listing.ownerId, listing.id);
       const chatRef = doc(db, "chats", chatId);
@@ -103,7 +119,13 @@ export default function ListingDetailsPage() {
           participants: [user.uid, listing.ownerId].sort(),
           participantsInfo: {
             [user.uid]: {
-              name: profile?.businessName || profile?.name || user.displayName || user.email || user.phoneNumber || "مستخدم",
+              name:
+                profile?.businessName ||
+                profile?.name ||
+                user.displayName ||
+                user.email ||
+                user.phoneNumber ||
+                "مستخدم",
               photoURL: profile?.photoURL || user.photoURL || "",
             },
             [listing.ownerId]: {
@@ -115,6 +137,7 @@ export default function ListingDetailsPage() {
           createdAt: serverTimestamp(),
         });
       }
+
       router.push(`/messages/${chatId}`);
     } catch (err: any) {
       toast.error(err?.message || "تعذّر فتح الدردشة.");
@@ -165,7 +188,9 @@ export default function ListingDetailsPage() {
 
             <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <h1 className="text-2xl font-black text-slate-950 dark:text-white sm:text-3xl">{listing.title}</h1>
+                <h1 className="text-2xl font-black text-slate-950 dark:text-white sm:text-3xl">
+                  {listing.title}
+                </h1>
                 <div className="mt-2 flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-300">
                   <MapPin size={15} />
                   <span>
@@ -177,13 +202,19 @@ export default function ListingDetailsPage() {
 
               <div className="text-left">
                 <div className="text-xs text-slate-500 dark:text-slate-400">السعر</div>
-                <div className="text-2xl font-black text-brand-700 dark:text-brand-300 sm:text-3xl">{formatPrice(listing.price)}</div>
+                <div className="text-2xl font-black text-brand-700 dark:text-brand-300 sm:text-3xl">
+                  {formatPrice(listing.price)}
+                </div>
               </div>
             </div>
 
             <div className="mt-5 grid grid-cols-2 gap-3 border-t border-slate-100 pt-5 dark:border-slate-800 sm:grid-cols-4">
               <Spec icon={Calendar} label="السنة" value={listing.year ?? "-"} />
-              <Spec icon={Gauge} label="العداد" value={listing.mileage ? `${Number(listing.mileage).toLocaleString("ar-LY")} كم` : "-"} />
+              <Spec
+                icon={Gauge}
+                label="العداد"
+                value={listing.mileage ? `${Number(listing.mileage).toLocaleString("ar-LY")} كم` : "-"}
+              />
               <Spec icon={Fuel} label="الوقود" value={listing.fuel ?? "-"} />
               <Spec icon={Settings} label="الناقل" value={listing.transmission ?? "-"} />
             </div>
@@ -199,14 +230,18 @@ export default function ListingDetailsPage() {
 
             <div className="mt-6 border-t border-slate-100 pt-5 dark:border-slate-800">
               <h3 className="mb-3 text-base font-black dark:text-white">الوصف</h3>
-              <p className="whitespace-pre-line text-[15px] leading-7 text-slate-700 dark:text-slate-200">{listing.description}</p>
+              <p className="whitespace-pre-line text-[15px] leading-7 text-slate-700 dark:text-slate-200">
+                {listing.description}
+              </p>
             </div>
 
             {(listing.features?.length || listing.defects?.length) && (
               <div className="mt-6 grid gap-4 border-t border-slate-100 pt-5 dark:border-slate-800 sm:grid-cols-2">
                 {listing.features?.length ? (
                   <div>
-                    <h4 className="mb-3 text-sm font-black text-emerald-700 dark:text-emerald-300">المميزات</h4>
+                    <h4 className="mb-3 text-sm font-black text-emerald-700 dark:text-emerald-300">
+                      المميزات
+                    </h4>
                     <ul className="space-y-2 text-sm">
                       {listing.features.map((feature) => (
                         <li key={feature} className="flex items-center gap-2 dark:text-slate-200">
@@ -217,9 +252,12 @@ export default function ListingDetailsPage() {
                     </ul>
                   </div>
                 ) : null}
+
                 {listing.defects?.length ? (
                   <div>
-                    <h4 className="mb-3 text-sm font-black text-rose-700 dark:text-rose-300">عيوب وملاحظات</h4>
+                    <h4 className="mb-3 text-sm font-black text-rose-700 dark:text-rose-300">
+                      عيوب وملاحظات
+                    </h4>
                     <ul className="space-y-2 text-sm">
                       {listing.defects.map((defect) => (
                         <li key={defect} className="flex items-center gap-2 dark:text-slate-200">
@@ -234,11 +272,20 @@ export default function ListingDetailsPage() {
             )}
 
             <div className="mt-6 border-t border-slate-100 pt-5 dark:border-slate-800">
-              <ListingActionsBar listing={listing} commentsCount={Number(listing.commentsCount || 0)} />
+              <ListingActionsBar
+                listing={listing}
+                commentsCount={Number(listing.commentsCount || 0)}
+              />
             </div>
           </div>
 
-          <OwnerStatsBar listingId={listing.id} ownerId={listing.ownerId} initialViews={listing.views} variant="compact" />
+          <OwnerStatsBar
+            listingId={listing.id}
+            ownerId={listing.ownerId}
+            initialViews={listing.views}
+            variant="compact"
+          />
+
           <ListingQualityCard listing={listing} />
 
           {(listing.address || listing.mapLink) && (
@@ -247,9 +294,19 @@ export default function ListingDetailsPage() {
                 <MapPin size={18} className="text-brand-700 dark:text-brand-300" />
                 <h3 className="text-base font-black dark:text-white">الموقع</h3>
               </div>
-              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{listing.city}{listing.address ? ` - ${listing.address}` : ""}</p>
+
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                {listing.city}
+                {listing.address ? ` - ${listing.address}` : ""}
+              </p>
+
               {listing.mapLink ? (
-                <a href={listing.mapLink} target="_blank" rel="noreferrer" className="btn-secondary mt-4">
+                <a
+                  href={listing.mapLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-secondary mt-4"
+                >
                   <MapPin size={16} />
                   فتح الخريطة
                 </a>
@@ -257,7 +314,12 @@ export default function ListingDetailsPage() {
             </div>
           )}
 
-          <ListingComments listingId={listing.id} commentsEnabled={listing.commentsEnabled !== false} ownerId={listing.ownerId} />
+          <ListingComments
+            listingId={listing.id}
+            commentsEnabled={listing.commentsEnabled !== false}
+            ownerId={listing.ownerId}
+          />
+
           <SafetyTipsCard />
         </div>
 
@@ -268,34 +330,72 @@ export default function ListingDetailsPage() {
               <h2 className="text-lg font-black dark:text-white">التاجر</h2>
             </div>
 
-            <Link href={`/traders/${listing.ownerId}`} className="mt-4 flex items-center gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-4 transition hover:border-brand-300 dark:border-slate-800 dark:bg-slate-950/40">
+            <Link
+              href={`/traders/${listing.ownerId}`}
+              className="mt-4 flex items-center gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-4 transition hover:border-brand-300 dark:border-slate-800 dark:bg-slate-950/40"
+            >
               {seller?.photoURL ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={seller.photoURL} alt={sellerName} className="h-16 w-16 rounded-2xl object-cover" referrerPolicy="no-referrer" />
+                <img
+                  src={seller.photoURL}
+                  alt={sellerName}
+                  className="h-16 w-16 rounded-2xl object-cover"
+                  referrerPolicy="no-referrer"
+                />
               ) : (
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-700 text-xl font-black text-white">{sellerName.charAt(0)}</div>
-              )}
-              <div className="min-w-0 flex-1">
-                <div className="text-base font-black text-slate-950 dark:text-white">{sellerName}</div>
-                <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
-                  {seller?.city ? <span className="inline-flex items-center gap-1"><MapPin size={12} />{seller.city}</span> : null}
-                  <span className="inline-flex items-center gap-1"><Star size={12} className="text-amber-500" />{Number(seller?.averageRating || 0).toFixed(1)}</span>
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-700 text-xl font-black text-white">
+                  {sellerName.charAt(0)}
                 </div>
-                <div className="mt-2 text-sm text-brand-700 dark:text-brand-300">عرض صفحة التاجر</div>
+              )}
+
+              <div className="min-w-0 flex-1">
+                <div className="text-base font-black text-slate-950 dark:text-white">
+                  {sellerName}
+                </div>
+
+                <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+                  {seller?.city ? (
+                    <span className="inline-flex items-center gap-1">
+                      <MapPin size={12} />
+                      {seller.city}
+                    </span>
+                  ) : null}
+
+                  <span className="inline-flex items-center gap-1">
+                    <Star size={12} className="text-amber-500" />
+                    {Number(seller?.averageRating || 0).toFixed(1)}
+                  </span>
+                </div>
+
+                <div className="mt-2 text-sm text-brand-700 dark:text-brand-300">
+                  عرض صفحة التاجر
+                </div>
               </div>
             </Link>
 
             <div className="mt-4 grid grid-cols-2 gap-3">
-              <button type="button" onClick={() => void startChat()} className="btn-action" disabled={chatLoading}>
+              <button
+                type="button"
+                onClick={() => void startChat()}
+                className="btn-action"
+                disabled={chatLoading}
+              >
                 <MessageCircle size={16} />
                 {chatLoading ? "جارٍ الفتح..." : "مراسلة"}
               </button>
+
               <a href={listing.phone ? `tel:${listing.phone}` : "#"} className="btn-secondary">
                 <Phone size={16} />
                 اتصال
               </a>
+
               {wa ? (
-                <a href={`https://wa.me/${wa}`} target="_blank" rel="noreferrer" className="btn-secondary col-span-2">
+                <a
+                  href={`https://wa.me/${wa}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-secondary col-span-2"
+                >
                   <MessageCircle size={16} />
                   واتساب
                 </a>
@@ -303,8 +403,16 @@ export default function ListingDetailsPage() {
             </div>
 
             <div className="mt-5 space-y-3 rounded-3xl bg-slate-50 p-4 dark:bg-slate-950/40">
-              <MetaRow icon={ShieldCheck} label="الحالة" value={listing.status === "approved" ? "موثّق داخل المنصة" : "قيد المراجعة"} />
-              <MetaRow icon={ScrollText} label="التعليقات" value={listing.commentsEnabled === false ? "مغلقة" : "مفتوحة"} />
+              <MetaRow
+                icon={ShieldCheck}
+                label="الحالة"
+                value={listing.status === "approved" ? "موثّق داخل المنصة" : "قيد المراجعة"}
+              />
+              <MetaRow
+                icon={ScrollText}
+                label="التعليقات"
+                value={listing.commentsEnabled === false ? "مغلقة" : "مفتوحة"}
+              />
               <MetaRow icon={MapPin} label="المدينة" value={listing.city || "-"} />
             </div>
           </div>
@@ -314,7 +422,15 @@ export default function ListingDetailsPage() {
   );
 }
 
-function Spec({ icon: Icon, label, value }: { icon?: any; label: string; value: string | number }) {
+function Spec({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon?: any;
+  label: string;
+  value: string | number;
+}) {
   return (
     <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-950/40">
       <div className="text-xs font-bold text-slate-500 dark:text-slate-400">{label}</div>
@@ -326,7 +442,15 @@ function Spec({ icon: Icon, label, value }: { icon?: any; label: string; value: 
   );
 }
 
-function MetaRow({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
+function MetaRow({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: any;
+  label: string;
+  value: string;
+}) {
   return (
     <div className="flex items-center justify-between gap-3 text-sm">
       <div className="inline-flex items-center gap-2 text-slate-500 dark:text-slate-400">
