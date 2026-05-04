@@ -10,15 +10,9 @@ import {
   where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { Story, StoryDisplayItem } from "@/lib/stories/types";
+import type { StoryDisplayItem, StoryDocument } from "@/lib/stories/types";
 import { toDisplayItem } from "@/lib/stories/helpers";
 
-/**
- * يجلب القصص النشطة (غير المنتهية).
- *
- * نفلتر بـ expiresAt > now على مستوى Firestore (يحتاج فهرس على expiresAt).
- * ونفلتر مرة أخرى في الواجهة احتياطاً (لو القصة انتهت بين الجلب والعرض).
- */
 export function useStories() {
   const [items, setItems] = useState<StoryDisplayItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,21 +28,30 @@ export function useStories() {
     const unsub = onSnapshot(
       q,
       (snap) => {
-        const result: StoryDisplayItem[] = [];
         const nowMs = Date.now();
-        snap.forEach((d) => {
-          const story = { id: d.id, ...(d.data() as any) } as Story;
+        const nextItems: StoryDisplayItem[] = [];
+
+        snap.forEach((docSnap) => {
+          const raw = docSnap.data() as Omit<StoryDocument, "id">;
+          const story = {
+            ...raw,
+            id: docSnap.id,
+          } as StoryDocument;
+
           const display = toDisplayItem(story);
           if (display && display.expiresAtMs > nowMs) {
-            result.push(display);
+            nextItems.push(display);
           }
         });
-        // ترتيب من الأحدث للأقدم
-        result.sort((a, b) => b.createdAtMs - a.createdAtMs);
-        setItems(result);
+
+        nextItems.sort((a, b) => b.createdAtMs - a.createdAtMs);
+        setItems(nextItems);
         setLoading(false);
       },
-      () => setLoading(false)
+      () => {
+        setItems([]);
+        setLoading(false);
+      }
     );
 
     return () => unsub();

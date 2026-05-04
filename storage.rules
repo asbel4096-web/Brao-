@@ -2,28 +2,34 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     function signedIn() { return request.auth != null; }
+    function maxSize(bytes) { return request.resource.size < bytes; }
     function isImage() { return request.resource.contentType.matches('image/.*'); }
-    function maxSize(mb) { return request.resource.size < mb * 1024 * 1024; }
+    function isVideo() { return request.resource.contentType.matches('video/.*'); }
 
-    // صور الإعلانات: المالك فقط يكتب، الجميع يقرأ
     match /listing-images/{userId}/{allPaths=**} {
       allow read: if true;
       allow write: if signedIn()
         && request.auth.uid == userId
         && isImage()
-        && maxSize(10);
+        && maxSize(10 * 1024 * 1024);
     }
 
-    // صور المستخدم
     match /users/{userId}/{allPaths=**} {
       allow read: if true;
       allow write: if signedIn()
         && request.auth.uid == userId
         && isImage()
-        && maxSize(5);
+        && maxSize(5 * 1024 * 1024);
     }
 
-    // افتراض: لا شيء آخر
+    match /stories/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if signedIn()
+        && request.auth.uid == userId
+        && (isImage() || isVideo())
+        && maxSize(25 * 1024 * 1024);
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }

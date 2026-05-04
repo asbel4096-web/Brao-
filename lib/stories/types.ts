@@ -1,130 +1,128 @@
-import type { Timestamp, FieldValue } from "firebase/firestore";
+import type { FieldValue, Timestamp } from "firebase/firestore";
 
-/**
- * أنواع القصص المدعومة.
- * إضافة نوع جديد لاحقاً (مثل "ورشة") لا تحتاج إلا توسيع هذا الـ union
- * + توسيع الـ payload + إضافة fields component جديد.
- */
 export type StoryType = "car" | "service" | "offer";
+export type StoryMediaKind = "image" | "video";
+export type StoryOwnerRole = "trader" | "service_provider";
 
-/* ============================================================
- * Payloads حسب النوع
- * ============================================================ */
-
-/** قصة سيارة */
-export interface CarStoryPayload {
-  type: "car";
-  title: string;          // عنوان قصير
-  price?: number;         // اختياري
-  city: string;
-  listingId?: string;     // رابط لإعلان داخلي
-  phone?: string;         // اتصال
-  whatsapp?: string;      // واتساب
+export interface StoryMediaItem {
+  id: string;
+  kind: StoryMediaKind;
+  url: string;
+  storagePath: string;
+  mimeType: string;
+  sizeBytes: number;
+  durationSec?: number;
+  width?: number;
+  height?: number;
+  thumbnailUrl?: string;
 }
 
-/** قصة خدمة */
-export interface ServiceStoryPayload {
-  type: "service";
-  serviceName: string;    // اسم الخدمة
-  description: string;    // وصف قصير
+export interface StoryUploadDraft {
+  id: string;
+  file: File;
+  kind: StoryMediaKind;
+  previewUrl: string;
+  mimeType: string;
+  sizeBytes: number;
+  durationSec?: number;
+  width?: number;
+  height?: number;
+}
+
+export interface CarStoryPayload {
+  type: "car";
+  title: string;
+  price?: number;
   city: string;
-  phone: string;          // إجباري للخدمة
+  listingId?: string;
+  phone?: string;
   whatsapp?: string;
 }
 
-/** قصة عرض / تخفيض */
+export interface ServiceStoryPayload {
+  type: "service";
+  serviceName: string;
+  description: string;
+  city: string;
+  phone: string;
+  whatsapp?: string;
+}
+
 export interface OfferStoryPayload {
   type: "offer";
   title: string;
-  /**
-   * مرونة: قد يكون نسبة (50% خصم) أو سعر (200 د.ل بدلاً من 400)
-   * نخزّنه كـ string لمرونة العرض.
-   */
   discount: string;
   city: string;
   phone?: string;
   whatsapp?: string;
 }
 
-/** الـ payload الموحَّد */
-export type StoryPayload =
-  | CarStoryPayload
-  | ServiceStoryPayload
-  | OfferStoryPayload;
+export type StoryPayload = CarStoryPayload | ServiceStoryPayload | OfferStoryPayload;
 
-/* ============================================================
- * مستند القصة في Firestore
- * ============================================================ */
-
-/**
- * شكل المستند في collection 'stories'.
- *
- * createdAt و expiresAt قد تكون Timestamp (عند القراءة) أو
- * FieldValue (عند الكتابة بـ serverTimestamp). الـ helpers تطبيع ذلك.
- */
-export interface Story {
+export interface StoryDocument {
   id: string;
   ownerId: string;
   ownerName: string;
   ownerPhotoURL?: string;
+  ownerRole: StoryOwnerRole;
   type: StoryType;
-  imageUrl: string;
+  coverUrl: string;
+  media: StoryMediaItem[];
   payload: StoryPayload;
-  createdAt: Timestamp | FieldValue;
-  /** بعد 24 ساعة من createdAt */
-  expiresAt: Timestamp | FieldValue;
-  /** عدد المشاهدات الكلي - يقرؤه المالك فقط */
+  createdAt: Timestamp | FieldValue | null;
+  expiresAt: Timestamp | FieldValue | null;
   viewsCount?: number;
 }
-
-/* ============================================================
- * عرض القصة في الواجهة (بعد parsing الـ timestamps)
- * ============================================================ */
 
 export interface StoryDisplayItem {
   id: string;
   ownerId: string;
   ownerName: string;
   ownerPhotoURL?: string;
+  ownerRole: StoryOwnerRole;
   type: StoryType;
-  imageUrl: string;
+  coverUrl: string;
+  media: StoryMediaItem[];
   payload: StoryPayload;
-  /** ms epoch */
   createdAtMs: number;
-  /** ms epoch */
   expiresAtMs: number;
   viewsCount?: number;
 }
 
-/* ============================================================
- * helpers للنوع: كل نوع → label عربي + لون
- * ============================================================ */
+export interface StoryPageItem {
+  pageId: string;
+  storyId: string;
+  storyIndex: number;
+  mediaIndex: number;
+  totalMedia: number;
+  story: StoryDisplayItem;
+  media: StoryMediaItem;
+}
 
 export const STORY_TYPE_META: Record<
   StoryType,
   {
     label: string;
     description: string;
-    /** ألوان tailwind classes للأيقونة في picker */
     bgClass: string;
     iconClass: string;
   }
 > = {
   car: {
     label: "سيارة",
-    description: "اعرض سيارتك بشكل سريع لجمهور واسع",
+    description: "اعرض سيارة أو إعلان بيع بسرعة وبنفس هوية براتشو كار",
     bgClass: "bg-gradient-to-br from-brand-700 to-brand-500",
     iconClass: "text-white",
   },
   service: {
     label: "خدمة",
-    description: "روّج لخدمتك أو ورشتك",
+    description: "روّج لخدمات الصيانة والورش والكهرباء والزواق",
     bgClass: "bg-gradient-to-br from-emerald-600 to-emerald-400",
     iconClass: "text-white",
   },
   offer: {
-    label: "عرض / تخفيض",
-    description: "أعلن عن عرض محدود الوقت",
+    label: "عرض",
+    description: "انشر عروض مؤقتة وتخفيضات بشكل سريع وجذاب",
     bgClass: "bg-gradient-to-br from-action-600 to-action-400",
     iconClass: "text-white",
   },

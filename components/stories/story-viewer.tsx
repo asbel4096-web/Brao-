@@ -1,14 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
-import {
-  doc,
-  increment,
-  serverTimestamp,
-  setDoc,
-  updateDoc,
-} from "firebase/firestore";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { doc, runTransaction, serverTimestamp } from "firebase/firestore";
 import {
   ChevronLeft,
   ChevronRight,
@@ -17,6 +11,7 @@ import {
   MessageCircle,
   Phone,
   Tag,
+  Wrench,
   X,
 } from "lucide-react";
 import { db } from "@/lib/firebase";
@@ -27,81 +22,95 @@ import type {
   OfferStoryPayload,
   ServiceStoryPayload,
   StoryDisplayItem,
+  StoryPageItem,
 } from "@/lib/stories/types";
-import { timeAgo } from "@/lib/stories/helpers";
+import {
+  buildStoryPages,
+  formatStoryCount,
+  STORY_DEFAULT_IMAGE_DURATION_MS,
+  timeAgo,
+} from "@/lib/stories/helpers";
 import { normalizeLibyanPhone } from "@/lib/utils";
 
 interface Props {
-  /** كل قصص نفس المالك */
   stories: StoryDisplayItem[];
-  /** فهرس القصة الأولى للعرض */
   startIndex?: number;
   onClose: () => void;
-  /** استدعاء عند انتهاء كل قصص هذا المالك (للانتقال للمالك التالي) */
   onCompleteOwner?: () => void;
+  onViewedStory?: (storyId: string) => void;
 }
-
-/** مدة عرض كل قصة - 5 ثوان */
-const STORY_DURATION_MS = 5000;
 
 export function StoryViewer({
   stories,
   startIndex = 0,
   onClose,
   onCompleteOwner,
+  onViewedStory,
 }: Props) {
   const { user } = useAuth();
+  const pages = useMemo(() => buildStoryPages(stories), [stories]);
   const [index, setIndex] = useState(startIndex);
   const [progress, setProgress] = useState(0);
   const [paused, setPaused] = useState(false);
+
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startedAtRef = useRef<number>(Date.now());
   const elapsedBeforePauseRef = useRef<number>(0);
-  const viewedRef = useRef<Set<string>>(new Set());
+  const viewedStoryIdsRef = useRef<Set<string>>(new Set());
 
-  const current = stories[index];
+  const currentPage = pages[index];
+  const currentStory = currentPage?.story;
+  const currentMedia = currentPage?.media;
+  const currentDurationMs =
+    currentMedia?.kind === "video" && currentMedia.durationSec
+      ? Math.max(3000, currentMedia.durationSec * 1000)
+      : STORY_DEFAULT_IMAGE_DURATION_MS;
 
-  /* ----------------------------------------------------------
-   * تسجيل المشاهدة عند تغيّر القصة
-   * ---------------------------------------------------------- */
   useEffect(() => {
-    if (!current) return;
-    if (viewedRef.current.has(current.id)) return;
-    if (user && user.uid === current.ownerId) {
-      // المالك لا يحسب لنفسه مشاهدة
-      viewedRef.current.add(current.id);
+    if (!currentStory) return;
+    onViewedStory?.(currentStory.id);
+
+    if (!user || user.uid === currentStory.ownerId || viewedStoryIdsRef.current.has(currentStory.id)) {
+      viewedStoryIdsRef.current.add(currentStory.id);
       return;
     }
-    viewedRef.current.add(current.id);
+
+    viewedStoryIdsRef.current.add(currentStory.id);
 
     const recordView = async () => {
       try {
-        // 1) زيادة العداد الإجمالي
-        await updateDoc(doc(db, "stories", current.id), {
-          viewsCount: increment(1),
-        });
+        const storyRef = doc(db, "stories", currentStory.id);
+        const viewerRef = doc(db, "stories", currentStory.id, "viewers", user.uid);
 
-        // 2) سجل المشاهد (لقائمة المشاهدين الخاصة بالمالك - اختيارية)
-        if (user) {
-          await setDoc(
-            doc(db, "stories", current.id, "viewers", user.uid),
-            {
-              userId: user.uid,
-              viewedAt: serverTimestamp(),
-            },
-            { merge: true }
-          );
-        }
+        await runTransaction(db, async (transaction) => {
+          const viewerSnap = await transaction.get(viewerRef);
+          if (viewerSnap.exists()) return;
+
+          const storySnap = await transaction.get(storyRef);
+          if (!storySnap.exists()) return;
+
+          const currentViews = Number(storySnap.data().viewsCount || 0);
+
+          transaction.set(viewerRef, {
+            userId: user.uid,
+            storyId: currentStory.id,
+            ownerId: currentStory.ownerId,
+            viewedAt: serverTimestamp(),
+          });
+
+          transaction.update(storyRef, {
+            viewsCount: currentViews + 1,
+          });
+        });
       } catch {
-        // تسجيل المشاهدة ليس حرجاً
+        // تجاهل فشل التحليلات حتى لا تتعطل المشاهدة
       }
     };
-    void recordView();
-  }, [current, user]);
 
-  /* ----------------------------------------------------------
-   * التقدم الزمني للقصة الحالية
-   * ---------------------------------------------------------- */
+    void recordView();
+  }, [currentStory, onViewedStory, user]);
+
   useEffect(() => {
     setProgress(0);
     elapsedBeforePauseRef.current = 0;
@@ -112,14 +121,21 @@ export function StoryViewer({
     if (paused) {
       elapsedBeforePauseRef.current += Date.now() - startedAtRef.current;
       if (intervalRef.current) clearInterval(intervalRef.current);
+      if (videoRef.current && !videoRef.current.paused) {
+        videoRef.current.pause();
+      }
       return;
     }
 
     startedAtRef.current = Date.now();
+
+    if (currentMedia?.kind === "video" && videoRef.current) {
+      void videoRef.current.play().catch(() => undefined);
+    }
+
     intervalRef.current = setInterval(() => {
-      const elapsed =
-        elapsedBeforePauseRef.current + (Date.now() - startedAtRef.current);
-      const pct = Math.min(100, (elapsed / STORY_DURATION_MS) * 100);
+      const elapsed = elapsedBeforePauseRef.current + (Date.now() - startedAtRef.current);
+      const pct = Math.min(100, (elapsed / currentDurationMs) * 100);
       setProgress(pct);
 
       if (pct >= 100) {
@@ -132,118 +148,104 @@ export function StoryViewer({
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paused, index]);
+  }, [paused, index, currentDurationMs, currentMedia?.kind]);
 
-  /* ----------------------------------------------------------
-   * التنقل
-   * ---------------------------------------------------------- */
-  const next = () => {
-    if (index < stories.length - 1) {
-      setIndex(index + 1);
-    } else {
-      onCompleteOwner?.();
-      onClose();
-    }
-  };
-
-  const prev = () => {
-    if (index > 0) setIndex(index - 1);
-  };
-
-  // إغلاق بـ Escape
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-      if (e.key === "ArrowRight") prev();
-      if (e.key === "ArrowLeft") next();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+      if (event.key === "ArrowRight") prev();
+      if (event.key === "ArrowLeft") next();
     };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index]);
 
-  // قفل scroll
   useEffect(() => {
-    const original = document.body.style.overflow;
+    const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = original;
+      document.body.style.overflow = originalOverflow;
     };
   }, []);
 
-  if (!current) return null;
+  const next = () => {
+    if (index < pages.length - 1) {
+      setIndex((current) => current + 1);
+      return;
+    }
+
+    onCompleteOwner?.();
+    onClose();
+  };
+
+  const prev = () => {
+    if (index > 0) {
+      setIndex((current) => current - 1);
+    }
+  };
+
+  if (!currentPage || !currentStory || !currentMedia) return null;
+
+  const ownerPhoto = currentStory.ownerPhotoURL || currentStory.coverUrl;
 
   return (
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-[120] flex items-center justify-center bg-black"
+      className="fixed inset-0 z-[140] flex items-center justify-center bg-black"
       onMouseDown={() => setPaused(true)}
       onMouseUp={() => setPaused(false)}
       onTouchStart={() => setPaused(true)}
       onTouchEnd={() => setPaused(false)}
     >
-      {/* الصورة كخلفية */}
+      <div className="absolute inset-0 bg-black/90" />
       <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${current.imageUrl})` }}
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-25 blur-sm"
+        style={{ backgroundImage: `url(${currentMedia.thumbnailUrl || currentStory.coverUrl})` }}
         aria-hidden="true"
       />
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80"
-      />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-black/90" aria-hidden="true" />
 
-      {/* الحاوية */}
       <div className="relative z-10 flex h-full w-full max-w-md flex-col text-white">
-        {/* أشرطة التقدم */}
         <div className="flex gap-1 p-3">
-          {stories.map((_, i) => (
-            <div
-              key={i}
-              className="h-0.5 flex-1 overflow-hidden rounded-full bg-white/30"
-            >
+          {pages.map((page, pageIndex) => (
+            <div key={page.pageId} className="h-0.5 flex-1 overflow-hidden rounded-full bg-white/30">
               <div
                 className="h-full bg-white transition-all"
                 style={{
-                  width:
-                    i < index ? "100%" : i === index ? `${progress}%` : "0%",
+                  width: pageIndex < index ? "100%" : pageIndex === index ? `${progress}%` : "0%",
                 }}
               />
             </div>
           ))}
         </div>
 
-        {/* رأس: صورة المالك + الاسم + الوقت + إغلاق */}
         <div className="flex items-center gap-3 px-4 pb-2">
-          {current.ownerPhotoURL ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={current.ownerPhotoURL}
-              alt={current.ownerName}
-              referrerPolicy="no-referrer"
-              className="h-9 w-9 rounded-full object-cover ring-2 ring-white/50"
-            />
-          ) : (
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-700 text-sm font-black ring-2 ring-white/50">
-              {(current.ownerName || "م").charAt(0).toUpperCase()}
-            </div>
-          )}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={ownerPhoto}
+            alt={currentStory.ownerName}
+            referrerPolicy="no-referrer"
+            className="h-9 w-9 rounded-full object-cover ring-2 ring-white/50"
+          />
+
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-black">{current.ownerName}</p>
-            <p className="text-[11px] text-white/70">
-              {timeAgo(current.createdAtMs)}
-            </p>
+            <p className="truncate text-sm font-black">{currentStory.ownerName}</p>
+            <div className="mt-0.5 flex items-center gap-2 text-[11px] text-white/75">
+              <span>{timeAgo(currentStory.createdAtMs)}</span>
+              <span>•</span>
+              <span>
+                {currentPage.mediaIndex + 1}/{currentPage.totalMedia}
+              </span>
+            </div>
           </div>
 
-          {/* العداد للمالك فقط */}
-          <OwnerOnly ownerId={current.ownerId}>
-            <div
-              className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-bold backdrop-blur"
-              title="عدد المشاهدات (يظهر لك فقط)"
-            >
+          <OwnerOnly ownerId={currentStory.ownerId}>
+            <div className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-bold backdrop-blur">
               <Eye size={12} />
-              {(current.viewsCount ?? 0).toLocaleString("ar-LY")}
+              {formatStoryCount(Number(currentStory.viewsCount || 0))}
             </div>
           </OwnerOnly>
 
@@ -257,28 +259,14 @@ export function StoryViewer({
           </button>
         </div>
 
-        {/* المحتوى - منطقة قابلة للنقر للتنقل */}
-        <div className="relative flex-1">
-          {/* النصف الأيمن (RTL: السابق) */}
-          <button
-            type="button"
-            onClick={prev}
-            className="absolute inset-y-0 right-0 z-10 w-1/3"
-            aria-label="السابق"
-          />
-          {/* النصف الأيسر (RTL: التالي) */}
-          <button
-            type="button"
-            onClick={next}
-            className="absolute inset-y-0 left-0 z-10 w-1/3"
-            aria-label="التالي"
-          />
+        <div className="relative flex-1 overflow-hidden">
+          <button type="button" onClick={prev} className="absolute inset-y-0 right-0 z-20 w-1/3" aria-label="السابق" />
+          <button type="button" onClick={next} className="absolute inset-y-0 left-0 z-20 w-1/3" aria-label="التالي" />
 
-          {/* أزرار جانبية صغيرة (للديسكتوب) */}
           <button
             type="button"
             onClick={prev}
-            className="absolute right-2 top-1/2 z-20 hidden -translate-y-1/2 sm:inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur hover:bg-black/60"
+            className="absolute right-2 top-1/2 z-30 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur hover:bg-black/60 sm:inline-flex"
             aria-label="السابق"
           >
             <ChevronRight size={20} />
@@ -286,87 +274,125 @@ export function StoryViewer({
           <button
             type="button"
             onClick={next}
-            className="absolute left-2 top-1/2 z-20 hidden -translate-y-1/2 sm:inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur hover:bg-black/60"
+            className="absolute left-2 top-1/2 z-30 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur hover:bg-black/60 sm:inline-flex"
             aria-label="التالي"
           >
             <ChevronLeft size={20} />
           </button>
-        </div>
 
-        {/* الـ caption والإجراءات في الأسفل */}
-        <div className="relative z-20 p-4 pb-6">
-          <StoryCaption story={current} />
+          <div className="flex h-full items-center justify-center px-4 pb-6 pt-2">
+            <div className="relative h-full w-full overflow-hidden rounded-[34px] border border-white/10 bg-black shadow-2xl">
+              {currentMedia.kind === "video" ? (
+                <video
+                  ref={videoRef}
+                  src={currentMedia.url}
+                  className="h-full w-full object-cover"
+                  playsInline
+                  muted
+                  autoPlay
+                  onEnded={next}
+                />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={currentMedia.url}
+                  alt={currentStory.ownerName}
+                  className="h-full w-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              )}
+
+              <div className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/70 to-transparent p-4" />
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent p-4 pb-5">
+                <StoryCaption story={currentStory} currentPage={currentPage} />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-/* ============================================================
- * StoryCaption - يعرض الحقول حسب النوع + أزرار اتصال/واتساب
- * ============================================================ */
+function StoryCaption({
+  story,
+  currentPage,
+}: {
+  story: StoryDisplayItem;
+  currentPage: StoryPageItem;
+}) {
+  const typeBadge = {
+    car: "سيارة",
+    service: "خدمة",
+    offer: "عرض",
+  }[story.type];
 
-function StoryCaption({ story }: { story: StoryDisplayItem }) {
-  const { type, payload } = story;
-
-  if (type === "car") {
-    const p = payload as CarStoryPayload;
+  if (story.type === "car") {
+    const payload = story.payload as CarStoryPayload;
     return (
       <div className="rounded-3xl bg-black/45 p-4 backdrop-blur-md">
-        <h3 className="text-lg font-black leading-tight">{p.title}</h3>
-        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/85">
-          {typeof p.price === "number" && p.price > 0 && (
-            <span className="rounded-full bg-brand-700/90 px-2 py-0.5 text-sm font-black">
-              {p.price.toLocaleString("ar-LY")} د.ل
-            </span>
-          )}
-          <span className="inline-flex items-center gap-1">
-            <MapPin size={12} /> {p.city}
-          </span>
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <span className="badge-action !bg-white/15 !text-white">{typeBadge}</span>
+          <span className="text-[11px] text-white/80">{currentPage.mediaIndex + 1}/{currentPage.totalMedia}</span>
         </div>
-        <ContactButtons phone={p.phone} whatsapp={p.whatsapp}>
-          {p.listingId && (
-            <Link
-              href={`/listings/${p.listingId}`}
-              className="btn-primary !flex-1 !py-2.5 !text-xs"
-            >
+        <h3 className="text-lg font-black leading-tight">{payload.title}</h3>
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-white/85">
+          {typeof payload.price === "number" && payload.price > 0 ? (
+            <span className="rounded-full bg-brand-700/90 px-2 py-1 text-sm font-black">
+              {payload.price.toLocaleString("ar-LY")} د.ل
+            </span>
+          ) : null}
+          {payload.city ? (
+            <span className="inline-flex items-center gap-1">
+              <MapPin size={12} />
+              {payload.city}
+            </span>
+          ) : null}
+        </div>
+        <ContactButtons phone={payload.phone} whatsapp={payload.whatsapp}>
+          {payload.listingId ? (
+            <Link href={`/listings/${payload.listingId}`} className="btn-primary !min-h-[40px] !flex-1 !px-4 !py-2.5 !text-xs">
               فتح الإعلان
             </Link>
-          )}
+          ) : null}
         </ContactButtons>
       </div>
     );
   }
 
-  if (type === "service") {
-    const p = payload as ServiceStoryPayload;
+  if (story.type === "service") {
+    const payload = story.payload as ServiceStoryPayload;
     return (
       <div className="rounded-3xl bg-black/45 p-4 backdrop-blur-md">
-        <h3 className="text-lg font-black leading-tight">{p.serviceName}</h3>
-        <p className="mt-1 line-clamp-3 text-sm leading-relaxed text-white/85">
-          {p.description}
-        </p>
-        <div className="mt-2 inline-flex items-center gap-1 text-xs text-white/85">
-          <MapPin size={12} /> {p.city}
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/90 px-2.5 py-1 text-xs font-black text-white">
+            <Wrench size={12} />
+            {typeBadge}
+          </span>
+          <span className="text-[11px] text-white/80">{currentPage.mediaIndex + 1}/{currentPage.totalMedia}</span>
         </div>
-        <ContactButtons phone={p.phone} whatsapp={p.whatsapp} />
+        <h3 className="text-lg font-black leading-tight">{payload.serviceName}</h3>
+        <p className="mt-2 text-xs leading-6 text-white/85">{payload.description}</p>
+        <div className="mt-2 text-xs text-white/75">{payload.city}</div>
+        <ContactButtons phone={payload.phone} whatsapp={payload.whatsapp} />
       </div>
     );
   }
 
-  // offer
-  const p = payload as OfferStoryPayload;
+  const payload = story.payload as OfferStoryPayload;
   return (
     <div className="rounded-3xl bg-black/45 p-4 backdrop-blur-md">
-      <div className="inline-flex items-center gap-1 rounded-full bg-action-500 px-3 py-1 text-xs font-black">
-        <Tag size={12} /> عرض خاص
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <span className="inline-flex items-center gap-1 rounded-full bg-action-500/90 px-2.5 py-1 text-xs font-black text-white">
+          <Tag size={12} />
+          {typeBadge}
+        </span>
+        <span className="text-[11px] text-white/80">{currentPage.mediaIndex + 1}/{currentPage.totalMedia}</span>
       </div>
-      <h3 className="mt-2 text-lg font-black leading-tight">{p.title}</h3>
-      <p className="mt-1 text-base font-black text-action-300">{p.discount}</p>
-      <div className="mt-2 inline-flex items-center gap-1 text-xs text-white/85">
-        <MapPin size={12} /> {p.city}
-      </div>
-      <ContactButtons phone={p.phone} whatsapp={p.whatsapp} />
+      <h3 className="text-lg font-black leading-tight">{payload.title}</h3>
+      <p className="mt-2 text-sm font-black text-white/95">{payload.discount}</p>
+      <div className="mt-2 text-xs text-white/75">{payload.city}</div>
+      <ContactButtons phone={payload.phone} whatsapp={payload.whatsapp} />
     </div>
   );
 }
@@ -381,36 +407,27 @@ function ContactButtons({
   children?: React.ReactNode;
 }) {
   const wa = normalizeLibyanPhone(whatsapp || phone || "");
-  if (!phone && !whatsapp && !children) return null;
+
   return (
-    <div className="mt-3 flex items-stretch gap-2">
+    <div className="mt-4 flex flex-wrap gap-2">
       {children}
-      {phone && (
-        <a
-          href={`tel:${phone}`}
-          className="
-            inline-flex flex-1 items-center justify-center gap-1.5
-            rounded-2xl bg-white/15 px-3 py-2.5 text-xs font-bold text-white
-            backdrop-blur transition hover:bg-white/25
-          "
-        >
-          <Phone size={14} /> اتصال
+      {phone ? (
+        <a href={`tel:${phone}`} className="btn-secondary !min-h-[40px] !flex-1 !border-white/15 !bg-white/10 !px-4 !py-2.5 !text-xs !text-white hover:!bg-white/20">
+          <Phone size={14} />
+          اتصال
         </a>
-      )}
-      {wa && (
+      ) : null}
+      {wa ? (
         <a
           href={`https://wa.me/${wa}`}
           target="_blank"
           rel="noreferrer"
-          className="
-            inline-flex flex-1 items-center justify-center gap-1.5
-            rounded-2xl bg-emerald-500 px-3 py-2.5 text-xs font-bold text-white
-            transition hover:bg-emerald-600
-          "
+          className="btn-secondary !min-h-[40px] !flex-1 !border-white/15 !bg-white/10 !px-4 !py-2.5 !text-xs !text-white hover:!bg-white/20"
         >
-          <MessageCircle size={14} /> واتساب
+          <MessageCircle size={14} />
+          واتساب
         </a>
-      )}
+      ) : null}
     </div>
   );
 }

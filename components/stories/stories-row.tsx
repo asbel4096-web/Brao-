@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useStories } from "@/hooks/useStories";
-import { groupByOwner } from "@/lib/stories/helpers";
+import { getSeenStoryIdsLocal, groupByOwner, markStorySeenLocal } from "@/lib/stories/helpers";
 import { AddStoryBubble } from "./add-story-bubble";
 import { StoryBubble } from "./story-bubble";
 import { StoryCreateModal } from "./story-create-modal";
@@ -19,33 +19,34 @@ export function StoriesRow() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [viewerGroupIndex, setViewerGroupIndex] = useState<number | null>(null);
+  const [seenStoryIds, setSeenStoryIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    setSeenStoryIds(new Set(getSeenStoryIdsLocal()));
+  }, []);
 
   const groups = useMemo(() => groupByOwner(items), [items]);
 
   const handleAddStory = () => {
     if (!user) {
-      toast.info("سجّل الدخول لنشر قصة.");
+      toast.info("سجّل الدخول أولًا حتى تتمكن من نشر قصة.");
       router.push("/login?redirect=/");
       return;
     }
     setCreateOpen(true);
   };
 
-  const handleOpenGroup = (groupIndex: number) => {
-    setViewerGroupIndex(groupIndex);
+  const handleCompleteOwner = () => {
+    setViewerGroupIndex((current) => {
+      if (current === null) return null;
+      const next = current + 1;
+      return next < groups.length ? next : null;
+    });
   };
 
-  const handleCloseViewer = () => setViewerGroupIndex(null);
-
-  const handleCompleteOwner = () => {
-    // الانتقال للمالك التالي تلقائياً (مثل Facebook)
-    if (viewerGroupIndex === null) return;
-    const next = viewerGroupIndex + 1;
-    if (next < groups.length) {
-      setViewerGroupIndex(next);
-    } else {
-      setViewerGroupIndex(null);
-    }
+  const handleViewedStory = (storyId: string) => {
+    const next = markStorySeenLocal(storyId);
+    setSeenStoryIds(new Set(next));
   };
 
   return (
@@ -55,32 +56,39 @@ export function StoriesRow() {
         className="border-b border-slate-200/70 bg-white py-3 dark:border-slate-800 dark:bg-slate-950 sm:py-4"
       >
         <div className="container">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-black text-slate-900 dark:text-white sm:text-base">
+                قصص براتشو كار
+              </h2>
+              <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400 sm:text-xs">
+                صور وفيديوهات سريعة تختفي بعد 24 ساعة
+              </p>
+            </div>
+          </div>
+
           <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-1 sm:gap-4">
-            {/* الفقاعة الأولى دائماً: إضافة قصة */}
             <AddStoryBubble onClick={handleAddStory} />
 
             {loading
-              ? // skeleton placeholders
-                Array.from({ length: 5 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="shrink-0 flex flex-col items-center gap-1"
-                  >
-                    <div className="h-16 w-16 sm:h-[68px] sm:w-[68px] rounded-full bg-slate-200 dark:bg-slate-800 animate-pulse" />
-                    <div className="h-2.5 w-12 rounded bg-slate-200 dark:bg-slate-800 animate-pulse" />
+              ? Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex shrink-0 flex-col items-center gap-1">
+                    <div className="h-16 w-16 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800 sm:h-[68px] sm:w-[68px]" />
+                    <div className="h-2.5 w-12 animate-pulse rounded bg-slate-200 dark:bg-slate-800" />
                   </div>
                 ))
               : groups.map((group, idx) => (
                   <StoryBubble
                     key={group[0].ownerId}
                     stories={group}
-                    onClick={() => handleOpenGroup(idx)}
+                    seen={group.every((story) => seenStoryIds.has(story.id))}
+                    onClick={() => setViewerGroupIndex(idx)}
                   />
                 ))}
 
             {!loading && groups.length === 0 && (
-              <div className="flex items-center text-xs text-slate-500 dark:text-slate-400">
-                لا توجد قصص حالياً — كن أوّل من ينشر!
+              <div className="flex min-h-[68px] items-center rounded-3xl border border-dashed border-slate-300 px-4 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                لا توجد قصص حالياً — كن أول من ينشر.
               </div>
             )}
           </div>
@@ -89,14 +97,14 @@ export function StoriesRow() {
 
       <StoryCreateModal open={createOpen} onClose={() => setCreateOpen(false)} />
 
-      {viewerGroupIndex !== null && groups[viewerGroupIndex] && (
+      {viewerGroupIndex !== null && groups[viewerGroupIndex] ? (
         <StoryViewer
           stories={groups[viewerGroupIndex]}
-          startIndex={0}
-          onClose={handleCloseViewer}
+          onClose={() => setViewerGroupIndex(null)}
           onCompleteOwner={handleCompleteOwner}
+          onViewedStory={handleViewedStory}
         />
-      )}
+      ) : null}
     </>
   );
 }
