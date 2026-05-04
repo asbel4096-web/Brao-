@@ -1,240 +1,302 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   addDoc,
   collection,
   deleteDoc,
   doc,
-  increment,
   onSnapshot,
   orderBy,
   query,
-  runTransaction,
   serverTimestamp,
-  setDoc,
+  updateDoc,
+  increment,
 } from "firebase/firestore";
-import { Flag, MessageSquare, Trash2 } from "lucide-react";
+import { AlertTriangle, MessageCircle, Send, Trash2 } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
-import { useConfirm } from "@/components/confirm-dialog";
-import { timeAgo } from "@/lib/utils";
-import type { Listing } from "@/lib/types";
+import type { ListingComment } from "@/lib/types";
 
-interface ListingCommentsProps {
+type Props = {
   listingId: string;
+  ownerId: string;
   commentsEnabled?: boolean;
-  ownerId?: string;
-}
-
-interface ListingCommentItem {
-  id: string;
-  text: string;
-  userId: string;
-  userName: string;
-  userPhoto?: string;
-  createdAt?: any;
-}
+};
 
 export default function ListingComments({
   listingId,
-  commentsEnabled = true,
   ownerId,
-}: ListingCommentsProps) {
-  const { user, profile, isAdmin } = useAuth();
+  commentsEnabled = true,
+}: Props) {
+  const { user, profile } = useAuth();
   const toast = useToast();
-  const confirm = useConfirm();
-  const [comments, setComments] = useState<ListingCommentItem[]>([]);
+
+  const [comments, setComments] = useState<ListingComment[]>([]);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   useEffect(() => {
-    const q = query(collection(db, "listings", listingId, "comments"), orderBy("createdAt", "desc"));
+    const q = query(
+      collection(db, "listings", listingId, "comments"),
+      orderBy("createdAt", "desc")
+    );
+
     const unsub = onSnapshot(
       q,
       (snap) => {
-        setComments(snap.docs.map((d) => ({ id: d.id, ...(d.data() as ListingCommentItem) })));
+        const nextComments = snap.docs.map((d) => {
+          const data = d.data() as Omit<ListingComment, "id">;
+          return {
+            ...data,
+            id: d.id,
+          } as ListingComment;
+        });
+
+        setComments(nextComments);
         setLoading(false);
       },
-      () => setLoading(false)
+      () => {
+        setLoading(false);
+      }
     );
+
     return () => unsub();
   }, [listingId]);
 
-  const handleAdd = async (e: FormEvent) => {
-    e.preventDefault();
+  const canPost = useMemo(() => {
+    return Boolean(user && text.trim().length >= 2 && commentsEnabled && !sending);
+  }, [user, text, commentsEnabled, sending]);
+
+  const handleSubmit = async () => {
+    const value = text.trim();
+
     if (!user) {
-      toast.warning("سجّل الدخول أولاً لإضافة تعليق.");
+      toast.warning("سجّل الدخول أولًا لإضافة تعليق.");
       return;
     }
+
     if (!commentsEnabled) {
-      toast.info("التعليقات مغلقة لهذا الإعلان.");
+      toast.warning("التعليقات مغلقة لهذا الإعلان.");
       return;
     }
-    if (!text.trim()) return;
 
-    setSaving(true);
+    if (value.length < 2) {
+      toast.warning("اكتب تعليقًا واضحًا.");
+      return;
+    }
+
     try {
-      const listingRef = doc(db, "listings", listingId);
-      const commentsRef = collection(db, "listings", listingId, "comments");
+      setSending(true);
 
-      await runTransaction(db, async (tx) => {
-        tx.set(doc(commentsRef), {
-          text: text.trim(),
-          userId: user.uid,
-          userName: profile?.businessName || profile?.name || user.displayName || user.email || user.phoneNumber || "مستخدم",
-          userPhoto: profile?.photoURL || user.photoURL || "",
-          ownerId: ownerId || "",
-          createdAt: serverTimestamp(),
-        });
-        tx.update(listingRef, { commentsCount: increment(1) });
+      await addDoc(collection(db, "listings", listingId, "comments"), {
+        userId: user.uid,
+        userName:
+          profile?.businessName ||
+          profile?.name ||
+          user.displayName ||
+          user.email ||
+          "مستخدم",
+        userPhotoURL: profile?.photoURL || user.photoURL || "",
+        text: value,
+        createdAt: serverTimestamp(),
+        reported: false,
+        reportedCount: 0,
+      });
+
+      await updateDoc(doc(db, "listings", listingId), {
+        commentsCount: increment(1),
       });
 
       setText("");
       toast.success("تمت إضافة التعليق.");
-    } catch (err: any) {
-      toast.error(err?.message || "تعذّر إضافة التعليق.");
+    } catch (error: any) {
+      toast.error(error?.message || "تعذّر إضافة التعليق.");
     } finally {
-      setSaving(false);
+      setSending(false);
     }
   };
 
-  const handleDelete = async (commentId: string, commentOwnerId: string) => {
+  const handleDelete = async (comment: ListingComment) => {
     if (!user) return;
-    if (user.uid !== commentOwnerId && !isAdmin && user.uid !== ownerId) return;
 
-    const ok = await confirm({
-      title: "حذف التعليق؟",
-      message: "سيتم حذف التعليق نهائياً.",
-      confirmLabel: "حذف",
-      tone: "danger",
-    });
-    if (!ok) return;
+    const isOwner = comment.userId === user.uid;
+    const isAdmin = profile?.role === "admin";
+    const isListingOwner = ownerId === user.uid;
 
-    try {
-      await runTransaction(db, async (tx) => {
-        tx.delete(doc(db, "listings", listingId, "comments", commentId));
-        tx.update(doc(db, "listings", listingId), { commentsCount: increment(-1) });
-      });
-      toast.success("تم حذف التعليق.");
-    } catch (err: any) {
-      toast.error(err?.message || "تعذّر حذف التعليق.");
-    }
-  };
-
-  const handleReport = async (comment: ListingCommentItem) => {
-    if (!user) {
-      toast.info("سجّل الدخول أولاً للإبلاغ عن التعليق.");
+    if (!isOwner && !isAdmin && !isListingOwner) {
+      toast.warning("ليس لديك صلاحية حذف هذا التعليق.");
       return;
     }
+
     try {
-      const reportId = `${comment.id}_${user.uid}`;
-      await setDoc(doc(db, "commentReports", reportId), {
-        commentId: comment.id,
-        listingId,
-        commentOwnerId: comment.userId,
-        reportedBy: user.uid,
-        reportedAt: serverTimestamp(),
-        text: comment.text,
+      setBusyId(comment.id);
+
+      await deleteDoc(doc(db, "listings", listingId, "comments", comment.id));
+      await updateDoc(doc(db, "listings", listingId), {
+        commentsCount: increment(-1),
       });
-      toast.success("تم إرسال البلاغ إلى الإدارة.");
-    } catch (err: any) {
-      toast.error(err?.message || "تعذّر إرسال البلاغ.");
+
+      toast.success("تم حذف التعليق.");
+    } catch (error: any) {
+      toast.error(error?.message || "تعذّر حذف التعليق.");
+    } finally {
+      setBusyId(null);
     }
   };
 
-  const userCanComment = !!user && commentsEnabled;
+  const handleReport = async (comment: ListingComment) => {
+    if (!user) {
+      toast.warning("سجّل الدخول أولًا للتبليغ.");
+      return;
+    }
+
+    if (comment.userId === user.uid) {
+      toast.warning("لا يمكنك التبليغ عن تعليقك.");
+      return;
+    }
+
+    try {
+      setBusyId(comment.id);
+
+      await updateDoc(doc(db, "listings", listingId, "comments", comment.id), {
+        reported: true,
+        reportedCount: increment(1),
+        lastReportedAt: serverTimestamp(),
+      });
+
+      toast.success("تم إرسال البلاغ.");
+    } catch (error: any) {
+      toast.error(error?.message || "تعذّر إرسال البلاغ.");
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   return (
-    <div id="comments" className="card p-5 sm:p-6">
-      <div className="flex items-center gap-2">
-        <MessageSquare size={20} className="text-brand-700 dark:text-brand-300" />
-        <h2 className="text-xl font-black dark:text-white">التعليقات ({comments.length})</h2>
+    <div className="card p-5 sm:p-6">
+      <div className="mb-4 flex items-center gap-2">
+        <MessageCircle size={18} className="text-brand-700 dark:text-brand-300" />
+        <h3 className="text-base font-black dark:text-white">
+          التعليقات ({comments.length})
+        </h3>
       </div>
 
       {!commentsEnabled ? (
-        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-center text-sm font-bold text-amber-700 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-300">
-          التعليقات مغلقة لهذا الإعلان من قبل التاجر أو الإدارة.
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
+          التعليقات مغلقة لهذا الإعلان.
         </div>
-      ) : null}
-
-      {userCanComment ? (
-        <form onSubmit={handleAdd} className="mt-4 space-y-3">
+      ) : (
+        <div className="mb-5 rounded-3xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/40">
           <textarea
-            className="input min-h-[100px] resize-y"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="اكتب تعليقك..."
-            maxLength={500}
+            placeholder={user ? "اكتب تعليقك هنا..." : "سجّل الدخول حتى تتمكن من التعليق"}
+            disabled={!user || sending}
+            rows={3}
+            className="w-full resize-none rounded-2xl border border-transparent bg-white px-4 py-3 text-sm outline-none transition focus:border-brand-400 dark:bg-slate-900"
           />
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-500">{text.length}/500</span>
-            <button type="submit" className="btn-primary" disabled={saving || !text.trim()}>
-              {saving ? "جارٍ الإضافة..." : "إضافة تعليق"}
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              كن محترمًا في التعليقات.
+            </span>
+
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={!canPost}
+              className="btn-action disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Send size={16} />
+              {sending ? "جارٍ الإرسال..." : "إضافة تعليق"}
             </button>
           </div>
-        </form>
-      ) : !user ? (
-        <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-center text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-          سجّل الدخول لإضافة تعليق على هذا الإعلان.
         </div>
-      ) : null}
+      )}
 
-      <div className="mt-6 space-y-3">
-        {loading ? (
-          <div className="text-center text-slate-500">جارٍ تحميل التعليقات...</div>
-        ) : comments.length === 0 ? (
-          <div className="text-center text-slate-500">لا توجد تعليقات بعد.</div>
-        ) : (
-          comments.map((comment) => {
-            const canDelete = user?.uid === comment.userId || isAdmin || user?.uid === ownerId;
+      {loading ? (
+        <div className="space-y-3">
+          <div className="skeleton h-20" />
+          <div className="skeleton h-20" />
+        </div>
+      ) : comments.length === 0 ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-950/30 dark:text-slate-400">
+          لا توجد تعليقات بعد.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {comments.map((comment) => {
+            const isOwner = user?.uid === comment.userId;
+            const isAdmin = profile?.role === "admin";
+            const isListingOwner = user?.uid === ownerId;
+            const canDelete = Boolean(isOwner || isAdmin || isListingOwner);
+            const isBusy = busyId === comment.id;
+
             return (
-              <div key={comment.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800">
+              <div
+                key={comment.id}
+                className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950/30"
+              >
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    {comment.userPhoto ? (
+                  <div className="flex min-w-0 items-start gap-3">
+                    {comment.userPhotoURL ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={comment.userPhoto} alt={comment.userName} referrerPolicy="no-referrer" className="h-10 w-10 rounded-full object-cover" />
+                      <img
+                        src={comment.userPhotoURL}
+                        alt={comment.userName}
+                        className="h-10 w-10 rounded-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
                     ) : (
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-700 text-sm font-black text-white">
-                        {(comment.userName || "ب").charAt(0).toUpperCase()}
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-700 font-black text-white">
+                        {(comment.userName || "م").charAt(0)}
                       </div>
                     )}
-                    <div>
-                      <div className="text-sm font-black dark:text-white">{comment.userName}</div>
-                      <div className="text-xs text-slate-500">{timeAgo(comment.createdAt)}</div>
+
+                    <div className="min-w-0">
+                      <div className="font-bold text-slate-900 dark:text-white">
+                        {comment.userName}
+                      </div>
+                      <div className="mt-1 text-sm leading-6 text-slate-700 dark:text-slate-200">
+                        {comment.text}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => void handleReport(comment)}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-amber-600 dark:hover:bg-slate-700"
-                      aria-label="إبلاغ"
-                    >
-                      <Flag size={15} />
-                    </button>
+                  <div className="flex items-center gap-2">
+                    {!isOwner ? (
+                      <button
+                        type="button"
+                        onClick={() => void handleReport(comment)}
+                        disabled={isBusy}
+                        className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 transition hover:border-amber-300 hover:text-amber-700 disabled:opacity-60 dark:border-slate-700 dark:text-slate-300"
+                      >
+                        <AlertTriangle size={14} />
+                        تبليغ
+                      </button>
+                    ) : null}
+
                     {canDelete ? (
                       <button
                         type="button"
-                        onClick={() => void handleDelete(comment.id, comment.userId)}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-full text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30"
-                        aria-label="حذف"
+                        onClick={() => void handleDelete(comment)}
+                        disabled={isBusy}
+                        className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-rose-600 transition hover:border-rose-300 disabled:opacity-60 dark:border-slate-700"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={14} />
+                        حذف
                       </button>
                     ) : null}
                   </div>
                 </div>
-                <p className="mt-3 text-sm leading-7 text-slate-800 dark:text-slate-100">{comment.text}</p>
               </div>
             );
-          })
-        )}
-      </div>
+          })}
+        </div>
+      )}
     </div>
   );
 }
