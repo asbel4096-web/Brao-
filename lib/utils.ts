@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import type { Timestamp } from "firebase/firestore";
+import type { Listing, ListingEntityType } from "@/lib/types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -18,7 +19,6 @@ export function formatNumber(value: number | string | null | undefined): string 
   return new Intl.NumberFormat("ar-LY").format(n);
 }
 
-/** Normalize Libyan phone to international (218...) format for wa.me links */
 export function normalizeLibyanPhone(input: string): string {
   if (!input) return "";
   const digits = input.replace(/\D/g, "");
@@ -63,7 +63,6 @@ export function formatDateTime(ts?: Timestamp | null): string {
   }
 }
 
-/** Deterministic chatId from listing + two users (sorted) */
 export function buildChatId(uidA: string, uidB: string, listingId: string): string {
   const [u1, u2] = [uidA, uidB].sort();
   return `${listingId}__${u1}__${u2}`;
@@ -72,4 +71,34 @@ export function buildChatId(uidA: string, uidB: string, listingId: string): stri
 export function truncate(text: string, max = 60): string {
   if (!text) return "";
   return text.length > max ? text.slice(0, max - 1) + "…" : text;
+}
+
+export function inferListingEntityType(listing?: Partial<Listing> | null): ListingEntityType {
+  if (listing?.entityType === "service" || listing?.entityType === "listing") {
+    return listing.entityType;
+  }
+
+  const source = `${listing?.category || ""} ${listing?.title || ""} ${listing?.description || ""}`.toLowerCase();
+  const serviceKeywords = [
+    "خدمة",
+    "خدمات",
+    "ورشة",
+    "ورشه",
+    "ميكانيك",
+    "سمكرة",
+    "زواق",
+    "كهرباء",
+    "غسيل",
+    "تركيب",
+    "صيانة",
+    "service",
+    "services",
+    "workshop",
+  ];
+
+  return serviceKeywords.some((keyword) => source.includes(keyword)) ? "service" : "listing";
+}
+
+export function getTraderDisplayName(profile?: { businessName?: string; name?: string } | null): string {
+  return profile?.businessName?.trim() || profile?.name?.trim() || "تاجر براتشو كار";
 }

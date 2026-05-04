@@ -1,11 +1,13 @@
 import type { Timestamp } from "firebase/firestore";
 
 export type ListingStatus = "pending" | "approved" | "rejected" | "draft";
+export type ListingEntityType = "listing" | "service";
 
 export interface Listing {
   id: string;
   title: string;
   category: string;
+  entityType?: ListingEntityType;
   city: string;
   price: number;
   year?: number | null;
@@ -31,6 +33,9 @@ export interface Listing {
   featured?: boolean;
   views?: number;
   favoritesCount?: number;
+  likesCount?: number;
+  commentsCount?: number;
+  commentsEnabled?: boolean;
   createdAt?: Timestamp | null;
   updatedAt?: Timestamp | null;
   rejectionReason?: string;
@@ -41,12 +46,33 @@ export interface UserProfile {
   name: string;
   email: string;
   phone: string;
+  city?: string;
   bio?: string;
   photoURL?: string;
+  businessName?: string;
+  isOnline?: boolean;
+  lastSeenAt?: Timestamp | null;
+  followersCount?: number;
+  followingCount?: number;
+  averageRating?: number;
+  ratingsCount?: number;
+  listingsCount?: number;
+  servicesCount?: number;
   createdAt?: Timestamp | null;
   updatedAt?: Timestamp | null;
   lastLoginAt?: Timestamp | null;
   isAdmin?: boolean;
+}
+
+export interface TraderReview {
+  id: string;
+  traderId: string;
+  authorId: string;
+  authorName: string;
+  authorPhoto?: string;
+  rating: number;
+  text?: string;
+  createdAt?: Timestamp | null;
 }
 
 export interface ChatThread {
@@ -79,6 +105,7 @@ export type NotificationType =
   | "listing_rejected"
   | "new_message"
   | "new_comment"
+  | "new_follower"
   | "system";
 
 export interface AppNotification {

@@ -5,18 +5,16 @@ import Image from "next/image";
 import { memo } from "react";
 import { MapPin, Phone, MessageCircle, Eye, Calendar, Gauge } from "lucide-react";
 import type { Listing } from "@/lib/types";
-import { formatPrice, normalizeLibyanPhone } from "@/lib/utils";
+import { formatPrice, getTraderDisplayName, normalizeLibyanPhone } from "@/lib/utils";
 import { FavoriteButton } from "./favorite-button";
 import { OwnerOnly } from "./owner-only";
+import { LikeButton } from "./like-button";
+import { ShareButton } from "./share-button";
 
 const FALLBACK = "/icons/car-card.svg";
 
 interface ListingCardProps {
   listing: Listing;
-  /**
-   * إذا كانت true، الصورة الأولى ستتحمل بأولوية (eager).
-   * استعملها لأول 2-3 بطاقات فوق الـ fold للحصول على LCP أفضل.
-   */
   priority?: boolean;
 }
 
@@ -24,17 +22,10 @@ function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
   const wa = normalizeLibyanPhone(listing.whatsapp || listing.phone || "");
   const img = listing.images?.[0] || FALLBACK;
   const isFallback = !listing.images?.length;
+  const sellerName = getTraderDisplayName({ name: listing.sellerName });
 
   return (
-    <article
-      className="
-        group flex h-full flex-col overflow-hidden
-        rounded-3xl border border-slate-200/80 bg-white
-        shadow-card transition-all duration-300
-        hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-blue
-        dark:border-slate-700/80 dark:bg-slate-900 dark:hover:border-brand-700
-      "
-    >
+    <article className="group flex h-full flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-card transition-all duration-300 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-blue dark:border-slate-700/80 dark:bg-slate-900 dark:hover:border-brand-700">
       <Link
         href={`/listings/${listing.id}`}
         prefetch={false}
@@ -47,23 +38,13 @@ function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           loading={priority ? "eager" : "lazy"}
           priority={priority}
-          className={
-            isFallback
-              ? "object-contain p-10 opacity-50"
-              : "object-cover transition duration-500 group-hover:scale-105"
-          }
+          className={isFallback ? "object-contain p-10 opacity-50" : "object-cover transition duration-500 group-hover:scale-105"}
         />
 
         {!isFallback && (
           <>
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/40 to-transparent"
-            />
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/40 to-transparent"
-            />
+            <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/40 to-transparent" />
+            <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/40 to-transparent" />
           </>
         )}
 
@@ -73,43 +54,33 @@ function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
           </span>
         )}
 
-        <div className="absolute left-3 top-3">
+        <div className="absolute left-3 top-3 flex gap-2">
           <FavoriteButton listing={listing} />
+          <LikeButton listing={listing} variant="icon" />
         </div>
 
-        {/*
-          عداد المشاهدات يظهر فقط للمالك.
-          OwnerOnly يقارن user.uid مع listing.ownerId ويرجع null للزوار العاديين.
-          الشارة محسَّنة بشعار "خاص بك" ليفهم المالك أنها مرئية له فقط.
-        */}
         {typeof listing.views === "number" && listing.views > 0 && (
           <OwnerOnly ownerId={listing.ownerId}>
-            <span
-              className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full border border-amber-400/60 bg-amber-500/95 px-2.5 py-1 text-[11px] font-black text-white shadow-md backdrop-blur-md"
-              title="عداد المشاهدات يظهر لك فقط كمالك للإعلان"
-            >
+            <span className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full border border-amber-400/60 bg-amber-500/95 px-2.5 py-1 text-[11px] font-black text-white shadow-md backdrop-blur-md" title="عداد المشاهدات يظهر لك فقط كمالك للإعلان">
               <Eye size={12} /> {listing.views}
             </span>
           </OwnerOnly>
         )}
 
         <div className="absolute bottom-3 left-3 rounded-2xl border border-white/20 bg-brand-700/90 px-3 py-1.5 shadow-blue backdrop-blur-md">
-          <span className="text-sm font-black text-white">
-            {formatPrice(listing.price)}
-          </span>
+          <span className="text-sm font-black text-white">{formatPrice(listing.price)}</span>
         </div>
       </Link>
 
       <div className="flex flex-1 flex-col p-4">
-        <div className="mb-2">
+        <div className="mb-2 flex items-center justify-between gap-3">
           <span className="badge">{listing.category || "إعلان"}</span>
+          <Link href={`/traders/${listing.ownerId}`} className="text-xs font-bold text-brand-700 hover:text-brand-800 dark:text-brand-300">
+            {sellerName}
+          </Link>
         </div>
 
-        <Link
-          href={`/listings/${listing.id}`}
-          prefetch={false}
-          className="group/title"
-        >
+        <Link href={`/listings/${listing.id}`} prefetch={false} className="group/title">
           <h3 className="line-clamp-2 min-h-[2.75rem] text-base font-black leading-snug text-slate-950 transition-colors group-hover/title:text-brand-700 dark:text-white dark:group-hover/title:text-brand-300">
             {listing.title}
           </h3>
@@ -134,29 +105,25 @@ function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
           ) : null}
         </div>
 
+        <div className="mt-4 grid grid-cols-4 gap-2 rounded-2xl bg-slate-50 p-2 dark:bg-slate-950/40">
+          <LikeButton listing={listing} count={Number(listing.likesCount || 0)} className="!px-2" />
+          <Link href={`/listings/${listing.id}#comments`} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-2 py-2 text-xs font-bold text-slate-700 transition hover:border-brand-300 hover:text-brand-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+            <MessageCircle size={14} />
+            <span>{listing.commentsCount || 0}</span>
+          </Link>
+          <ShareButton title={listing.title} text={listing.city} variant="button" className="[&>button]:w-full [&>button]:!px-2 [&>button]:text-xs" />
+          <FavoriteButton listing={listing} variant="button" className="!px-2 !text-xs" />
+        </div>
+
         <div className="mt-auto grid grid-cols-3 gap-2 pt-4">
-          <Link
-            href={`/listings/${listing.id}`}
-            prefetch={false}
-            className="btn-primary !py-2 !px-2 !text-xs"
-          >
+          <Link href={`/listings/${listing.id}`} prefetch={false} className="btn-primary !px-2 !py-2 !text-xs">
             التفاصيل
           </Link>
-          <a
-            href={listing.phone ? `tel:${listing.phone}` : "#"}
-            className="btn-secondary !py-2 !px-2 !text-xs"
-            aria-label="اتصال"
-          >
+          <a href={listing.phone ? `tel:${listing.phone}` : "#"} className="btn-secondary !px-2 !py-2 !text-xs" aria-label="اتصال">
             <Phone size={14} />
             <span className="hidden sm:inline">اتصال</span>
           </a>
-          <a
-            href={wa ? `https://wa.me/${wa}` : "#"}
-            target="_blank"
-            rel="noreferrer"
-            className="btn-action !py-2 !px-2 !text-xs"
-            aria-label="واتساب"
-          >
+          <a href={wa ? `https://wa.me/${wa}` : "#"} target="_blank" rel="noreferrer" className="btn-action !px-2 !py-2 !text-xs" aria-label="واتساب">
             <MessageCircle size={14} />
             <span className="hidden sm:inline">واتساب</span>
           </a>
@@ -176,6 +143,8 @@ export const ListingCard = memo(ListingCardImpl, (prev, next) => {
     a.views === b.views &&
     a.featured === b.featured &&
     a.ownerId === b.ownerId &&
+    a.likesCount === b.likesCount &&
+    a.commentsCount === b.commentsCount &&
     prev.priority === next.priority
   );
 });

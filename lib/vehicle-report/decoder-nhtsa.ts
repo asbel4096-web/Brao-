@@ -107,10 +107,13 @@ export interface DecoderResult {
 export async function decodeVinFromNhtsa(vin: string): Promise<DecoderResult> {
   const url = `${NHTSA_BASE}/${encodeURIComponent(vin)}?format=json`;
 
-  const res = await fetch(url, {
-    next: { revalidate: 86400 }, // كاش يومي لكل VIN
-    headers: { Accept: "application/json" },
-  });
+  const res = await fetch(
+    url,
+    {
+      headers: { Accept: "application/json" },
+      next: { revalidate: 86400 }, // كاش يومي لكل VIN
+    } as RequestInit & { next?: { revalidate: number } }
+  );
 
   if (!res.ok) {
     throw new Error(`NHTSA API error: ${res.status}`);
