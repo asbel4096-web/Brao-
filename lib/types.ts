@@ -62,6 +62,7 @@ export interface UserProfile {
   updatedAt?: Timestamp | null;
   lastLoginAt?: Timestamp | null;
   isAdmin?: boolean;
+  role?: "admin" | "user" | "moderator";
 }
 
 export interface TraderReview {
@@ -73,6 +74,18 @@ export interface TraderReview {
   rating: number;
   text?: string;
   createdAt?: Timestamp | null;
+}
+
+export interface ListingComment {
+  id: string;
+  userId: string;
+  userName: string;
+  userPhotoURL?: string;
+  text: string;
+  createdAt?: Timestamp | null;
+  reported?: boolean;
+  reportedCount?: number;
+  lastReportedAt?: Timestamp | null;
 }
 
 export interface ChatThread {
