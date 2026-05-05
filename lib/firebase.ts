@@ -1,7 +1,7 @@
-import { getApps, initializeApp, FirebaseApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, Auth } from "firebase/auth";
-import { getFirestore, Firestore } from "firebase/firestore";
-import { getStorage, FirebaseStorage } from "firebase/storage";
+import { getApps, initializeApp, type FirebaseApp } from "firebase/app";
+import { getAuth, GoogleAuthProvider, type Auth } from "firebase/auth";
+import { getFirestore, type Firestore } from "firebase/firestore";
+import { getStorage, type FirebaseStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -12,21 +12,21 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// تحذير في الـ dev فقط لو متغيرات البيئة ناقصة
 if (
   process.env.NODE_ENV !== "production" &&
   typeof window !== "undefined" &&
-  !firebaseConfig.apiKey
+  (!firebaseConfig.apiKey ||
+    !firebaseConfig.authDomain ||
+    !firebaseConfig.projectId ||
+    !firebaseConfig.storageBucket)
 ) {
-  // eslint-disable-next-line no-console
   console.warn(
-    "[Firebase] متغيرات NEXT_PUBLIC_FIREBASE_* غير مضبوطة. انسخ .env.example إلى .env.local."
+    "[Firebase] بعض متغيرات NEXT_PUBLIC_FIREBASE_* غير مضبوطة. تأكد من إعداد env بشكل صحيح."
   );
 }
 
-const app: FirebaseApp = getApps().length
-  ? getApps()[0]!
-  : initializeApp(firebaseConfig);
+const app: FirebaseApp =
+  getApps().length > 0 ? getApps()[0]! : initializeApp(firebaseConfig);
 
 export const auth: Auth = getAuth(app);
 
@@ -40,7 +40,6 @@ googleProvider.setCustomParameters({ prompt: "select_account" });
 export const db: Firestore = getFirestore(app);
 export const storage: FirebaseStorage = getStorage(app);
 
-// قائمة بريد المشرفين (للـ UI gating). الحماية الفعلية في firestore.rules
 export const ADMIN_EMAILS: string[] = (
   process.env.NEXT_PUBLIC_ADMIN_EMAILS || ""
 )
@@ -51,3 +50,6 @@ export const ADMIN_EMAILS: string[] = (
 export const isAdminEmail = (email?: string | null): boolean => {
   if (!email) return false;
   return ADMIN_EMAILS.includes(email.toLowerCase());
+};
+
+export default app;
