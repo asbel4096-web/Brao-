@@ -1,35 +1,72 @@
 rules_version = '2';
+
 service firebase.storage {
   match /b/{bucket}/o {
-    function signedIn() { return request.auth != null; }
-    function maxSize(bytes) { return request.resource.size < bytes; }
-    function isImage() { return request.resource.contentType.matches('image/.*'); }
-    function isVideo() { return request.resource.contentType.matches('video/.*'); }
 
-    match /listing-images/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if signedIn()
-        && request.auth.uid == userId
-        && isImage()
-        && maxSize(10 * 1024 * 1024);
+    // ============================================================
+    // Helpers
+    // ============================================================
+    function signedIn() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+    function isImage() {
+      return request.resource.contentType.matches('image/(jpeg|png|webp|jpg)');
+    }
+    function isVideo() {
+      return request.resource.contentType.matches('video/(mp4|webm|quicktime)');
+    }
+    function imageUnder(bytes) {
+      return isImage() && request.resource.size < bytes;
+    }
+    function videoUnder(bytes) {
+      return isVideo() && request.resource.size < bytes;
     }
 
-    match /users/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if signedIn()
-        && request.auth.uid == userId
-        && isImage()
-        && maxSize(5 * 1024 * 1024);
-    }
-
+    // ============================================================
+    // Stories media (REQUIRED PATH — DO NOT CHANGE)
+    //
+    //   stories/{userId}/{filename...}
+    //
+    // - Public read for anyone watching stories.
+    // - Write only by the authenticated owner of that userId folder.
+    // - Allow images up to 5 MB or videos up to 25 MB.
+    // - Deny anything else (other content types, oversize, etc.).
+    // ============================================================
     match /stories/{userId}/{allPaths=**} {
       allow read: if true;
-      allow write: if signedIn()
-        && request.auth.uid == userId
-        && (isImage() || isVideo())
-        && maxSize(25 * 1024 * 1024);
+
+      allow write: if isOwner(userId)
+        && (
+          imageUnder(5 * 1024 * 1024)
+          ||
+          videoUnder(25 * 1024 * 1024)
+        );
     }
 
+    // ============================================================
+    // Listing images (existing — kept for completeness)
+    // ============================================================
+    match /listing-images/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOwner(userId)
+        && imageUnder(10 * 1024 * 1024);
+    }
+
+    // ============================================================
+    // User profile media (existing)
+    // ============================================================
+    match /users/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOwner(userId)
+        && imageUnder(5 * 1024 * 1024);
+    }
+
+    // ============================================================
+    // Default deny
+    // ============================================================
     match /{allPaths=**} {
       allow read, write: if false;
     }

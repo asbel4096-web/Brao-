@@ -3,7 +3,7 @@
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { addDoc, collection, serverTimestamp, Timestamp } from "firebase/firestore";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import {
   ArrowRight,
   Check,
@@ -12,7 +12,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { db, storage } from "@/lib/firebase";
+import { auth, db, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import type {
@@ -174,8 +174,25 @@ export function StoryCreateModal({ open, onClose }: Props) {
   };
 
   const handlePublish = async () => {
-    if (!user) {
+    // ============================================================
+    // STRICT AUTH GUARD — يمنع 403 من Firebase Storage
+    //
+    // نتحقق من ثلاث طبقات قبل أي رفع:
+    //  1. user من AuthContext موجود.
+    //  2. auth.currentUser الحي من Firebase SDK موجود ومتطابق.
+    //  3. الـ uid غير فارغ.
+    //
+    // إذا فشل أي شرط، نوقف فوراً برسالة عربية واضحة دون أي محاولة رفع.
+    // ============================================================
+    if (!user || !user.uid) {
       toast.error("سجّل الدخول أولًا حتى تتمكن من نشر القصة.");
+      router.push("/login?redirect=/");
+      return;
+    }
+
+    const liveUser = auth.currentUser;
+    if (!liveUser || liveUser.uid !== user.uid) {
+      toast.error("انتهت جلستك. يُرجى تسجيل الدخول من جديد.");
       router.push("/login?redirect=/");
       return;
     }
@@ -188,17 +205,23 @@ export function StoryCreateModal({ open, onClose }: Props) {
 
     setPublishing(true);
 
+    // نتتبّع المسارات المرفوعة لحذفها لو فشل النشر في منتصف العملية
+    const uploadedPaths: string[] = [];
+
     try {
       const uploadedMedia: StoryMediaItem[] = [];
 
       for (const [index, draft] of drafts.entries()) {
         const safeName = draft.file.name.replace(/\s+/g, "-").toLowerCase();
-        const storagePath = `stories/${user.uid}/${Date.now()}-${index}-${safeName}`;
+        // المسار الفعلي المعتمد:
+        //   stories/{userId}/{timestamp}-{1-based-index}-{safe-name}
+        const storagePath = `stories/${user.uid}/${Date.now()}-${index + 1}-${safeName}`;
         const storageRef = ref(storage, storagePath);
 
         await uploadBytes(storageRef, draft.file, {
           contentType: draft.file.type,
         });
+        uploadedPaths.push(storagePath);
 
         const url = await getDownloadURL(storageRef);
 
@@ -242,7 +265,31 @@ export function StoryCreateModal({ open, onClose }: Props) {
       toast.success("تم نشر القصة بنجاح وتبقى لمدة 24 ساعة.");
       handleClose();
     } catch (error: any) {
-      toast.error(error?.message || "تعذّر نشر القصة الآن.");
+      // محاولة تنظيف الملفات المرفوعة لو فشلت كتابة المستند
+      // (لتجنّب يتامى في Storage)
+      for (const path of uploadedPaths) {
+        try {
+          await deleteObject(ref(storage, path));
+        } catch {
+          // تجاهل — المهم لا نوقف flow الخطأ
+        }
+      }
+
+      const code: string = error?.code || "";
+      let message = error?.message || "تعذّر نشر القصة الآن.";
+
+      if (code === "storage/unauthorized" || code === "permission-denied") {
+        message =
+          "صلاحية الرفع مرفوضة. تأكّد من تسجيل الدخول وأن قواعد Firebase Storage محدّثة لمسار stories/{userId}.";
+      } else if (code === "storage/unauthenticated") {
+        message = "انتهت جلستك. يُرجى تسجيل الدخول من جديد.";
+      } else if (code === "storage/canceled") {
+        message = "تم إلغاء عملية الرفع.";
+      } else if (code === "storage/quota-exceeded") {
+        message = "تجاوزت سعة التخزين المتاحة. تواصل مع الدعم.";
+      }
+
+      toast.error(message);
     } finally {
       setPublishing(false);
     }
