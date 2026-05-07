@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart } from "lucide-react";
+import { ThumbsUp } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,27 +11,29 @@ import { cn } from "@/lib/utils";
 
 interface LikeButtonProps {
   listing: Pick<Listing, "id" | "title" | "images" | "ownerId">;
+  /** يُعرض داخل الزر دائماً (حتى لو 0). إذا لم يُمرَّر، يُعرض "إعجاب" بدلاً منه */
   count?: number;
+  /** أظهر العدد دائماً حتى لو 0 (الافتراضي: نعم في variant button) */
+  showCountAlways?: boolean;
   variant?: "button" | "icon";
   className?: string;
-  /** يخفي الرقم عندما يكون صفر */
-  showZero?: boolean;
 }
 
 /**
- * زر إعجاب بإحساس تفاعلي حديث:
- * - حالة افتراضية → مساحة لمس واضحة + قلب مفرغ.
- * - عند الضغط → نبض خفيف (active:scale-95).
- * - عند الإعجاب → قلب أحمر ممتلئ + خلفية وردية ناعمة + رقم بلون وردي.
- *
- * يحافظ على الهوية: حدود slate كباقي الأزرار، لون brand فقط عند hover.
+ * زر إعجاب بإحساس Facebook لكن بهوية براتشو:
+ * - أيقونة 👍 ThumbsUp (لا قلب).
+ * - الحالة الافتراضية: حدود slate ناعمة + نص رمادي.
+ * - عند hover: لون brand خفيف (الأزرق الداكن للعلامة).
+ * - عند الإعجاب: brand-700 ممتلئ + أيقونة بيضاء + ظل أزرق.
+ * - bump animation عند النقر (pop + scale).
+ * - active:scale للإحساس بالضغط.
  */
 export function LikeButton({
   listing,
   count = 0,
+  showCountAlways = true,
   variant = "button",
   className,
-  showZero = false,
 }: LikeButtonProps) {
   const { user } = useAuth();
   const router = useRouter();
@@ -52,12 +54,11 @@ export function LikeButton({
 
     if (busy) return;
     setBusy(true);
-
-    // bump animation: pop خفيف على القلب عند النقر
     setBump(true);
     setTimeout(() => setBump(false), 280);
 
     try {
+      // Optimistic - الـ toggle يحدّث الكاش والعدّاد فوراً
       await toggle(listing);
     } catch (err: any) {
       toast.error(err?.message || "تعذّر تنفيذ الإعجاب.");
@@ -66,8 +67,12 @@ export function LikeButton({
     }
   };
 
-  const showCount = count > 0 || showZero;
+  const displayedCount = count.toLocaleString("ar-LY");
+  const showLabel = !showCountAlways && count === 0;
 
+  /* ----------------------------------------------------------
+   * variant: icon - فقاعة دائرية فوق صورة الإعلان
+   * ---------------------------------------------------------- */
   if (variant === "icon") {
     return (
       <button
@@ -79,24 +84,26 @@ export function LikeButton({
         className={cn(
           "inline-flex h-10 w-10 items-center justify-center rounded-full border backdrop-blur transition-all duration-200 active:scale-95",
           isLiked
-            ? "border-rose-400/70 bg-rose-500/95 text-white shadow-lg shadow-rose-500/30"
+            ? "border-brand-300 bg-brand-700/95 text-white shadow-blue"
             : "border-white/30 bg-black/40 text-white hover:bg-black/60",
-          className,
+          className
         )}
       >
-        <Heart
+        <ThumbsUp
           size={18}
           className={cn(
             "transition-transform",
             isLiked && "fill-current",
-            bump && "scale-125",
+            bump && "scale-125"
           )}
         />
       </button>
     );
   }
 
-  // variant = button (داخل شريط التفاعل)
+  /* ----------------------------------------------------------
+   * variant: button - داخل شريط التفاعل
+   * ---------------------------------------------------------- */
   return (
     <button
       type="button"
@@ -105,29 +112,28 @@ export function LikeButton({
       aria-label={isLiked ? "إلغاء الإعجاب" : "إعجاب"}
       disabled={busy}
       className={cn(
-        // قاعدة: مساحة لمس مريحة، حدود ناعمة، نص bold
         "group inline-flex items-center justify-center gap-1.5 rounded-2xl px-3 py-2.5 text-sm font-bold transition-all duration-200 active:scale-[0.97]",
-        // الحالة الافتراضية
+        // الحالة الافتراضية - slate ناعم
         !isLiked &&
-          "border border-slate-200 bg-white text-slate-700 hover:border-rose-300 hover:bg-rose-50/60 hover:text-rose-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-rose-700 dark:hover:bg-rose-950/30 dark:hover:text-rose-300",
-        // الحالة المعجَب بها
+          "border border-slate-200 bg-white text-slate-700 hover:border-brand-300 hover:bg-brand-50/60 hover:text-brand-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-brand-700 dark:hover:bg-brand-950/30 dark:hover:text-brand-300",
+        // الحالة المعجَب بها - brand هوية براتشو
         isLiked &&
-          "border border-rose-300 bg-rose-50 text-rose-700 shadow-sm dark:border-rose-700 dark:bg-rose-950/40 dark:text-rose-300",
-        className,
+          "border border-brand-700 bg-brand-700 text-white shadow-blue dark:border-brand-500 dark:bg-brand-700",
+        className
       )}
     >
-      <Heart
+      <ThumbsUp
         size={16}
         className={cn(
           "shrink-0 transition-transform duration-200",
           isLiked
-            ? "fill-current text-rose-600 dark:text-rose-400"
-            : "text-slate-500 group-hover:text-rose-500 dark:text-slate-400",
-          bump && "scale-125",
+            ? "fill-current text-white"
+            : "text-slate-500 group-hover:text-brand-600 dark:text-slate-400 dark:group-hover:text-brand-300",
+          bump && "scale-125"
         )}
       />
-      <span className="truncate">
-        {showCount ? count.toLocaleString("ar-LY") : "إعجاب"}
+      <span className="truncate tabular-nums">
+        {showLabel ? "إعجاب" : displayedCount}
       </span>
     </button>
   );
