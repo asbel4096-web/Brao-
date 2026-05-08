@@ -2,8 +2,6 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { ToastProvider } from "@/contexts/ToastContext";
-import { ConfirmProvider } from "@/components/confirm-dialog";
 import { SiteHeader } from "@/components/site-header";
 import BottomNav from "@/components/bottom-nav";
 
@@ -33,6 +31,10 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <head>
+        {/*
+          Resource hints — تقصّر زمن أول طلب لـ Firebase بمئات الميلي ثانية
+          على الجوال لأن DNS + TLS handshake يبدآن باكراً.
+        */}
         <link rel="preconnect" href="https://firestore.googleapis.com" crossOrigin="" />
         <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossOrigin="" />
         <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossOrigin="" />
@@ -44,13 +46,9 @@ export default function RootLayout({
       <body>
         <ThemeProvider>
           <AuthProvider>
-            <ToastProvider>
-              <ConfirmProvider>
-                <SiteHeader />
-                <main className="pb-28 md:pb-12">{children}</main>
-                <BottomNav />
-              </ConfirmProvider>
-            </ToastProvider>
+            <SiteHeader />
+            <main className="pb-28 md:pb-12">{children}</main>
+            <BottomNav />
           </AuthProvider>
         </ThemeProvider>
       </body>

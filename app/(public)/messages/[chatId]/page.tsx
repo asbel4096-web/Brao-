@@ -384,7 +384,9 @@ export default function ChatRoomPage() {
   const otherUid = thread.participants.find((p) => p !== user.uid) || "";
   const other = thread.participantsInfo?.[otherUid];
   const groupedMessages = groupMessagesByDay(messages);
-  const otherPhone = other?.phone;
+  // phone قد لا يكون موجوداً في participantsInfo حسب نوع ChatThread.
+  // نقرؤه بطريقة آمنة في حال أضافه كود إنشاء المحادثة في المستقبل.
+  const otherPhone = (other as { phone?: string } | undefined)?.phone;
 
   return (
     <section className="container py-2 sm:py-4">
