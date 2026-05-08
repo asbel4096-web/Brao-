@@ -81,7 +81,7 @@ export function ShareButton({
   const buttonClass =
     variant === "icon"
       ? "inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-brand-300 hover:text-brand-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-      : "btn-secondary";
+      : "inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-600 transition-all duration-200 hover:text-brand-700 active:scale-95 dark:text-slate-300 dark:hover:text-brand-300";
 
   return (
     <div ref={wrapperRef} className={cn("relative", className)}>
@@ -93,11 +93,11 @@ export function ShareButton({
           const didNativeShare = await nativeShare();
           if (!didNativeShare) setOpen((value) => !value);
         }}
-        className={cn(buttonClass, copied && "border-emerald-300 text-emerald-700")}
+        className={cn(buttonClass, copied && "text-emerald-600 dark:text-emerald-400")}
         aria-expanded={open}
+        aria-label="مشاركة"
       >
-        {copied ? <Check size={16} /> : <Share2 size={16} />}
-        {variant === "button" ? (copied ? "تم النسخ" : "مشاركة") : null}
+        {copied ? <Check size={18} /> : <Share2 size={18} className="-scale-x-100" />}
       </button>
 
       {open && (

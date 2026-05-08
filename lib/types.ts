@@ -104,9 +104,23 @@ export interface ChatThread {
   createdAt?: Timestamp | null;
 }
 
+export type ChatMessageKind = "text" | "image" | "audio";
+
 export interface ChatMessage {
   id: string;
+  /** نوع الرسالة - افتراضياً text للتوافق الرجعي */
+  kind?: ChatMessageKind;
+  /** نص الرسالة (للنص أو caption لصورة) */
   text: string;
+  /** رابط الصورة (kind=image) */
+  imageUrl?: string;
+  /** أبعاد الصورة لتفادي layout shift */
+  imageWidth?: number;
+  imageHeight?: number;
+  /** رابط الصوت (kind=audio) */
+  audioUrl?: string;
+  /** مدة الصوت بالثواني */
+  audioDurationSec?: number;
   senderId: string;
   senderName: string;
   createdAt?: Timestamp | null;

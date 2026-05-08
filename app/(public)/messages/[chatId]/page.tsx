@@ -1,18 +1,53 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useRef, useState } from "react";
+import {
+  ChangeEvent,
+  FormEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
-  addDoc, collection, doc, getDoc, increment, onSnapshot, orderBy, query, serverTimestamp, updateDoc,
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  increment,
+  onSnapshot,
+  orderBy,
+  query,
+  serverTimestamp,
+  updateDoc,
 } from "firebase/firestore";
-import { ArrowRight, Send, MessageCircle } from "lucide-react";
-import { db } from "@/lib/firebase";
+import { getDownloadURL, ref as storageRef, uploadBytes } from "firebase/storage";
+import {
+  ArrowRight,
+  Camera,
+  Mic,
+  MessageCircle,
+  Paperclip,
+  Phone,
+  Send,
+  X,
+} from "lucide-react";
+import { auth, db, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { createNotification } from "@/lib/notifications";
-import { formatDateTime, timeAgo } from "@/lib/utils";
-import type { ChatMessage, ChatThread } from "@/lib/types";
+import { formatDateTime, normalizeLibyanPhone } from "@/lib/utils";
+import type { ChatMessage, ChatMessageKind, ChatThread } from "@/lib/types";
+import { ChatTipsBanner } from "@/components/chat/chat-tips-banner";
+import { AudioRecorder } from "@/components/chat/audio-recorder";
+import { ChatMessageBubble } from "@/components/chat/chat-message-bubble";
+import { cn } from "@/lib/utils";
+
+const QUICK_REPLIES = ["السلام عليكم", "مرحبا", "هلا"];
+
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
+const MAX_AUDIO_BYTES = 8 * 1024 * 1024; // 8 MB
 
 export default function ChatRoomPage() {
   const params = useParams<{ chatId: string }>();
@@ -26,9 +61,14 @@ export default function ChatRoomPage() {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [recording, setRecording] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  /* ----------------------------------------------------------
+   * تحميل المحادثة + الرسائل
+   * ---------------------------------------------------------- */
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
@@ -57,7 +97,7 @@ export default function ChatRoomPage() {
 
         try {
           await updateDoc(chatRef, { [`unreadCount.${user.uid}`]: 0 });
-        } catch {/* تحديث غير المقروء ليس حرجاً */}
+        } catch {/* غير حرج */}
 
         unsubThread = onSnapshot(chatRef, (s) => {
           if (s.exists()) setThread({ id: s.id, ...(s.data() as any) });
@@ -74,12 +114,12 @@ export default function ChatRoomPage() {
           }));
           setMessages(arr);
           setLoading(false);
-          setTimeout(() => {
+          requestAnimationFrame(() => {
             scrollRef.current?.scrollTo({
               top: scrollRef.current.scrollHeight,
               behavior: "smooth",
             });
-          }, 100);
+          });
         });
       } catch (err: any) {
         setError(err?.message || "تعذّر فتح المحادثة.");
@@ -94,44 +134,88 @@ export default function ChatRoomPage() {
     };
   }, [user, authLoading, params.chatId, router]);
 
-  const handleSend = async (e: FormEvent) => {
-    e.preventDefault();
+  /* ----------------------------------------------------------
+   * Helper موحَّد لإنشاء رسالة
+   * ---------------------------------------------------------- */
+  const writeMessage = async (
+    payload: Partial<ChatMessage> & {
+      kind: ChatMessageKind;
+      lastPreview: string;
+    }
+  ) => {
+    if (!user || !thread) return;
+
+    const liveUser = auth.currentUser;
+    if (!liveUser || liveUser.uid !== user.uid) {
+      toast.error("انتهت جلستك. يُرجى تسجيل الدخول من جديد.");
+      return;
+    }
+
+    const otherUid = thread.participants.find((p) => p !== user.uid) || "";
+    const senderName =
+      profile?.name ||
+      user.displayName ||
+      user.email ||
+      user.phoneNumber ||
+      "مستخدم";
+
+    const docPayload: any = {
+      kind: payload.kind,
+      text: payload.text || "",
+      senderId: user.uid,
+      senderName,
+      createdAt: serverTimestamp(),
+      read: false,
+    };
+
+    if (payload.imageUrl) {
+      docPayload.imageUrl = payload.imageUrl;
+      docPayload.imageWidth = payload.imageWidth ?? null;
+      docPayload.imageHeight = payload.imageHeight ?? null;
+    }
+    if (payload.audioUrl) {
+      docPayload.audioUrl = payload.audioUrl;
+      docPayload.audioDurationSec = payload.audioDurationSec ?? null;
+    }
+
+    await addDoc(
+      collection(db, "chats", params.chatId, "messages"),
+      docPayload
+    );
+
+    await updateDoc(doc(db, "chats", params.chatId), {
+      lastMessage: payload.lastPreview,
+      lastMessageAt: serverTimestamp(),
+      lastSenderId: user.uid,
+      [`unreadCount.${otherUid}`]: increment(1),
+    });
+
+    await createNotification({
+      userId: otherUid,
+      type: "new_message",
+      title: "رسالة جديدة",
+      body: `${senderName}: ${payload.lastPreview.slice(0, 80)}`,
+      link: `/messages/${params.chatId}`,
+      meta: { chatId: params.chatId, listingId: thread.listingId },
+    });
+  };
+
+  /* ----------------------------------------------------------
+   * إرسال نص
+   * ---------------------------------------------------------- */
+  const handleSendText = async (e?: FormEvent) => {
+    e?.preventDefault();
     if (!user || !thread) return;
     const content = text.trim();
     if (!content || sending) return;
+
     setSending(true);
     try {
-      const otherUid = thread.participants.find((p) => p !== user.uid) || "";
-
-      await addDoc(collection(db, "chats", params.chatId, "messages"), {
+      await writeMessage({
+        kind: "text",
         text: content,
-        senderId: user.uid,
-        senderName:
-          profile?.name ||
-          user.displayName ||
-          user.email ||
-          user.phoneNumber ||
-          "مستخدم",
-        createdAt: serverTimestamp(),
-        read: false,
+        lastPreview: content,
       });
-
-      await updateDoc(doc(db, "chats", params.chatId), {
-        lastMessage: content,
-        lastMessageAt: serverTimestamp(),
-        lastSenderId: user.uid,
-        [`unreadCount.${otherUid}`]: increment(1),
-      });
-
-      await createNotification({
-        userId: otherUid,
-        type: "new_message",
-        title: "رسالة جديدة",
-        body: `${profile?.name || "مستخدم"}: ${content.slice(0, 80)}`,
-        link: `/messages/${params.chatId}`,
-        meta: { chatId: params.chatId, listingId: thread.listingId },
-      });
-
       setText("");
     } catch (err: any) {
       toast.error(err?.message || "تعذّر إرسال الرسالة.");
@@ -140,6 +224,138 @@ export default function ChatRoomPage() {
     }
   };
 
+  const handleQuickReply = async (reply: string) => {
+    if (sending) return;
+    setSending(true);
+    try {
+      await writeMessage({ kind: "text", text: reply, lastPreview: reply });
+    } catch (err: any) {
+      toast.error(err?.message || "تعذّر إرسال الرسالة.");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  /* ----------------------------------------------------------
+   * إرسال صورة
+   * ---------------------------------------------------------- */
+  const handleImageChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (e.target) e.target.value = ""; // reset
+    if (!file) return;
+    if (!user || !thread) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("الرجاء اختيار صورة.");
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      toast.error("حجم الصورة يجب أن يكون أقل من 5 ميجابايت.");
+      return;
+    }
+
+    const liveUser = auth.currentUser;
+    if (!liveUser || liveUser.uid !== user.uid) {
+      toast.error("انتهت جلستك. يُرجى تسجيل الدخول من جديد.");
+      return;
+    }
+
+    setSending(true);
+
+    try {
+      // قراءة أبعاد الصورة قبل الرفع
+      const dims = await readImageDims(file);
+
+      const safeName = file.name.replace(/\s+/g, "-").toLowerCase();
+      const path = `chat-media/${params.chatId}/${user.uid}/images/${Date.now()}-${safeName}`;
+      const ref = storageRef(storage, path);
+      await uploadBytes(ref, file, { contentType: file.type });
+      const url = await getDownloadURL(ref);
+
+      await writeMessage({
+        kind: "image",
+        text: "",
+        imageUrl: url,
+        imageWidth: dims?.width,
+        imageHeight: dims?.height,
+        lastPreview: "📷 صورة",
+      });
+    } catch (err: any) {
+      const msg =
+        err?.code === "storage/unauthorized"
+          ? "صلاحية الرفع مرفوضة. تأكد من قواعد Storage."
+          : err?.message || "تعذّر إرسال الصورة.";
+      toast.error(msg);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  /* ----------------------------------------------------------
+   * إرسال صوت
+   * ---------------------------------------------------------- */
+  const handleAudioSubmit = async (recording: {
+    blob: Blob;
+    durationSec: number;
+    mimeType: string;
+  }) => {
+    if (!user || !thread) return;
+
+    if (recording.blob.size > MAX_AUDIO_BYTES) {
+      toast.error("حجم الصوت يجب أن يكون أقل من 8 ميجابايت.");
+      setRecording(false);
+      return;
+    }
+
+    const liveUser = auth.currentUser;
+    if (!liveUser || liveUser.uid !== user.uid) {
+      toast.error("انتهت جلستك. يُرجى تسجيل الدخول من جديد.");
+      setRecording(false);
+      return;
+    }
+
+    setSending(true);
+    try {
+      const ext = recording.mimeType.includes("webm")
+        ? "webm"
+        : recording.mimeType.includes("mp4")
+        ? "m4a"
+        : recording.mimeType.includes("ogg")
+        ? "ogg"
+        : "audio";
+      const path = `chat-media/${params.chatId}/${user.uid}/audio/${Date.now()}.${ext}`;
+      const ref = storageRef(storage, path);
+      await uploadBytes(ref, recording.blob, { contentType: recording.mimeType });
+      const url = await getDownloadURL(ref);
+
+      const seconds = Math.round(recording.durationSec);
+      const min = Math.floor(seconds / 60);
+      const sec = seconds % 60;
+      const formatted = `${min}:${sec.toString().padStart(2, "0")}`;
+
+      await writeMessage({
+        kind: "audio",
+        text: "",
+        audioUrl: url,
+        audioDurationSec: seconds,
+        lastPreview: `🎤 رسالة صوتية (${formatted})`,
+      });
+
+      setRecording(false);
+    } catch (err: any) {
+      const msg =
+        err?.code === "storage/unauthorized"
+          ? "صلاحية الرفع مرفوضة. تأكد من قواعد Storage."
+          : err?.message || "تعذّر إرسال التسجيل.";
+      toast.error(msg);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  /* ----------------------------------------------------------
+   * Render
+   * ---------------------------------------------------------- */
   if (authLoading || loading) {
     return (
       <section className="container py-10">
@@ -155,7 +371,9 @@ export default function ChatRoomPage() {
       <section className="container py-10">
         <div className="card mx-auto max-w-md p-8 text-center">
           <p className="font-bold text-rose-700">{error}</p>
-          <Link href="/messages" className="btn-secondary mt-4">العودة للمحادثات</Link>
+          <Link href="/messages" className="btn-secondary mt-4">
+            العودة للمحادثات
+          </Link>
         </div>
       </section>
     );
@@ -165,12 +383,13 @@ export default function ChatRoomPage() {
 
   const otherUid = thread.participants.find((p) => p !== user.uid) || "";
   const other = thread.participantsInfo?.[otherUid];
-
   const groupedMessages = groupMessagesByDay(messages);
+  const otherPhone = other?.phone;
 
   return (
-    <section className="container py-4 sm:py-6">
-      <div className="mx-auto flex max-w-3xl flex-col h-[calc(100dvh-180px)] sm:h-[calc(100dvh-160px)]">
+    <section className="container py-2 sm:py-4">
+      <div className="mx-auto flex max-w-3xl flex-col h-[calc(100dvh-120px)] sm:h-[calc(100dvh-140px)]">
+        {/* ================ Header ================ */}
         <div className="flex items-center gap-3 rounded-3xl rounded-b-none border border-b-0 border-slate-200/80 bg-white p-3 shadow-card dark:border-slate-700/80 dark:bg-slate-900 sm:p-4">
           <Link
             href="/messages"
@@ -180,37 +399,70 @@ export default function ChatRoomPage() {
             <ArrowRight size={20} />
           </Link>
 
-          {other?.photoURL ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={other.photoURL}
-              alt={other.name}
-              referrerPolicy="no-referrer"
-              className="h-11 w-11 rounded-full object-cover ring-2 ring-brand-100 dark:ring-brand-900/40"
-            />
-          ) : (
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-brand-700 to-brand-500 text-sm font-black text-white shadow-blue">
-              {(other?.name || "م").charAt(0).toUpperCase()}
-            </div>
-          )}
-
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-black text-slate-900 dark:text-white sm:text-base">
-              {other?.name || "مستخدم"}
+            <div className="flex items-center justify-end gap-2">
+              <span className="truncate text-sm font-black text-slate-900 dark:text-white sm:text-base">
+                {other?.name || "مستخدم"}
+              </span>
+              {other?.photoURL ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={other.photoURL}
+                  alt={other.name}
+                  referrerPolicy="no-referrer"
+                  className="h-9 w-9 rounded-full object-cover ring-2 ring-brand-100 dark:ring-brand-900/40"
+                />
+              ) : (
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-brand-700 to-brand-500 text-xs font-black text-white">
+                  {(other?.name || "م").charAt(0).toUpperCase()}
+                </div>
+              )}
             </div>
-            <Link
-              href={`/listings/${thread.listingId}`}
-              className="block truncate text-xs text-brand-700 hover:underline dark:text-brand-300"
-            >
-              حول: {thread.listingTitle}
-            </Link>
           </div>
+
+          {otherPhone && (
+            <a
+              href={`tel:${otherPhone}`}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-2xl text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+              aria-label="اتصال"
+            >
+              <Phone size={18} />
+            </a>
+          )}
         </div>
 
+        {/* ================ Listing summary chip ================ */}
+        {thread.listingTitle && (
+          <Link
+            href={`/listings/${thread.listingId}`}
+            className="
+              flex items-center gap-3 border-x border-slate-200/80 bg-white px-4 py-2.5
+              text-xs transition hover:bg-slate-50
+              dark:border-slate-700/80 dark:bg-slate-900 dark:hover:bg-slate-800
+            "
+          >
+            {thread.listingImage && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={thread.listingImage}
+                alt={thread.listingTitle}
+                className="h-9 w-12 shrink-0 rounded-lg object-cover"
+              />
+            )}
+            <span className="truncate font-bold text-slate-700 dark:text-slate-200">
+              {thread.listingTitle}
+            </span>
+          </Link>
+        )}
+
+        {/* ================ Messages area ================ */}
         <div
           ref={scrollRef}
-          className="flex-1 overflow-y-auto border-x border-slate-200/80 bg-slate-50 p-3 dark:border-slate-700/80 dark:bg-slate-950 sm:p-4"
+          className="flex-1 overflow-y-auto border-x border-slate-200/80 bg-slate-50 px-3 pt-2 pb-3 dark:border-slate-700/80 dark:bg-slate-950 sm:px-4"
         >
+          {/* بانر النصائح - يظهر دائماً في أعلى المحادثة */}
+          <ChatTipsBanner />
+
           {messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
@@ -234,34 +486,13 @@ export default function ChatRoomPage() {
                     const mine = m.senderId === user.uid;
                     const prev = group.items[idx - 1];
                     const isFirstOfRun = !prev || prev.senderId !== m.senderId;
-
                     return (
-                      <div
+                      <ChatMessageBubble
                         key={m.id}
-                        className={`flex ${mine ? "justify-start" : "justify-end"}`}
-                      >
-                        <div
-                          className={`
-                            max-w-[78%] rounded-2xl px-3.5 py-2 text-sm shadow-sm sm:px-4 sm:py-2.5
-                            ${
-                              mine
-                                ? `bg-brand-700 text-white ${isFirstOfRun ? "rounded-tr-md" : ""}`
-                                : `border border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white ${isFirstOfRun ? "rounded-tl-md" : ""}`
-                            }
-                          `}
-                        >
-                          <p className="whitespace-pre-wrap break-words leading-relaxed">
-                            {m.text}
-                          </p>
-                          <div
-                            className={`mt-1 text-[10px] ${
-                              mine ? "text-white/70" : "text-slate-500 dark:text-slate-400"
-                            }`}
-                          >
-                            {timeAgo(m.createdAt)}
-                          </div>
-                        </div>
-                      </div>
+                        message={m}
+                        mine={mine}
+                        isFirstOfRun={isFirstOfRun}
+                      />
                     );
                   })}
                 </div>
@@ -270,35 +501,140 @@ export default function ChatRoomPage() {
           )}
         </div>
 
-        <form
-          onSubmit={handleSend}
-          className="flex items-end gap-2 rounded-3xl rounded-t-none border border-t-0 border-slate-200/80 bg-white p-3 shadow-card dark:border-slate-700/80 dark:bg-slate-900"
-        >
-          <textarea
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSend(e as any);
-              }
-            }}
-            placeholder="اكتب رسالتك..."
-            rows={1}
-            className="input min-h-[44px] max-h-32 flex-1 resize-none !py-2.5"
+        {/* ================ Quick replies ================ */}
+        {messages.length === 0 && !recording && (
+          <div className="flex justify-center gap-2 border-x border-slate-200/80 bg-white px-3 py-2 dark:border-slate-700/80 dark:bg-slate-900">
+            {QUICK_REPLIES.map((q) => (
+              <button
+                key={q}
+                type="button"
+                onClick={() => void handleQuickReply(q)}
+                disabled={sending}
+                className="
+                  rounded-full border-2 border-brand-200 bg-white px-4 py-1.5
+                  text-xs font-black text-brand-700 transition
+                  hover:bg-brand-50 active:scale-95
+                  disabled:opacity-50
+                  dark:border-brand-700 dark:bg-slate-900 dark:text-brand-300
+                  dark:hover:bg-brand-950/40
+                "
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* ================ Composer ================ */}
+        <div className="rounded-3xl rounded-t-none border border-t-0 border-slate-200/80 bg-white p-2.5 shadow-card dark:border-slate-700/80 dark:bg-slate-900">
+          {recording ? (
+            <AudioRecorder
+              onSubmit={handleAudioSubmit}
+              onCancel={() => setRecording(false)}
+            />
+          ) : (
+            <form
+              onSubmit={handleSendText}
+              className="flex items-center gap-2"
+            >
+              {/* مرفقات (صورة) */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={sending}
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 active:scale-95 disabled:opacity-60 dark:text-slate-300 dark:hover:bg-slate-800"
+                aria-label="إرفاق صورة"
+              >
+                <Paperclip size={18} />
+              </button>
+
+              {/* حقل النص */}
+              <div className="flex flex-1 items-center rounded-full bg-slate-100 px-4 py-1 dark:bg-slate-800">
+                <input
+                  type="text"
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      void handleSendText();
+                    }
+                  }}
+                  placeholder="أرسل رسالة جديدة"
+                  className="flex-1 bg-transparent py-2 text-sm outline-none placeholder:text-slate-400 dark:text-white"
+                  disabled={sending}
+                />
+
+                {/* زر صورة سريع داخل الحقل */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={sending}
+                  className="ml-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-brand-700 transition hover:bg-brand-100 active:scale-95 disabled:opacity-60 dark:text-brand-300 dark:hover:bg-brand-900/40"
+                  aria-label="إرسال صورة"
+                >
+                  <Camera size={18} />
+                </button>
+              </div>
+
+              {/* إذا كان النص فارغ → زر مايك. إذا في نص → زر إرسال */}
+              {text.trim() ? (
+                <button
+                  type="submit"
+                  disabled={sending}
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-700 text-white shadow-blue transition active:scale-95 hover:bg-brand-600 disabled:opacity-60"
+                  aria-label="إرسال"
+                >
+                  <Send size={18} />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setRecording(true)}
+                  disabled={sending}
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-700 text-white shadow-blue transition active:scale-95 hover:bg-brand-600 disabled:opacity-60"
+                  aria-label="تسجيل صوتي"
+                >
+                  <Mic size={18} />
+                </button>
+              )}
+            </form>
+          )}
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={handleImageChange}
+            className="sr-only"
           />
-          <button
-            type="submit"
-            disabled={sending || !text.trim()}
-            className="btn-action shrink-0 !px-4 !py-3"
-            aria-label="إرسال"
-          >
-            <Send size={18} />
-          </button>
-        </form>
+        </div>
       </div>
     </section>
   );
+}
+
+/* ============================================================
+ * Helpers
+ * ============================================================ */
+
+function readImageDims(
+  file: File
+): Promise<{ width: number; height: number } | null> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const dims = { width: img.naturalWidth, height: img.naturalHeight };
+      URL.revokeObjectURL(url);
+      resolve(dims);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(null);
+    };
+    img.src = url;
+  });
 }
 
 function groupMessagesByDay(messages: ChatMessage[]) {
