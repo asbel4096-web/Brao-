@@ -3,22 +3,55 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { memo, useEffect, useState } from "react";
-import { Home, LayoutGrid, Plus, MessageCircle, Heart } from "lucide-react";
+import {
+  Heart,
+  Home,
+  LayoutGrid,
+  MessageCircle,
+  Plus,
+} from "lucide-react";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
+import { useScrollDirection } from "@/hooks/useScrollDirection";
+import { cn } from "@/lib/utils";
 
-const items = [
+/**
+ * Bottom navigation بمواصفات احترافية مثل Facebook/Instagram:
+ *
+ * - عرض كامل من الحافة للحافة (full-width).
+ * - ارتفاع 56px للأيقونات + safe-area-inset-bottom للـ home indicator.
+ * - أيقونات 24px (FB يستخدم 24-26).
+ * - الأيقونة النشطة ممتلئة + لون brand.
+ * - يختفي عند التمرير للأسفل، يظهر عند التمرير للأعلى أو التوقف.
+ * - زر الإضافة بارز فوق الشريط (FAB style مثل Threads/IG).
+ * - badges مدمجة على أيقونات المفضلة والدردشة.
+ */
+
+interface NavItem {
+  href: string;
+  label: string;
+  Icon: typeof Home;
+  /** أيقونة ممتلئة عند التنشيط (للحالة active) */
+  ActiveIcon?: typeof Home;
+  /** نوع الـ badge (لإظهار العدد) */
+  badge?: "favorites" | "messages";
+  /** زر الإضافة المرتفع */
+  raised?: boolean;
+}
+
+const items: NavItem[] = [
   { href: "/", label: "الرئيسية", Icon: Home },
   { href: "/listings", label: "الإعلانات", Icon: LayoutGrid },
-  { href: "/add-listing", label: "إضافة", Icon: Plus, highlight: true },
-  { href: "/favorites", label: "المفضلة", Icon: Heart, badge: "favorites" as const },
-  { href: "/messages", label: "الدردشة", Icon: MessageCircle, badge: "messages" as const },
+  { href: "/add-listing", label: "إضافة", Icon: Plus, raised: true },
+  { href: "/favorites", label: "المفضلة", Icon: Heart, badge: "favorites" },
+  { href: "/messages", label: "الدردشة", Icon: MessageCircle, badge: "messages" },
 ];
 
 function BottomNavImpl() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const direction = useScrollDirection({ topOffset: 64, threshold: 6, idleDelay: 160 });
   const [unreadChats, setUnreadChats] = useState(0);
   const [favCount, setFavCount] = useState(0);
 
@@ -69,7 +102,7 @@ function BottomNavImpl() {
     }
   }, [user]);
 
-  // اشتراك بالمفضلة (مؤجَّل أيضاً)
+  // اشتراك بالمفضلة
   useEffect(() => {
     if (!user) {
       setFavCount(0);
@@ -105,64 +138,118 @@ function BottomNavImpl() {
     }
   }, [user]);
 
+  // إخفاء عند التمرير للأسفل، إظهار عند التمرير للأعلى أو التوقف
+  const hidden = direction === "down";
+
   return (
-    <div className="md:hidden fixed bottom-3 left-1/2 z-50 w-[min(96%,560px)] -translate-x-1/2">
-      <nav className="grid grid-cols-5 items-center rounded-[28px] border border-white/40 bg-white/85 px-2 py-2 shadow-2xl backdrop-blur-xl dark:border-slate-700/60 dark:bg-slate-900/85">
+    <div
+      className={cn(
+        "md:hidden fixed inset-x-0 bottom-0 z-50",
+        "transition-transform duration-300 ease-out will-change-transform",
+        hidden ? "translate-y-full" : "translate-y-0"
+      )}
+      style={{
+        // تجنّب overlap مع home indicator على iPhone
+        paddingBottom: "env(safe-area-inset-bottom)",
+      }}
+    >
+      <nav
+        className={cn(
+          "relative flex h-14 items-stretch border-t border-slate-200 bg-white/95 backdrop-blur-md",
+          "dark:border-slate-800 dark:bg-slate-950/95",
+          "shadow-[0_-1px_8px_rgba(15,23,42,0.04)] dark:shadow-[0_-1px_8px_rgba(0,0,0,0.4)]"
+        )}
+        aria-label="التنقل الرئيسي"
+      >
         {items.map((item) => {
           const active = pathname === item.href;
-          const Icon = item.Icon;
 
-          if (item.highlight) {
+          // زر الإضافة المرتفع (raised)
+          if (item.raised) {
             return (
-              <Link
+              <div
                 key={item.href}
-                href={item.href}
-                prefetch={false}
-                className="mx-auto flex h-16 w-16 -translate-y-3 flex-col items-center justify-center rounded-[22px] bg-action-500 text-white shadow-action transition active:scale-95"
-                aria-label={item.label}
+                className="relative flex flex-1 items-center justify-center"
               >
-                <Icon size={24} />
-                <span className="mt-0.5 text-[10px] font-black">{item.label}</span>
-              </Link>
+                <Link
+                  href={item.href}
+                  prefetch={false}
+                  aria-label={item.label}
+                  className={cn(
+                    "absolute -top-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl",
+                    "bg-action-500 text-white shadow-action transition-all duration-200",
+                    "active:scale-95 hover:bg-action-600"
+                  )}
+                >
+                  <Plus size={26} strokeWidth={2.5} />
+                </Link>
+              </div>
             );
           }
 
-          // Determine badge value for this item
+          // Badge value
           let badgeValue = 0;
           if (item.badge === "messages") badgeValue = unreadChats;
           if (item.badge === "favorites") badgeValue = favCount;
+
+          const Icon = item.Icon;
 
           return (
             <Link
               key={item.href}
               href={item.href}
               prefetch={false}
-              className={`relative flex flex-col items-center justify-center rounded-2xl px-2 py-2 transition ${
+              aria-label={item.label}
+              aria-current={active ? "page" : undefined}
+              className={cn(
+                "relative flex flex-1 flex-col items-center justify-center gap-0.5 transition-colors duration-150",
+                "active:bg-slate-100/60 dark:active:bg-slate-800/60",
                 active
                   ? "text-brand-700 dark:text-brand-300"
-                  : "text-slate-600 dark:text-slate-300"
-              }`}
-              aria-label={item.label}
+                  : "text-slate-500 dark:text-slate-400"
+              )}
             >
-              <Icon
-                size={22}
-                className={
-                  item.badge === "favorites" && active
-                    ? "fill-rose-500 text-rose-500"
-                    : item.badge === "favorites" && favCount > 0
-                    ? "fill-rose-500/20 text-rose-500"
-                    : ""
-                }
-              />
-              <span className="mt-0.5 text-[11px] font-bold">{item.label}</span>
-              {badgeValue > 0 && (
+              <div className="relative">
+                <Icon
+                  size={24}
+                  strokeWidth={active ? 2.4 : 2}
+                  className={cn(
+                    "transition-transform duration-200",
+                    active && "scale-105 fill-current"
+                  )}
+                />
+
+                {/* badge مدمج فوق الأيقونة */}
+                {badgeValue > 0 && (
+                  <span
+                    className={cn(
+                      "absolute -top-1.5 -right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full px-1",
+                      "border-2 border-white text-[10px] font-black leading-none text-white",
+                      "dark:border-slate-950",
+                      item.badge === "favorites" ? "bg-rose-500" : "bg-action-500"
+                    )}
+                    aria-label={`${badgeValue} غير مقروء`}
+                  >
+                    {badgeValue > 9 ? "9+" : badgeValue}
+                  </span>
+                )}
+              </div>
+
+              <span
+                className={cn(
+                  "text-[10px] leading-none transition-all",
+                  active ? "font-black" : "font-bold"
+                )}
+              >
+                {item.label}
+              </span>
+
+              {/* مؤشّر علوي للحالة النشطة (مثل IG) */}
+              {active && (
                 <span
-                  className={`absolute top-0 right-2 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-black text-white ${
-                    item.badge === "favorites" ? "bg-rose-500" : "bg-action-500"
-                  }`}
-                >
-                  {badgeValue > 9 ? "9+" : badgeValue}
-                </span>
+                  aria-hidden="true"
+                  className="absolute top-0 left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-b-full bg-brand-700 dark:bg-brand-300"
+                />
               )}
             </Link>
           );

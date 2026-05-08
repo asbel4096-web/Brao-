@@ -1,143 +1,124 @@
-# Chat: صوت + صور + نصائح + شريط تفاعل أيقوني
+# Bottom Nav احترافي + إخفاء عند التمرير
 
-تنفيذ كامل لمتطلبات الصورتين المرجعيتين.
+شريط سفلي بمواصفات Facebook/Instagram مع الحفاظ على هوية براتشو كار.
 
-## الملفات (10 ملفات)
+## الملفات (3 ملفات)
 
 ```
-lib/
-└── types.ts                                   ← ChatMessage موسَّع (kind/image/audio)
-
-components/
-├── like-button.tsx                            ← تصميم أيقوني نظيف (ThumbsUp + رقم)
-├── favorite-button.tsx                        ← Bookmark بدلاً من Heart
-├── share-button.tsx                           ← Share2 أيقوني نظيف
-├── listing-actions-bar.tsx                    ← شريط بدون خلفية، justify-around
-└── chat/
-    ├── chat-tips-banner.tsx                   ← نصائح عامة (حدود متقطعة وردية) ← جديد
-    ├── audio-recorder.tsx                     ← مسجّل صوت ← جديد
-    └── chat-message-bubble.tsx                ← فقاعة تدعم نص/صورة/صوت ← جديد
-
-app/(public)/messages/[chatId]/page.tsx         ← الدردشة الكاملة بكل الميزات
-
-storage.rules                                  ← + chat-media/{chatId}/{userId}/...
+hooks/useScrollDirection.ts          ← جديد - يكشف اتجاه التمرير
+components/bottom-nav.tsx            ← مُعاد التصميم بالكامل
+app/layout.tsx                       ← pb-28 → pb-20 (أصغر لأن الشريط أنحف)
 ```
 
 ## التطبيق
 
 ```bash
-unzip chat-audio-image-and-icons-redesign.zip
-git add lib/ components/ app/ storage.rules
-git commit -m "feat: chat audio+image + tips banner + redesigned actions bar"
+unzip bottom-nav-pro.zip
+git add hooks/ components/ app/
+git commit -m "feat: pro bottom-nav with hide-on-scroll"
 git push
-
-# مهم: انشر القواعد على Firebase
-firebase deploy --only storage
 ```
 
-تم اختباره بـ `tsc --noEmit` → **0 أخطاء**.
+تم اختباره بـ `tsc --noEmit` → **0 أخطاء**. لا تبعيات جديدة.
 
 ---
 
-## تنفيذ المتطلبات (من الصورتين)
+## مواصفات الشريط (مستوحاة من Facebook/Instagram)
 
-### 🟦 شريط التفاعل (Image 1)
+### قياسات احترافية
 
-طابقت الصورة بالضبط:
-- **بدون خلفيات أو حدود ملوّنة** — مجرد أيقونات.
-- **الرقم بجانب الأيقونة** يميناً (RTL): `1 👍` `6 💬`.
-- **مقاس موحَّد** — كل الأيقونات `size={18}` والأزرار `h-10`.
-- **توزيع متساوٍ** — `justify-around` + خط فاصل علوي خفيف (`border-t`).
-- **هوية براتشو** — لون افتراضي slate، عند hover/active يصبح brand-700.
-- 4 أزرار: `🔖 Bookmark` / `↪ Share` / `💬 Comment` / `👍 Like`
+| العنصر | القيمة | لماذا |
+|---|---|---|
+| **العرض** | full-width (edge-to-edge) | معيار FB/IG/Threads |
+| **الارتفاع** | 56px (h-14) | معيار Material + iOS HIG |
+| **آيكونات** | 24px (FB يستخدم 24-26) | أوضح على الجوال |
+| **النصوص** | 10px (text-[10px]) | كافية للقراءة دون ازدحام |
+| **safe-area** | `env(safe-area-inset-bottom)` | يحترم home indicator في iPhone |
+| **Backdrop** | `backdrop-blur-md` على bg `white/95` | يعكس المحتوى مثل iOS |
+| **الحدود** | `border-t` رفيع + ظل علوي خفيف | فصل بصري نظيف |
 
-### 🟦 الدردشة (Image 2)
+### حالات الأيقونات
 
-#### 1. النصائح العامة
-بانر علوي ثابت بحدود وردية متقطعة + أيقونة `i` حمراء + 3 نصائح:
-- قم بتفقّد المنتج جيداً قبل شرائه
-- لا تقم بإرسال المال مسبقاً
-- اجتمع في الأماكن العامة فقط
+- **افتراضي**: stroke = 2، لون slate-500.
+- **نشط**: stroke = 2.4، fill-current، لون brand-700، scale-105.
+- **مؤشّر علوي**: شريط 2px × 32px فوق الأيقونة (مثل Instagram).
 
-#### 2. رفع صورة
-- زر `📎 Paperclip` خارج الحقل + `📷 Camera` داخل الحقل (مطابق للصورة).
-- التحقق: `image/*` فقط، حد أقصى **5 MB**.
-- Triple auth guard قبل الرفع (`user` + `auth.currentUser` + UID match).
-- المسار: `chat-media/{chatId}/{userId}/images/{timestamp}-{filename}`.
-- أبعاد الصورة تُقرأ قبل الرفع لتفادي layout shift في الفقاعة.
+### زر "إضافة" المرتفع
 
-#### 3. تسجيل صوتي
-- زر `🎤` يتحوّل إلى مسجّل واجهي عند الضغط.
-- يبدأ تلقائياً، يعرض المؤقت + موجة بصرية نابضة.
-- يختار أفضل MIME مدعوم (webm/opus → mp4 → ogg).
-- حد أقصى 120 ثانية (تلقائي) و 8 MB.
-- الـ Send/Cancel واضحين مع الألوان (brand لإرسال، rose لحذف).
-- المسار: `chat-media/{chatId}/{userId}/audio/{timestamp}.{ext}`.
+مثل Threads/IG modern: مربع 48px مرتفع 20px فوق الشريط، خلفية action-500 (لون براتشو الإجرائي)، shadow-action، plus icon 26px.
 
-#### 4. الردود السريعة
-3 buttons دائرية بحدود brand: `السلام عليكم` / `مرحبا` / `هلا`.
-تظهر فقط في المحادثات الفارغة (لا تشتت بعدما تبدأ).
+### الـ badges
 
-#### 5. Header محسَّن
-- اسم المستخدم + صورته يميناً (مطابق RTL).
-- زر `📞 اتصال` على اليسار.
-- chip تحت الـ header يعرض الإعلان المرتبط بصورة مصغّرة.
-
-#### 6. أيقونة المايك/الإرسال الذكية
-عندما الحقل فارغ → زر `🎤 Mic`.
-بمجرد كتابة أي حرف → يتحوّل تلقائياً لـ `Send`.
-(نفس سلوك واتساب/Messenger).
+- مدمجة على الأيقونة نفسها (top-right) بدلاً من تحت النص.
+- إطار أبيض 2px (border-2 border-white) ليفصلها عن خلفية الشريط (مثل Discord/Telegram).
+- `9+` بدلاً من العدد إذا تجاوز 9.
+- وردي للمفضلة، action-500 للرسائل.
 
 ---
 
-## بنية رسائل Firestore
+## سلوك الإخفاء عند التمرير
 
-`ChatMessage` الآن يحمل حقل `kind`:
+### Hook منفصل: `useScrollDirection`
 
-```ts
-{
-  kind: "text" | "image" | "audio",
-  text: string,                        // نص أو caption
-  imageUrl?, imageWidth?, imageHeight?, // للصور
-  audioUrl?, audioDurationSec?,         // للصوت
-  senderId, senderName, createdAt, read
-}
+ثلاث حالات:
+- **`down`** → المستخدم يمرّر للأسفل → الشريط يختفي (`translate-y-full`).
+- **`up`** → يمرّر للأعلى → الشريط يظهر فوراً.
+- **`idle`** → توقّف عن التمرير 160ms → يظهر (لو كان مخفياً).
+
+### حماية من flicker
+
+- **threshold = 6px**: لا يستجيب لاهتزازات صغيرة في الـ scroll.
+- **topOffset = 64px**: لا يخفي الشريط عندما المستخدم في أعلى الصفحة (دائماً مرئي في hero).
+- **rAF debouncing**: يستخدم `requestAnimationFrame` لتحديث 60fps دون لاج.
+- **passive listener**: لا يعيق scrolling الأصلي.
+
+### الانتقال
+
+```css
+transition-transform duration-300 ease-out will-change-transform
 ```
 
-**التوافق الرجعي:** الرسائل القديمة بدون `kind` تُعرض كـ text تلقائياً (السلوك الافتراضي).
-
-`lastMessage` في chat document يستخدم previews واضحة:
-- نص: النص نفسه
-- صورة: `📷 صورة`
-- صوت: `🎤 رسالة صوتية (M:SS)`
+300ms مع easing طبيعي مثل iOS/Android — ليس بطيئاً ولا حادّاً.
 
 ---
 
-## Storage Rules — مسار chat-media
+## الحفاظ على هوية براتشو
 
-```
-match /chat-media/{chatId}/{userId}/{allPaths=**} {
-  allow read: if signedIn();          // أي مستخدم مسجَّل (روابط Firestore تكشف فقط للمشاركين)
-  allow write: if isOwner(userId)
-    && (imageUnder(5MB) || audioUnder(8MB));
-}
-```
+| العنصر | الهوية |
+|---|---|
+| اللون النشط | `brand-700` (أزرق براتشو) |
+| زر الإضافة | `action-500` (لون CTA براتشو) |
+| الـ badges المفضلة | `rose-500` (نفس القلب) |
+| الـ badges الرسائل | `action-500` |
+| الخط | font-black للنشط، font-bold للباقي |
+| الزوايا | `rounded-2xl` لزر الإضافة (نفس برامج البطاقات) |
 
-⚠️ **مهم:** بعد الـ deploy، `firebase deploy --only storage` لتفعيل القواعد الجديدة.
+---
+
+## مقارنة قبل/بعد
+
+| | قبل | بعد |
+|---|---|---|
+| الشكل | floating pill 96% عرض، 28px borderRadius | full-width edge-to-edge |
+| الارتفاع | متغيّر (~70px مع زر مرتفع 16) | ثابت 56px + safe-area |
+| الإخفاء | لا | عند scroll للأسفل |
+| safe-area | لا (`bottom-3`) | نعم (`env(safe-area-inset-bottom)`) |
+| المؤشّر النشط | لون فقط | لون + شريط علوي + scale |
+| الـ badges | تحت/جانب الأيقونة | على الأيقونة بإطار أبيض |
+| Backdrop | `backdrop-blur-xl` ثقيل | `backdrop-blur-md` خفيف |
 
 ---
 
 ## التحقق
 
 ```
-✓ tsc --noEmit                         → 0 أخطاء
-✓ شريط التفاعل أيقوني نظيف             → مطابق Image 1
-✓ النصائح العامة                        → مطابق Image 2 (حدود وردية متقطعة)
-✓ رفع صورة                              → يعمل بـ guard كامل
-✓ تسجيل صوت                             → يعمل بـ MediaRecorder API
-✓ الردود السريعة                         → السلام عليكم/مرحبا/هلا
-✓ أيقونة Mic/Send ذكية                  → تتبدّل حسب وجود نص
-✓ RTL                                  → مطابق
-✓ هوية براتشو                          → brand colors محفوظة
-✓ التوافق الرجعي                       → الرسائل القديمة (نصية) تعمل
+✓ tsc --noEmit                      → 0 أخطاء
+✓ يختفي عند scroll للأسفل           → نعم (translate-y-full)
+✓ يظهر عند scroll للأعلى أو التوقف  → نعم
+✓ مقاس FB/IG-like                   → h-14, icon 24px, text 10px
+✓ safe-area للـ iPhone              → نعم
+✓ هوية براتشو                       → brand-700 + action-500
+✓ RTL                               → يعمل بدون تعديل (flex-row)
+✓ لا يكسر صفحات أخرى                → main padding مُحدَّث
+✓ أداء سلس 60fps                   → rAF + threshold + passive
 ```
