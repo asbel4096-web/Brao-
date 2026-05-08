@@ -1,124 +1,118 @@
-# Bottom Nav احترافي + إخفاء عند التمرير
+# المرحلة 1: تحسين الواجهة الرئيسية + بطاقات الإعلان
 
-شريط سفلي بمواصفات Facebook/Instagram مع الحفاظ على هوية براتشو كار.
+تنفيذ احترافي للأولويات الرئيسية في document. التحقق بـ `tsc --noEmit` → **0 أخطاء**.
 
-## الملفات (3 ملفات)
+## الملفات المعدَّلة (4 ملفات)
 
 ```
-hooks/useScrollDirection.ts          ← جديد - يكشف اتجاه التمرير
-components/bottom-nav.tsx            ← مُعاد التصميم بالكامل
-app/layout.tsx                       ← pb-28 → pb-20 (أصغر لأن الشريط أنحف)
+components/listing-card.tsx       ← بطاقة جديدة احترافية
+components/hero.tsx               ← Hero بـ بحث + chips
+components/category-grid.tsx      ← شبكة موحَّدة لكل المقاسات
+components/listings-grid.tsx      ← skeletons + grid أنظف
 ```
 
 ## التطبيق
 
 ```bash
-unzip bottom-nav-pro.zip
-git add hooks/ components/ app/
-git commit -m "feat: pro bottom-nav with hide-on-scroll"
+unzip homepage-pro.zip
+git add components/
+git commit -m "feat(home): pro homepage redesign + cleaner listing cards"
 git push
 ```
 
-تم اختباره بـ `tsc --noEmit` → **0 أخطاء**. لا تبعيات جديدة.
-
 ---
 
-## مواصفات الشريط (مستوحاة من Facebook/Instagram)
+## نقاط الضعف التي تم إصلاحها
 
-### قياسات احترافية
+### 1. `listing-card.tsx` — بطاقة الإعلان
 
-| العنصر | القيمة | لماذا |
-|---|---|---|
-| **العرض** | full-width (edge-to-edge) | معيار FB/IG/Threads |
-| **الارتفاع** | 56px (h-14) | معيار Material + iOS HIG |
-| **آيكونات** | 24px (FB يستخدم 24-26) | أوضح على الجوال |
-| **النصوص** | 10px (text-[10px]) | كافية للقراءة دون ازدحام |
-| **safe-area** | `env(safe-area-inset-bottom)` | يحترم home indicator في iPhone |
-| **Backdrop** | `backdrop-blur-md` على bg `white/95` | يعكس المحتوى مثل iOS |
-| **الحدود** | `border-t` رفيع + ظل علوي خفيف | فصل بصري نظيف |
-
-### حالات الأيقونات
-
-- **افتراضي**: stroke = 2، لون slate-500.
-- **نشط**: stroke = 2.4، fill-current، لون brand-700، scale-105.
-- **مؤشّر علوي**: شريط 2px × 32px فوق الأيقونة (مثل Instagram).
-
-### زر "إضافة" المرتفع
-
-مثل Threads/IG modern: مربع 48px مرتفع 20px فوق الشريط، خلفية action-500 (لون براتشو الإجرائي)، shadow-action، plus icon 26px.
-
-### الـ badges
-
-- مدمجة على الأيقونة نفسها (top-right) بدلاً من تحت النص.
-- إطار أبيض 2px (border-2 border-white) ليفصلها عن خلفية الشريط (مثل Discord/Telegram).
-- `9+` بدلاً من العدد إذا تجاوز 9.
-- وردي للمفضلة، action-500 للرسائل.
-
----
-
-## سلوك الإخفاء عند التمرير
-
-### Hook منفصل: `useScrollDirection`
-
-ثلاث حالات:
-- **`down`** → المستخدم يمرّر للأسفل → الشريط يختفي (`translate-y-full`).
-- **`up`** → يمرّر للأعلى → الشريط يظهر فوراً.
-- **`idle`** → توقّف عن التمرير 160ms → يظهر (لو كان مخفياً).
-
-### حماية من flicker
-
-- **threshold = 6px**: لا يستجيب لاهتزازات صغيرة في الـ scroll.
-- **topOffset = 64px**: لا يخفي الشريط عندما المستخدم في أعلى الصفحة (دائماً مرئي في hero).
-- **rAF debouncing**: يستخدم `requestAnimationFrame` لتحديث 60fps دون لاج.
-- **passive listener**: لا يعيق scrolling الأصلي.
-
-### الانتقال
-
-```css
-transition-transform duration-300 ease-out will-change-transform
-```
-
-300ms مع easing طبيعي مثل iOS/Android — ليس بطيئاً ولا حادّاً.
-
----
-
-## الحفاظ على هوية براتشو
-
-| العنصر | الهوية |
+| قبل | بعد |
 |---|---|
-| اللون النشط | `brand-700` (أزرق براتشو) |
-| زر الإضافة | `action-500` (لون CTA براتشو) |
-| الـ badges المفضلة | `rose-500` (نفس القلب) |
-| الـ badges الرسائل | `action-500` |
-| الخط | font-black للنشط، font-bold للباقي |
-| الزوايا | `rounded-2xl` لزر الإضافة (نفس برامج البطاقات) |
+| 11 زر إجمالي (4 إجراءات + 4 أيقونات + 3 تواصل) | 6 أزرار فقط (4 تفاعل + 2 تواصل) |
+| سعر داخلي مع باقي المعلومات | سعر بارز فوق الصورة بكبسولة brand |
+| نفس وزن لكل المعلومات | هرمية بصرية (سعر → عنوان → تفاصيل → أزرار) |
+| أزرار اتصال بـ 3 أعمدة (التفاصيل/اتصال/واتساب) | عمودان فقط (اتصال + واتساب) - البطاقة كلها رابط |
+| Heart + Like منفصلان فوق الصورة (تشتيت) | زر مفضلة واحد فوق الصورة |
+| الوزن: 150 سطر | 175 سطر مع تعليقات + هيكل أنظف |
+
+### 2. `hero.tsx` — Hero الصفحة الرئيسية
+
+| قبل | بعد |
+|---|---|
+| `dashboardStats` مزيّف (أرقام لا تتغيّر) | حذف stats — لا أرقام كاذبة |
+| البحث في header فقط (المستخدم لا يلاحظه) | شريط بحث رئيسي بارز في الـ Hero |
+| لا توجد طريقة سريعة للوصول للأقسام | chips للأقسام الرئيسية مباشرة تحت البحث |
+| نص طويل سرد دعائي | نص مختصر مع قيمة مباشرة |
+| zوايا decoration ثابتة | blob خلفي + animation subtle |
+
+### 3. `category-grid.tsx` — شبكة الأقسام
+
+| قبل | بعد |
+|---|---|
+| chips على الموبايل، cards فقط على الديسكتوب (تجربتان مختلفتان) | grid موحَّد على كل المقاسات |
+| 2 columns على الديسكتوب فقط | 3 → 4 → 8 columns حسب العرض |
+| `marketplaceSections` معقد بـ accent colors | تصميم بسيط نظيف بأيقونة + اسم |
+
+### 4. `listings-grid.tsx`
+
+| قبل | بعد |
+|---|---|
+| Skeleton مجرّد aspect-ratio (لا يحاكي البطاقة) | Skeleton كامل يطابق هيكل البطاقة الفعلي |
+| 1 column على الجوال (يتطلب scroll طويل) | 2 columns من الجوال (نفس Facebook Marketplace) |
+| عنوان عادي | أيقونة Sparkles لتمييز "أحدث" |
 
 ---
 
-## مقارنة قبل/بعد
+## القرارات التصميمية
 
-| | قبل | بعد |
-|---|---|---|
-| الشكل | floating pill 96% عرض، 28px borderRadius | full-width edge-to-edge |
-| الارتفاع | متغيّر (~70px مع زر مرتفع 16) | ثابت 56px + safe-area |
-| الإخفاء | لا | عند scroll للأسفل |
-| safe-area | لا (`bottom-3`) | نعم (`env(safe-area-inset-bottom)`) |
-| المؤشّر النشط | لون فقط | لون + شريط علوي + scale |
-| الـ badges | تحت/جانب الأيقونة | على الأيقونة بإطار أبيض |
-| Backdrop | `backdrop-blur-xl` ثقيل | `backdrop-blur-md` خفيف |
+### السعر فوق الصورة
+استلهمت من Cars.com / AutoTrader / موزجيك: السعر هو **القرار الأهم** عند تصفّح إعلان سيارة. وضعه فوق الصورة بكبسولة brand-700 يجعله ينقفز بصرياً.
+
+### حذف الـ stats المزيّفة
+كانت dashboardStats تعرض أرقاماً ثابتة من ملف بدون اتصال بـ Firestore. هذا يفقد ثقة المستخدم. الأفضل: لا أرقام، أو أرقام حقيقية live (يمكن إضافتها لاحقاً عبر `useStats()` hook منفصل).
+
+### 2 columns على الموبايل
+- 1 column = scroll طويل، تشتيت
+- 2 columns = نظرة سريعة على 4 إعلانات في الـ fold = قرار أسرع
+- Facebook Marketplace, IG Shop, Carfax كلها 2-cols mobile
+
+### chips للأقسام في Hero
+المستخدم على الجوال يحتاج إجراءً بنقرة واحدة. التصنيف الواحد يفتح صفحة `/listings?category=cars`. هذا يقصر مسار الوصول من 3 خطوات إلى 1.
+
+---
+
+## الملفات التي **لم** تُعدَّل (محفوظة كما هي)
+
+- `components/site-header.tsx` — يبقى كما هو (موضوع المرحلة الثانية)
+- `components/bottom-nav.tsx` — تم تحسينه في المرحلة السابقة
+- `app/page.tsx` — يبقى كما هو (لا تغيير في الترتيب)
+- `tailwind.config.ts` و `globals.css` — لا حاجة لتغيير
+- بطاقات Stories / Categories الفرعية — لم تُمَس
+
+---
+
+## الخطوة التالية المقترحة
+
+**المرحلة 2:**
+1. تحسين `site-header.tsx` (تقليل الازدحام)
+2. تحسين `app/(public)/listings/[id]/page.tsx` (صفحة التفاصيل = أهم صفحة)
+3. مراجعة `image-gallery.tsx` على الجوال (سحب أفضل)
+
+**المرحلة 3:**
+4. توحيد القوائم العمودية في `app/(public)/profile/page.tsx`
+5. تنظيف `app/(public)/messages/page.tsx`
+6. مراجعة `add-listing` (form طويل يحتاج steps)
 
 ---
 
 ## التحقق
 
 ```
-✓ tsc --noEmit                      → 0 أخطاء
-✓ يختفي عند scroll للأسفل           → نعم (translate-y-full)
-✓ يظهر عند scroll للأعلى أو التوقف  → نعم
-✓ مقاس FB/IG-like                   → h-14, icon 24px, text 10px
-✓ safe-area للـ iPhone              → نعم
-✓ هوية براتشو                       → brand-700 + action-500
-✓ RTL                               → يعمل بدون تعديل (flex-row)
-✓ لا يكسر صفحات أخرى                → main padding مُحدَّث
-✓ أداء سلس 60fps                   → rAF + threshold + passive
+✓ tsc --noEmit                → 0 أخطاء
+✓ هوية براتشو محفوظة          → brand-700 + action-500 + ink
+✓ RTL يعمل                    → نعم (flex-row + Arabic numerals)
+✓ موبايل first                → grid-cols-2/3 على الجوال
+✓ لا تبعيات جديدة              → لا
+✓ لا كسر للميزات الموجودة      → ListingActionsBar محفوظ
+✓ أداء                        → memo + skeleton أنظف + priority على أول 2
 ```

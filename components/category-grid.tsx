@@ -2,77 +2,93 @@
 
 import Link from "next/link";
 import * as Icons from "lucide-react";
-import { marketplaceSections, categories } from "@/lib/categories";
+import { categories } from "@/lib/categories";
 
 function getIcon(name: string) {
   const Icon = (Icons as any)[name];
   return Icon || Icons.Tag;
 }
 
+/**
+ * شبكة الأقسام موحَّدة:
+ *
+ * - 2 أعمدة على الجوال، 4 على الديسكتوب.
+ * - بطاقات نظيفة بأيقونة كبيرة + اسم.
+ * - hover يلوّن brand بشكل خفيف.
+ * - نفس التجربة على كل الأجهزة (إزالة chips/cards الازدواجية).
+ */
+
 export function CategoryGrid() {
   return (
-    <section className="container py-8 sm:py-10">
-      <div className="flex items-end justify-between gap-4">
+    <section className="container py-7 sm:py-10">
+      <div className="flex items-end justify-between gap-3">
         <div>
-          <h2 className="section-title">أقسام براتشو كار</h2>
+          <h2 className="section-title">تصفّح حسب القسم</h2>
           <p className="section-subtitle">
-            تقسيم احترافي لسوق السيارات في ليبيا.
+            اختر القسم المناسب وابدأ التصفّح فوراً.
           </p>
         </div>
         <Link
           href="/categories"
-          className="btn-ghost text-brand-700 dark:text-brand-300"
+          className="
+            inline-flex items-center gap-1 text-sm font-bold
+            text-brand-700 hover:text-brand-800
+            dark:text-brand-300 dark:hover:text-brand-200
+          "
         >
           عرض الكل ←
         </Link>
       </div>
 
-      {/* Quick chips on mobile */}
-      <div className="mt-5 flex gap-2 overflow-x-auto no-scrollbar pb-2 sm:hidden">
+      <div
+        className="
+          mt-5 grid grid-cols-3 gap-2.5
+          sm:mt-6 sm:grid-cols-4 sm:gap-3
+          lg:grid-cols-8
+        "
+      >
         {categories.map((c) => {
           const Icon = getIcon(c.icon);
           return (
             <Link
               key={c.slug}
               href={`/listings?category=${c.slug}`}
-              className="shrink-0 inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="
+                group flex flex-col items-center justify-center gap-2
+                rounded-2xl border border-slate-200/70 bg-white
+                p-3 text-center transition-all
+                hover:-translate-y-0.5 hover:border-brand-300
+                hover:bg-brand-50/40 hover:shadow-card
+                active:scale-[0.97]
+                dark:border-slate-700/70 dark:bg-slate-900
+                dark:hover:border-brand-700 dark:hover:bg-brand-950/30
+                sm:p-4
+              "
             >
-              <Icon size={14} />
-              {c.name}
+              <div
+                className="
+                  flex h-11 w-11 shrink-0 items-center justify-center
+                  rounded-2xl bg-brand-50 text-brand-700
+                  transition-colors
+                  group-hover:bg-brand-100
+                  dark:bg-brand-900/40 dark:text-brand-300
+                  dark:group-hover:bg-brand-900/60
+                  sm:h-12 sm:w-12
+                "
+              >
+                <Icon size={20} aria-hidden="true" />
+              </div>
+              <span
+                className="
+                  line-clamp-1 text-[11px] font-bold text-slate-800
+                  dark:text-slate-100 sm:text-xs
+                "
+              >
+                {c.name}
+              </span>
             </Link>
           );
         })}
-      </div>
-
-      {/* Section cards on tablet+ */}
-      <div className="mt-6 hidden gap-5 sm:grid lg:grid-cols-2">
-        {marketplaceSections.map((section) => (
-          <div key={section.title} className="card overflow-hidden p-0">
-            <div className={`bg-gradient-to-l ${section.accent} p-5 text-white`}>
-              <h3 className="text-xl font-black sm:text-2xl">{section.title}</h3>
-              <p className="mt-1 text-sm text-white/80">
-                واجهة مرتبة للمعلنين والمشترين.
-              </p>
-            </div>
-            <div className="p-4">
-              <div className="grid grid-cols-2 gap-2">
-                {section.items.map((item) => {
-                  const Icon = getIcon(item.icon);
-                  return (
-                    <Link
-                      key={item.slug}
-                      href={`/listings?category=${item.slug}`}
-                      className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-bold text-slate-800 transition hover:border-brand-200 hover:bg-brand-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:border-brand-700 dark:hover:bg-slate-700"
-                    >
-                      <Icon size={16} className="text-brand-700 dark:text-brand-300 shrink-0" />
-                      <span className="truncate">{item.name}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        ))}
       </div>
     </section>
   );
