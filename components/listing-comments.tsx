@@ -30,7 +30,7 @@ export default function ListingComments({
   ownerId,
   commentsEnabled = true,
 }: Props) {
-  const { user, isAdmin } = useAuth();
+  const { user, profile, isAdmin } = useAuth();
   const toast = useToast();
 
   const [comments, setComments] = useState<ListingComment[]>([]);
