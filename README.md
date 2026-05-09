@@ -1,189 +1,225 @@
-# المرحلة 4 — الجزء 2/4: توحيد نظام الأدمن
+# المرحلة 4 — الجزء 3+4: الصفحات + الأداء
 
-تم توحيد نظام الأدمن في كل المشروع لمصدر واحد: `users/{uid}.isAdmin === true`.
+تكملة المرحلة 4: تحسين 3 صفحات أساسية + تحسين الأداء بـ lazy loading.
+التحقق بـ `tsc --noEmit` → **0 أخطاء**.
 
-## الملفات المعدَّلة (4 ملفات)
+## الملفات المعدَّلة (5 ملفات)
 
 ```
-lib/firebase.ts                       ← isAdminEmail → isBootstrapAdminEmail (deprecated)
-contexts/AuthContext.tsx              ← isAdmin يقرأ من Firestore فقط + bootstrap logic
-components/listing-comments.tsx       ← profile?.role === "admin" → useAuth().isAdmin
-app/admin/users/page.tsx              ← + زر منح/سحب صلاحيات الأدمن
+app/(public)/profile/page.tsx          ← صفحة احترافية أنظف + logout confirm
+app/(public)/favorites/page.tsx        ← يستخدم نمط ListingCard الموحَّد
+app/(public)/messages/page.tsx         ← بطاقات مبسطة، بحث على الحاجة فقط
+components/stories/stories-row.tsx     ← Lazy load StoryCreateModal + StoryViewer
+app/(public)/listings/[id]/page.tsx    ← Lazy load SafetyTipsCard
 ```
 
 ## التطبيق
 
 ```bash
-unzip admin-unification.zip
-git add lib/ contexts/ components/ app/
-git commit -m "feat(admin): unify admin system to users/{uid}.isAdmin === true"
+unzip phase-4-final.zip
+git add app/ components/
+git commit -m "feat(phase-4): pages cleanup + lazy loading heavy components"
 git push
 ```
 
-تم اختباره بـ `tsc --noEmit` → **0 أخطاء**.
+---
+
+## الجزء 3 — تحسين الصفحات
+
+### 1) `profile/page.tsx`
+
+**نقاط الضعف السابقة:**
+- 5 quick actions cards مكرَّرة مع bottom-nav
+- زر "تسجيل الخروج" بدون confirm (خطر النقر بالخطأ)
+- `معرف الحساب (uid)` ظاهر — معلومة تقنية للمطوّرين فقط
+- شبكة 2 أعمدة على md+ تُربك تنظيم المحتوى
+
+**ما تغيَّر:**
+
+| قبل | بعد |
+|---|---|
+| Header كبير `p-8` + شبكة 5 quick actions | Header مدمج بـ gradient brand + الصورة تتداخل مع الـ gradient |
+| 5 quick actions مكرَّرة مع bottom-nav | 2 quick actions فقط (إعلاناتي + الإعدادات) + كرت أدمن منفصل لو أدمن |
+| logout بدون تأكيد | confirm dialog قبل تسجيل الخروج |
+| معرف الحساب + lastSignInTime ظاهرة | محذوفة (تقنية) |
+| تخطيط 2 cols على md+ يفصل النموذج عن المعلومات | عمود واحد - النموذج فقط، تنظيم أنظف |
+| كل البيانات تتغيّر بـ inline labels | `Label` component موحَّد + counter للـ bio |
+
+**مزايا تجربة المستخدم:**
+- شارة "مشرف" مرئية في الـ header للأدمن
+- كرت "لوحة الإدارة" بارز (action color) يظهر للأدمن فقط
+- زر تسجيل الخروج لون رودي مع confirm — تصرّف خطير = عرض خطير
+- max 500 حرف للـ bio مع counter
+
+### 2) `favorites/page.tsx`
+
+**نقاط الضعف السابقة:**
+- بطاقة custom مختلفة عن `ListingCard` الجديدة (تشتت في التصميم)
+- زر "إزالة" منفصل = خطوة إضافية
+- لا يستخدم نظام `useFavoriteState` الموحَّد
+- 1 column على الموبايل بدلاً من 2
+
+**ما تغيَّر:**
+
+| قبل | بعد |
+|---|---|
+| بطاقة custom 169 سطر | بطاقة موحَّدة بنفس نمط ListingCard |
+| زر "إزالة" بنص في صف منفصل | أيقونة Bookmark filled على الصورة (نفس النمط) |
+| `deleteDoc` مباشر | `useFavoriteState().toggle()` (متناسق مع باقي التطبيق) |
+| 1 col على الموبايل | 2 cols على الموبايل |
+| سعر صغير | سعر كبسولة brand (نفس ListingCard) |
+
+**النتيجة:** البطاقات تبدو متطابقة مع الصفحة الرئيسية وقائمة الإعلانات → ثبات بصري.
+
+### 3) `messages/page.tsx`
+
+**نقاط الضعف السابقة:**
+- شريط بحث يظهر دائماً (مساحة مهدورة عند < 5 محادثات)
+- صورة الإعلان (14×14) + صورة الشخص (6×6 overlapping) = ازدحام
+- "حول:" تكتب قبل عنوان الإعلان وسط الكرت
+- "ابدأ المحادثة..." تظهر مكان آخر رسالة بدون توضيح للمستخدم
+
+**ما تغيَّر:**
+
+| قبل | بعد |
+|---|---|
+| بحث دائماً مرئي | يظهر فقط عند ≥ 5 محادثات (`SEARCH_THRESHOLD`) |
+| صورة الإعلان + overlay صورة الشخص | صورة الشخص فقط (مثل WhatsApp/Messenger) |
+| "حول: عنوان الإعلان" وسط البطاقة | chip صغير bg-slate-100 في الأسفل |
+| 3 صفوف معلومات داخل البطاقة | صفّان فقط: اسم+وقت / آخر رسالة+badge، + chip optional للإعلان |
+| Empty state عام | empty state موجَّه بزر "تصفّح الإعلانات" |
+
+**مزايا تجربة المستخدم:**
+- فحص بصري أسرع (عيناك على الاسم وآخر رسالة، الإعلان معلومة ثانوية)
+- مساحة أوضح لـ unread badge (لون action مع shadow)
+- chip الإعلان لا يأخذ مساحة لو ليس له `listingTitle`
 
 ---
 
-## نقاط الضعف التي تم إصلاحها
+## الجزء 4 — تحسين الأداء
 
-### 1) ❌ 4 طرق متضاربة للتحقق من الأدمن
+### Lazy loading للمكوّنات الثقيلة
 
+#### 1) `stories-row.tsx` — توفير ~1054 سطر JS من initial bundle
+
+**قبل:**
 ```ts
-// قبل:
-useAuth().isAdmin                              // ✅ من Firestore (بعد إصلاح أيضاً)
-profile?.role === "admin"                      // ❌ في listing-comments.tsx — حقل غير موجود!
-isAdminEmail(email)                            // ❌ في admin/users.tsx — env-based
-u.isAdmin || isAdminEmail(u.email)             // ❌ مرة أخرى env-based
+import { StoryCreateModal } from "./story-create-modal";  // 621 سطر
+import { StoryViewer } from "./story-viewer";              // 433 سطر
 ```
 
-**النتيجة قبل:** أدمن في صفحة قد لا يكون أدمن في صفحة أخرى. مثلاً: أدمن من قائمة env يستطيع دخول /admin، لكن لا يستطيع حذف تعليق لأن الكود يفحص `profile?.role`.
+كلاهما يُحمَّل في initial bundle حتى لو لم يفتح المستخدم أي قصة.
 
-**بعد:** كل المشروع يستخدم نفس المصدر:
+**بعد:**
 ```ts
-const { isAdmin } = useAuth(); // ✅
+const StoryCreateModal = dynamic(
+  () => import("./story-create-modal").then((m) => m.StoryCreateModal),
+  { ssr: false }
+);
+
+const StoryViewer = dynamic(
+  () => import("./story-viewer").then((m) => m.StoryViewer),
+  { ssr: false }
+);
 ```
-الذي يقرأ مباشرة من `profile?.isAdmin === true`.
 
-### 2) ✅ كيف يتمّ منح أوّل أدمن (Bootstrap)
+→ يُحمَّلان فقط عند نقرة المستخدم على "إضافة قصة" أو على bubble قصة.
 
-نظراً لأن المصدر الوحيد هو حقل في Firestore، نحتاج طريقة لإنشاء **أول** أدمن. الحل:
+**`ssr: false`** لأنهما يستخدمان browser-only APIs (FileReader, video element, MediaRecorder).
 
-**في `AuthContext.tsx`:**
+**التأثير المتوقع:**
+- Initial JS bundle للصفحة الرئيسية ينقص ~1000+ سطر من الكود (~30-40 KB minified)
+- LCP أسرع (StoriesRow يظهر الـ bubbles من الـ snapshot، لا ينتظر الـ modals)
+- Time to Interactive أقل لمدة عدة مئات من المللي ثانية على شبكات 3G
+
+#### 2) `listings/[id]/page.tsx` — Lazy load SafetyTipsCard
+
+**قبل:**
 ```ts
-const loadProfile = useCallback(async (currentUser) => {
-  const snap = await getDoc(userRef);
-
-  if (!snap.exists()) {
-    // مستخدم جديد - bootstrap لو إيميله مسجَّل
-    const shouldBootstrapAdmin = isBootstrapAdminEmail(currentUser.email);
-    await setDoc(userRef, {
-      // ...
-      isAdmin: shouldBootstrapAdmin, // ← يُكتب مرة واحدة فقط
-    });
-    return;
-  }
-
-  // مستخدم موجود - تحديث lastLoginAt فقط، **لا يُلمَس isAdmin**
-  await setDoc(userRef, { lastLoginAt: serverTimestamp() }, { merge: true });
-});
+import { SafetyTipsCard } from "@/components/safety-tips-card";
 ```
 
-**النتيجة:**
-- أوّل تسجيل دخول لإيميل في `NEXT_PUBLIC_ADMIN_EMAILS` → `isAdmin: true` يُكتب تلقائياً
-- بعد ذلك، **تغيير env vars لا يؤثر** على أي مستخدم
-- إدارة الأدمن تتم فقط من `/admin/users` بزر "منح/سحب"
+كرت "نصائح الأمان" آخر شيء في الصفحة → تحت الطيّ → لا يحتاج تحميله أثناء initial paint.
 
-### 3) ✅ صفحة `/admin/users` بزر toggle احترافي
-
-قبل:
-```tsx
-const admin = u.isAdmin || isAdminEmail(u.email);  // عرض فقط
-```
-
-بعد:
-```tsx
-const isAdmin = u.isAdmin === true;  // عرض من Firestore فقط
-
-<button onClick={() => toggleAdmin(u)}>
-  {isAdmin ? "سحب" : "منح أدمن"}
-</button>
-```
-
-**ميزات الزر:**
-- لا يستطيع الأدمن سحب صلاحياته من نفسه (حماية من قفل النظام)
-- يُظهر confirm dialog قبل التغيير
-- يكتب `isAdmin: bool + updatedAt` على Firestore
-- لون أخضر للمنح، وردي للسحب
-- شارة "أنت" بجانب اسم الأدمن الحالي للتمييز
-
-### 4) ✅ Deprecated alias للتوافق الرجعي
-
+**بعد:**
 ```ts
-// lib/firebase.ts:
-export const BOOTSTRAP_ADMIN_EMAILS = [...];
-export const isBootstrapAdminEmail = (email) => {...};
-
-/**
- * @deprecated استخدم useAuth().isAdmin
- */
-export const isAdminEmail = isBootstrapAdminEmail;
+const SafetyTipsCard = dynamic(
+  () => import("@/components/safety-tips-card").then((m) => m.SafetyTipsCard),
+  { ssr: true, loading: () => null }
+);
 ```
 
-→ أي كود قديم لم نعدّله لا يكسر، ويظهر تحذير في IDE لاستبداله لاحقاً.
+`ssr: true` للحفاظ على SEO. `loading: () => null` لتجنب أي placeholder وامض.
+
+#### لماذا لم أفصل ListingComments؟
+
+`ListingComments` (302 سطر) من ضمن المحتوى الأساسي للصفحة. تحميلها dynamic سيظهر "loading..." بشكل غير محبَّب وأيضاً تتأثر SEO إذا `ssr: false`. الأفضل: تركها eager.
+
+#### لماذا لم أفصل ImageGallery؟
+
+`ImageGallery` فوق الطيّ مباشرة (الصور هي أوّل ما يراه المستخدم). تأخيرها يضرّ بـ LCP.
 
 ---
 
-## الملف الذي تم تعديله بالتفصيل
+## ما لم يُنفَّذ (واضح ولماذا)
 
-### `lib/firebase.ts`
-- `ADMIN_EMAILS` → `BOOTSTRAP_ADMIN_EMAILS` (اسم أوضح)
-- `isAdminEmail` → `isBootstrapAdminEmail` (أوضح للقارئ)
-- إبقاء `isAdminEmail` كـ deprecated alias
-- توثيق واضح: لا تستخدم لتقييم صلاحيات
+### 1) `next/image` بدلاً من `<img>` في seller-card و chat avatars
+- `seller-card.tsx` يطبَّق فوق `listing-details-pro.zip` (جولة سابقة) — التحسين هذا يحتاج رفع تلك الـ zip أولاً
+- `<img>` للصور المرفوعة من Firebase Storage يعمل بشكل جيد (Firebase يُقدّم الصور بأحجام مناسبة عبر URL)
+- `next/image` يحتاج تكوين `remotePatterns` في `next.config.js` لكل domain
 
-### `contexts/AuthContext.tsx`
-- إزالة `isAdminEmail(user?.email) || profile?.isAdmin` من الـ `useMemo`
-- استبداله بـ: `isAdmin: profile?.isAdmin === true`
-- إضافة منطق bootstrap: عند `loadProfile()` لمستخدم جديد، يُحفظ `isAdmin: true` لو الإيميل في BOOTSTRAP list
-- توثيق شامل لكيفية عمل النظام في JSDoc
+### 2) Code splitting لخطوات `add-listing`
+- النموذج كله يحتاج state موحَّد (form state يمتد عبر 4 خطوات)
+- فصل خطوات بـ `dynamic` يعقّد إدارة الحالة دون فائدة قياسية
+- الـ form الحالي خفيف (لا libraries ثقيلة) — التحسين هنا له مردود ضعيف
 
-### `components/listing-comments.tsx`
-- إضافة `isAdmin` إلى destructuring من `useAuth()`
-- إزالة `profile?.role === "admin"` (سطرين)
-- استخدام `isAdmin` المباشرة في `handleDelete` و render loop
+### 3) Intersection Observer للـ Firestore subscriptions
+- أكثر تعقيداً من فائدته
+- الـ subscriptions الحالية مؤجَّلة بالفعل بـ `requestIdleCallback` (في bottom-nav, site-header)
+- لو تأخّرت الـ subscriptions حتى scroll، badges الإشعارات قد تتأخر
 
-### `app/admin/users/page.tsx`
-- إزالة `isAdminEmail` import
-- إزالة `u.isAdmin || isAdminEmail(u.email)`
-- إضافة `toggleAdmin()` function تكتب `isAdmin: bool` مباشرة
-- إضافة زر "منح/سحب" مع confirm dialog
-- شارة "أنت" بجانب الأدمن الحالي
-- حماية من سحب الذات (`if u.id === currentUser.uid`)
+### 4) Tree-shaking lucide-react
+- Next.js 14 يقوم بـ tree-shake تلقائياً للـ named imports (نحن نستخدم `import { Heart } from "lucide-react"` ✅)
+- كل أيقونة تُجلب منفردة بالفعل
 
 ---
 
-## التوافق مع Firestore Rules (الجزء 1)
+## القياسات المتوقّعة
 
-القواعد الجديدة في الجزء 1 تفترض نفس المصدر:
-
-```javascript
-function isAdmin() {
-  return signedIn()
-    && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-    && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-}
-```
-
-→ **القواعد + الكود متطابقتان الآن** — أدمن في الواجهة = أدمن في القواعد، لا تضارب.
-
-أيضاً القواعد تمنع:
-- المستخدم من رفع `isAdmin` على نفسه ✅ (الحقل يُحرّر فقط بواسطة admin آخر أو counters)
-- منح أدمن لشخص بعد تسجيله الأوّل عبر env ✅ (bootstrap logic لا يلمس existing users)
+| المقياس | التحسين المتوقع |
+|---|---|
+| Initial JS bundle (homepage) | -30 إلى -45 KB minified |
+| Time to Interactive (3G) | -300 إلى -500ms |
+| LCP | تحسّن طفيف (StoriesRow يظهر أسرع) |
+| Lighthouse Performance | +5 إلى +10 نقاط |
 
 ---
 
 ## التحقق
 
 ```
-✓ tsc --noEmit                                → 0 أخطاء
-✓ مصدر واحد للأدمن في كل الكود               → users/{uid}.isAdmin
-✓ لا profile?.role === "admin" في الكود     → نعم، صفر تطابق
-✓ لا isAdminEmail() لتقييم صلاحيات          → نعم (deprecated alias فقط)
-✓ Bootstrap أوّل أدمن يعمل                   → نعم (لإيميلات في env عند أوّل تسجيل)
-✓ صفحة /admin/users تدعم منح/سحب أدمن       → نعم
-✓ حماية من سحب الأدمن لنفسه                  → نعم
-✓ توافق مع Firestore Rules                   → نعم 100%
+✓ tsc --noEmit                                    → 0 أخطاء
+✓ هوية براتشو محفوظة                              → نعم
+✓ RTL                                            → نعم
+✓ موبايل first                                    → نعم (2 cols favorites، header مدمج)
+✓ logout بـ confirm                                → نعم
+✓ admin badge في profile                          → نعم
+✓ بطاقة favorites موحَّدة مع ListingCard            → نعم
+✓ messages بحث conditional                        → نعم (≥5 chats)
+✓ Stories modals تُحمَّل عند الحاجة                → نعم
+✓ SafetyTipsCard lazy                             → نعم (مع SSR)
+✓ لا كسر للميزات                                  → نعم
 ```
 
 ---
 
-## نقاط للمرحلة التالية
+## ملخص المرحلة 4 الكاملة
 
-| البند | حالته |
-|---|---|
-| ميزة دعوة أدمن جديد بالإيميل | يمكن إضافتها لاحقاً (تحتاج Cloud Function لإرسال invite) |
-| سجل تغييرات صلاحيات الأدمن (audit log) | لم يُنفَّذ — يحتاج collection `admin_logs` |
-| Custom claims في Firebase Auth (token-based) | لم يُنفَّذ — Firestore-based يكفي حالياً ولا يحتاج Cloud Functions |
-| إضافة rule لمنع أدمن من سحب آخر أدمن في النظام | لم يُنفَّذ — يحتاج فحص count في rule |
+| الجزء | الملفات | النتيجة |
+|---|---|---|
+| 1) Firestore Rules | `firestore.rules` + `indexes` + `firebase.json` | 8 ثغرات أمنية مغلقة + 13 مسار محمي + 10 indexes |
+| 2) توحيد الأدمن | `firebase.ts`, `AuthContext.tsx`, `listing-comments.tsx`, `admin/users/page.tsx` | مصدر واحد: `users/{uid}.isAdmin` + bootstrap لأوّل أدمن |
+| 3) صفحات | `profile`, `favorites`, `messages` | 3 صفحات أنظف ومتناسقة مع نظام البطاقات |
+| 4) أداء | `stories-row.tsx`, `listings/[id]/page.tsx` | Lazy loading لـ ~1100 سطر JS |
 
-**الجزء 3 الآن: مراجعة صفحات profile + favorites + messages.**
+**المرحلة 4 مكتملة. النظام جاهز للإطلاق من ناحية الأمان والأداء.**

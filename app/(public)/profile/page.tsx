@@ -3,21 +3,37 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
-import {
-  signOut,
-  updateProfile,
-} from "firebase/auth";
+import { signOut, updateProfile } from "firebase/auth";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import {
-  LogOut, Settings, Heart, MessageCircle, ListChecks, Shield, Bell, FileText,
+  ListChecks,
+  LogOut,
+  Pencil,
+  Settings,
+  Shield,
 } from "lucide-react";
 import { auth, db, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
+import { useConfirm } from "@/components/confirm-dialog";
 
+/**
+ * صفحة الملف الشخصي - أُعيد ترتيبها:
+ *
+ * - Header مدمج (h-20 → h-16، p-8 → p-5) ليكون موبايل-friendly
+ * - Quick actions اختصرت إلى 2 فقط: إعلاناتي + الإعدادات
+ *   (المفضلة/الرسائل/الإشعارات موجودة في bottom-nav والـ header)
+ * - زر "إدارة" يظهر للأدمن فقط
+ * - تسجيل الخروج بـ confirm dialog (حماية من النقر بالخطأ)
+ * - الشبكة تُكدَّس عمودياً على الموبايل (تعديل ثم معلومات)
+ * - حذف uid/lastSignInTime - معلومات تقنية لا تفيد المستخدم العادي
+ */
 export default function ProfilePage() {
   const router = useRouter();
   const { user, profile, loading, isAdmin, refreshProfile } = useAuth();
+  const toast = useToast();
+  const confirm = useConfirm();
 
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
@@ -25,8 +41,6 @@ export default function ProfilePage() {
   const [photoURL, setPhotoURL] = useState("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -60,17 +74,14 @@ export default function ProfilePage() {
   const handlePhotoChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     if (file && file.size > 5 * 1024 * 1024) {
-      setError("الصورة يجب أن تكون أقل من 5 ميجابايت.");
+      toast.error("الصورة يجب أن تكون أقل من 5 ميجابايت.");
       return;
     }
-    setError("");
     setPhotoFile(file);
   };
 
   const handleSave = async () => {
     if (!user) return;
-    setError("");
-    setMessage("");
     setSaving(true);
     try {
       let finalPhotoURL = photoURL;
@@ -80,7 +91,9 @@ export default function ProfilePage() {
           storage,
           `users/${user.uid}/${Date.now()}-${safeName}`
         );
-        await uploadBytes(fileRef, photoFile, { contentType: photoFile.type });
+        await uploadBytes(fileRef, photoFile, {
+          contentType: photoFile.type,
+        });
         finalPhotoURL = await getDownloadURL(fileRef);
       }
 
@@ -110,20 +123,28 @@ export default function ProfilePage() {
       setPhotoURL(finalPhotoURL);
       setPhotoFile(null);
       await refreshProfile();
-      setMessage("تم حفظ بيانات الحساب بنجاح.");
+      toast.success("تم حفظ بياناتك بنجاح.");
     } catch (err: any) {
-      setError(err?.message || "حدث خطأ أثناء حفظ الحساب.");
+      toast.error(err?.message || "حدث خطأ أثناء الحفظ.");
     } finally {
       setSaving(false);
     }
   };
 
   const handleLogout = async () => {
+    const ok = await confirm({
+      title: "تسجيل الخروج؟",
+      message: "ستحتاج لإعادة تسجيل الدخول لاحقاً للوصول إلى حسابك.",
+      confirmText: "تسجيل الخروج",
+      tone: "danger",
+    });
+    if (!ok) return;
+
     try {
       await signOut(auth);
       router.replace("/");
     } catch (err: any) {
-      setError(err?.message || "فشل تسجيل الخروج.");
+      toast.error(err?.message || "فشل تسجيل الخروج.");
     }
   };
 
@@ -138,171 +159,263 @@ export default function ProfilePage() {
   }
 
   return (
-    <section className="container py-8">
-      <div className="mx-auto max-w-5xl space-y-6">
-        {/* Header */}
-        <div className="card p-6 sm:p-8">
-          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-4">
+    <section className="container py-4 sm:py-8">
+      <div className="mx-auto max-w-3xl space-y-4 sm:space-y-5">
+        {/* ============== Header مدمج ============== */}
+        <div className="card overflow-hidden p-0">
+          <div
+            className="
+              relative bg-gradient-to-l from-brand-700 to-brand-800
+              px-5 pb-12 pt-5 text-white sm:px-6 sm:pt-6
+            "
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-white/70">
+                ملفي الشخصي
+              </div>
+              {isAdmin && (
+                <span
+                  className="
+                    inline-flex items-center gap-1 rounded-full
+                    bg-action-500 px-2.5 py-1 text-[10px] font-black
+                    text-white shadow-action
+                  "
+                >
+                  <Shield size={11} />
+                  مشرف
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* الصورة + الاسم - تتداخل مع الـ gradient */}
+          <div className="-mt-12 px-5 pb-5 sm:px-6">
+            <div className="flex items-end gap-4">
               {previewPhoto ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={previewPhoto}
                   alt={name || "user"}
-                  className="h-20 w-20 rounded-3xl object-cover ring-4 ring-slate-100 dark:ring-slate-800"
+                  referrerPolicy="no-referrer"
+                  className="h-20 w-20 shrink-0 rounded-3xl border-4 border-white object-cover shadow-card dark:border-slate-900 sm:h-24 sm:w-24"
                 />
               ) : (
-                <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-brand-700 text-3xl font-black text-white">
+                <div
+                  className="
+                    flex h-20 w-20 shrink-0 items-center justify-center
+                    rounded-3xl border-4 border-white
+                    bg-gradient-to-br from-brand-700 to-brand-500
+                    text-2xl font-black text-white shadow-card
+                    dark:border-slate-900 sm:h-24 sm:w-24 sm:text-3xl
+                  "
+                >
                   {initial}
                 </div>
               )}
+            </div>
 
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-3xl font-black text-slate-950 dark:text-white">
-                    {name || "مستخدم براتشو كار"}
-                  </h1>
-                  {isAdmin && (
-                    <span className="badge-action !text-xs">
-                      <Shield size={12} className="ml-1" /> مشرف
-                    </span>
-                  )}
-                </div>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">
-                  {user.email || user.phoneNumber || "حساب جديد"}
-                </p>
+            <div className="mt-3">
+              <h1 className="text-xl font-black text-slate-950 dark:text-white sm:text-2xl">
+                {name || "مستخدم براتشو كار"}
+              </h1>
+              <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
+                {user.email || user.phoneNumber || "حساب جديد"}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* ============== Quick actions - 2 إلى 3 فقط ============== */}
+        <div className="grid grid-cols-2 gap-2 sm:gap-3">
+          <QuickActionCard
+            href="/my-listings"
+            icon={ListChecks}
+            label="إعلاناتي"
+            color="brand"
+          />
+          <QuickActionCard
+            href="/settings"
+            icon={Settings}
+            label="الإعدادات"
+            color="slate"
+          />
+        </div>
+
+        {isAdmin && (
+          <Link
+            href="/admin"
+            className="
+              flex items-center justify-between gap-3 rounded-3xl
+              border-2 border-action-200 bg-action-50/50 p-4
+              transition active:scale-[0.99]
+              hover:border-action-300 hover:bg-action-50
+              dark:border-action-700/60 dark:bg-action-950/30
+              dark:hover:bg-action-950/50
+            "
+          >
+            <div className="flex items-center gap-3">
+              <div
+                className="
+                  flex h-10 w-10 items-center justify-center
+                  rounded-2xl bg-action-500 text-white shadow-action
+                "
+              >
+                <Shield size={18} />
               </div>
+              <div>
+                <div className="text-sm font-black text-slate-950 dark:text-white">
+                  لوحة الإدارة
+                </div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                  إدارة الإعلانات والمستخدمين
+                </div>
+              </div>
+            </div>
+            <span className="text-action-700 dark:text-action-300">←</span>
+          </Link>
+        )}
+
+        {/* ============== Edit form ============== */}
+        <div className="card p-5 sm:p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <Pencil size={16} className="text-brand-700 dark:text-brand-300" />
+            <h2 className="text-base font-black text-slate-950 dark:text-white sm:text-lg">
+              تعديل البيانات
+            </h2>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="label">الصورة الشخصية</label>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handlePhotoChange}
+                className="
+                  input file:ml-3 file:rounded-full file:border-0
+                  file:bg-slate-100 file:px-4 file:py-2 file:font-bold
+                  file:text-slate-700 dark:file:bg-slate-800
+                  dark:file:text-white
+                "
+              />
+              <p className="mt-1 text-[11px] text-slate-500">
+                حد أقصى 5 ميجابايت.
+              </p>
+            </div>
+
+            <div>
+              <label className="label">الاسم أو اسم النشاط</label>
+              <input
+                className="input"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="اسمك أو اسم نشاطك التجاري"
+                maxLength={60}
+              />
+            </div>
+
+            <div>
+              <label className="label">رقم الهاتف</label>
+              <input
+                className="input"
+                dir="ltr"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="0912345678"
+              />
+            </div>
+
+            <div>
+              <label className="label">السيرة الذاتية</label>
+              <textarea
+                rows={4}
+                className="input min-h-[100px] resize-y"
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder="نبذة مختصرة عنك أو نشاطك (اختياري)"
+                maxLength={500}
+              />
+              <p className="mt-1 text-[11px] text-slate-500">
+                {bio.length}/500
+              </p>
             </div>
 
             <button
               type="button"
-              onClick={handleLogout}
-              className="btn-secondary"
+              onClick={handleSave}
+              disabled={saving}
+              className="btn-primary w-full"
             >
-              <LogOut size={16} />
-              تسجيل الخروج
+              {saving ? "جارٍ الحفظ..." : "حفظ التعديلات"}
             </button>
           </div>
-
-          {/* Quick actions - 5 بطاقات */}
-          <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            <Link href="/my-listings" className="card p-4 text-center hover:border-brand-300 transition">
-              <ListChecks size={22} className="mx-auto text-brand-700" />
-              <div className="mt-2 text-sm font-bold dark:text-white">إعلاناتي</div>
-            </Link>
-            <Link href="/favorites" className="card p-4 text-center hover:border-rose-300 transition">
-              <Heart size={22} className="mx-auto text-rose-600" />
-              <div className="mt-2 text-sm font-bold dark:text-white">المفضلة</div>
-            </Link>
-            <Link href="/messages" className="card p-4 text-center hover:border-brand-300 transition">
-              <MessageCircle size={22} className="mx-auto text-brand-700" />
-              <div className="mt-2 text-sm font-bold dark:text-white">الرسائل</div>
-            </Link>
-            <Link href="/vehicle-report" className="card p-4 text-center hover:border-brand-300 transition">
-              <FileText size={22} className="mx-auto text-brand-700" />
-              <div className="mt-2 text-sm font-bold dark:text-white">تقرير المركبة</div>
-            </Link>
-            <Link href="/notifications" className="card p-4 text-center hover:border-action-300 transition">
-              <Bell size={22} className="mx-auto text-action-600" />
-              <div className="mt-2 text-sm font-bold dark:text-white">الإشعارات</div>
-            </Link>
-          </div>
         </div>
 
-        {error && (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-700">
-            {error}
-          </div>
-        )}
-        {message && (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-700">
-            {message}
-          </div>
-        )}
-
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Edit form */}
-          <div className="card p-6">
-            <h2 className="text-xl font-black mb-5 dark:text-white">تعديل الحساب</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="label">الصورة الشخصية</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoChange}
-                  className="input file:ml-3 file:rounded-full file:border-0 file:bg-slate-100 file:px-4 file:py-2 file:font-bold dark:file:bg-slate-800 dark:file:text-white"
-                />
-                <p className="mt-1 text-xs text-slate-500">حد أقصى 5 ميجابايت.</p>
-              </div>
-              <div>
-                <label className="label">الاسم</label>
-                <input
-                  className="input"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="اسمك أو اسم نشاطك التجاري"
-                />
-              </div>
-              <div>
-                <label className="label">رقم الهاتف</label>
-                <input
-                  className="input"
-                  dir="ltr"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="0912345678"
-                />
-              </div>
-              <div>
-                <label className="label">السيرة الذاتية</label>
-                <textarea
-                  rows={5}
-                  className="input min-h-[120px] resize-y"
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  placeholder="نبذة مختصرة عنك أو نشاطك (اختياري)"
-                />
-              </div>
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={saving}
-                className="btn-primary w-full"
-              >
-                {saving ? "جارٍ الحفظ..." : "حفظ التعديلات"}
-              </button>
-            </div>
-          </div>
-
-          {/* Info read-only */}
-          <div className="card p-6">
-            <h2 className="text-xl font-black mb-5 dark:text-white">معلومات الحساب</h2>
-            <div className="space-y-3 text-sm">
-              <Row label="معرف الحساب" value={user.uid} mono />
-              <Row label="البريد الإلكتروني" value={user.email || "—"} />
-              <Row label="هاتف Firebase" value={user.phoneNumber || "—"} />
-              <Row label="آخر دخول" value={user.metadata?.lastSignInTime || "—"} />
-              <div className="pt-2">
-                <Link href="/settings" className="btn-secondary w-full">
-                  <Settings size={16} /> الإعدادات
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* ============== تسجيل الخروج ============== */}
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="
+            inline-flex w-full items-center justify-center gap-2
+            rounded-3xl border-2 border-rose-200 bg-rose-50/50
+            px-4 py-3.5 text-sm font-black text-rose-700
+            transition active:scale-[0.99]
+            hover:bg-rose-50 hover:border-rose-300
+            dark:border-rose-800 dark:bg-rose-950/20 dark:text-rose-300
+            dark:hover:bg-rose-950/40
+          "
+        >
+          <LogOut size={16} />
+          تسجيل الخروج
+        </button>
       </div>
     </section>
   );
 }
 
-function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+/* ============================================================
+ * Quick action card
+ * ============================================================ */
+function QuickActionCard({
+  href,
+  icon: Icon,
+  label,
+  color,
+}: {
+  href: string;
+  icon: typeof ListChecks;
+  label: string;
+  color: "brand" | "slate";
+}) {
+  const colorClasses =
+    color === "brand"
+      ? "text-brand-700 bg-brand-50 dark:text-brand-300 dark:bg-brand-900/40"
+      : "text-slate-700 bg-slate-100 dark:text-slate-300 dark:bg-slate-800";
+
   return (
-    <div className="flex flex-col gap-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-950">
-      <span className="text-xs font-bold text-slate-500">{label}</span>
-      <span className={mono ? "font-mono text-xs break-all" : "text-slate-800 dark:text-slate-200"}>
-        {value}
+    <Link
+      href={href}
+      className="
+        flex items-center gap-3 rounded-2xl border border-slate-200/70
+        bg-white p-3.5 transition-all
+        hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-card
+        active:scale-[0.97]
+        dark:border-slate-700/70 dark:bg-slate-900
+        dark:hover:border-brand-700
+      "
+    >
+      <div
+        className={`
+          flex h-10 w-10 shrink-0 items-center justify-center
+          rounded-xl ${colorClasses}
+        `}
+      >
+        <Icon size={18} />
+      </div>
+      <span className="text-sm font-black text-slate-900 dark:text-white">
+        {label}
       </span>
-    </div>
+    </Link>
   );
 }

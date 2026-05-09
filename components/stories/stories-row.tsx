@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
@@ -8,8 +9,26 @@ import { useStories } from "@/hooks/useStories";
 import { getSeenStoryIdsLocal, groupByOwner, markStorySeenLocal } from "@/lib/stories/helpers";
 import { AddStoryBubble } from "./add-story-bubble";
 import { StoryBubble } from "./story-bubble";
-import { StoryCreateModal } from "./story-create-modal";
-import { StoryViewer } from "./story-viewer";
+
+/**
+ * Lazy load المكوّنات الثقيلة:
+ * - StoryCreateModal (621 سطر، tabs + media upload + form)
+ * - StoryViewer (433 سطر، video player + progress + viewers)
+ *
+ * هذه تُفتح عند نقرة المستخدم فقط، فلا داعي لتحميلها في initial bundle.
+ * النتيجة: تقليل JS bundle بـ ~1000+ سطر من الكود من الصفحة الرئيسية.
+ *
+ * `ssr: false` لأن كلاهما يستخدم browser-only APIs (FileReader, video, etc).
+ */
+const StoryCreateModal = dynamic(
+  () => import("./story-create-modal").then((m) => m.StoryCreateModal),
+  { ssr: false }
+);
+
+const StoryViewer = dynamic(
+  () => import("./story-viewer").then((m) => m.StoryViewer),
+  { ssr: false }
+);
 
 export function StoriesRow() {
   const router = useRouter();
