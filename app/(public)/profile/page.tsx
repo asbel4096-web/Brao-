@@ -135,7 +135,7 @@ export default function ProfilePage() {
     const ok = await confirm({
       title: "تسجيل الخروج؟",
       message: "ستحتاج لإعادة تسجيل الدخول لاحقاً للوصول إلى حسابك.",
-      confirmText: "تسجيل الخروج",
+      
       tone: "danger",
     });
     if (!ok) return;
