@@ -4,20 +4,39 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, memo, useEffect, useState } from "react";
 import {
-  Bell, MessageCircle, Plus, Search, User as UserIcon, Shield, Heart, FileText,
+  Bell,
+  Plus,
+  Search,
+  Shield,
+  User as UserIcon,
 } from "lucide-react";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { ThemeToggle } from "./theme-toggle";
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
 
-const links = [
-  { href: "/", label: "الرئيسية" },
+/**
+ * Header احترافي بسيط:
+ *
+ * **الموبايل (3 عناصر فقط):**
+ *   [Logo + اسم] ………………… [Profile/Login]
+ *   [Search field كامل العرض]
+ *
+ *   لا أيقونات إضافية - باقي الإجراءات في bottom-nav
+ *   (الرئيسية، الإعلانات، الإضافة، المفضلة، الرسائل).
+ *
+ * **الديسكتوب (lg+):**
+ *   [Logo] [Search] [Links] [Notifications] [Theme] [+ إضافة] [Profile]
+ *
+ * هذا يوحّد التجربة:
+ * - الموبايل = 100% للبحث (الإجراء الأهم)
+ * - الديسكتوب = navigation كامل
+ */
+
+const NAV_LINKS = [
   { href: "/listings", label: "الإعلانات" },
-  { href: "/my-listings", label: "إعلاناتي" },
-  { href: "/favorites", label: "المفضلة" },
-  { href: "/messages", label: "الدردشة" },
-  { href: "/vehicle-report", label: "تقرير المركبة" },
+  { href: "/categories", label: "الأقسام" },
+  { href: "/vehicle-report", label: "فحص VIN" },
 ];
 
 function SiteHeaderImpl() {
@@ -25,9 +44,8 @@ function SiteHeaderImpl() {
   const { user, profile, isAdmin } = useAuth();
   const [search, setSearch] = useState("");
   const [unreadNotifications, setUnreadNotifications] = useState(0);
-  const [favCount, setFavCount] = useState(0);
 
-  // اشتراك مؤجَّل بالإشعارات
+  // اشتراك مؤجَّل بالإشعارات (نحتفظ به - مهم للديسكتوب)
   useEffect(() => {
     if (!user) {
       setUnreadNotifications(0);
@@ -51,43 +69,9 @@ function SiteHeaderImpl() {
     };
 
     if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-      const id = (window as any).requestIdleCallback(startSubscription, { timeout: 2000 });
-      return () => {
-        cancelled = true;
-        (window as any).cancelIdleCallback?.(id);
-        unsub?.();
-      };
-    } else {
-      const t = setTimeout(startSubscription, 800);
-      return () => {
-        cancelled = true;
-        clearTimeout(t);
-        unsub?.();
-      };
-    }
-  }, [user]);
-
-  // اشتراك مؤجَّل بالمفضلة
-  useEffect(() => {
-    if (!user) {
-      setFavCount(0);
-      return;
-    }
-    let unsub: (() => void) | null = null;
-    let cancelled = false;
-
-    const startSubscription = () => {
-      if (cancelled) return;
-      const colRef = collection(db, "users", user.uid, "favorites");
-      unsub = onSnapshot(
-        colRef,
-        (snap) => setFavCount(snap.size),
-        () => setFavCount(0)
-      );
-    };
-
-    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-      const id = (window as any).requestIdleCallback(startSubscription, { timeout: 2000 });
+      const id = (window as any).requestIdleCallback(startSubscription, {
+        timeout: 2000,
+      });
       return () => {
         cancelled = true;
         (window as any).cancelIdleCallback?.(id);
@@ -116,149 +100,247 @@ function SiteHeaderImpl() {
     "U";
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/90 backdrop-blur-xl dark:border-slate-700/70 dark:bg-slate-950/90">
-      <div className="container flex items-center gap-3 py-3 sm:py-4">
-        <Link href="/" prefetch={false} className="flex items-center gap-3 shrink-0">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-700 to-ink text-base font-black text-white shadow-blue">
-            BC
-          </div>
-          <div className="hidden sm:block">
-            <div className="text-xl font-black text-slate-950 dark:text-white leading-tight">
-              براتشو كار
+    <header
+      className="
+        sticky top-0 z-40 border-b border-slate-200/70
+        bg-white/90 backdrop-blur-xl
+        dark:border-slate-700/70 dark:bg-slate-950/90
+      "
+    >
+      <div className="container">
+        {/* ============== الصف العلوي ============== */}
+        <div className="flex items-center gap-3 py-2.5 sm:py-3.5">
+          {/* Logo */}
+          <Link
+            href="/"
+            prefetch={false}
+            aria-label="الصفحة الرئيسية"
+            className="flex shrink-0 items-center gap-2.5"
+          >
+            <div
+              className="
+                flex h-10 w-10 items-center justify-center
+                rounded-2xl bg-gradient-to-br from-brand-700 to-ink
+                text-base font-black text-white shadow-blue
+                sm:h-11 sm:w-11
+              "
+            >
+              <span className="leading-none">BC</span>
             </div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
-              سوق السيارات في ليبيا
+            <div className="hidden leading-tight sm:block">
+              <div className="text-base font-black text-slate-950 dark:text-white sm:text-lg">
+                براتشو كار
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                سوق السيارات في ليبيا
+              </div>
             </div>
-          </div>
-        </Link>
+          </Link>
 
-        <form onSubmit={handleSearch} className="relative flex-1 max-w-2xl mx-auto">
+          {/* Search - يظهر على sm+ بجانب الـ logo */}
+          <form
+            onSubmit={handleSearch}
+            className="relative mx-auto hidden max-w-2xl flex-1 sm:block"
+            role="search"
+          >
+            <Search
+              size={16}
+              className="
+                pointer-events-none absolute right-3 top-1/2
+                -translate-y-1/2 text-slate-400
+              "
+              aria-hidden="true"
+            />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="ابحث عن سيارة، قطعة، ورشة..."
+              aria-label="ابحث في الإعلانات"
+              className="
+                w-full rounded-2xl border border-slate-200 bg-slate-50
+                py-2.5 pr-9 pl-3 text-sm outline-none transition
+                placeholder:text-slate-400
+                focus:border-brand-400 focus:bg-white focus:ring-4
+                focus:ring-brand-100
+                dark:border-slate-700 dark:bg-slate-900 dark:text-white
+                dark:focus:bg-slate-950 dark:focus:ring-brand-900/40
+              "
+            />
+          </form>
+
+          {/* Nav links - lg+ فقط */}
+          <nav
+            className="hidden items-center gap-5 lg:flex"
+            aria-label="القائمة الرئيسية"
+          >
+            {NAV_LINKS.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                prefetch={false}
+                className="
+                  text-sm font-bold text-slate-700 transition-colors
+                  hover:text-brand-700
+                  dark:text-slate-200 dark:hover:text-brand-300
+                "
+              >
+                {l.label}
+              </Link>
+            ))}
+            {isAdmin && (
+              <Link
+                href="/admin"
+                prefetch={false}
+                className="
+                  inline-flex items-center gap-1 text-sm font-bold
+                  text-action-700 hover:text-action-600
+                "
+              >
+                <Shield size={14} />
+                الإدارة
+              </Link>
+            )}
+          </nav>
+
+          {/* الإجراءات على اليسار */}
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            {/* الإشعارات - sm+ فقط */}
+            {user && (
+              <Link
+                href="/notifications"
+                prefetch={false}
+                aria-label={
+                  unreadNotifications > 0
+                    ? `الإشعارات (${unreadNotifications} غير مقروء)`
+                    : "الإشعارات"
+                }
+                className="
+                  relative hidden h-10 w-10 items-center justify-center
+                  rounded-2xl border border-slate-200 text-slate-600
+                  transition hover:border-brand-300 hover:text-brand-700
+                  active:scale-95
+                  dark:border-slate-700 dark:text-slate-300
+                  dark:hover:border-brand-700 dark:hover:text-brand-300
+                  sm:inline-flex
+                "
+              >
+                <Bell size={17} />
+                {unreadNotifications > 0 && (
+                  <span
+                    className="
+                      absolute -top-1 -right-1 flex h-4 min-w-[16px]
+                      items-center justify-center rounded-full
+                      border-2 border-white bg-action-500 px-1
+                      text-[9px] font-black leading-none text-white
+                      dark:border-slate-950
+                    "
+                  >
+                    {unreadNotifications > 9 ? "9+" : unreadNotifications}
+                  </span>
+                )}
+              </Link>
+            )}
+
+            {/* Theme - sm+ فقط */}
+            <div className="hidden sm:block">
+              <ThemeToggle />
+            </div>
+
+            {/* زر إضافة إعلان - sm+ فقط (في الموبايل موجود في bottom-nav) */}
+            <Link
+              href="/add-listing"
+              prefetch={false}
+              className="
+                hidden items-center gap-1.5 rounded-2xl
+                bg-action-500 px-3 py-2 text-xs font-black text-white
+                shadow-action transition active:scale-[0.97]
+                hover:bg-action-600
+                sm:inline-flex sm:px-4 sm:py-2.5 sm:text-sm
+              "
+            >
+              <Plus size={16} />
+              <span>إعلان جديد</span>
+            </Link>
+
+            {/* Profile / Login */}
+            {user ? (
+              <Link
+                href="/profile"
+                prefetch={false}
+                aria-label="حسابي"
+                className="
+                  inline-flex h-10 w-10 items-center justify-center
+                  overflow-hidden rounded-2xl
+                  border border-slate-200 bg-gradient-to-br
+                  from-brand-700 to-brand-500 text-sm font-black text-white
+                  transition active:scale-95
+                  dark:border-slate-700
+                "
+              >
+                {profile?.photoURL ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={profile.photoURL}
+                    alt={profile.name || "profile"}
+                    className="h-full w-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  initial
+                )}
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                prefetch={false}
+                aria-label="تسجيل الدخول"
+                className="
+                  inline-flex h-10 w-10 items-center justify-center
+                  rounded-2xl border border-slate-200 text-slate-700
+                  transition hover:border-brand-300 hover:text-brand-700
+                  active:scale-95
+                  dark:border-slate-700 dark:text-slate-200
+                  dark:hover:border-brand-700 dark:hover:text-brand-300
+                "
+              >
+                <UserIcon size={18} />
+              </Link>
+            )}
+          </div>
+        </div>
+
+        {/* ============== شريط البحث للموبايل (يظهر فقط على sm-) ============== */}
+        <form
+          onSubmit={handleSearch}
+          className="relative pb-2.5 sm:hidden"
+          role="search"
+        >
           <Search
-            size={18}
-            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+            size={16}
+            className="
+              pointer-events-none absolute right-3 top-1/2
+              -translate-y-1/2 text-slate-400
+            "
+            aria-hidden="true"
           />
           <input
+            type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="ابحث عن سيارة، قطعة، ورشة..."
-            className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-2.5 pr-10 pl-3 text-sm outline-none transition focus:border-brand-400 focus:bg-white focus:ring-4 focus:ring-brand-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:bg-slate-950 dark:focus:ring-brand-900/40"
+            aria-label="ابحث في الإعلانات"
+            className="
+              w-full rounded-2xl border border-slate-200 bg-slate-50
+              py-2.5 pr-9 pl-3 text-sm outline-none transition
+              placeholder:text-slate-400
+              focus:border-brand-400 focus:bg-white focus:ring-4
+              focus:ring-brand-100
+              dark:border-slate-700 dark:bg-slate-900 dark:text-white
+              dark:focus:bg-slate-950 dark:focus:ring-brand-900/40
+            "
           />
         </form>
-
-        <nav className="hidden lg:flex items-center gap-5 mx-2">
-          {links.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              prefetch={false}
-              className="text-sm font-bold text-slate-700 hover:text-brand-700 dark:text-slate-200 dark:hover:text-brand-300"
-            >
-              {l.label}
-            </Link>
-          ))}
-          {isAdmin && (
-            <Link
-              href="/admin"
-              prefetch={false}
-              className="inline-flex items-center gap-1 text-sm font-bold text-action-700 hover:text-action-600"
-            >
-              <Shield size={14} /> الإدارة
-            </Link>
-          )}
-        </nav>
-
-        <div className="flex items-center gap-2 shrink-0">
-          {/* أيقونة تقرير المركبة - تظهر على كل المقاسات */}
-          <Link
-            href="/vehicle-report"
-            prefetch={false}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-slate-700 transition hover:border-brand-300 hover:text-brand-700 dark:border-slate-700 dark:text-slate-200 dark:hover:border-brand-700 dark:hover:text-brand-300"
-            aria-label="تقرير المركبة"
-            title="تقرير المركبة"
-          >
-            <FileText size={18} />
-          </Link>
-
-          {/* أيقونة المفضلة */}
-          <Link
-            href="/favorites"
-            prefetch={false}
-            className="relative inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-slate-700 transition hover:border-rose-300 hover:text-rose-600 dark:border-slate-700 dark:text-slate-200 dark:hover:border-rose-700 dark:hover:text-rose-400"
-            aria-label="المفضلة"
-          >
-            <Heart
-              size={18}
-              className={favCount > 0 ? "fill-rose-500 text-rose-500" : ""}
-            />
-            {favCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-black text-white">
-                {favCount > 9 ? "9+" : favCount}
-              </span>
-            )}
-          </Link>
-
-          <Link
-            href="/notifications"
-            prefetch={false}
-            className="relative hidden sm:inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-slate-700 dark:border-slate-700 dark:text-slate-200"
-            aria-label="الإشعارات"
-          >
-            <Bell size={18} />
-            {unreadNotifications > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-action-500 px-1 text-[10px] font-black text-white">
-                {unreadNotifications > 9 ? "9+" : unreadNotifications}
-              </span>
-            )}
-          </Link>
-          <Link
-            href="/messages"
-            prefetch={false}
-            className="hidden sm:inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-slate-700 dark:border-slate-700 dark:text-slate-200"
-            aria-label="الدردشة"
-          >
-            <MessageCircle size={18} />
-          </Link>
-          <ThemeToggle />
-
-          <Link
-            href="/add-listing"
-            prefetch={false}
-            className="btn-action !px-3 !py-2 sm:!px-5 sm:!py-3"
-          >
-            <Plus size={18} />
-            <span className="hidden sm:inline">أضف إعلان</span>
-          </Link>
-
-          {user ? (
-            <Link
-              href="/profile"
-              prefetch={false}
-              aria-label="حسابي"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-brand-700 text-white font-black"
-            >
-              {profile?.photoURL ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={profile.photoURL}
-                  alt={profile.name || "profile"}
-                  className="h-full w-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                initial
-              )}
-            </Link>
-          ) : (
-            <Link
-              href="/login"
-              prefetch={false}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-slate-700 dark:border-slate-700 dark:text-slate-200"
-              aria-label="تسجيل الدخول"
-            >
-              <UserIcon size={18} />
-            </Link>
-          )}
-        </div>
       </div>
     </header>
   );
