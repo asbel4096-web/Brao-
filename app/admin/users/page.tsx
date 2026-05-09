@@ -96,7 +96,7 @@ export default function AdminUsersPage() {
         ? `سيصبح ${u.name || u.email || "هذا المستخدم"} أدمناً وله صلاحيات كاملة.`
         : `سيتم سحب صلاحيات الإدارة من ${u.name || u.email || "هذا المستخدم"}.`,
       confirmText: next ? "منح الصلاحيات" : "سحب الصلاحيات",
-      tone: next ? "primary" : "danger",
+      tone: "danger",
     });
     if (!ok) return;
 
