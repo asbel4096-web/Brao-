@@ -11,13 +11,21 @@ import {
 } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
-import { auth, db, isAdminEmail } from "@/lib/firebase";
+import { auth, db, isBootstrapAdminEmail } from "@/lib/firebase";
 import type { UserProfile } from "@/lib/types";
 
 interface AuthContextValue {
   user: User | null;
   profile: UserProfile | null;
   loading: boolean;
+  /**
+   * مصدر الحقيقة الوحيد للأدمن في الواجهة.
+   * يقرأ من حقل `users/{uid}.isAdmin === true`.
+   *
+   * هذا الحقل يُحفظ تلقائياً عند أوّل تسجيل دخول لمستخدم
+   * إيميله في قائمة `NEXT_PUBLIC_ADMIN_EMAILS` (bootstrap).
+   * بعد ذلك تغيير env vars لا يؤثر — الإدارة تتم من /admin/users.
+   */
   isAdmin: boolean;
   refreshProfile: () => Promise<void>;
 }
@@ -35,12 +43,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  /**
+   * تحميل الملف الشخصي + bootstrap أوّل أدمن:
+   * - مستخدم جديد: يُنشأ ملف. لو إيميله في BOOTSTRAP list → isAdmin=true تلقائياً.
+   * - مستخدم موجود: يُحدّث lastLoginAt فقط، **لا يُلمَس isAdmin** أبداً.
+   */
   const loadProfile = useCallback(async (currentUser: User) => {
     try {
       const userRef = doc(db, "users", currentUser.uid);
       const snap = await getDoc(userRef);
 
       if (!snap.exists()) {
+        // مستخدم جديد - إنشاء + bootstrap admin إذا كان إيميله مسجَّلاً
+        const shouldBootstrapAdmin = isBootstrapAdminEmail(currentUser.email);
+
         await setDoc(
           userRef,
           {
@@ -49,22 +65,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             email: currentUser.email || "",
             phone: currentUser.phoneNumber || "",
             photoURL: currentUser.photoURL || "",
+            isAdmin: shouldBootstrapAdmin, // مصدر الحقيقة الوحيد
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
             lastLoginAt: serverTimestamp(),
           },
           { merge: true }
         );
+
         const fresh = await getDoc(userRef);
         setProfile({ uid: currentUser.uid, ...(fresh.data() as any) });
-      } else {
-        await setDoc(
-          userRef,
-          { lastLoginAt: serverTimestamp() },
-          { merge: true }
-        );
-        setProfile({ uid: currentUser.uid, ...(snap.data() as any) });
+        return;
       }
+
+      // مستخدم موجود - تحديث lastLoginAt فقط، لا نلمس isAdmin
+      await setDoc(
+        userRef,
+        { lastLoginAt: serverTimestamp() },
+        { merge: true }
+      );
+      setProfile({ uid: currentUser.uid, ...(snap.data() as any) });
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error("[Auth] loadProfile error:", err);
@@ -103,7 +123,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       profile,
       loading,
-      isAdmin: isAdminEmail(user?.email) || profile?.isAdmin === true,
+      // ✅ مصدر واحد - من Firestore فقط
+      isAdmin: profile?.isAdmin === true,
       refreshProfile,
     }),
     [user, profile, loading, refreshProfile]

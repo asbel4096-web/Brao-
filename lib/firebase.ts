@@ -40,16 +40,43 @@ googleProvider.setCustomParameters({ prompt: "select_account" });
 export const db: Firestore = getFirestore(app);
 export const storage: FirebaseStorage = getStorage(app);
 
-export const ADMIN_EMAILS: string[] = (
+// ============================================================================
+// نظام الأدمن
+// ============================================================================
+//
+// مصدر الحقيقة الوحيد للأدمن في كل مكان (واجهة + قواعد):
+//   users/{uid}.isAdmin === true
+//
+// قائمة الإيميلات أدناه تُستخدم فقط لـ bootstrap أول أدمن:
+//   عند تسجيل دخول مستخدم لأول مرة وكان إيميله في القائمة،
+//   يُكتب isAdmin: true تلقائياً في وثيقة المستخدم في AuthContext.
+//
+// بعد ذلك، تغيير الإيميلات في env لن يؤثر على الأدمن الحاليين.
+// إدارة الأدمن (منح/سحب) تتم من صفحة /admin/users بكتابة الحقل مباشرة.
+// ============================================================================
+
+/** قائمة إيميلات الأدمن لـ bootstrap أوّل أدمن. لا تُستخدم لتقييم الصلاحيات. */
+export const BOOTSTRAP_ADMIN_EMAILS: string[] = (
   process.env.NEXT_PUBLIC_ADMIN_EMAILS || ""
 )
   .split(",")
   .map((s) => s.trim().toLowerCase())
   .filter(Boolean);
 
-export const isAdminEmail = (email?: string | null): boolean => {
+/**
+ * يفحص ما إذا كان الإيميل في قائمة bootstrap.
+ * **لا تستخدم هذه الدالة لتقييم صلاحيات الأدمن!**
+ * استخدم `useAuth().isAdmin` أو حقل `users/{uid}.isAdmin` بدلاً منها.
+ */
+export const isBootstrapAdminEmail = (email?: string | null): boolean => {
   if (!email) return false;
-  return ADMIN_EMAILS.includes(email.toLowerCase());
+  return BOOTSTRAP_ADMIN_EMAILS.includes(email.toLowerCase());
 };
+
+/**
+ * @deprecated استخدم `useAuth().isAdmin` أو احفظ `isAdmin: true` في وثيقة المستخدم.
+ * تُحفظ هذه الدالة لتجنّب كسر أي كود قديم لكن لا تقيّم صلاحيات.
+ */
+export const isAdminEmail = isBootstrapAdminEmail;
 
 export default app;

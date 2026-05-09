@@ -30,7 +30,7 @@ export default function ListingComments({
   ownerId,
   commentsEnabled = true,
 }: Props) {
-  const { user, profile } = useAuth();
+  const { user, isAdmin } = useAuth();
   const toast = useToast();
 
   const [comments, setComments] = useState<ListingComment[]>([]);
@@ -124,7 +124,6 @@ export default function ListingComments({
     if (!user) return;
 
     const isOwner = comment.userId === user.uid;
-    const isAdmin = profile?.role === "admin";
     const isListingOwner = ownerId === user.uid;
 
     if (!isOwner && !isAdmin && !isListingOwner) {
@@ -230,7 +229,6 @@ export default function ListingComments({
         <div className="space-y-3">
           {comments.map((comment) => {
             const isOwner = user?.uid === comment.userId;
-            const isAdmin = profile?.role === "admin";
             const isListingOwner = user?.uid === ownerId;
             const canDelete = Boolean(isOwner || isAdmin || isListingOwner);
             const isBusy = busyId === comment.id;
