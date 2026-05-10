@@ -2,140 +2,154 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
-import { signOut, updateProfile } from "firebase/auth";
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { useEffect, useState } from "react";
+import { signOut } from "firebase/auth";
 import {
-  ListChecks,
+  collection,
+  onSnapshot,
+  query,
+  where,
+} from "firebase/firestore";
+import {
+  Bell,
+  Bookmark,
+  ChevronLeft,
+  Copy,
+  FileText,
   LogOut,
+  MessageSquare,
   Pencil,
-  Settings,
+  Plus,
+  Settings as SettingsIcon,
+  Share2,
   Shield,
+  ShieldCheck,
+  Star,
 } from "lucide-react";
-import { auth, db, storage } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/components/confirm-dialog";
 
 /**
- * صفحة الملف الشخصي - أُعيد ترتيبها:
+ * صفحة الملف الشخصي - تصميم احترافي مستلهَم من الصورتين 5+6:
  *
- * - Header مدمج (h-20 → h-16، p-8 → p-5) ليكون موبايل-friendly
- * - Quick actions اختصرت إلى 2 فقط: إعلاناتي + الإعدادات
- *   (المفضلة/الرسائل/الإشعارات موجودة في bottom-nav والـ header)
- * - زر "إدارة" يظهر للأدمن فقط
- * - تسجيل الخروج بـ confirm dialog (حماية من النقر بالخطأ)
- * - الشبكة تُكدَّس عمودياً على الموبايل (تعديل ثم معلومات)
- * - حذف uid/lastSignInTime - معلومات تقنية لا تفيد المستخدم العادي
+ * - بطاقة مستخدم كبيرة (header) فيها:
+ *     - صورة + اسم + شارة "موثَّق" + شارة "مشرف"
+ *     - رقم العضوية + تاريخ الانضمام + تقييم
+ *     - زرّا "إدارة الحساب" + "تعديل البيانات"
+ *
+ * - 4 إحصائيات سريعة (إعلاناتي / المفضلة / الرسائل / المشاهدات)
+ * - أقسام مرتّبة في cards (إدارتي / إعدادات / دعم وتواصل / إدارة - للأدمن فقط)
+ * - زر تسجيل الخروج في الأسفل
  */
+
+interface Stats {
+  listings: number;
+  favorites: number;
+  unreadChats: number;
+}
+
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, profile, loading, isAdmin, refreshProfile } = useAuth();
+  const { user, profile, loading, isAdmin } = useAuth();
   const toast = useToast();
   const confirm = useConfirm();
 
-  const [name, setName] = useState("");
-  const [bio, setBio] = useState("");
-  const [phone, setPhone] = useState("");
-  const [photoURL, setPhotoURL] = useState("");
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [saving, setSaving] = useState(false);
+  const [stats, setStats] = useState<Stats>({
+    listings: 0,
+    favorites: 0,
+    unreadChats: 0,
+  });
 
+  /* ----------------------------------------------------------
+   * Auth guard
+   * ---------------------------------------------------------- */
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
   }, [loading, user, router]);
 
+  /* ----------------------------------------------------------
+   * Stats - مؤجَّلة لتفادي تأخير LCP
+   * ---------------------------------------------------------- */
   useEffect(() => {
-    if (profile) {
-      setName(profile.name || user?.displayName || "");
-      setBio(profile.bio || "");
-      setPhone(profile.phone || user?.phoneNumber || "");
-      setPhotoURL(profile.photoURL || user?.photoURL || "");
-    }
-  }, [profile, user]);
-
-  const previewPhoto = useMemo(() => {
-    if (photoFile) return URL.createObjectURL(photoFile);
-    return photoURL;
-  }, [photoFile, photoURL]);
-
-  useEffect(() => {
-    return () => {
-      if (photoFile && previewPhoto) URL.revokeObjectURL(previewPhoto);
-    };
-  }, [photoFile, previewPhoto]);
-
-  const initial =
-    name?.trim()?.charAt(0)?.toUpperCase() ||
-    user?.email?.charAt(0)?.toUpperCase() ||
-    "U";
-
-  const handlePhotoChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    if (file && file.size > 5 * 1024 * 1024) {
-      toast.error("الصورة يجب أن تكون أقل من 5 ميجابايت.");
-      return;
-    }
-    setPhotoFile(file);
-  };
-
-  const handleSave = async () => {
     if (!user) return;
-    setSaving(true);
-    try {
-      let finalPhotoURL = photoURL;
-      if (photoFile) {
-        const safeName = photoFile.name.replace(/\s+/g, "-");
-        const fileRef = ref(
-          storage,
-          `users/${user.uid}/${Date.now()}-${safeName}`
-        );
-        await uploadBytes(fileRef, photoFile, {
-          contentType: photoFile.type,
-        });
-        finalPhotoURL = await getDownloadURL(fileRef);
-      }
 
-      await setDoc(
-        doc(db, "users", user.uid),
-        {
-          uid: user.uid,
-          name: name.trim(),
-          email: user.email || "",
-          phone: phone.trim() || user.phoneNumber || "",
-          bio: bio.trim(),
-          photoURL: finalPhotoURL,
-          updatedAt: serverTimestamp(),
-        },
-        { merge: true }
+    let unsubListings: (() => void) | null = null;
+    let unsubFavorites: (() => void) | null = null;
+    let unsubChats: (() => void) | null = null;
+    let cancelled = false;
+
+    const startSubscriptions = () => {
+      if (cancelled) return;
+
+      // الإعلانات
+      unsubListings = onSnapshot(
+        query(collection(db, "listings"), where("ownerId", "==", user.uid)),
+        (snap) => setStats((s) => ({ ...s, listings: snap.size })),
+        () => {/* تجاهل */}
       );
 
-      try {
-        await updateProfile(user, {
-          displayName: name.trim() || user.displayName || "",
-          photoURL: finalPhotoURL || user.photoURL || "",
-        });
-      } catch {
-        /* non-fatal */
-      }
+      // المفضلة
+      unsubFavorites = onSnapshot(
+        collection(db, "users", user.uid, "favorites"),
+        (snap) => setStats((s) => ({ ...s, favorites: snap.size })),
+        () => {/* تجاهل */}
+      );
 
-      setPhotoURL(finalPhotoURL);
-      setPhotoFile(null);
-      await refreshProfile();
-      toast.success("تم حفظ بياناتك بنجاح.");
-    } catch (err: any) {
-      toast.error(err?.message || "حدث خطأ أثناء الحفظ.");
-    } finally {
-      setSaving(false);
+      // المحادثات غير المقروءة
+      unsubChats = onSnapshot(
+        query(
+          collection(db, "chats"),
+          where("participants", "array-contains", user.uid)
+        ),
+        (snap) => {
+          let count = 0;
+          snap.forEach((d) => {
+            const data = d.data() as any;
+            const c = data?.unreadCount?.[user.uid];
+            if (typeof c === "number") count += c;
+          });
+          setStats((s) => ({ ...s, unreadChats: count }));
+        },
+        () => {/* تجاهل */}
+      );
+    };
+
+    if (
+      typeof window !== "undefined" &&
+      "requestIdleCallback" in window
+    ) {
+      const id = (window as any).requestIdleCallback(startSubscriptions, {
+        timeout: 2000,
+      });
+      return () => {
+        cancelled = true;
+        (window as any).cancelIdleCallback?.(id);
+        unsubListings?.();
+        unsubFavorites?.();
+        unsubChats?.();
+      };
+    } else {
+      const t = setTimeout(startSubscriptions, 600);
+      return () => {
+        cancelled = true;
+        clearTimeout(t);
+        unsubListings?.();
+        unsubFavorites?.();
+        unsubChats?.();
+      };
     }
-  };
+  }, [user]);
 
+  /* ----------------------------------------------------------
+   * Logout مع confirm
+   * ---------------------------------------------------------- */
   const handleLogout = async () => {
     const ok = await confirm({
       title: "تسجيل الخروج؟",
-      message: "ستحتاج لإعادة تسجيل الدخول لاحقاً للوصول إلى حسابك.",
-      
+      message: "ستحتاج لإعادة تسجيل الدخول للوصول إلى حسابك.",
+      confirmText: "تسجيل الخروج",
       tone: "danger",
     });
     if (!ok) return;
@@ -148,6 +162,37 @@ export default function ProfilePage() {
     }
   };
 
+  const handleCopyUid = async () => {
+    if (!user) return;
+    try {
+      await navigator.clipboard.writeText(user.uid);
+      toast.success("تم نسخ رقم الحساب.");
+    } catch {
+      toast.info(`رقم الحساب: ${user.uid.slice(0, 12)}…`);
+    }
+  };
+
+  const handleShare = async () => {
+    if (!user) return;
+    const url = `${window.location.origin}/traders/${user.uid}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: profile?.name || "صفحتي على براتشو كار",
+          url,
+        });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success("تم نسخ رابط حسابك.");
+      }
+    } catch {
+      /* المستخدم ألغى المشاركة */
+    }
+  };
+
+  /* ----------------------------------------------------------
+   * Loading / not authed
+   * ---------------------------------------------------------- */
   if (loading || !user) {
     return (
       <section className="container py-10">
@@ -158,55 +203,67 @@ export default function ProfilePage() {
     );
   }
 
+  const name =
+    profile?.name ||
+    user.displayName ||
+    user.email ||
+    user.phoneNumber ||
+    "مستخدم براتشو كار";
+  const initial = name.charAt(0).toUpperCase();
+  const isPhoneVerified = !!user.phoneNumber || !!profile?.phone;
+  const memberSince = formatJoinDate(profile?.createdAt);
+  const accountNumber = user.uid.slice(-8).toUpperCase();
+  const rating = Number(profile?.averageRating || 0);
+  const ratingsCount = Number(profile?.ratingsCount || 0);
+
   return (
     <section className="container py-4 sm:py-8">
       <div className="mx-auto max-w-3xl space-y-4 sm:space-y-5">
-        {/* ============== Header مدمج ============== */}
+        {/* ============================================================
+            بطاقة المستخدم - Header الرئيسي
+           ============================================================ */}
         <div className="card overflow-hidden p-0">
+          {/* خلفية gradient */}
           <div
             className="
-              relative bg-gradient-to-l from-brand-700 to-brand-800
-              px-5 pb-12 pt-5 text-white sm:px-6 sm:pt-6
+              relative h-24 bg-gradient-to-l from-brand-700 to-brand-800
+              sm:h-28
             "
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-white/70">
-                ملفي الشخصي
-              </div>
-              {isAdmin && (
-                <span
-                  className="
-                    inline-flex items-center gap-1 rounded-full
-                    bg-action-500 px-2.5 py-1 text-[10px] font-black
-                    text-white shadow-action
-                  "
-                >
-                  <Shield size={11} />
-                  مشرف
-                </span>
-              )}
-            </div>
+            <button
+              type="button"
+              onClick={handleShare}
+              aria-label="مشاركة الحساب"
+              className="
+                absolute left-3 top-3 inline-flex h-9 w-9
+                items-center justify-center rounded-full border
+                border-white/20 bg-black/30 text-white backdrop-blur
+                transition hover:bg-black/50 active:scale-95
+              "
+            >
+              <Share2 size={16} />
+            </button>
           </div>
 
-          {/* الصورة + الاسم - تتداخل مع الـ gradient */}
-          <div className="-mt-12 px-5 pb-5 sm:px-6">
-            <div className="flex items-end gap-4">
-              {previewPhoto ? (
+          {/* الصورة تتداخل مع الـ gradient */}
+          <div className="px-5 pb-5 sm:px-6">
+            <div className="-mt-12 flex items-end gap-4 sm:-mt-14">
+              {profile?.photoURL ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={previewPhoto}
-                  alt={name || "user"}
+                  src={profile.photoURL}
+                  alt={name}
                   referrerPolicy="no-referrer"
-                  className="h-20 w-20 shrink-0 rounded-3xl border-4 border-white object-cover shadow-card dark:border-slate-900 sm:h-24 sm:w-24"
+                  className="h-24 w-24 shrink-0 rounded-3xl border-4 border-white object-cover shadow-card dark:border-slate-900 sm:h-28 sm:w-28"
                 />
               ) : (
                 <div
                   className="
-                    flex h-20 w-20 shrink-0 items-center justify-center
+                    flex h-24 w-24 shrink-0 items-center justify-center
                     rounded-3xl border-4 border-white
                     bg-gradient-to-br from-brand-700 to-brand-500
-                    text-2xl font-black text-white shadow-card
-                    dark:border-slate-900 sm:h-24 sm:w-24 sm:text-3xl
+                    text-3xl font-black text-white shadow-card
+                    dark:border-slate-900 sm:h-28 sm:w-28 sm:text-4xl
                   "
                 >
                   {initial}
@@ -214,33 +271,205 @@ export default function ProfilePage() {
               )}
             </div>
 
+            {/* الاسم + الشارات */}
             <div className="mt-3">
-              <h1 className="text-xl font-black text-slate-950 dark:text-white sm:text-2xl">
-                {name || "مستخدم براتشو كار"}
-              </h1>
-              <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
-                {user.email || user.phoneNumber || "حساب جديد"}
-              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-xl font-black text-slate-950 dark:text-white sm:text-2xl">
+                  {name}
+                </h1>
+                {isPhoneVerified && (
+                  <ShieldCheck
+                    size={18}
+                    className="text-brand-700 dark:text-brand-300"
+                    aria-label="رقم موثَّق"
+                  />
+                )}
+                {isAdmin && (
+                  <span
+                    className="
+                      inline-flex items-center gap-1 rounded-full
+                      bg-action-500 px-2.5 py-0.5 text-[10px] font-black
+                      text-white shadow-action
+                    "
+                  >
+                    <Shield size={11} />
+                    مشرف
+                  </span>
+                )}
+              </div>
+
+              {/* التقييم */}
+              {ratingsCount > 0 && (
+                <div className="mt-1 inline-flex items-center gap-1 text-sm">
+                  <Star
+                    size={14}
+                    className="fill-current text-amber-500"
+                    aria-hidden="true"
+                  />
+                  <span className="font-black text-slate-900 dark:text-white">
+                    {rating.toFixed(1)}
+                  </span>
+                  <span className="text-slate-500 dark:text-slate-400">
+                    ({ratingsCount} تقييم)
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* معلومات العضوية */}
+            <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+              <button
+                type="button"
+                onClick={handleCopyUid}
+                className="
+                  flex items-center justify-between gap-2 rounded-2xl
+                  border border-slate-200 bg-slate-50 px-3 py-2
+                  text-right transition active:scale-[0.98]
+                  hover:border-brand-300 hover:bg-brand-50/30
+                  dark:border-slate-700 dark:bg-slate-950/40
+                  dark:hover:border-brand-700 dark:hover:bg-brand-950/30
+                "
+                aria-label="نسخ رقم الحساب"
+              >
+                <Copy
+                  size={12}
+                  className="shrink-0 text-slate-400"
+                  aria-hidden="true"
+                />
+                <div className="min-w-0">
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                    رقم الحساب
+                  </div>
+                  <div
+                    dir="ltr"
+                    className="truncate text-right font-mono text-xs font-black text-slate-900 dark:text-white"
+                  >
+                    {accountNumber}
+                  </div>
+                </div>
+              </button>
+
+              <div
+                className="
+                  rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2
+                  dark:border-slate-700 dark:bg-slate-950/40
+                "
+              >
+                <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                  عضو منذ
+                </div>
+                <div className="text-xs font-black text-slate-900 dark:text-white">
+                  {memberSince}
+                </div>
+              </div>
+            </div>
+
+            {/* CTAs */}
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <Link
+                href="/profile/complete?redirect=/profile"
+                className="
+                  inline-flex items-center justify-center gap-1.5
+                  rounded-2xl border border-slate-200 bg-white
+                  px-3 py-2.5 text-xs font-black text-slate-700
+                  transition active:scale-[0.98]
+                  hover:border-brand-300 hover:bg-brand-50/30
+                  dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100
+                "
+              >
+                <Pencil size={14} />
+                تعديل البيانات
+              </Link>
+              <Link
+                href="/settings"
+                className="
+                  inline-flex items-center justify-center gap-1.5
+                  rounded-2xl border border-slate-200 bg-white
+                  px-3 py-2.5 text-xs font-black text-slate-700
+                  transition active:scale-[0.98]
+                  hover:border-brand-300 hover:bg-brand-50/30
+                  dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100
+                "
+              >
+                <SettingsIcon size={14} />
+                إدارة الحساب
+              </Link>
             </div>
           </div>
         </div>
 
-        {/* ============== Quick actions - 2 إلى 3 فقط ============== */}
-        <div className="grid grid-cols-2 gap-2 sm:gap-3">
-          <QuickActionCard
+        {/* ============================================================
+            تنبيه توثيق الهاتف (لو لم يكن موثَّقاً)
+           ============================================================ */}
+        {!isPhoneVerified && (
+          <Link
+            href="/verify-phone?redirect=/profile"
+            className="
+              flex items-center justify-between gap-3 rounded-3xl
+              border-2 border-amber-200 bg-amber-50/60 p-4
+              transition active:scale-[0.99]
+              hover:border-amber-300 hover:bg-amber-50
+              dark:border-amber-800 dark:bg-amber-950/30
+              dark:hover:bg-amber-950/50
+            "
+          >
+            <div className="flex items-center gap-3">
+              <div
+                className="
+                  flex h-10 w-10 shrink-0 items-center justify-center
+                  rounded-2xl bg-amber-500 text-white shadow-sm
+                "
+              >
+                <ShieldCheck size={18} />
+              </div>
+              <div>
+                <div className="text-sm font-black text-slate-950 dark:text-white">
+                  وثّق رقم هاتفك
+                </div>
+                <div className="text-[11px] text-slate-600 dark:text-slate-300">
+                  لزيادة ثقة المشترين بإعلاناتك
+                </div>
+              </div>
+            </div>
+            <ChevronLeft
+              size={18}
+              className="shrink-0 text-amber-700 dark:text-amber-300"
+              aria-hidden="true"
+            />
+          </Link>
+        )}
+
+        {/* ============================================================
+            إحصائيات سريعة - 3 بطاقات
+           ============================================================ */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          <StatCard
             href="/my-listings"
-            icon={ListChecks}
+            icon={FileText}
+            value={stats.listings}
             label="إعلاناتي"
             color="brand"
           />
-          <QuickActionCard
-            href="/settings"
-            icon={Settings}
-            label="الإعدادات"
-            color="slate"
+          <StatCard
+            href="/favorites"
+            icon={Bookmark}
+            value={stats.favorites}
+            label="المفضلة"
+            color="rose"
+          />
+          <StatCard
+            href="/messages"
+            icon={MessageSquare}
+            value={stats.unreadChats}
+            label="رسائل"
+            color="action"
+            badge={stats.unreadChats > 0}
           />
         </div>
 
+        {/* ============================================================
+            الإدارة - كرت للأدمن فقط
+           ============================================================ */}
         {isAdmin && (
           <Link
             href="/admin"
@@ -256,103 +485,65 @@ export default function ProfilePage() {
             <div className="flex items-center gap-3">
               <div
                 className="
-                  flex h-10 w-10 items-center justify-center
+                  flex h-11 w-11 shrink-0 items-center justify-center
                   rounded-2xl bg-action-500 text-white shadow-action
                 "
               >
-                <Shield size={18} />
+                <Shield size={20} />
               </div>
               <div>
                 <div className="text-sm font-black text-slate-950 dark:text-white">
                   لوحة الإدارة
                 </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                <div className="text-[11px] text-slate-600 dark:text-slate-300">
                   إدارة الإعلانات والمستخدمين
                 </div>
               </div>
             </div>
-            <span className="text-action-700 dark:text-action-300">←</span>
+            <ChevronLeft
+              size={18}
+              className="shrink-0 text-action-700 dark:text-action-300"
+              aria-hidden="true"
+            />
           </Link>
         )}
 
-        {/* ============== Edit form ============== */}
-        <div className="card p-5 sm:p-6">
-          <div className="mb-4 flex items-center gap-2">
-            <Pencil size={16} className="text-brand-700 dark:text-brand-300" />
-            <h2 className="text-base font-black text-slate-950 dark:text-white sm:text-lg">
-              تعديل البيانات
-            </h2>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <label className="label">الصورة الشخصية</label>
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={handlePhotoChange}
-                className="
-                  input file:ml-3 file:rounded-full file:border-0
-                  file:bg-slate-100 file:px-4 file:py-2 file:font-bold
-                  file:text-slate-700 dark:file:bg-slate-800
-                  dark:file:text-white
-                "
-              />
-              <p className="mt-1 text-[11px] text-slate-500">
-                حد أقصى 5 ميجابايت.
-              </p>
-            </div>
-
-            <div>
-              <label className="label">الاسم أو اسم النشاط</label>
-              <input
-                className="input"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="اسمك أو اسم نشاطك التجاري"
-                maxLength={60}
-              />
-            </div>
-
-            <div>
-              <label className="label">رقم الهاتف</label>
-              <input
-                className="input"
-                dir="ltr"
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="0912345678"
-              />
-            </div>
-
-            <div>
-              <label className="label">السيرة الذاتية</label>
-              <textarea
-                rows={4}
-                className="input min-h-[100px] resize-y"
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                placeholder="نبذة مختصرة عنك أو نشاطك (اختياري)"
-                maxLength={500}
-              />
-              <p className="mt-1 text-[11px] text-slate-500">
-                {bio.length}/500
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={saving}
-              className="btn-primary w-full"
-            >
-              {saving ? "جارٍ الحفظ..." : "حفظ التعديلات"}
-            </button>
-          </div>
+        {/* ============================================================
+            القائمة - الأقسام الرئيسية
+           ============================================================ */}
+        <div
+          className="
+            overflow-hidden rounded-3xl border border-slate-200/70 bg-white
+            dark:border-slate-700/70 dark:bg-slate-900
+          "
+        >
+          <MenuRow
+            href="/add-listing"
+            icon={Plus}
+            label="أضف إعلان جديد"
+            color="action"
+          />
+          <MenuRow
+            href="/notifications"
+            icon={Bell}
+            label="الإشعارات"
+          />
+          <MenuRow
+            href="/vehicle-report"
+            icon={FileText}
+            label="تقرير المركبة (VIN)"
+          />
+          <MenuRow
+            href="/contact"
+            icon={MessageSquare}
+            label="الدعم والتواصل"
+            isLast
+          />
         </div>
 
-        {/* ============== تسجيل الخروج ============== */}
+        {/* ============================================================
+            تسجيل الخروج
+           ============================================================ */}
         <button
           type="button"
           onClick={handleLogout}
@@ -361,7 +552,7 @@ export default function ProfilePage() {
             rounded-3xl border-2 border-rose-200 bg-rose-50/50
             px-4 py-3.5 text-sm font-black text-rose-700
             transition active:scale-[0.99]
-            hover:bg-rose-50 hover:border-rose-300
+            hover:border-rose-300 hover:bg-rose-50
             dark:border-rose-800 dark:bg-rose-950/20 dark:text-rose-300
             dark:hover:bg-rose-950/40
           "
@@ -375,47 +566,131 @@ export default function ProfilePage() {
 }
 
 /* ============================================================
- * Quick action card
+ * Sub-components
  * ============================================================ */
-function QuickActionCard({
+
+function StatCard({
   href,
   icon: Icon,
+  value,
   label,
   color,
+  badge,
 }: {
   href: string;
-  icon: typeof ListChecks;
+  icon: typeof FileText;
+  value: number;
   label: string;
-  color: "brand" | "slate";
+  color: "brand" | "rose" | "action";
+  badge?: boolean;
 }) {
-  const colorClasses =
-    color === "brand"
-      ? "text-brand-700 bg-brand-50 dark:text-brand-300 dark:bg-brand-900/40"
-      : "text-slate-700 bg-slate-100 dark:text-slate-300 dark:bg-slate-800";
+  const colorClasses = {
+    brand: "text-brand-700 bg-brand-50 dark:text-brand-300 dark:bg-brand-900/40",
+    rose: "text-rose-600 bg-rose-50 dark:text-rose-300 dark:bg-rose-900/40",
+    action: "text-action-600 bg-action-50 dark:text-action-300 dark:bg-action-900/40",
+  };
 
   return (
     <Link
       href={href}
       className="
-        flex items-center gap-3 rounded-2xl border border-slate-200/70
-        bg-white p-3.5 transition-all
+        relative flex flex-col items-center gap-1.5 rounded-2xl border
+        border-slate-200/70 bg-white p-3 transition-all
         hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-card
         active:scale-[0.97]
         dark:border-slate-700/70 dark:bg-slate-900
         dark:hover:border-brand-700
+        sm:p-4
       "
     >
       <div
         className={`
-          flex h-10 w-10 shrink-0 items-center justify-center
-          rounded-xl ${colorClasses}
+          flex h-10 w-10 items-center justify-center rounded-xl
+          ${colorClasses[color]}
         `}
       >
         <Icon size={18} />
       </div>
-      <span className="text-sm font-black text-slate-900 dark:text-white">
+      <div className="text-xl font-black text-slate-900 dark:text-white sm:text-2xl">
+        {value.toLocaleString("ar-LY")}
+      </div>
+      <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 sm:text-[11px]">
         {label}
-      </span>
+      </div>
+
+      {badge && (
+        <span
+          className="
+            absolute right-2 top-2 inline-flex h-2 w-2
+            rounded-full bg-action-500
+          "
+          aria-hidden="true"
+        />
+      )}
     </Link>
   );
+}
+
+function MenuRow({
+  href,
+  icon: Icon,
+  label,
+  color = "neutral",
+  isLast,
+}: {
+  href: string;
+  icon: typeof Plus;
+  label: string;
+  color?: "neutral" | "action";
+  isLast?: boolean;
+}) {
+  const iconColor =
+    color === "action"
+      ? "text-action-600 bg-action-50 dark:bg-action-900/40 dark:text-action-300"
+      : "text-slate-700 bg-slate-100 dark:bg-slate-800 dark:text-slate-300";
+
+  return (
+    <Link
+      href={href}
+      className={`
+        flex items-center gap-3 px-4 py-3.5 transition
+        hover:bg-slate-50 active:bg-slate-100
+        dark:hover:bg-slate-950/40 dark:active:bg-slate-950/60
+        ${!isLast ? "border-b border-slate-100 dark:border-slate-800" : ""}
+      `}
+    >
+      <div
+        className={`
+          flex h-9 w-9 shrink-0 items-center justify-center
+          rounded-xl ${iconColor}
+        `}
+      >
+        <Icon size={16} />
+      </div>
+      <span className="flex-1 text-sm font-bold text-slate-900 dark:text-white">
+        {label}
+      </span>
+      <ChevronLeft
+        size={16}
+        className="shrink-0 text-slate-400"
+        aria-hidden="true"
+      />
+    </Link>
+  );
+}
+
+/* ============================================================
+ * Helpers
+ * ============================================================ */
+function formatJoinDate(timestamp: any): string {
+  if (!timestamp?.toDate) return "—";
+  try {
+    const date = timestamp.toDate() as Date;
+    return new Intl.DateTimeFormat("ar-LY", {
+      month: "long",
+      year: "numeric",
+    }).format(date);
+  } catch {
+    return "—";
+  }
 }
