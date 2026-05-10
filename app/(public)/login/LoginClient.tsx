@@ -10,9 +10,15 @@ import {
   signInWithPhoneNumber,
   signInWithPopup,
 } from "firebase/auth";
-import { Phone, Smartphone, Clock, RotateCw, ShieldCheck } from "lucide-react";
+import {
+  CheckCircle2,
+  ChevronLeft,
+  Clock,
+  RotateCw,
+} from "lucide-react";
 import { auth, googleProvider } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
+import { AuthLayout } from "@/components/auth/auth-layout";
 
 declare global {
   interface Window {
@@ -20,47 +26,64 @@ declare global {
   }
 }
 
-// مدة العداد قبل السماح بإعادة الإرسال (بالثواني)
 const OTP_RESEND_SECONDS = 144;
+const COUNTRY_CODE = "+218"; // ليبيا
+
+type Step = "phone" | "otp";
 
 export default function LoginClient() {
   const router = useRouter();
   const params = useSearchParams();
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
 
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [phone, setPhone] = useState("+218");
+  const [step, setStep] = useState<Step>("phone");
+  const [phoneDigits, setPhoneDigits] = useState(""); // بدون code الدولة
   const [code, setCode] = useState("");
+  const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
+
   const [sendingCode, setSendingCode] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [confirmation, setConfirmation] = useState<ConfirmationResult | null>(null);
   const [phoneAuthUnavailable, setPhoneAuthUnavailable] = useState(false);
   const [countdown, setCountdown] = useState(0);
+
   const recaptchaRef = useRef<HTMLDivElement | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const redirectTo = params.get("redirect") || "/profile";
+  const fullPhone = `${COUNTRY_CODE}${phoneDigits}`;
 
+  // إعادة التوجيه:
+  // - مستخدم جديد بدون اسم → /profile/complete
+  // - مستخدم مكتمل → redirectTo
   useEffect(() => {
-    if (!loading && user) router.replace(redirectTo);
-  }, [user, loading, router, redirectTo]);
+    if (loading || !user) return;
 
-  // تنظيف reCAPTCHA والمؤقّت عند مغادرة الصفحة
+    const isProfileComplete = Boolean(profile?.name?.trim());
+
+    if (!isProfileComplete) {
+      router.replace(
+        `/profile/complete?redirect=${encodeURIComponent(redirectTo)}`
+      );
+    } else {
+      router.replace(redirectTo);
+    }
+  }, [user, profile, loading, router, redirectTo]);
+
+  // تنظيف
   useEffect(() => {
     return () => {
       try {
         window.recaptchaVerifier?.clear();
         window.recaptchaVerifier = undefined;
-      } catch {
-        // تجاهل
-      }
+      } catch {/* تجاهل */}
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, []);
 
-  // عداد تنازلي: يبدأ من القيمة المحددة وينقص كل ثانية
+  // عداد تنازلي
   const startCountdown = (seconds: number) => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     setCountdown(seconds);
@@ -75,7 +98,7 @@ export default function LoginClient() {
     }, 1000);
   };
 
-  // تهيئة reCAPTCHA عند الطلب فقط (lazy)
+  // تهيئة reCAPTCHA invisible (لا يحجز مساحة)
   const ensureRecaptcha = async (): Promise<RecaptchaVerifier | null> => {
     if (typeof window === "undefined") return null;
     if (!recaptchaRef.current) return null;
@@ -83,8 +106,8 @@ export default function LoginClient() {
 
     try {
       const verifier = new RecaptchaVerifier(auth, recaptchaRef.current, {
-        size: "normal",
-        callback: () => setMessage("تم التحقق بنجاح، اضغط إرسال الرمز."),
+        size: "invisible",
+        callback: () => {/* silent */},
         "expired-callback": () => {
           setError("انتهت صلاحية التحقق. أعد المحاولة.");
         },
@@ -94,368 +117,506 @@ export default function LoginClient() {
       window.recaptchaVerifier = verifier;
       return verifier;
     } catch {
-      // فشل reCAPTCHA = phone auth غير متاح
       setPhoneAuthUnavailable(true);
       return null;
     }
   };
 
+  /* ----------------------------------------------------------
+   * Step 1: إرسال رقم الهاتف
+   * ---------------------------------------------------------- */
+  const handleSendCode = async () => {
+    setError("");
+    setInfo("");
+
+    // تحقق محلي
+    const digits = phoneDigits.replace(/\D/g, "");
+    if (digits.length < 9 || digits.length > 10) {
+      setError("اكتب رقم هاتف ليبي صحيح (9-10 أرقام).");
+      return;
+    }
+
+    setSendingCode(true);
+    try {
+      const verifier = await ensureRecaptcha();
+      if (!verifier) {
+        setError("تعذّر تهيئة التحقق. استخدم Google.");
+        return;
+      }
+
+      await setPersistence(auth, browserLocalPersistence);
+      const result = await signInWithPhoneNumber(auth, fullPhone, verifier);
+      setConfirmation(result);
+      setStep("otp");
+      setInfo(`تم إرسال رمز التحقق إلى ${fullPhone}`);
+      startCountdown(OTP_RESEND_SECONDS);
+    } catch (err: any) {
+      const code = err?.code as string | undefined;
+      if (code === "auth/billing-not-enabled") {
+        setPhoneAuthUnavailable(true);
+        setError("تسجيل الدخول برقم الهاتف غير متاح حالياً. استخدم Google.");
+      } else if (code === "auth/too-many-requests") {
+        setError("عدد كبير من المحاولات. انتظر قليلاً ثم حاول مجدداً.");
+      } else if (code === "auth/invalid-phone-number") {
+        setError("صيغة الرقم غير صحيحة.");
+      } else {
+        setError(err?.message || "فشل إرسال الرمز.");
+      }
+    } finally {
+      setSendingCode(false);
+    }
+  };
+
+  /* ----------------------------------------------------------
+   * Step 2: التحقق من الرمز
+   * ---------------------------------------------------------- */
+  const handleVerifyCode = async () => {
+    setError("");
+    if (!confirmation) {
+      setError("أعد إرسال الرمز.");
+      return;
+    }
+    if (code.length < 6) {
+      setError("اكتب الرمز كاملاً (6 أرقام).");
+      return;
+    }
+
+    setVerifying(true);
+    try {
+      await confirmation.confirm(code);
+      // التوجيه يحدث في useEffect أعلاه عند تغيير user
+    } catch (err: any) {
+      setError(err?.message || "رمز التحقق غير صحيح.");
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  /* ----------------------------------------------------------
+   * Google
+   * ---------------------------------------------------------- */
   const handleGoogle = async () => {
     if (googleLoading) return;
-
     setError("");
-    setMessage("");
     setGoogleLoading(true);
 
     try {
       await setPersistence(auth, browserLocalPersistence);
       await signInWithPopup(auth, googleProvider);
-    } catch (err: unknown) {
-      const firebaseError = err as { code?: string; message?: string };
-      const errorCode = firebaseError?.code;
-
-      if (errorCode === "auth/popup-blocked") {
+    } catch (err: any) {
+      const c = err?.code as string | undefined;
+      if (c === "auth/popup-blocked") {
         setError("المتصفح منع نافذة Google. اسمح بالنوافذ المنبثقة.");
-      } else if (errorCode === "auth/popup-closed-by-user") {
-        setError("تم إغلاق نافذة Google قبل إكمال تسجيل الدخول.");
-      } else if (errorCode === "auth/cancelled-popup-request") {
+      } else if (c === "auth/popup-closed-by-user") {
+        setError("تم إغلاق نافذة Google قبل إكمال الدخول.");
+      } else if (c === "auth/cancelled-popup-request") {
         setError("اضغط مرة واحدة فقط على زر Google.");
-      } else if (errorCode === "auth/unauthorized-domain") {
-        setError("هذا الدومين غير مصرح به في Firebase. أضفه في Authentication > Settings > Authorized domains.");
+      } else if (c === "auth/unauthorized-domain") {
+        setError("هذا الدومين غير مصرّح به في Firebase.");
       } else {
-        setError(firebaseError?.message || "فشل تسجيل الدخول عبر Google.");
+        setError(err?.message || "فشل تسجيل الدخول عبر Google.");
       }
     } finally {
       setGoogleLoading(false);
     }
   };
 
-  const handleSendCode = async () => {
-    setError("");
-    setMessage("");
-
-    if (!phone.trim().startsWith("+")) {
-      setError("اكتب الرقم بصيغة دولية تبدأ بـ +218.");
-      return;
-    }
-
-    setSendingCode(true);
-
-    try {
-      const verifier = await ensureRecaptcha();
-      if (!verifier) {
-        setError("تعذّر تهيئة reCAPTCHA. استخدم تسجيل الدخول عبر Google.");
-        setSendingCode(false);
-        return;
-      }
-
-      await setPersistence(auth, browserLocalPersistence);
-
-      const result = await signInWithPhoneNumber(
-        auth,
-        phone.trim(),
-        verifier
-      );
-
-      setConfirmation(result);
-      setMessage("تم إرسال رمز التحقق إلى رقمك.");
-      // ابدأ العداد التنازلي بعد إرسال ناجح
-      startCountdown(OTP_RESEND_SECONDS);
-    } catch (err: unknown) {
-      const firebaseError = err as { code?: string; message?: string };
-
-      if (firebaseError?.code === "auth/billing-not-enabled") {
-        setPhoneAuthUnavailable(true);
-        setConfirmation(null);
-        setError("تسجيل الدخول برقم الهاتف غير متاح حاليًا. استخدم تسجيل الدخول عبر Google.");
-        return;
-      }
-
-      if (firebaseError?.code === "auth/too-many-requests") {
-        setError("عدد كبير من المحاولات. انتظر قليلاً ثم حاول مجدداً.");
-        return;
-      }
-
-      setError(
-        firebaseError?.message ||
-          "فشل إرسال الرمز. تأكد من الرقم وreCAPTCHA والدومينات المصرّح بها."
-      );
-    } finally {
-      setSendingCode(false);
-    }
-  };
-
-  const handleVerifyCode = async () => {
-    setError("");
-    setMessage("");
-
-    if (!confirmation) {
-      setError("أرسل رمز التحقق أولاً.");
-      return;
-    }
-
-    if (!code.trim()) {
-      setError("اكتب رمز التحقق.");
-      return;
-    }
-
-    setVerifying(true);
-
-    try {
-      await confirmation.confirm(code.trim());
-    } catch (err: unknown) {
-      const firebaseError = err as { message?: string };
-      setError(firebaseError?.message || "رمز التحقق غير صحيح أو انتهت صلاحيته.");
-    } finally {
-      setVerifying(false);
-    }
-  };
-
+  /* ----------------------------------------------------------
+   * Loading state
+   * ---------------------------------------------------------- */
   if (loading) {
     return (
-      <section className="container py-10">
-        <div className="card mx-auto max-w-md p-8 text-center text-slate-500">
-          جارٍ التحميل...
+      <AuthLayout title="جارٍ التحميل..." showLegalFooter={false}>
+        <div className="space-y-3">
+          <div className="skeleton h-12 w-full" />
+          <div className="skeleton h-12 w-full" />
         </div>
-      </section>
+      </AuthLayout>
     );
   }
 
-  // وضعية الإرسال: قبل الإرسال / أثناء العداد / بعد العداد
-  const codeSent = !!confirmation;
-  const canResend = codeSent && countdown === 0 && !sendingCode;
-  const isCountingDown = countdown > 0;
+  /* ============================================================
+   * Step: PHONE
+   * ============================================================ */
+  if (step === "phone") {
+    return (
+      <AuthLayout
+        title="تسجيل الدخول أو التسجيل"
+        description="الرجاء تعبئة رقم الموبايل"
+        onBack={() => router.back()}
+        backType="close"
+      >
+        <div className="space-y-5">
+          {error && <ErrorMessage message={error} />}
 
-  return (
-    <section className="container py-10">
-      <div className="mx-auto max-w-3xl space-y-6">
-        <div className="text-center">
-          <h1 className="section-title">تسجيل الدخول</h1>
-          <p className="section-subtitle mx-auto">
-            اختر طريقة تسجيل الدخول المناسبة لإدارة حسابك وإعلاناتك.
-          </p>
-        </div>
-
-        {error && (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-700 dark:border-rose-800 dark:bg-rose-900/20 dark:text-rose-300">
-            {error}
-          </div>
-        )}
-
-        {message && (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300">
-            {message}
-          </div>
-        )}
-
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* بطاقة Google */}
-          <div className="card p-6">
-            <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
-                <Smartphone size={22} />
-              </div>
-              <div>
-                <h2 className="text-xl font-black dark:text-white">Google</h2>
-                <p className="text-sm text-slate-500">دخول سريع بحساب Google.</p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleGoogle}
-              disabled={googleLoading}
-              className="btn-primary w-full"
+          {/* ============ حقل رقم الهاتف ============ */}
+          <div>
+            <label className="mb-2 block text-sm font-black text-slate-900 dark:text-white">
+              رقم الموبايل
+            </label>
+            <div
+              className="
+                flex items-stretch gap-2 rounded-2xl border border-slate-200
+                bg-white p-1.5 transition focus-within:border-brand-400
+                focus-within:ring-4 focus-within:ring-brand-100
+                dark:border-slate-700 dark:bg-slate-900
+                dark:focus-within:ring-brand-900/40
+              "
             >
-              {googleLoading ? "جارٍ فتح Google..." : "تسجيل الدخول عبر Google"}
-            </button>
+              {/* code الدولة - ثابت */}
+              <div
+                className="
+                  flex shrink-0 items-center gap-2 rounded-xl bg-slate-50 px-3
+                  text-sm font-black text-slate-700
+                  dark:bg-slate-800 dark:text-slate-200
+                "
+              >
+                <LibyaFlag />
+                <span dir="ltr">{COUNTRY_CODE}</span>
+              </div>
+
+              <input
+                type="tel"
+                inputMode="numeric"
+                autoComplete="tel-national"
+                dir="ltr"
+                value={phoneDigits}
+                onChange={(e) =>
+                  setPhoneDigits(e.target.value.replace(/\D/g, "").slice(0, 10))
+                }
+                placeholder="9xxxxxxxx"
+                aria-label="ادخل رقم الموبايل"
+                disabled={phoneAuthUnavailable}
+                className="
+                  flex-1 rounded-xl border-0 bg-transparent
+                  py-3 px-3 text-base outline-none
+                  placeholder:text-slate-400
+                  dark:text-white
+                "
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && phoneDigits.length >= 9) {
+                    void handleSendCode();
+                  }
+                }}
+              />
+            </div>
+            <p className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+              مثال: 912345678 (بدون 0 في البداية)
+            </p>
           </div>
 
-          {/* بطاقة رقم الهاتف */}
-          <div className="card p-6">
-            <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-action-50 text-action-700 dark:bg-action-700/30 dark:text-action-200">
-                <Phone size={22} />
-              </div>
-              <div>
-                <h2 className="text-xl font-black dark:text-white">رقم الهاتف</h2>
-                <p className="text-sm text-slate-500">استلام رمز SMS للتحقق.</p>
-              </div>
+          {/* ============ CTA الأساسي ============ */}
+          <button
+            type="button"
+            onClick={handleSendCode}
+            disabled={
+              sendingCode ||
+              phoneDigits.length < 9 ||
+              phoneAuthUnavailable
+            }
+            className="
+              w-full rounded-2xl bg-brand-700 py-4 text-base font-black
+              text-white shadow-blue transition active:scale-[0.99]
+              hover:bg-brand-800 disabled:cursor-not-allowed
+              disabled:bg-slate-300 disabled:text-slate-500
+              disabled:shadow-none dark:disabled:bg-slate-700
+              dark:disabled:text-slate-500
+            "
+          >
+            {sendingCode ? "جارٍ الإرسال..." : "التالي"}
+          </button>
+
+          {/* reCAPTCHA invisible - لا يأخذ مساحة */}
+          <div ref={recaptchaRef} className="hidden" />
+
+          {phoneAuthUnavailable && (
+            <div
+              className="
+                rounded-2xl border border-amber-200 bg-amber-50 p-3
+                text-xs font-bold text-amber-800
+                dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200
+              "
+            >
+              ⚠️ تسجيل الدخول برقم الهاتف غير متاح حالياً. استخدم Google.
             </div>
+          )}
 
-            {phoneAuthUnavailable ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-700 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
-                تسجيل الدخول برقم الهاتف غير متاح حاليًا في هذا المشروع. استخدم تسجيل الدخول عبر Google إلى أن يتم تفعيل Billing في Firebase.
-              </div>
-            ) : (
-              <>
-                <label className="label">رقم الهاتف</label>
-                <input
-                  dir="ltr"
-                  className="input mb-3"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+2189xxxxxxxx"
-                  disabled={codeSent}
-                  inputMode="tel"
-                  autoComplete="tel"
-                />
+          {/* ============ فاصل "أو" ============ */}
+          <div className="flex items-center gap-3">
+            <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+            <span className="text-xs font-bold text-slate-400">أو</span>
+            <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+          </div>
 
-                <div className="my-3 min-h-[78px] rounded-2xl border border-slate-200 bg-white p-2 dark:border-slate-700 dark:bg-slate-950">
-                  <div ref={recaptchaRef} className="flex justify-center" />
-                </div>
+          {/* ============ Google ============ */}
+          <button
+            type="button"
+            onClick={handleGoogle}
+            disabled={googleLoading}
+            className="
+              flex w-full items-center justify-center gap-2 rounded-2xl
+              border-2 border-slate-200 bg-white py-3.5
+              text-sm font-black text-slate-800 transition
+              hover:border-brand-300 active:scale-[0.99]
+              disabled:opacity-60
+              dark:border-slate-700 dark:bg-slate-900 dark:text-white
+            "
+          >
+            <GoogleIcon />
+            {googleLoading ? "جارٍ فتح Google..." : "المتابعة باستخدام Google"}
+          </button>
 
-                {/* قبل الإرسال: زر "إرسال رمز التحقق" */}
-                {!codeSent && (
-                  <button
-                    type="button"
-                    onClick={handleSendCode}
-                    disabled={sendingCode}
-                    className="btn-secondary mb-3 w-full"
-                  >
-                    {sendingCode ? "جارٍ الإرسال..." : "إرسال رمز التحقق"}
-                  </button>
-                )}
-
-                {/* بعد الإرسال: حقل الرمز + زر التحقق + عداد إعادة الإرسال */}
-                {codeSent && (
-                  <>
-                    {/* بطاقة العداد */}
-                    <OtpCountdownCard
-                      countdown={countdown}
-                      isCountingDown={isCountingDown}
-                      canResend={canResend}
-                      sendingResend={sendingCode}
-                      onResend={handleSendCode}
-                    />
-
-                    <label className="label">رمز التحقق</label>
-                    <input
-                      dir="ltr"
-                      className="input mb-3 text-center font-mono text-2xl tracking-[0.5em] font-black"
-                      value={code}
-                      onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                      placeholder="------"
-                      inputMode="numeric"
-                      autoComplete="one-time-code"
-                      maxLength={6}
-                    />
-
-                    <button
-                      type="button"
-                      onClick={handleVerifyCode}
-                      disabled={verifying || code.length < 6}
-                      className="btn-action w-full"
-                    >
-                      {verifying ? "جارٍ التحقق..." : "تأكيد الرمز ودخول"}
-                    </button>
-                  </>
-                )}
-              </>
-            )}
+          {/* ============ Sell tagline ============ */}
+          <div
+            className="
+              rounded-3xl border border-slate-200 bg-white p-5
+              dark:border-slate-700 dark:bg-slate-900
+            "
+          >
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              أفضل طريقة
+            </p>
+            <h3 className="text-lg font-black leading-tight text-slate-950 dark:text-white">
+              لبيع أو شراء أي سيارة
+            </h3>
+            <ul className="mt-3 space-y-1.5 text-xs text-slate-700 dark:text-slate-200">
+              <SellingPoint>تواصل مباشر مع البائعين</SellingPoint>
+              <SellingPoint>إعلانات سيارات معتمدة وموثَّقة</SellingPoint>
+              <SellingPoint>إدارة إعلاناتك ومحادثاتك بسهولة</SellingPoint>
+              <SellingPoint>إضافة إعلانات للسيارات والقطع والخدمات</SellingPoint>
+            </ul>
           </div>
         </div>
+      </AuthLayout>
+    );
+  }
 
-        <p className="text-center text-xs text-slate-500 dark:text-slate-400">
-          بدخولك إلى براتشو كار، فأنت توافق على شروط الاستخدام وسياسة الخصوصية.
-        </p>
+  /* ============================================================
+   * Step: OTP
+   * ============================================================ */
+  return (
+    <AuthLayout
+      title="ادخل رمز التحقق"
+      description={`أرسلنا رمزاً مكوناً من 6 أرقام إلى ${fullPhone}`}
+      onBack={() => {
+        setStep("phone");
+        setCode("");
+        setError("");
+        setInfo("");
+        setConfirmation(null);
+      }}
+      backType="back"
+    >
+      <div className="space-y-5">
+        {error && <ErrorMessage message={error} />}
+        {info && !error && <InfoMessage message={info} />}
+
+        {/* ============ حقل رمز التحقق ============ */}
+        <div>
+          <label className="mb-2 block text-sm font-black text-slate-900 dark:text-white">
+            رمز التحقق
+          </label>
+          <input
+            type="text"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            dir="ltr"
+            value={code}
+            onChange={(e) =>
+              setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+            }
+            placeholder="------"
+            maxLength={6}
+            aria-label="رمز التحقق"
+            autoFocus
+            className="
+              w-full rounded-2xl border-2 border-slate-200 bg-white
+              py-4 text-center font-mono text-3xl font-black
+              tracking-[0.6em] outline-none transition
+              focus:border-brand-400 focus:ring-4 focus:ring-brand-100
+              dark:border-slate-700 dark:bg-slate-900 dark:text-white
+              dark:focus:ring-brand-900/40
+            "
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && code.length === 6) {
+                void handleVerifyCode();
+              }
+            }}
+          />
+        </div>
+
+        {/* ============ CTA الأساسي ============ */}
+        <button
+          type="button"
+          onClick={handleVerifyCode}
+          disabled={verifying || code.length < 6}
+          className="
+            w-full rounded-2xl bg-brand-700 py-4 text-base font-black
+            text-white shadow-blue transition active:scale-[0.99]
+            hover:bg-brand-800 disabled:cursor-not-allowed
+            disabled:bg-slate-300 disabled:text-slate-500
+            disabled:shadow-none dark:disabled:bg-slate-700
+          "
+        >
+          {verifying ? "جارٍ التحقق..." : "تأكيد ودخول"}
+        </button>
+
+        {/* ============ Resend / Countdown ============ */}
+        <ResendBlock
+          countdown={countdown}
+          onResend={handleSendCode}
+          sending={sendingCode}
+        />
       </div>
-    </section>
+    </AuthLayout>
   );
 }
 
 /* ============================================================
- * بطاقة عداد إعادة إرسال OTP
+ * Sub-components
  * ============================================================ */
 
-function OtpCountdownCard({
-  countdown,
-  isCountingDown,
-  canResend,
-  sendingResend,
-  onResend,
-}: {
-  countdown: number;
-  isCountingDown: boolean;
-  canResend: boolean;
-  sendingResend: boolean;
-  onResend: () => void;
-}) {
-  const minutes = Math.floor(countdown / 60);
-  const seconds = countdown % 60;
-  const formatted =
-    minutes > 0
-      ? `${minutes}:${seconds.toString().padStart(2, "0")}`
-      : `${seconds}`;
+function ErrorMessage({ message }: { message: string }) {
+  return (
+    <div
+      role="alert"
+      className="
+        rounded-2xl border border-rose-200 bg-rose-50 p-3
+        text-sm font-bold text-rose-700
+        dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-300
+      "
+    >
+      {message}
+    </div>
+  );
+}
 
-  // نسبة التقدم 0-100 (من القيمة الكاملة إلى 0)
-  const FULL = 144;
-  const progress = Math.max(0, Math.min(100, (countdown / FULL) * 100));
-
+function InfoMessage({ message }: { message: string }) {
   return (
     <div
       className="
-        mb-4 overflow-hidden rounded-2xl border
-        bg-gradient-to-br from-brand-50 to-white
-        dark:border-brand-800 dark:from-brand-900/20 dark:to-slate-900
+        flex items-start gap-2 rounded-2xl border border-emerald-200
+        bg-emerald-50 p-3 text-sm font-bold text-emerald-800
+        dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200
       "
-      style={{ borderColor: isCountingDown ? "rgb(191 219 254)" : undefined }}
     >
-      <div className="p-4">
-        {isCountingDown ? (
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
-              <Clock size={18} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs text-slate-600 dark:text-slate-400">
-                يمكنك إعادة الإرسال بعد
-              </p>
-              <p className="font-mono text-lg font-black text-brand-700 dark:text-brand-300">
-                {formatted}
-                <span className="mr-1 text-xs font-bold text-slate-500">
-                  {minutes > 0 ? "د:ث" : "ثانية"}
-                </span>
-              </p>
-            </div>
-            <ShieldCheck
-              size={20}
-              className="shrink-0 text-emerald-600 dark:text-emerald-400"
-              aria-hidden="true"
-            />
-          </div>
-        ) : (
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <p className="text-xs text-slate-600 dark:text-slate-400">
-                لم يصلك الرمز؟
-              </p>
-              <p className="text-sm font-black text-slate-900 dark:text-white">
-                يمكنك طلب إعادة الإرسال الآن
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={onResend}
-              disabled={!canResend}
-              className="btn-secondary !py-2 !px-3 !text-xs"
-            >
-              <RotateCw size={14} className={sendingResend ? "animate-spin" : ""} />
-              {sendingResend ? "جارٍ..." : "إعادة الإرسال"}
-            </button>
-          </div>
-        )}
-      </div>
+      <CheckCircle2 size={16} className="mt-0.5 shrink-0" />
+      {message}
+    </div>
+  );
+}
 
-      {/* شريط التقدم */}
-      {isCountingDown && (
-        <div className="h-1 w-full bg-brand-100 dark:bg-brand-900/40">
-          <div
-            className="h-full bg-gradient-to-r from-brand-700 to-brand-500 transition-all duration-1000 ease-linear"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
+function ResendBlock({
+  countdown,
+  onResend,
+  sending,
+}: {
+  countdown: number;
+  onResend: () => void;
+  sending: boolean;
+}) {
+  const counting = countdown > 0;
+  const min = Math.floor(countdown / 60);
+  const sec = countdown % 60;
+  const formatted =
+    min > 0 ? `${min}:${sec.toString().padStart(2, "0")}` : `${sec}`;
+
+  return (
+    <div className="text-center text-sm">
+      <p className="text-slate-600 dark:text-slate-400">
+        لم يصلك الرمز؟
+      </p>
+      {counting ? (
+        <p className="mt-1 inline-flex items-center gap-1.5 font-bold text-slate-500">
+          <Clock size={14} />
+          <span dir="ltr">{formatted}</span>
+          <span className="text-xs">
+            {min > 0 ? "د:ث" : "ثانية"}
+          </span>
+        </p>
+      ) : (
+        <button
+          type="button"
+          onClick={onResend}
+          disabled={sending}
+          className="
+            mt-1 inline-flex items-center gap-1.5 font-black
+            text-brand-700 hover:underline disabled:opacity-60
+            dark:text-brand-300
+          "
+        >
+          <RotateCw size={14} className={sending ? "animate-spin" : ""} />
+          {sending ? "جارٍ الإرسال..." : "إعادة إرسال الرمز"}
+        </button>
       )}
     </div>
+  );
+}
+
+function SellingPoint({ children }: { children: React.ReactNode }) {
+  return (
+    <li className="flex items-start gap-1.5">
+      <CheckCircle2
+        size={14}
+        className="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400"
+        aria-hidden="true"
+      />
+      <span>{children}</span>
+    </li>
+  );
+}
+
+function LibyaFlag() {
+  return (
+    <svg
+      width="22"
+      height="14"
+      viewBox="0 0 22 14"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+      className="rounded-sm"
+    >
+      <rect width="22" height="14" rx="2" fill="#239e46" />
+      <rect y="3.5" width="22" height="7" fill="#000" />
+      <rect y="10.5" width="22" height="3.5" fill="#e70013" />
+      <path
+        d="M11.5 7c0-.83.67-1.5 1.5-1.5.41 0 .79.17 1.06.44a1.5 1.5 0 1 0 0 2.12A1.5 1.5 0 0 1 11.5 7z"
+        fill="#fff"
+      />
+      <path
+        d="m12.5 6 .15.46h.49l-.4.29.15.47-.4-.3-.4.3.15-.47-.4-.29h.49z"
+        fill="#fff"
+      />
+    </svg>
+  );
+}
+
+function GoogleIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 18 18"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <path
+        d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.12-.84 2.07-1.79 2.71v2.25h2.9c1.7-1.56 2.69-3.87 2.69-6.6z"
+        fill="#4285F4"
+      />
+      <path
+        d="M9 18c2.43 0 4.47-.81 5.96-2.18l-2.9-2.25c-.81.54-1.83.86-3.06.86-2.36 0-4.36-1.59-5.07-3.73H.96v2.33A9 9 0 0 0 9 18z"
+        fill="#34A853"
+      />
+      <path
+        d="M3.93 10.7c-.18-.54-.28-1.11-.28-1.7s.1-1.16.28-1.7V4.97H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.04l2.97-2.33z"
+        fill="#FBBC05"
+      />
+      <path
+        d="M9 3.58c1.33 0 2.52.46 3.46 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.97l2.97 2.33C4.64 5.16 6.64 3.58 9 3.58z"
+        fill="#EA4335"
+      />
+    </svg>
   );
 }
