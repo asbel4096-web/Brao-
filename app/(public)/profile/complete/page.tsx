@@ -1,14 +1,12 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
-import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { Suspense, ChangeEvent, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { updateProfile } from "firebase/auth";
-import { Camera, CheckCircle2, User as UserIcon } from "lucide-react";
-import { auth, db, storage } from "@/lib/firebase";
+import { Camera } from "lucide-react";
+import { db, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { AuthLayout } from "@/components/auth/auth-layout";
@@ -34,6 +32,23 @@ const STEPS: { key: Step; n: number; total: number }[] = [
  * مبدأ: شاشة واحدة = هدف واحد. CTA كبير + خطوة واضحة.
  */
 export default function CompleteProfilePage() {
+  return (
+    <Suspense
+      fallback={
+        <AuthLayout title="جارٍ التحميل..." showLegalFooter={false}>
+          <div className="space-y-3">
+            <div className="skeleton h-12 w-full" />
+            <div className="skeleton h-12 w-full" />
+          </div>
+        </AuthLayout>
+      }
+    >
+      <CompleteProfilePageInner />
+    </Suspense>
+  );
+}
+
+function CompleteProfilePageInner() {
   const router = useRouter();
   const params = useSearchParams();
   const { user, profile, loading: authLoading, refreshProfile } = useAuth();
@@ -71,9 +86,7 @@ export default function CompleteProfilePage() {
   /* ----------------------------------------------------------
    * Image preview
    * ---------------------------------------------------------- */
-  const previewPhoto = photoFile
-    ? URL.createObjectURL(photoFile)
-    : photoURL;
+  const previewPhoto = photoFile ? URL.createObjectURL(photoFile) : photoURL;
 
   useEffect(() => {
     return () => {
@@ -162,7 +175,9 @@ export default function CompleteProfilePage() {
           displayName: name.trim(),
           photoURL: finalPhotoURL || user.photoURL || "",
         });
-      } catch {/* non-fatal */}
+      } catch {
+        /* non-fatal */
+      }
 
       await refreshProfile();
       toast.success("تم إكمال حسابك بنجاح!");
@@ -199,16 +214,9 @@ export default function CompleteProfilePage() {
       backType={isFirst ? "close" : "back"}
     >
       <div className="space-y-5">
-        {/* ============ شريط التقدم ============ */}
-        <StepProgress
-          current={currentStep.n}
-          total={currentStep.total}
-        />
+        <StepProgress current={currentStep.n} total={currentStep.total} />
 
-        {/* ============ المحتوى حسب الخطوة ============ */}
-        {step === "name" && (
-          <StepName name={name} onChange={setName} />
-        )}
+        {step === "name" && <StepName name={name} onChange={setName} />}
 
         {step === "photo" && (
           <StepPhoto
@@ -244,7 +252,6 @@ export default function CompleteProfilePage() {
           />
         )}
 
-        {/* ============ Actions ============ */}
         <div className="pt-2">
           {isLast ? (
             <button
@@ -346,7 +353,6 @@ function StepPhoto({
 
   return (
     <div className="flex flex-col items-center">
-      {/* صورة كبيرة */}
       <div className="relative">
         {preview ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -370,7 +376,6 @@ function StepPhoto({
           </div>
         )}
 
-        {/* زر تغيير الصورة */}
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
@@ -541,7 +546,6 @@ function StepReview({
         dark:border-slate-700 dark:bg-slate-900
       "
     >
-      {/* Header: صورة + اسم */}
       <div className="flex items-center gap-3">
         {preview ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -568,7 +572,6 @@ function StepReview({
         </div>
       </div>
 
-      {/* Details */}
       <div className="mt-4 space-y-3 border-t border-slate-100 pt-4 dark:border-slate-800">
         <ReviewRow label="البريد الإلكتروني" value={email} />
         <ReviewRow label="رقم هاتف بديل" value={phone} dir="ltr" />
@@ -610,9 +613,6 @@ function ReviewRow({
   );
 }
 
-/* ============================================================
- * Step progress indicator
- * ============================================================ */
 function StepProgress({ current, total }: { current: number; total: number }) {
   return (
     <div className="space-y-2">
@@ -637,9 +637,6 @@ function StepProgress({ current, total }: { current: number; total: number }) {
   );
 }
 
-/* ============================================================
- * Helpers
- * ============================================================ */
 function getStepTitle(step: Step): string {
   switch (step) {
     case "name":
