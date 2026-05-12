@@ -72,13 +72,17 @@ export default function LoginClient() {
     }
   }, [user, profile, loading, router, redirectTo]);
 
+  const clearRecaptcha = () => {
+    try {
+      window.recaptchaVerifier?.clear();
+    } catch {/* تجاهل */}
+    window.recaptchaVerifier = undefined;
+  };
+
   // تنظيف
   useEffect(() => {
     return () => {
-      try {
-        window.recaptchaVerifier?.clear();
-        window.recaptchaVerifier = undefined;
-      } catch {/* تجاهل */}
+      clearRecaptcha();
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, []);
@@ -101,14 +105,18 @@ export default function LoginClient() {
   // تهيئة reCAPTCHA invisible (لا يحجز مساحة)
   const ensureRecaptcha = async (): Promise<RecaptchaVerifier | null> => {
     if (typeof window === "undefined") return null;
-    if (!recaptchaRef.current) return null;
-    if (window.recaptchaVerifier) return window.recaptchaVerifier;
+    if (!recaptchaRef.current || !recaptchaRef.current.isConnected) {
+      return null;
+    }
+
+    clearRecaptcha();
 
     try {
       const verifier = new RecaptchaVerifier(auth, recaptchaRef.current, {
         size: "invisible",
         callback: () => {/* silent */},
         "expired-callback": () => {
+          clearRecaptcha();
           setError("انتهت صلاحية التحقق. أعد المحاولة.");
         },
       });
@@ -116,8 +124,10 @@ export default function LoginClient() {
       await verifier.render();
       window.recaptchaVerifier = verifier;
       return verifier;
-    } catch {
+    } catch (err) {
+      clearRecaptcha();
       setPhoneAuthUnavailable(true);
+      console.error("reCAPTCHA init error:", err);
       return null;
     }
   };
@@ -151,6 +161,11 @@ export default function LoginClient() {
       setInfo(`تم إرسال رمز التحقق إلى ${fullPhone}`);
       startCountdown(OTP_RESEND_SECONDS);
     } catch (err: any) {
+      clearRecaptcha();
+      console.error("PHONE AUTH ERROR:", err);
+      console.error("PHONE AUTH CODE:", err?.code);
+      console.error("PHONE AUTH MESSAGE:", err?.message);
+
       const code = err?.code as string | undefined;
       if (code === "auth/billing-not-enabled") {
         setPhoneAuthUnavailable(true);
@@ -159,8 +174,15 @@ export default function LoginClient() {
         setError("عدد كبير من المحاولات. انتظر قليلاً ثم حاول مجدداً.");
       } else if (code === "auth/invalid-phone-number") {
         setError("صيغة الرقم غير صحيحة.");
+      } else if (code === "auth/captcha-check-failed") {
+        setError("فشل تحقق الأمان. أعد المحاولة.");
+      } else if (code === "auth/invalid-app-credential") {
+        setError("تعذر تهيئة التحقق الأمني. حدّث الصفحة وأعد المحاولة.");
+      } else if (code === "auth/unauthorized-domain") {
+        setPhoneAuthUnavailable(true);
+        setError("الدومين غير مصرّح به في Firebase.");
       } else {
-        setError(err?.message || "فشل إرسال الرمز.");
+        setError(err?.code || err?.message || "فشل إرسال الرمز.");
       }
     } finally {
       setSendingCode(false);
@@ -327,7 +349,12 @@ export default function LoginClient() {
           </button>
 
           {/* reCAPTCHA invisible - لا يأخذ مساحة */}
-          <div ref={recaptchaRef} className="hidden" />
+          <div
+            ref={recaptchaRef}
+            id="recaptcha-container"
+            className="pointer-events-none absolute opacity-0"
+            aria-hidden="true"
+          />
 
           {phoneAuthUnavailable && (
             <div

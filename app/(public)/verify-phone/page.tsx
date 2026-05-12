@@ -88,15 +88,19 @@ function VerifyPhoneClient() {
     }
   }, [user, authLoading, router]);
 
+  const clearRecaptcha = () => {
+    try {
+      window.recaptchaVerifierVerifyPhone?.clear();
+    } catch {/* تجاهل */}
+    window.recaptchaVerifierVerifyPhone = undefined;
+  };
+
   /* ----------------------------------------------------------
    * Cleanup
    * ---------------------------------------------------------- */
   useEffect(() => {
     return () => {
-      try {
-        window.recaptchaVerifierVerifyPhone?.clear();
-        window.recaptchaVerifierVerifyPhone = undefined;
-      } catch {/* تجاهل */}
+      clearRecaptcha();
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, []);
@@ -123,20 +127,25 @@ function VerifyPhoneClient() {
    * ---------------------------------------------------------- */
   const ensureRecaptcha = async (): Promise<RecaptchaVerifier | null> => {
     if (typeof window === "undefined") return null;
-    if (!recaptchaRef.current) return null;
-    if (window.recaptchaVerifierVerifyPhone) {
-      return window.recaptchaVerifierVerifyPhone;
-    }
+    if (!recaptchaRef.current || !recaptchaRef.current.isConnected) return null;
+
+    clearRecaptcha();
 
     try {
       const verifier = new RecaptchaVerifier(auth, recaptchaRef.current, {
         size: "invisible",
         callback: () => {/* silent */},
+        "expired-callback": () => {
+          clearRecaptcha();
+          setError("انتهت صلاحية التحقق. أعد المحاولة.");
+        },
       });
       await verifier.render();
       window.recaptchaVerifierVerifyPhone = verifier;
       return verifier;
-    } catch {
+    } catch (err) {
+      clearRecaptcha();
+      console.error("VERIFY PHONE reCAPTCHA init error:", err);
       return null;
     }
   };
@@ -166,6 +175,11 @@ function VerifyPhoneClient() {
       setStep("otp");
       startCountdown(OTP_RESEND_SECONDS);
     } catch (err: any) {
+      clearRecaptcha();
+      console.error("VERIFY PHONE ERROR:", err);
+      console.error("VERIFY PHONE CODE:", err?.code);
+      console.error("VERIFY PHONE MESSAGE:", err?.message);
+
       const code = err?.code as string | undefined;
       if (code === "auth/billing-not-enabled") {
         setError("توثيق الهاتف غير متاح حالياً.");
@@ -175,8 +189,12 @@ function VerifyPhoneClient() {
         setError("صيغة الرقم غير صحيحة.");
       } else if (code === "auth/account-exists-with-different-credential") {
         setError("هذا الرقم مستخدم في حساب آخر.");
+      } else if (code === "auth/captcha-check-failed") {
+        setError("فشل تحقق الأمان. أعد المحاولة.");
+      } else if (code === "auth/invalid-app-credential") {
+        setError("تعذر تهيئة التحقق الأمني. حدّث الصفحة وأعد المحاولة.");
       } else {
-        setError(err?.message || "فشل إرسال الرمز.");
+        setError(err?.code || err?.message || "فشل إرسال الرمز.");
       }
     } finally {
       setSendingCode(false);
@@ -510,7 +528,12 @@ function VerifyPhoneClient() {
         </button>
 
         {/* reCAPTCHA invisible */}
-        <div ref={recaptchaRef} className="hidden" />
+        <div
+          ref={recaptchaRef}
+          id="verify-phone-recaptcha-container"
+          className="pointer-events-none absolute opacity-0"
+          aria-hidden="true"
+        />
       </div>
     </AuthLayout>
   );
