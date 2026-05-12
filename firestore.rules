@@ -153,6 +153,9 @@ service cloud.firestore {
           signedIn()
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewsCount'])
           && request.resource.data.viewsCount == resource.data.viewsCount + 1
+          && request.resource.data.ownerId == resource.data.ownerId
+          && request.resource.data.type == resource.data.type
+          && request.resource.data.coverUrl == resource.data.coverUrl
         );
 
       allow delete: if (signedIn() && resource.data.ownerId == request.auth.uid) || isAdmin();
