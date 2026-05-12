@@ -45,8 +45,19 @@ interface Props {
 }
 
 function deepRemoveUndefined(value: any): any {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+
   if (Array.isArray(value)) {
     return value.map(deepRemoveUndefined).filter((v) => v !== undefined);
+  }
+
+  if (
+    value &&
+    typeof value === "object" &&
+    typeof value.toMillis === "function"
+  ) {
+    return value;
   }
 
   if (value && typeof value === "object") {
@@ -57,7 +68,7 @@ function deepRemoveUndefined(value: any): any {
     );
   }
 
-  return value === undefined ? undefined : value;
+  return value;
 }
 
 export function StoryCreateModal({ open, onClose }: Props) {
@@ -247,7 +258,7 @@ export function StoryCreateModal({ open, onClose }: Props) {
       const coverUrl = uploadedMedia[0]?.thumbnailUrl || uploadedMedia[0]?.url || "";
       const expiresAt = Timestamp.fromMillis(Date.now() + STORY_LIFETIME_MS);
 
-      const storyDoc = deepRemoveUndefined({
+      const storyDoc = {
         ownerId: user.uid,
         ownerName:
           profile?.businessName ||
@@ -260,12 +271,12 @@ export function StoryCreateModal({ open, onClose }: Props) {
         ownerRole: type === "service" ? "service_provider" : "trader",
         type,
         coverUrl,
-        media: uploadedMedia,
-        payload: payload as StoryPayload,
+        media: uploadedMedia.map((item) => deepRemoveUndefined(item)),
+        payload: deepRemoveUndefined(payload as StoryPayload),
         viewsCount: 0,
         createdAt: serverTimestamp(),
         expiresAt,
-      });
+      };
 
       await addDoc(collection(db, "stories"), storyDoc);
 
