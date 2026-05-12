@@ -44,6 +44,22 @@ interface Props {
   onClose: () => void;
 }
 
+function deepRemoveUndefined(value: any): any {
+  if (Array.isArray(value)) {
+    return value.map(deepRemoveUndefined).filter((v) => v !== undefined);
+  }
+
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value)
+        .map(([key, val]) => [key, deepRemoveUndefined(val)])
+        .filter(([, val]) => val !== undefined)
+    );
+  }
+
+  return value === undefined ? undefined : value;
+}
+
 export function StoryCreateModal({ open, onClose }: Props) {
   const router = useRouter();
   const { user, profile } = useAuth();
@@ -174,16 +190,6 @@ export function StoryCreateModal({ open, onClose }: Props) {
   };
 
   const handlePublish = async () => {
-    // ============================================================
-    // STRICT AUTH GUARD — يمنع 403 من Firebase Storage
-    //
-    // نتحقق من ثلاث طبقات قبل أي رفع:
-    //  1. user من AuthContext موجود.
-    //  2. auth.currentUser الحي من Firebase SDK موجود ومتطابق.
-    //  3. الـ uid غير فارغ.
-    //
-    // إذا فشل أي شرط، نوقف فوراً برسالة عربية واضحة دون أي محاولة رفع.
-    // ============================================================
     if (!user || !user.uid) {
       toast.error("سجّل الدخول أولًا حتى تتمكن من نشر القصة.");
       router.push("/login?redirect=/");
@@ -205,7 +211,6 @@ export function StoryCreateModal({ open, onClose }: Props) {
 
     setPublishing(true);
 
-    // نتتبّع المسارات المرفوعة لحذفها لو فشل النشر في منتصف العملية
     const uploadedPaths: string[] = [];
 
     try {
@@ -213,8 +218,6 @@ export function StoryCreateModal({ open, onClose }: Props) {
 
       for (const [index, draft] of drafts.entries()) {
         const safeName = draft.file.name.replace(/\s+/g, "-").toLowerCase();
-        // المسار الفعلي المعتمد:
-        //   stories/{userId}/{timestamp}-{1-based-index}-{safe-name}
         const storagePath = `stories/${user.uid}/${Date.now()}-${index + 1}-${safeName}`;
         const storageRef = ref(storage, storagePath);
 
@@ -225,24 +228,26 @@ export function StoryCreateModal({ open, onClose }: Props) {
 
         const url = await getDownloadURL(storageRef);
 
-        uploadedMedia.push({
-          id: draft.id,
-          kind: draft.kind,
-          url,
-          storagePath,
-          mimeType: draft.mimeType,
-          sizeBytes: draft.sizeBytes,
-          durationSec: draft.durationSec,
-          width: draft.width,
-          height: draft.height,
-          thumbnailUrl: draft.kind === "video" ? url : undefined,
-        });
+        uploadedMedia.push(
+          deepRemoveUndefined({
+            id: draft.id,
+            kind: draft.kind,
+            url,
+            storagePath,
+            mimeType: draft.mimeType,
+            sizeBytes: draft.sizeBytes,
+            durationSec: draft.durationSec,
+            width: draft.width,
+            height: draft.height,
+            thumbnailUrl: draft.kind === "video" ? url : undefined,
+          })
+        );
       }
 
       const coverUrl = uploadedMedia[0]?.thumbnailUrl || uploadedMedia[0]?.url || "";
       const expiresAt = Timestamp.fromMillis(Date.now() + STORY_LIFETIME_MS);
 
-      await addDoc(collection(db, "stories"), {
+      const storyDoc = deepRemoveUndefined({
         ownerId: user.uid,
         ownerName:
           profile?.businessName ||
@@ -262,17 +267,15 @@ export function StoryCreateModal({ open, onClose }: Props) {
         expiresAt,
       });
 
+      await addDoc(collection(db, "stories"), storyDoc);
+
       toast.success("تم نشر القصة بنجاح وتبقى لمدة 24 ساعة.");
       handleClose();
     } catch (error: any) {
-      // محاولة تنظيف الملفات المرفوعة لو فشلت كتابة المستند
-      // (لتجنّب يتامى في Storage)
       for (const path of uploadedPaths) {
         try {
           await deleteObject(ref(storage, path));
-        } catch {
-          // تجاهل — المهم لا نوقف flow الخطأ
-        }
+        } catch {}
       }
 
       const code: string = error?.code || "";
@@ -389,7 +392,6 @@ export function StoryCreateModal({ open, onClose }: Props) {
                                 muted
                               />
                             ) : activeDraft ? (
-                              // eslint-disable-next-line @next/next/no-img-element
                               <img
                                 src={activeDraft.previewUrl}
                                 alt="معاينة القصة"
@@ -421,7 +423,6 @@ export function StoryCreateModal({ open, onClose }: Props) {
                                     playsInline
                                   />
                                 ) : (
-                                  // eslint-disable-next-line @next/next/no-img-element
                                   <img
                                     src={draft.previewUrl}
                                     alt={`وسيط ${index + 1}`}
@@ -522,7 +523,6 @@ export function StoryCreateModal({ open, onClose }: Props) {
                           muted
                         />
                       ) : activeDraft ? (
-                        // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={activeDraft.previewUrl}
                           alt="معاينة القصة"
@@ -565,7 +565,6 @@ export function StoryCreateModal({ open, onClose }: Props) {
                           ].join(" ")}
                         >
                           <div className="relative h-16 w-14 bg-slate-200 dark:bg-slate-800">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={draft.previewUrl} alt={`معاينة ${index + 1}`} className="h-full w-full object-cover" />
                           </div>
                         </button>
