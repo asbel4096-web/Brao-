@@ -32,36 +32,24 @@ export function useStories() {
         const nowMs = Date.now();
         const nextItems: StoryDisplayItem[] = [];
 
-        console.log("STORIES SNAPSHOT SIZE:", snap.size);
-
         snap.forEach((docSnap) => {
           const raw = docSnap.data() as Omit<StoryDocument, "id">;
-
           const story = {
             ...raw,
             id: docSnap.id,
           } as StoryDocument;
 
-          console.log("RAW STORY:", story);
-
           const display = toDisplayItem(story);
-          console.log("DISPLAY STORY:", display);
-
           if (display && display.expiresAtMs > nowMs) {
             nextItems.push(display);
           }
         });
 
         nextItems.sort((a, b) => b.createdAtMs - a.createdAtMs);
-        console.log("VISIBLE STORIES:", nextItems);
-
         setItems(nextItems);
         setLoading(false);
       },
-      (error) => {
-        console.error("USE STORIES ERROR:", error);
-        console.error("USE STORIES CODE:", (error as any)?.code);
-        console.error("USE STORIES MESSAGE:", (error as any)?.message);
+      () => {
         setItems([]);
         setLoading(false);
       }
