@@ -36,6 +36,14 @@ export function useTraderProfile(uid: string): TraderProfileState {
 
     let mounted = true;
 
+    // Reset state when the uid changes so a previous trader's data
+    // (or a stale `missing` flag) never leaks into the new profile.
+    setProfile(null);
+    setTraderItems([]);
+    setReviews([]);
+    setLoading(true);
+    setMissing(false);
+
     getDoc(doc(db, "users", uid))
       .then((snap) => {
         if (!mounted) return;
@@ -46,6 +54,9 @@ export function useTraderProfile(uid: string): TraderProfileState {
         }
         setProfile({ ...(snap.data() as UserProfile), uid: snap.id });
         setMissing(false);
+        // The trader document is what gates the page. Once we have it,
+        // stop the full-page skeleton; listings/reviews stream in after.
+        setLoading(false);
       })
       .catch(() => {
         if (!mounted) return;
@@ -77,9 +88,15 @@ export function useTraderProfile(uid: string): TraderProfileState {
       () => setLoading(false)
     );
 
-    const unsubReviews = onSnapshot(reviewsQuery, (snap) => {
-      setReviews(snap.docs.map((item) => ({ ...(item.data() as TraderReview), id: item.id })));
-    });
+    const unsubReviews = onSnapshot(
+      reviewsQuery,
+      (snap) => {
+        setReviews(snap.docs.map((item) => ({ ...(item.data() as TraderReview), id: item.id })));
+      },
+      () => {
+        // Reviews are non-critical; never block the page on a reviews error.
+      }
+    );
 
     return () => {
       mounted = false;
