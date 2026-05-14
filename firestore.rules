@@ -16,6 +16,26 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
+    // ------------------------------------------------------------------
+    // Bootstrap Admin allowlist.
+    // Must mirror NEXT_PUBLIC_ADMIN_EMAILS used by the client for the
+    // first-login bootstrap in contexts/AuthContext.tsx.
+    // Keep this list in sync on every deploy. It is ONLY consulted at
+    // user-document creation time; ongoing admin management still goes
+    // through the isAdmin field and the /admin/users page.
+    // ------------------------------------------------------------------
+    function bootstrapAdminEmails() {
+      return [
+        // 'owner@example.com'
+      ];
+    }
+
+    function isBootstrapAdminCreate() {
+      return signedIn()
+        && request.resource.data.email is string
+        && request.resource.data.email.lower() in bootstrapAdminEmails();
+    }
+
     function unchanged(keys) {
       return request.resource.data.diff(resource.data).unchangedKeys().hasAll(keys);
     }
@@ -43,7 +63,10 @@ service cloud.firestore {
 
       allow create: if isMe(userId)
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.isAdmin == false;
+        && (
+          request.resource.data.isAdmin == false
+          || (request.resource.data.isAdmin == true && isBootstrapAdminCreate())
+        );
 
       allow update: if (
           isMe(userId)
@@ -64,9 +87,19 @@ service cloud.firestore {
             'updatedAt',
             'lastLoginAt',
             'isAdmin',
-            'createdAt'
+            'createdAt',
+            'followersCount',
+            'followingCount'
           ])
-        ) || isAdmin();
+        )
+        || (
+          // Allow a different signed-in user to ONLY adjust follow counters
+          // on this profile (used by the follow/unfollow transaction).
+          signedIn()
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['followersCount', 'followingCount'])
+        )
+        || isAdmin();
 
       allow delete: if isAdmin();
 
@@ -109,7 +142,16 @@ service cloud.firestore {
           && resource.data.ownerId == request.auth.uid
           && request.resource.data.ownerId == resource.data.ownerId
           && request.resource.data.status == resource.data.status
-        ) || isAdmin();
+        )
+        || (
+          // Any signed-in user may ONLY adjust engagement counters.
+          // Used by the like and comment transactions. Owner/status and
+          // every other field must stay byte-for-byte unchanged.
+          signedIn()
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['likesCount', 'commentsCount'])
+        )
+        || isAdmin();
 
       allow delete: if (signedIn() && resource.data.ownerId == request.auth.uid) || isAdmin();
 
@@ -122,7 +164,16 @@ service cloud.firestore {
           get(/databases/$(database)/documents/listings/$(listingId)).data.ownerId == request.auth.uid ||
           isAdmin()
         );
-        allow update: if false;
+        // Reporting a comment: a signed-in user who is NOT the author may
+        // only touch the report fields, and reportedCount may only go up.
+        allow update: if (
+          signedIn()
+          && resource.data.userId != request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['reported', 'reportedCount', 'lastReportedAt'])
+          && request.resource.data.reported == true
+          && request.resource.data.reportedCount == resource.data.reportedCount + 1
+        ) || isAdmin();
       }
 
       match /likes/{userId} {

@@ -11,15 +11,15 @@ service firebase.storage {
     }
 
     function isImage() {
-      return request.resource.contentType.matches('image/(jpeg|jpg|png|webp)');
+      return request.resource.contentType.matches('image/(jpeg|jpg|png|webp)([;].*)?');
     }
 
     function isVideo() {
-      return request.resource.contentType.matches('video/(mp4|webm|quicktime)');
+      return request.resource.contentType.matches('video/(mp4|webm|quicktime)([;].*)?');
     }
 
     function isAudio() {
-      return request.resource.contentType.matches('audio/(mpeg|mp3|wav|webm|ogg|mp4|x-m4a|aac)');
+      return request.resource.contentType.matches('audio/(mpeg|mp3|wav|webm|ogg|mp4|x-m4a|aac)([;].*)?');
     }
 
     function imageUnder(bytes) {
@@ -38,7 +38,7 @@ service firebase.storage {
       allow read: if true;
       allow write: if isOwner(userId)
         && (
-          imageUnder(5 * 1024 * 1024)
+          imageUnder(8 * 1024 * 1024)
           || videoUnder(25 * 1024 * 1024)
         );
     }
