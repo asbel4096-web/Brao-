@@ -1,6 +1,7 @@
 "use client";
 
-import { notFound, useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,7 +16,16 @@ export default function TraderPage() {
   const router = useRouter();
   const { user, profile } = useAuth();
   const toast = useToast();
-  const { profile: trader, listings, services, reviews, loading, missing } = useTraderProfile(params.uid);
+  const {
+    profile: trader,
+    listings,
+    services,
+    reviews,
+    averageRating,
+    reviewsCount,
+    loading,
+    missing,
+  } = useTraderProfile(params.uid);
 
   const handleMessage = async () => {
     if (!trader) return;
@@ -73,7 +83,23 @@ export default function TraderPage() {
     );
   }
 
-  if (missing || !trader) return notFound();
+  if (missing || !trader) {
+    return (
+      <section className="container py-16 sm:py-24">
+        <div className="mx-auto flex max-w-md flex-col items-center text-center">
+          <h1 className="text-xl font-black text-slate-900 dark:text-white sm:text-2xl">
+            لم يتم العثور على التاجر
+          </h1>
+          <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+            قد يكون الحساب غير موجود أو تم حذفه.
+          </p>
+          <Link href="/" className="btn-primary mt-6 inline-flex">
+            العودة للرئيسية
+          </Link>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="container py-6 sm:py-8">
@@ -83,9 +109,18 @@ export default function TraderPage() {
           profile={trader}
           listingsCount={listings.length}
           servicesCount={services.length}
+          averageRating={averageRating}
+          reviewsCount={reviewsCount}
           onMessage={handleMessage}
         />
-        <TraderTabs profile={trader} listings={listings} services={services} reviews={reviews} />
+        <TraderTabs
+          profile={trader}
+          listings={listings}
+          services={services}
+          reviews={reviews}
+          averageRating={averageRating}
+          reviewsCount={reviewsCount}
+        />
       </div>
     </section>
   );

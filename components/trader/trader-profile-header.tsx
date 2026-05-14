@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import { MapPin, Phone, MessageCircle, Star, UserPlus, UserCheck, Clock3, FileText, BriefcaseBusiness } from "lucide-react";
 import { getTraderDisplayName, normalizeLibyanPhone, formatNumber } from "@/lib/utils";
+import { onlineStatusText, onlineShortLabel, isProfileOnline } from "@/lib/online";
 import type { UserProfile } from "@/lib/types";
 import { useFollowTraderState } from "@/hooks/useListingEngagement";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,6 +17,8 @@ interface TraderProfileHeaderProps {
   profile: UserProfile;
   listingsCount: number;
   servicesCount: number;
+  averageRating: number;
+  reviewsCount: number;
   onMessage: () => Promise<void> | void;
 }
 
@@ -24,6 +27,8 @@ export function TraderProfileHeader({
   profile,
   listingsCount,
   servicesCount,
+  averageRating,
+  reviewsCount,
   onMessage,
 }: TraderProfileHeaderProps) {
   const router = useRouter();
@@ -34,6 +39,9 @@ export function TraderProfileHeader({
   const displayName = getTraderDisplayName(profile);
   const phone = profile.phone || "";
   const wa = normalizeLibyanPhone(phone);
+  const online = isProfileOnline(profile);
+  const statusText = onlineStatusText(profile);
+  const ratingText = Number(averageRating || 0).toFixed(1);
 
   const handleFollow = async () => {
     if (!user) {
@@ -75,9 +83,9 @@ export function TraderProfileHeader({
                 <h1 className="text-2xl font-black text-slate-950 dark:text-white sm:text-3xl">
                   {displayName}
                 </h1>
-                <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-black ${profile.isOnline ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}>
+                <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-black ${online ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}>
                   <Clock3 size={12} />
-                  {profile.isOnline ? "نشط الآن" : "نشاط عادي"}
+                  {statusText}
                 </span>
               </div>
 
@@ -85,7 +93,7 @@ export function TraderProfileHeader({
                 {profile.city ? (
                   <span className="inline-flex items-center gap-1"><MapPin size={14} />{profile.city}</span>
                 ) : null}
-                <span className="inline-flex items-center gap-1"><Star size={14} className="text-amber-500" />{Number(profile.averageRating || 0).toFixed(1)} متوسط التقييم</span>
+                <span className="inline-flex items-center gap-1"><Star size={14} className="text-amber-500" />{ratingText} متوسط التقييم{reviewsCount > 0 ? ` (${formatNumber(reviewsCount)})` : ""}</span>
               </div>
 
               {profile.bio ? (
@@ -126,8 +134,8 @@ export function TraderProfileHeader({
           <StatCard icon={<FileText size={18} />} label="الإعلانات" value={formatNumber(listingsCount)} />
           <StatCard icon={<BriefcaseBusiness size={18} />} label="الخدمات" value={formatNumber(servicesCount)} />
           <StatCard icon={<UserPlus size={18} />} label="المتابعين" value={formatNumber(profile.followersCount || 0)} />
-          <StatCard icon={<Star size={18} />} label="التقييم" value={Number(profile.averageRating || 0).toFixed(1)} />
-          <StatCard icon={<Clock3 size={18} />} label="الحالة" value={profile.isOnline ? "نشط" : "متصل لاحقاً"} />
+          <StatCard icon={<Star size={18} />} label="التقييم" value={`${ratingText} (${formatNumber(reviewsCount)})`} />
+          <StatCard icon={<Clock3 size={18} />} label="الحالة" value={onlineShortLabel(profile)} />
         </div>
       </div>
     </section>

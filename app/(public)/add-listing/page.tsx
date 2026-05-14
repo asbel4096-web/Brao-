@@ -30,7 +30,7 @@ import {
   listingCategories,
   transmissionTypes,
 } from "@/lib/categories";
-import { formatPrice, normalizeLibyanPhone } from "@/lib/utils";
+import { formatPrice, normalizeLibyanPhone, inferListingEntityType } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
 interface FormState {
@@ -280,6 +280,13 @@ export default function AddListingPage() {
         .map((s) => s.trim())
         .filter(Boolean);
 
+      const ownerName =
+        profile?.businessName ||
+        profile?.name ||
+        user.displayName ||
+        "مستخدم براتشو كار";
+      const ownerAvatar = profile?.photoURL || user.photoURL || "";
+
       await addDoc(collection(db, "listings"), {
         title: form.title.trim(),
         category: form.category,
@@ -308,7 +315,16 @@ export default function AddListingPage() {
         defects,
         images: imageUrls,
         ownerId: user.uid,
+        ownerName,
+        ownerAvatar,
         ownerEmail: user.email || "",
+        // Derived from category/title so the trader page can split
+        // listings vs services reliably without a new UI field.
+        entityType: inferListingEntityType({
+          category: form.category,
+          title: form.title,
+          description: form.description,
+        }),
         status: "pending",
         featured: false,
         views: 0,

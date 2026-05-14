@@ -402,7 +402,10 @@ export default function ChatRoomPage() {
           </Link>
 
           <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-end gap-2">
+            <Link
+              href={`/traders/${otherUid}`}
+              className="flex items-center justify-end gap-2"
+            >
               <span className="truncate text-sm font-black text-slate-900 dark:text-white sm:text-base">
                 {other?.name || "مستخدم"}
               </span>
@@ -419,7 +422,7 @@ export default function ChatRoomPage() {
                   {(other?.name || "م").charAt(0).toUpperCase()}
                 </div>
               )}
-            </div>
+            </Link>
           </div>
 
           {otherPhone && (

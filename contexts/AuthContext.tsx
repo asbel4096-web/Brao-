@@ -7,6 +7,7 @@ import {
   useState,
   useMemo,
   useCallback,
+  useRef,
   ReactNode,
 } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
@@ -66,6 +67,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             phone: currentUser.phoneNumber || "",
             photoURL: currentUser.photoURL || "",
             isAdmin: shouldBootstrapAdmin, // مصدر الحقيقة الوحيد
+            isOnline: true,
+            lastSeenAt: serverTimestamp(),
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
             lastLoginAt: serverTimestamp(),
@@ -78,10 +81,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // مستخدم موجود - تحديث lastLoginAt فقط، لا نلمس isAdmin
+      // مستخدم موجود - تحديث lastLoginAt + الحضور فقط، لا نلمس isAdmin
       await setDoc(
         userRef,
-        { lastLoginAt: serverTimestamp() },
+        {
+          lastLoginAt: serverTimestamp(),
+          isOnline: true,
+          lastSeenAt: serverTimestamp(),
+        },
         { merge: true }
       );
       setProfile({ uid: currentUser.uid, ...(snap.data() as any) });
@@ -117,6 +124,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     return () => unsub();
   }, [loadProfile]);
+
+  /**
+   * Presence heartbeat.
+   * - Refreshes `lastSeenAt` every 2 minutes while a tab is open, so the
+   *   5-minute "online" window stays accurate without exact disconnect
+   *   tracking.
+   * - Best-effort flip to `isOnline: false` when the tab is hidden/closed.
+   * Only ever writes the user's OWN document, with the field-scoped rule.
+   */
+  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const userRef = doc(db, "users", user.uid);
+
+    const beat = (online: boolean) => {
+      // Fire-and-forget; never block the UI on presence writes.
+      setDoc(
+        userRef,
+        { isOnline: online, lastSeenAt: serverTimestamp() },
+        { merge: true }
+      ).catch(() => {
+        /* presence is non-critical */
+      });
+    };
+
+    beat(true);
+    heartbeatRef.current = setInterval(() => beat(true), 2 * 60 * 1000);
+
+    const handleVisibility = () => {
+      beat(document.visibilityState === "visible");
+    };
+    const handleLeave = () => beat(false);
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("pagehide", handleLeave);
+    window.addEventListener("beforeunload", handleLeave);
+
+    return () => {
+      if (heartbeatRef.current) clearInterval(heartbeatRef.current);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("pagehide", handleLeave);
+      window.removeEventListener("beforeunload", handleLeave);
+      // Mark offline when the user signs out / provider unmounts.
+      beat(false);
+    };
+  }, [user]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
