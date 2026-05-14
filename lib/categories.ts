@@ -95,3 +95,52 @@ export const marketplaceSections = [
 
 export const fuelTypes = ["بنزين", "ديزل", "هايبرد", "كهرباء", "غاز"];
 export const transmissionTypes = ["أوتوماتيك", "عادي", "نصف أوتوماتيك"];
+
+/**
+ * إعدادات نموذج إضافة الإعلان حسب مجموعة القسم.
+ * - helper: نص إرشادي يظهر تحت اختيار القسم.
+ * - showVehicleSpecs: إظهار حقول المركبة (ماركة/موديل/سنة/مسافة/محرك/وقود/ناقل).
+ * - entityType: نوع الكيان المخزَّن في Firestore.
+ * لا يغيّر التصميم — فقط يتحكم في إظهار/إخفاء المجموعات الموجودة.
+ */
+export interface AddListingCategoryConfig {
+  helper: string;
+  showVehicleSpecs: boolean;
+  entityType: "listing" | "service";
+}
+
+export const addListingConfigByGroup: Record<
+  CategoryDef["group"],
+  AddListingCategoryConfig
+> = {
+  vehicles: {
+    helper:
+      "أدخل بيانات السيارة بشكل واضح مثل النوع، الفئة، سنة الصنع، المسافة، المحرك، الحالة، السعر، المدينة، ورقم التواصل.",
+    showVehicleSpecs: true,
+    entityType: "listing",
+  },
+  parts: {
+    helper:
+      "اكتب اسم القطعة، حالتها (جديدة/مستعملة)، نوع السيارة المناسبة، السعر، المدينة، ورقم التواصل.",
+    showVehicleSpecs: false,
+    entityType: "listing",
+  },
+  services: {
+    helper:
+      "اكتب نوع الخدمة التي تقدمها، المدينة، تفاصيل الخدمة، أوقات العمل، السعر إن وجد، ورقم التواصل.",
+    showVehicleSpecs: false,
+    entityType: "service",
+  },
+  special: {
+    helper:
+      "اكتب تفاصيل الإعلان بوضوح: العنوان، الوصف، السعر إن وجد، المدينة، ورقم التواصل.",
+    showVehicleSpecs: false,
+    entityType: "listing",
+  },
+};
+
+/** يرجع إعدادات النموذج المناسبة لاسم القسم العربي. */
+export function getAddListingConfig(categoryName: string): AddListingCategoryConfig {
+  const cat = findCategoryByName(categoryName);
+  return addListingConfigByGroup[cat?.group ?? "special"];
+}

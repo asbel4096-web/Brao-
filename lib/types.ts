@@ -139,6 +139,8 @@ export type NotificationType =
   | "new_message"
   | "new_comment"
   | "new_follower"
+  | "new_like"
+  | "new_review"
   | "system";
 
 export interface AppNotification {
