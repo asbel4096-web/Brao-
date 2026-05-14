@@ -65,7 +65,7 @@ export function TraderProfileHeader({
   return (
     <section className="card overflow-hidden">
       <div className="h-24 bg-gradient-to-l from-brand-700 via-brand-600 to-action-500" />
-      <div className="relative px-5 pb-5 sm:px-6 sm:pb-6">
+      <div className="relative z-10 px-5 pb-5 sm:px-6 sm:pb-6">
         <div className="-mt-12 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
             <div className="relative h-24 w-24 overflow-hidden rounded-[28px] border-4 border-white bg-white shadow-xl dark:border-slate-900 dark:bg-slate-900">
@@ -130,7 +130,7 @@ export function TraderProfileHeader({
           </div>
         </div>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="mt-5 grid grid-cols-2 gap-2.5 sm:mt-6 sm:gap-3 sm:grid-cols-3 xl:grid-cols-5">
           <StatCard icon={<FileText size={18} />} label="الإعلانات" value={formatNumber(listingsCount)} />
           <StatCard icon={<BriefcaseBusiness size={18} />} label="الخدمات" value={formatNumber(servicesCount)} />
           <StatCard icon={<UserPlus size={18} />} label="المتابعين" value={formatNumber(profile.followersCount || 0)} />
@@ -144,9 +144,9 @@ export function TraderProfileHeader({
 
 function StatCard({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
-    <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+    <div className="rounded-3xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/40 sm:p-4">
       <div className="flex items-center gap-2 text-brand-700 dark:text-brand-300">{icon}<span className="text-xs font-bold">{label}</span></div>
-      <div className="mt-3 text-2xl font-black text-slate-950 dark:text-white">{value}</div>
+      <div className="mt-2 text-xl font-black text-slate-950 dark:text-white sm:mt-3 sm:text-2xl">{value}</div>
     </div>
   );
 }

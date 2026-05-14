@@ -217,7 +217,7 @@ export default function ProfilePage() {
   const ratingsCount = Number(profile?.ratingsCount || 0);
 
   return (
-    <section className="container py-4 sm:py-8">
+    <section className="container py-4 pb-28 sm:py-8 sm:pb-32">
       <div className="mx-auto max-w-3xl space-y-4 sm:space-y-5">
         {/* ============================================================
             بطاقة المستخدم - Header الرئيسي
@@ -247,7 +247,7 @@ export default function ProfilePage() {
 
           {/* الصورة تتداخل مع الـ gradient */}
           <div className="px-5 pb-5 sm:px-6">
-            <div className="-mt-12 flex items-end gap-4 sm:-mt-14">
+            <div className="relative z-10 -mt-12 flex items-end gap-4 sm:-mt-14">
               {profile?.photoURL ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -272,7 +272,7 @@ export default function ProfilePage() {
             </div>
 
             {/* الاسم + الشارات */}
-            <div className="mt-3">
+            <div className="mt-4">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-xl font-black text-slate-950 dark:text-white sm:text-2xl">
                   {name}

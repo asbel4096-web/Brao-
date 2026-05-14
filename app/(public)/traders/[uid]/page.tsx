@@ -102,8 +102,8 @@ export default function TraderPage() {
   }
 
   return (
-    <section className="container py-6 sm:py-8">
-      <div className="space-y-6">
+    <section className="container py-4 pb-28 sm:py-8 sm:pb-32">
+      <div className="space-y-4 sm:space-y-6">
         <TraderProfileHeader
           traderId={trader.uid}
           profile={trader}

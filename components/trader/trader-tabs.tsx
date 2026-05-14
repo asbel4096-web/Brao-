@@ -68,17 +68,25 @@ export function TraderTabs({
 
   return (
     <section className="card p-4 sm:p-6">
-      <div className="flex gap-2 overflow-x-auto no-scrollbar">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setActive(tab.id)}
-            className={`rounded-2xl px-4 py-3 text-sm font-black transition ${active === tab.id ? "bg-brand-700 text-white shadow-blue" : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"}`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/*
+        Tabs row: horizontally scrollable on mobile without clipping.
+        - Negative margin + matching padding lets the scroll area reach the
+          card edges, so the last tab ("حول التاجر") is never cut off.
+        - scroll-px keeps a small inset when scrolled to either end.
+      */}
+      <div className="-mx-4 sm:-mx-6">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar scroll-px-4 px-4 sm:px-6">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActive(tab.id)}
+              className={`shrink-0 whitespace-nowrap rounded-2xl px-4 py-3 text-sm font-black transition ${active === tab.id ? "bg-brand-700 text-white shadow-blue" : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"}`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="mt-6">{content}</div>
