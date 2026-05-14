@@ -56,6 +56,8 @@ export interface UserProfile {
   followingCount?: number;
   averageRating?: number;
   ratingsCount?: number;
+  /** Denormalised review count; the trader page derives the live value too. */
+  reviewsCount?: number;
   listingsCount?: number;
   servicesCount?: number;
   createdAt?: Timestamp | null;
@@ -67,13 +69,17 @@ export interface UserProfile {
 
 export interface TraderReview {
   id: string;
+  /** uid of the trader being reviewed */
   traderId: string;
-  authorId: string;
-  authorName: string;
-  authorPhoto?: string;
+  /** uid of the reviewer (also the document id) */
+  reviewerId: string;
+  reviewerName: string;
+  reviewerPhoto?: string;
+  /** 1..5 */
   rating: number;
-  text?: string;
+  comment?: string;
   createdAt?: Timestamp | null;
+  updatedAt?: Timestamp | null;
 }
 
 export interface ListingComment {

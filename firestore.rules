@@ -40,6 +40,20 @@ service cloud.firestore {
       return request.resource.data.diff(resource.data).unchangedKeys().hasAll(keys);
     }
 
+    // True when `field` either stays the same or moves by exactly +1 / -1.
+    // Null-safe: a missing value on either side is treated as 0, so the
+    // first follower / first review still passes.
+    function counterDeltaOk(field) {
+      return (
+        (field in resource.data ? resource.data[field] : 0)
+          == (field in request.resource.data ? request.resource.data[field] : 0)
+        || (field in request.resource.data ? request.resource.data[field] : 0)
+          == (field in resource.data ? resource.data[field] : 0) + 1
+        || (field in request.resource.data ? request.resource.data[field] : 0)
+          == (field in resource.data ? resource.data[field] : 0) - 1
+      );
+    }
+
     function listingVisible() {
       return resource.data.status == 'approved'
         || (signedIn() && resource.data.ownerId == request.auth.uid)
@@ -83,21 +97,50 @@ service cloud.firestore {
             'whatsapp',
             'rating',
             'reviewsCount',
+            'ratingsCount',
+            'averageRating',
             'phoneVerified',
             'updatedAt',
             'lastLoginAt',
             'isAdmin',
             'createdAt',
             'followersCount',
-            'followingCount'
+            'followingCount',
+            'listingsCount',
+            'servicesCount',
+            'isOnline',
+            'lastSeenAt',
+            'role'
           ])
         )
         || (
-          // Allow a different signed-in user to ONLY adjust follow counters
-          // on this profile (used by the follow/unfollow transaction).
+          // A different signed-in user may ONLY nudge the follow counters
+          // on this profile, and only by exactly +1 / -1 (or no-op).
+          // Used by the follow / unfollow transaction.
           signedIn()
           && request.resource.data.diff(resource.data).affectedKeys()
                .hasOnly(['followersCount', 'followingCount'])
+          && counterDeltaOk('followersCount')
+          && counterDeltaOk('followingCount')
+        )
+        || (
+          // A different signed-in user may ONLY adjust this profile's
+          // rating aggregates (averageRating + reviewsCount), nothing else.
+          // We cannot read the sibling review-doc write from inside the same
+          // transaction, so we constrain the *values* instead: averageRating
+          // must be a valid 0..5 number and reviewsCount a non-negative int
+          // that moves by at most 1. The trader page also derives these live
+          // from the reviews subcollection, so a tampered value is cosmetic
+          // and self-corrects on the next real review.
+          signedIn()
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['averageRating', 'reviewsCount'])
+          && counterDeltaOk('reviewsCount')
+          && request.resource.data.reviewsCount is int
+          && request.resource.data.reviewsCount >= 0
+          && request.resource.data.averageRating is number
+          && request.resource.data.averageRating >= 0
+          && request.resource.data.averageRating <= 5
         )
         || isAdmin();
 
@@ -123,10 +166,29 @@ service cloud.firestore {
         allow create, update, delete: if isMe(userId);
       }
 
+      // Trader reviews. Document id MUST equal the reviewer's uid, so each
+      // user has at most one review per trader. A trader cannot review
+      // itself. Rating is constrained to 1..5.
       match /reviews/{reviewId} {
         allow read: if true;
-        allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
-        allow update, delete: if isAdmin();
+
+        allow create: if signedIn()
+          && reviewId == request.auth.uid
+          && request.auth.uid != userId
+          && request.resource.data.reviewerId == request.auth.uid
+          && request.resource.data.rating is number
+          && request.resource.data.rating >= 1
+          && request.resource.data.rating <= 5;
+
+        allow update: if signedIn()
+          && reviewId == request.auth.uid
+          && request.auth.uid != userId
+          && request.resource.data.reviewerId == request.auth.uid
+          && request.resource.data.rating is number
+          && request.resource.data.rating >= 1
+          && request.resource.data.rating <= 5;
+
+        allow delete: if (signedIn() && reviewId == request.auth.uid) || isAdmin();
       }
     }
 
