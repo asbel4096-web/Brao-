@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type TouchEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Maximize2, X } from "lucide-react";
 
 const FALLBACK = "/icons/car-card.svg";
@@ -29,53 +29,65 @@ export function ImageGallery({ images, alt }: Props) {
   const [idx, setIdx] = useState(0);
   const [lightbox, setLightbox] = useState(false);
   const trackRef = useRef<HTMLDivElement | null>(null);
-  const touchStartX = useRef<number | null>(null);
-  const touchDeltaX = useRef(0);
+  // Guard so programmatic scrolling does not fight the scroll listener.
+  const isProgrammaticScroll = useRef(false);
 
-  // مزامنة الـ scroll-snap عند تغيير الـ index برمجياً
+  // مزامنة الـ scroll-snap عند تغيير الـ index برمجياً.
+  // نستخدم scrollIntoView بدل حساب offsetLeft يدوياً — يعمل بشكل صحيح
+  // مع RTL حيث تكون قيم scrollLeft سالبة/معكوسة حسب المتصفح.
   useEffect(() => {
     const track = trackRef.current;
     if (!track) return;
     const slide = track.children[idx] as HTMLElement | undefined;
-    if (slide) {
-      track.scrollTo({ left: slide.offsetLeft, behavior: "smooth" });
-    }
+    if (!slide) return;
+    isProgrammaticScroll.current = true;
+    slide.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "center",
+    });
+    // أعد تفعيل مستمع التمرير بعد انتهاء الحركة.
+    const t = setTimeout(() => {
+      isProgrammaticScroll.current = false;
+    }, 400);
+    return () => clearTimeout(t);
   }, [idx]);
 
-  // الكشف عن الـ slide الحالي من scroll-snap (لتحديث dots عند swipe يدوي)
+  // الكشف عن الـ slide الحالي من scroll-snap (لتحديث dots عند swipe يدوي).
+  // RTL-safe: نحسب الفهرس من موضع مركز كل شريحة بالنسبة لمركز المسار،
+  // بدلاً من القسمة على scrollLeft التي تنكسر في RTL.
   const handleScroll = () => {
     const track = trackRef.current;
-    if (!track) return;
-    const w = track.clientWidth;
-    const newIdx = Math.round(track.scrollLeft / w);
-    if (newIdx !== idx && newIdx >= 0 && newIdx < list.length) {
-      setIdx(newIdx);
+    if (!track || isProgrammaticScroll.current) return;
+    const trackCenter = track.getBoundingClientRect().left + track.clientWidth / 2;
+    let nearest = 0;
+    let nearestDist = Infinity;
+    for (let i = 0; i < track.children.length; i++) {
+      const child = track.children[i] as HTMLElement;
+      const rect = child.getBoundingClientRect();
+      const childCenter = rect.left + rect.width / 2;
+      const dist = Math.abs(childCenter - trackCenter);
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        nearest = i;
+      }
+    }
+    if (nearest !== idx && nearest >= 0 && nearest < list.length) {
+      setIdx(nearest);
     }
   };
 
   const prev = () => setIdx((i) => (i - 1 + list.length) % list.length);
   const next = () => setIdx((i) => (i + 1) % list.length);
 
-  // دعم touch swipe (احتياطي - scroll-snap الأصلي يفعل المهمة لكن نحتفظ به للموبايل القديم)
-  const onTouchStart = (e: TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-    touchDeltaX.current = 0;
-  };
-
-  const onTouchMove = (e: TouchEvent) => {
-    if (touchStartX.current === null) return;
-    touchDeltaX.current = e.touches[0].clientX - touchStartX.current;
-  };
-
-  const onTouchEnd = () => {
-    if (touchStartX.current === null) return;
-    const delta = touchDeltaX.current;
-    touchStartX.current = null;
-    touchDeltaX.current = 0;
-    // RTL: السحب يميناً = next، السحب يساراً = prev
-    if (Math.abs(delta) < 50) return;
-    if (delta > 0) prev();
-    else next();
+  // التمرير الأصلي (scroll-snap) يتكفّل بالـ swipe على الموبايل.
+  // نزيل معالجات اللمس اليدوية لأنها كانت تنفّذ prev/next *إضافةً* إلى
+  // الـ scroll-snap فيقفز العداد صورتين دفعة واحدة.
+  // نكتفي بكشف الشريحة الحالية بعد استقرار التمرير (debounced).
+  const scrollSettleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onTrackScroll = () => {
+    if (scrollSettleTimer.current) clearTimeout(scrollSettleTimer.current);
+    scrollSettleTimer.current = setTimeout(handleScroll, 90);
   };
 
   // Keyboard navigation داخل الـ lightbox
@@ -110,10 +122,7 @@ export function ImageGallery({ images, alt }: Props) {
           {/* track يحتوي كل الصور، يقبل swipe + scroll-snap */}
           <div
             ref={trackRef}
-            onScroll={handleScroll}
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEnd}
+            onScroll={onTrackScroll}
             className="
               flex h-full w-full snap-x snap-mandatory overflow-x-auto
               overflow-y-hidden no-scrollbar
@@ -170,6 +179,24 @@ export function ImageGallery({ images, alt }: Props) {
               "
             >
               {idx + 1} / {list.length}
+            </div>
+          )}
+
+          {/* علامة Bratsho Car احترافية - شفافة وأنيقة */}
+          {!isFallback && (
+            <div
+              aria-hidden="true"
+              className="
+                pointer-events-none absolute bottom-3 left-3 select-none
+                inline-flex items-center gap-1.5
+                rounded-full border border-white/15 bg-black/40 px-2.5 py-1
+                backdrop-blur-md
+              "
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-action-500" />
+              <span className="text-[10px] font-black tracking-wider text-white/95">
+                BRATSHO CAR
+              </span>
             </div>
           )}
 

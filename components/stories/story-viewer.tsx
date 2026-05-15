@@ -302,9 +302,16 @@ export function StoryViewer({
                 />
               )}
 
-              <div className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/70 to-transparent p-4" />
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent p-4 pb-5">
-                <StoryCaption story={currentStory} currentPage={currentPage} />
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/55 to-transparent" />
+              {/*
+                شريط معلومات سفلي خفيف — يحتوي البيانات فقط ولا يغطي
+                منتصف الصورة. يبقى مرتبطاً بأسفل الشاشة لمظهر احترافي.
+              */}
+              <div className="absolute inset-x-0 bottom-0">
+                <div className="pointer-events-none h-10 bg-gradient-to-t from-black/55 to-transparent" />
+                <div className="bg-black/35 px-3 pb-3 pt-2 backdrop-blur-sm">
+                  <StoryCaption story={currentStory} currentPage={currentPage} />
+                </div>
               </div>
             </div>
           </div>
@@ -330,15 +337,15 @@ function StoryCaption({
   if (story.type === "car") {
     const payload = story.payload as CarStoryPayload;
     return (
-      <div className="rounded-3xl bg-black/45 p-4 backdrop-blur-md">
-        <div className="mb-2 flex items-center justify-between gap-2">
+      <div className="text-white">
+        <div className="mb-1 flex items-center justify-between gap-2">
           <span className="badge-action !bg-white/15 !text-white">{typeBadge}</span>
-          <span className="text-[11px] text-white/80">{currentPage.mediaIndex + 1}/{currentPage.totalMedia}</span>
+          <span className="text-[11px] text-white/70">{currentPage.mediaIndex + 1}/{currentPage.totalMedia}</span>
         </div>
-        <h3 className="text-lg font-black leading-tight">{payload.title}</h3>
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-white/85">
+        <h3 className="line-clamp-1 text-base font-black leading-tight">{payload.title}</h3>
+        <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-white/85">
           {typeof payload.price === "number" && payload.price > 0 ? (
-            <span className="rounded-full bg-brand-700/90 px-2 py-1 text-sm font-black">
+            <span className="rounded-full bg-brand-700/95 px-2 py-0.5 text-sm font-black">
               {payload.price.toLocaleString("ar-LY")} د.ل
             </span>
           ) : null}
@@ -351,7 +358,7 @@ function StoryCaption({
         </div>
         <ContactButtons phone={payload.phone} whatsapp={payload.whatsapp}>
           {payload.listingId ? (
-            <Link href={`/listings/${payload.listingId}`} className="btn-primary !min-h-[40px] !flex-1 !px-4 !py-2.5 !text-xs">
+            <Link href={`/listings/${payload.listingId}`} className="btn-primary !min-h-[36px] !flex-1 !px-3 !py-2 !text-xs">
               فتح الإعلان
             </Link>
           ) : null}
@@ -363,17 +370,21 @@ function StoryCaption({
   if (story.type === "service") {
     const payload = story.payload as ServiceStoryPayload;
     return (
-      <div className="rounded-3xl bg-black/45 p-4 backdrop-blur-md">
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/90 px-2.5 py-1 text-xs font-black text-white">
+      <div className="text-white">
+        <div className="mb-1 flex items-center justify-between gap-2">
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/90 px-2.5 py-0.5 text-xs font-black text-white">
             <Wrench size={12} />
             {typeBadge}
           </span>
-          <span className="text-[11px] text-white/80">{currentPage.mediaIndex + 1}/{currentPage.totalMedia}</span>
+          <span className="text-[11px] text-white/70">{currentPage.mediaIndex + 1}/{currentPage.totalMedia}</span>
         </div>
-        <h3 className="text-lg font-black leading-tight">{payload.serviceName}</h3>
-        <p className="mt-2 text-xs leading-6 text-white/85">{payload.description}</p>
-        <div className="mt-2 text-xs text-white/75">{payload.city}</div>
+        <h3 className="line-clamp-1 text-base font-black leading-tight">{payload.serviceName}</h3>
+        {payload.city ? (
+          <div className="mt-1.5 inline-flex items-center gap-1 text-xs text-white/80">
+            <MapPin size={12} />
+            {payload.city}
+          </div>
+        ) : null}
         <ContactButtons phone={payload.phone} whatsapp={payload.whatsapp} />
       </div>
     );
@@ -381,17 +392,28 @@ function StoryCaption({
 
   const payload = story.payload as OfferStoryPayload;
   return (
-    <div className="rounded-3xl bg-black/45 p-4 backdrop-blur-md">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="inline-flex items-center gap-1 rounded-full bg-action-500/90 px-2.5 py-1 text-xs font-black text-white">
+    <div className="text-white">
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <span className="inline-flex items-center gap-1 rounded-full bg-action-500/90 px-2.5 py-0.5 text-xs font-black text-white">
           <Tag size={12} />
           {typeBadge}
         </span>
-        <span className="text-[11px] text-white/80">{currentPage.mediaIndex + 1}/{currentPage.totalMedia}</span>
+        <span className="text-[11px] text-white/70">{currentPage.mediaIndex + 1}/{currentPage.totalMedia}</span>
       </div>
-      <h3 className="text-lg font-black leading-tight">{payload.title}</h3>
-      <p className="mt-2 text-sm font-black text-white/95">{payload.discount}</p>
-      <div className="mt-2 text-xs text-white/75">{payload.city}</div>
+      <h3 className="line-clamp-1 text-base font-black leading-tight">{payload.title}</h3>
+      <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-white/85">
+        {payload.discount ? (
+          <span className="rounded-full bg-action-500/95 px-2 py-0.5 text-sm font-black">
+            {payload.discount}
+          </span>
+        ) : null}
+        {payload.city ? (
+          <span className="inline-flex items-center gap-1">
+            <MapPin size={12} />
+            {payload.city}
+          </span>
+        ) : null}
+      </div>
       <ContactButtons phone={payload.phone} whatsapp={payload.whatsapp} />
     </div>
   );
@@ -409,10 +431,10 @@ function ContactButtons({
   const wa = normalizeLibyanPhone(whatsapp || phone || "");
 
   return (
-    <div className="mt-4 flex flex-wrap gap-2">
+    <div className="mt-2 flex flex-wrap gap-2">
       {children}
       {phone ? (
-        <a href={`tel:${phone}`} className="btn-secondary !min-h-[40px] !flex-1 !border-white/15 !bg-white/10 !px-4 !py-2.5 !text-xs !text-white hover:!bg-white/20">
+        <a href={`tel:${phone}`} className="btn-secondary !min-h-[36px] !flex-1 !border-white/15 !bg-white/10 !px-3 !py-2 !text-xs !text-white hover:!bg-white/20">
           <Phone size={14} />
           اتصال
         </a>
@@ -422,7 +444,7 @@ function ContactButtons({
           href={`https://wa.me/${wa}`}
           target="_blank"
           rel="noreferrer"
-          className="btn-secondary !min-h-[40px] !flex-1 !border-white/15 !bg-white/10 !px-4 !py-2.5 !text-xs !text-white hover:!bg-white/20"
+          className="btn-secondary !min-h-[36px] !flex-1 !border-white/15 !bg-emerald-500/80 !px-3 !py-2 !text-xs !text-white hover:!bg-emerald-500"
         >
           <MessageCircle size={14} />
           واتساب

@@ -223,19 +223,70 @@ export default function ProfilePage() {
             بطاقة المستخدم - Header الرئيسي
            ============================================================ */}
         <div className="card overflow-hidden p-0">
-          {/* خلفية gradient */}
+          {/* غلاف Bratsho Car: تدرّج مع طبقات زخرفية خفيفة + شعار BC مائي */}
           <div
             className="
-              relative h-24 bg-gradient-to-l from-brand-700 to-brand-800
-              sm:h-28
+              relative h-28 overflow-hidden
+              bg-gradient-to-l from-brand-700 via-brand-800 to-ink
+              sm:h-36
             "
           >
+            {/* طبقة ضوء قُطْري */}
+            <div
+              aria-hidden="true"
+              className="
+                pointer-events-none absolute -top-10 -right-10 h-44 w-44
+                rounded-full bg-brand-400/25 blur-2xl
+              "
+            />
+            <div
+              aria-hidden="true"
+              className="
+                pointer-events-none absolute -bottom-12 -left-12 h-44 w-44
+                rounded-full bg-action-500/15 blur-2xl
+              "
+            />
+            {/* شبكة نقاط ناعمة بهوية براتشو */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 opacity-[0.18]"
+              style={{
+                backgroundImage:
+                  "radial-gradient(rgba(255,255,255,0.9) 1px, transparent 1px)",
+                backgroundSize: "18px 18px",
+              }}
+            />
+            {/* شعار BC مائي ناعم */}
+            <div
+              aria-hidden="true"
+              className="
+                pointer-events-none absolute left-4 top-1/2 -translate-y-1/2
+                select-none text-[64px] font-black leading-none text-white/10
+                sm:left-6 sm:text-[80px]
+              "
+            >
+              BC
+            </div>
+            {/* اسم الهوية بشكل أنيق */}
+            <div
+              aria-hidden="true"
+              className="
+                pointer-events-none absolute bottom-3 left-4 hidden
+                items-center gap-1.5 sm:flex
+              "
+            >
+              <span className="text-[11px] font-black tracking-wider text-white/70">
+                BRATSHO CAR
+              </span>
+              <span className="h-1 w-1 rounded-full bg-action-500" />
+            </div>
+
             <button
               type="button"
               onClick={handleShare}
               aria-label="مشاركة الحساب"
               className="
-                absolute left-3 top-3 inline-flex h-9 w-9
+                absolute left-3 top-3 z-10 inline-flex h-9 w-9
                 items-center justify-center rounded-full border
                 border-white/20 bg-black/30 text-white backdrop-blur
                 transition hover:bg-black/50 active:scale-95

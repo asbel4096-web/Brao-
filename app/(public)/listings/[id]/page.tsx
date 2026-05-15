@@ -320,11 +320,13 @@ export default function ListingDetailsPage() {
             </div>
           )}
 
-          <ListingComments
-            listingId={listing.id}
-            commentsEnabled={listing.commentsEnabled !== false}
-            ownerId={listing.ownerId}
-          />
+          <div id="comments" className="scroll-mt-24">
+            <ListingComments
+              listingId={listing.id}
+              commentsEnabled={listing.commentsEnabled !== false}
+              ownerId={listing.ownerId}
+            />
+          </div>
 
           <SafetyTipsCard />
         </div>

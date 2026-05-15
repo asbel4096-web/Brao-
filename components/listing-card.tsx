@@ -113,6 +113,21 @@ function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
           <FavoriteButton listing={listing} />
         </div>
 
+        {/* علامة براتشو احترافية - شفافة، صغيرة، لا تشوّه الصورة */}
+        {!isFallback && (
+          <div
+            aria-hidden="true"
+            className="
+              pointer-events-none absolute bottom-3 left-3 select-none
+              rounded-full bg-black/35 px-2 py-0.5
+              text-[10px] font-black tracking-wide text-white/90
+              backdrop-blur-sm
+            "
+          >
+            براتشو
+          </div>
+        )}
+
         {/* السعر - ركن سفلي يميناً (RTL) - بارز */}
         <div className="absolute bottom-3 right-3">
           <div

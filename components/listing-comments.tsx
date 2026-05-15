@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   addDoc,
   collection,
@@ -17,6 +17,7 @@ import { AlertTriangle, MessageCircle, Send, Trash2 } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
+import { createNotification } from "@/lib/notifications";
 import type { ListingComment } from "@/lib/types";
 
 type Props = {
@@ -38,6 +39,22 @@ export default function ListingComments({
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // عند الوصول للصفحة عبر رابط #comments (من زر التعليق في بطاقة الإعلان)،
+  // مرّر إلى قسم التعليقات وركّز خانة الكتابة إن كان المستخدم مسجّلاً.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.location.hash !== "#comments") return;
+    // ننتظر قليلاً حتى يكتمل رسم الصفحة قبل التمرير/التركيز.
+    const t = setTimeout(() => {
+      textareaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (user && commentsEnabled) {
+        textareaRef.current?.focus({ preventScroll: true });
+      }
+    }, 350);
+    return () => clearTimeout(t);
+  }, [user, commentsEnabled]);
 
   useEffect(() => {
     const q = query(
@@ -110,6 +127,28 @@ export default function ListingComments({
       await updateDoc(doc(db, "listings", listingId), {
         commentsCount: increment(1),
       });
+
+      // إشعار لصاحب الإعلان عند إضافة تعليق، إلا إذا علّق على إعلانه نفسه.
+      if (ownerId && ownerId !== user.uid) {
+        const actorName =
+          profile?.businessName ||
+          profile?.name ||
+          user.displayName ||
+          "مستخدم";
+        await createNotification({
+          userId: ownerId,
+          type: "new_comment",
+          title: "تعليق جديد",
+          body: `علّق ${actorName} على إعلانك.`,
+          link: `/listings/${listingId}#comments`,
+          meta: {
+            actorId: user.uid,
+            actorName,
+            actorPhoto: profile?.photoURL || user.photoURL || "",
+            listingId,
+          },
+        });
+      }
 
       setText("");
       toast.success("تمت إضافة التعليق.");
@@ -191,6 +230,7 @@ export default function ListingComments({
       ) : (
         <div className="mb-5 rounded-3xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/40">
           <textarea
+            ref={textareaRef}
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder={user ? "اكتب تعليقك هنا..." : "سجّل الدخول حتى تتمكن من التعليق"}
