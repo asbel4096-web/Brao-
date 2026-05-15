@@ -323,8 +323,8 @@ export default function ProfilePage() {
                   aria-hidden="true"
                   className="
                     pointer-events-none absolute left-4 top-1/2 -translate-y-1/2
-                    select-none text-[64px] font-black leading-none text-white/10
-                    sm:left-6 sm:text-[80px]
+                    select-none text-[56px] font-black leading-none text-white/[0.06]
+                    sm:left-6 sm:text-[72px]
                   "
                 >
                   BC
@@ -356,20 +356,22 @@ export default function ProfilePage() {
               type="button"
               onClick={handlePickCover}
               disabled={uploadingCover}
-              aria-label="تغيير صورة الغلاف"
+              aria-label={profile?.coverURL ? "تغيير صورة الغلاف" : "إضافة صورة غلاف"}
               className="
-                absolute right-3 top-3 z-10 inline-flex h-9 items-center gap-1.5
-                rounded-full border border-white/20 bg-black/35 px-2.5 text-white
-                backdrop-blur transition hover:bg-black/55 active:scale-95
+                absolute right-3 top-3 z-10 inline-flex h-8 items-center gap-1
+                rounded-full border border-white/20 bg-black/40 px-2 text-white
+                backdrop-blur transition hover:bg-black/60 active:scale-95
                 disabled:opacity-60
+                sm:h-9 sm:gap-1.5 sm:px-2.5
               "
             >
               {uploadingCover ? (
-                <Loader2 size={14} className="animate-spin" />
+                <Loader2 size={13} className="animate-spin" />
               ) : (
-                <Camera size={14} />
+                <Camera size={13} />
               )}
-              <span className="text-[11px] font-black">
+              {/* النص يظهر على sm+ فقط حتى لا يزاحم الغلاف على الهاتف */}
+              <span className="hidden text-[11px] font-black sm:inline">
                 {uploadingCover ? "جارٍ الرفع..." : profile?.coverURL ? "تغيير الغلاف" : "إضافة غلاف"}
               </span>
             </button>
@@ -389,9 +391,9 @@ export default function ProfilePage() {
             </button>
           </div>
 
-          {/* الصورة تتداخل مع الـ gradient */}
+          {/* الصورة تتداخل مع الغلاف بشكل أنيق (ليس مرتفعة جداً) */}
           <div className="px-5 pb-5 sm:px-6">
-            <div className="relative z-10 -mt-12 flex items-end gap-4 sm:-mt-14">
+            <div className="relative z-10 -mt-10 flex items-end gap-4 sm:-mt-12">
               {profile?.photoURL ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -415,8 +417,8 @@ export default function ProfilePage() {
               )}
             </div>
 
-            {/* الاسم + الشارات */}
-            <div className="mt-4">
+            {/* الاسم + الشارات - قريب من الصورة */}
+            <div className="mt-3">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-xl font-black text-slate-950 dark:text-white sm:text-2xl">
                   {name}

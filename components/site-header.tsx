@@ -228,12 +228,13 @@ function SiteHeaderImpl() {
                     : "الإشعارات"
                 }
                 className="
-                  relative inline-flex h-10 w-10 items-center justify-center
+                  relative inline-flex h-9 w-9 items-center justify-center
                   rounded-2xl border border-slate-200 text-slate-600
                   transition hover:border-brand-300 hover:text-brand-700
                   active:scale-95
                   dark:border-slate-700 dark:text-slate-300
                   dark:hover:border-brand-700 dark:hover:text-brand-300
+                  sm:h-10 sm:w-10
                 "
               >
                 <Bell size={17} />
@@ -254,7 +255,7 @@ function SiteHeaderImpl() {
             )}
 
             {/* Theme - يظهر على كل المقاسات */}
-            <ThemeToggle />
+            <ThemeToggle className="!h-9 !w-9 sm:!h-10 sm:!w-10" />
 
             {/* زر إضافة إعلان - sm+ فقط (في الموبايل موجود في bottom-nav) */}
             <Link
@@ -279,12 +280,13 @@ function SiteHeaderImpl() {
                 prefetch={false}
                 aria-label="حسابي"
                 className="
-                  inline-flex h-10 w-10 items-center justify-center
+                  inline-flex h-9 w-9 items-center justify-center
                   overflow-hidden rounded-2xl
                   border border-slate-200 bg-gradient-to-br
                   from-brand-700 to-brand-500 text-sm font-black text-white
                   transition active:scale-95
                   dark:border-slate-700
+                  sm:h-10 sm:w-10
                 "
               >
                 {profile?.photoURL ? (
@@ -305,12 +307,13 @@ function SiteHeaderImpl() {
                 prefetch={false}
                 aria-label="تسجيل الدخول"
                 className="
-                  inline-flex h-10 w-10 items-center justify-center
+                  inline-flex h-9 w-9 items-center justify-center
                   rounded-2xl border border-slate-200 text-slate-700
                   transition hover:border-brand-300 hover:text-brand-700
                   active:scale-95
                   dark:border-slate-700 dark:text-slate-200
                   dark:hover:border-brand-700 dark:hover:text-brand-300
+                  sm:h-10 sm:w-10
                 "
               >
                 <UserIcon size={18} />
