@@ -66,10 +66,12 @@ service cloud.firestore {
         || isAdmin();
     }
 
+    // الستوريز محتوى عام للنشر — قراءتها مفتوحة للجميع.
+    // فلترة الانتهاء (expiresAt) تتم في العميل لتفادي فشل الاستعلامات
+    // التي يقيّمها Firestore على القاعدة بدون قراءة بيانات الوثيقة.
+    // الكتابة والحذف لا يزالان محميَّيْن بصرامة أدناه.
     function storyVisible() {
-      return (resource.data.expiresAt is timestamp && resource.data.expiresAt > request.time)
-        || (signedIn() && resource.data.ownerId == request.auth.uid)
-        || isAdmin();
+      return true;
     }
 
     match /users/{userId} {
