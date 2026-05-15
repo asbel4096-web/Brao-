@@ -32,6 +32,7 @@ import {
   getAddListingConfig,
 } from "@/lib/categories";
 import { formatPrice, normalizeLibyanPhone } from "@/lib/utils";
+import { applyBratshoWatermark } from "@/lib/image-watermark";
 import { cn } from "@/lib/utils";
 
 interface FormState {
@@ -262,16 +263,18 @@ export default function AddListingPage() {
     try {
       setSubmitting(true);
 
-      // رفع الصور
+      // رفع الصور - مع دمج شعار براتشو كار تلقائياً قبل الرفع
       const imageUrls: string[] = [];
       for (let i = 0; i < images.length; i++) {
-        const f = images[i];
-        const safe = f.name.replace(/\s+/g, "-").toLowerCase();
+        const original = images[i];
+        // دمج العلامة المائية. إن فشل لأي سبب يُعاد الملف الأصلي.
+        const stamped = await applyBratshoWatermark(original);
+        const safe = stamped.name.replace(/\s+/g, "-").toLowerCase();
         const r = ref(
           storage,
           `listing-images/${user.uid}/${Date.now()}-${i + 1}-${safe}`
         );
-        await uploadBytes(r, f, { contentType: f.type });
+        await uploadBytes(r, stamped, { contentType: stamped.type });
         const url = await getDownloadURL(r);
         imageUrls.push(url);
       }

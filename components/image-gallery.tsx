@@ -31,6 +31,8 @@ export function ImageGallery({ images, alt }: Props) {
   const trackRef = useRef<HTMLDivElement | null>(null);
   // Guard so programmatic scrolling does not fight the scroll listener.
   const isProgrammaticScroll = useRef(false);
+  // كشف الضغط القصير لفتح الـlightbox دون التعارض مع السحب الأفقي.
+  const pointerStart = useRef<{ x: number; y: number; t: number } | null>(null);
 
   // مزامنة الـ scroll-snap عند تغيير الـ index برمجياً.
   // نستخدم scrollIntoView بدل حساب offsetLeft يدوياً — يعمل بشكل صحيح
@@ -90,13 +92,11 @@ export function ImageGallery({ images, alt }: Props) {
     scrollSettleTimer.current = setTimeout(handleScroll, 90);
   };
 
-  // Keyboard navigation داخل الـ lightbox
+  // Keyboard: Escape فقط لإغلاق العارض العمودي
   useEffect(() => {
     if (!lightbox) return;
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") setLightbox(false);
-      if (e.key === "ArrowRight") prev();
-      if (e.key === "ArrowLeft") next();
     };
     document.addEventListener("keydown", handler);
     document.body.style.overflow = "hidden";
@@ -104,7 +104,6 @@ export function ImageGallery({ images, alt }: Props) {
       document.removeEventListener("keydown", handler);
       document.body.style.overflow = "";
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lightbox]);
 
   return (
@@ -135,6 +134,25 @@ export function ImageGallery({ images, alt }: Props) {
               <div
                 key={`${src}-${i}`}
                 className="relative h-full w-full shrink-0 snap-center"
+                onPointerDown={(e) => {
+                  pointerStart.current = {
+                    x: e.clientX,
+                    y: e.clientY,
+                    t: Date.now(),
+                  };
+                }}
+                onPointerUp={(e) => {
+                  const start = pointerStart.current;
+                  pointerStart.current = null;
+                  if (!start || isFallback) return;
+                  const dx = Math.abs(e.clientX - start.x);
+                  const dy = Math.abs(e.clientY - start.y);
+                  const dt = Date.now() - start.t;
+                  // ضغطة قصيرة بدون سحب → افتح lightbox.
+                  if (dx < 8 && dy < 8 && dt < 300) {
+                    setLightbox(true);
+                  }
+                }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -146,7 +164,7 @@ export function ImageGallery({ images, alt }: Props) {
                     ${
                       isFallback
                         ? "object-contain p-12 opacity-60"
-                        : "object-cover"
+                        : "object-cover cursor-zoom-in"
                     }
                   `}
                   draggable={false}
@@ -343,28 +361,15 @@ export function ImageGallery({ images, alt }: Props) {
         )}
       </div>
 
-      {/* Lightbox */}
+      {/* Lightbox - تصفّح عمودي احترافي (كل الصور أسفل بعض) */}
       {lightbox && (
         <div
-          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/95"
-          onClick={() => setLightbox(false)}
+          className="fixed inset-0 z-[110] flex flex-col bg-black"
           role="dialog"
           aria-modal="true"
         >
-          <button
-            type="button"
-            onClick={() => setLightbox(false)}
-            className="
-              absolute top-4 left-4 inline-flex h-11 w-11
-              items-center justify-center rounded-full bg-white/10
-              text-white transition hover:bg-white/20
-            "
-            aria-label="إغلاق"
-          >
-            <X size={22} />
-          </button>
-
-          <div className="absolute top-4 right-4 flex items-center gap-2">
+          {/* شريط علوي ثابت */}
+          <div className="sticky top-0 z-10 flex h-14 items-center justify-between gap-2 bg-black/90 px-3 backdrop-blur sm:h-16 sm:px-4">
             <a
               href={list[idx]}
               download
@@ -373,59 +378,56 @@ export function ImageGallery({ images, alt }: Props) {
               onClick={(e) => e.stopPropagation()}
               aria-label="حفظ الصورة"
               className="
-                inline-flex h-11 w-11 items-center justify-center
+                inline-flex h-10 w-10 items-center justify-center
                 rounded-full bg-white/10 text-white transition hover:bg-white/20
               "
             >
-              <Download size={20} />
+              <Download size={18} />
             </a>
-            <div className="rounded-full bg-white/10 px-3 py-1.5 text-sm font-bold text-white backdrop-blur">
-              {idx + 1} / {list.length}
+
+            <div className="text-sm font-black text-white sm:text-base">
+              {list.length.toLocaleString("ar-LY")} صور
             </div>
+
+            <button
+              type="button"
+              onClick={() => setLightbox(false)}
+              className="
+                inline-flex h-10 w-10 items-center justify-center
+                rounded-full bg-white/10 text-white transition hover:bg-white/20
+              "
+              aria-label="إغلاق"
+            >
+              <X size={20} />
+            </button>
           </div>
 
-          {list.length > 1 && (
-            <>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  prev();
-                }}
-                aria-label="السابق"
-                className="
-                  absolute right-4 top-1/2 -translate-y-1/2 inline-flex
-                  h-12 w-12 items-center justify-center rounded-full
-                  bg-white/10 text-white transition hover:bg-white/20
-                "
-              >
-                <ChevronRight size={26} />
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  next();
-                }}
-                aria-label="التالي"
-                className="
-                  absolute left-4 top-1/2 -translate-y-1/2 inline-flex
-                  h-12 w-12 items-center justify-center rounded-full
-                  bg-white/10 text-white transition hover:bg-white/20
-                "
-              >
-                <ChevronLeft size={26} />
-              </button>
-            </>
-          )}
-
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={list[idx]}
-            alt={`${alt}-full-${idx + 1}`}
-            className="max-h-[90vh] max-w-[95vw] object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
+          {/* قائمة الصور عمودياً مع تمرير سلس */}
+          <div className="flex-1 overflow-y-auto overscroll-contain">
+            <div className="mx-auto max-w-3xl">
+              {list.map((src, i) => (
+                <div
+                  key={`lb-${src}-${i}`}
+                  className="relative w-full border-b border-white/5 last:border-b-0"
+                >
+                  {/* رقم الصورة في الزاوية */}
+                  <div className="pointer-events-none absolute right-3 top-3 z-10 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-black text-white backdrop-blur-md sm:right-4 sm:top-4">
+                    {(i + 1).toLocaleString("ar-LY")} / {list.length.toLocaleString("ar-LY")}
+                  </div>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={src}
+                    alt={`${alt}-full-${i + 1}`}
+                    loading={i < 2 ? "eager" : "lazy"}
+                    className="block h-auto w-full select-none"
+                    draggable={false}
+                  />
+                </div>
+              ))}
+              {/* مسافة سفلية ناعمة لانتهاء التمرير */}
+              <div className="h-8" />
+            </div>
+          </div>
         </div>
       )}
     </>
