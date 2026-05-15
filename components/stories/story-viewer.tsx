@@ -257,8 +257,21 @@ export function StoryViewer({
       style={{ backgroundColor: `rgba(2,6,23,${dragOpacity})` }}
     >
       {/*
-        ====== الصورة fullscreen ======
-        لا إطار، لا حواف ناعمة، الصورة تملأ الشاشة بالكامل بهوية فخمة.
+        ====== خلفية مموّهة من نفس الصورة ======
+        تملأ المساحات الفارغة عندما تكون نسبة الصورة مختلفة عن 9:16،
+        فلا يظهر شريط أسود قبيح. مثل Instagram/TikTok.
+      */}
+      <div
+        className="absolute inset-0 scale-110 bg-cover bg-center bg-no-repeat opacity-60 blur-2xl"
+        style={{
+          backgroundImage: `url(${currentMedia.thumbnailUrl || currentMedia.url})`,
+        }}
+        aria-hidden="true"
+      />
+
+      {/*
+        ====== الصورة fullscreen مع object-contain ======
+        تُعرض كامل الصورة بدون قص — مهمة جداً للسيارات حتى لا تُقطع.
       */}
       <div
         className="absolute inset-0"
@@ -271,7 +284,7 @@ export function StoryViewer({
           <video
             ref={videoRef}
             src={currentMedia.url}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-contain"
             playsInline
             muted
             autoPlay
@@ -282,7 +295,7 @@ export function StoryViewer({
           <img
             src={currentMedia.url}
             alt={currentStory.ownerName}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-contain"
             referrerPolicy="no-referrer"
           />
         )}
@@ -291,13 +304,13 @@ export function StoryViewer({
       {/* تظليل علوي بهوية براتشو — بدرجة الأزرق الداكن قليلاً */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-ink/85 via-ink/40 to-transparent"
+        className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-ink/70 via-ink/30 to-transparent"
       />
 
       {/* تظليل سفلي عميق ليبرز كارد المعلومات */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-72 bg-gradient-to-t from-black/90 via-black/55 to-transparent"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-black/70 via-black/25 to-transparent"
       />
 
       {/* مناطق النقر للتنقّل */}
@@ -361,7 +374,7 @@ export function StoryViewer({
             </button>
 
             <OwnerOnly ownerId={currentStory.ownerId}>
-              <div className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-bold backdrop-blur-md">
+              <div className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1 text-[11px] font-bold backdrop-blur-md">
                 <Eye size={12} />
                 {formatStoryCount(Number(currentStory.viewsCount || 0))}
               </div>
@@ -369,14 +382,43 @@ export function StoryViewer({
 
             <div className="flex-1" />
 
-            {/* وقت النشر + رقم الصفحة - معلومة بسيطة جداً */}
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-bold text-white/85 backdrop-blur-md">
+            {/* وقت النشر + رقم الصفحة */}
+            <div className="inline-flex items-center gap-1 text-[10px] font-bold text-white/80 drop-shadow">
               <span>{timeAgo(currentStory.createdAtMs)}</span>
               <span className="text-white/40">•</span>
               <span>
                 {currentPage.mediaIndex + 1}/{currentPage.totalMedia}
               </span>
             </div>
+
+            {/* بطاقة المالك المصغّرة: صورة + اسم في pill أنيق صغير */}
+            <Link
+              href={`/traders/${currentStory.ownerId}`}
+              onClick={onClose}
+              aria-label={currentStory.ownerName}
+              className="
+                inline-flex max-w-[40%] shrink-0 items-center gap-1.5
+                rounded-full border border-white/15 bg-white/12 py-0.5 pl-2 pr-0.5
+                backdrop-blur-md transition active:scale-[0.97]
+              "
+            >
+              <span className="truncate text-[11px] font-black text-white">
+                {currentStory.ownerName}
+              </span>
+              {currentStory.ownerPhotoURL ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={currentStory.ownerPhotoURL}
+                  alt={currentStory.ownerName}
+                  referrerPolicy="no-referrer"
+                  className="h-6 w-6 shrink-0 rounded-full object-cover ring-1 ring-action-500"
+                />
+              ) : (
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-700 to-brand-500 text-[9px] font-black text-white ring-1 ring-action-500">
+                  {(currentStory.ownerName || "م").charAt(0).toUpperCase()}
+                </span>
+              )}
+            </Link>
           </div>
         </div>
       </div>
@@ -457,21 +499,23 @@ function StoryActionsRail({
   return (
     <div
       className="
-        pointer-events-none absolute z-30 flex flex-col items-center gap-4
+        pointer-events-none absolute z-30 flex flex-col items-center gap-5
         right-2 sm:right-3
       "
       style={{
-        bottom: "calc(env(safe-area-inset-bottom) + 10rem)",
+        bottom: "calc(env(safe-area-inset-bottom) + 9.5rem)",
       }}
     >
-      {/* صورة المالك + زر متابعة صغير (OpenSooq style) */}
+      {/* متابعة - أيقونة بسيطة وأنيقة (الصورة + الاسم موجودان في الهيدر) */}
       {!isOwn && (
-        <OwnerAvatarFollow
-          story={story}
-          isFollowing={isFollowing}
-          onFollow={handleFollow}
-          onClose={onClose}
-        />
+        <RailButton
+          label={isFollowing ? "متابَع" : "متابعة"}
+          onClick={handleFollow}
+          tone={isFollowing ? "neutral" : "action"}
+          active={isFollowing}
+        >
+          {isFollowing ? <UserCheck size={20} /> : <UserPlus size={20} />}
+        </RailButton>
       )}
 
       {linkedListingId && (
@@ -488,75 +532,10 @@ function StoryActionsRail({
         </>
       )}
 
+      {/* مشاركة - واضحة لكن غير مزعجة */}
       <RailButton label="مشاركة" onClick={handleShare}>
-        <Share2 size={20} />
+        <Share2 size={19} />
       </RailButton>
-    </div>
-  );
-}
-
-/* صورة المالك + زر + صغير للمتابعة - بأسلوب OpenSooq */
-function OwnerAvatarFollow({
-  story,
-  isFollowing,
-  onFollow,
-  onClose,
-}: {
-  story: StoryDisplayItem;
-  isFollowing: boolean;
-  onFollow: () => void;
-  onClose: () => void;
-}) {
-  const ownerPhoto = story.ownerPhotoURL || story.coverUrl;
-
-  return (
-    <div className="pointer-events-auto relative flex flex-col items-center">
-      <Link
-        href={`/traders/${story.ownerId}`}
-        onClick={onClose}
-        aria-label={story.ownerName}
-        className="relative block"
-      >
-        {ownerPhoto ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={ownerPhoto}
-            alt={story.ownerName}
-            referrerPolicy="no-referrer"
-            className="
-              h-12 w-12 rounded-full object-cover
-              ring-2 ring-white shadow-lg
-            "
-          />
-        ) : (
-          <div
-            className="
-              flex h-12 w-12 items-center justify-center rounded-full
-              bg-gradient-to-br from-brand-700 to-brand-500
-              text-base font-black text-white ring-2 ring-white shadow-lg
-            "
-          >
-            {(story.ownerName || "م").charAt(0).toUpperCase()}
-          </div>
-        )}
-      </Link>
-
-      {/* زر + / ✓ صغير في أسفل الصورة */}
-      <button
-        type="button"
-        onClick={onFollow}
-        aria-label={isFollowing ? "إلغاء المتابعة" : "متابعة"}
-        className={`
-          absolute -bottom-1.5 left-1/2 -translate-x-1/2
-          inline-flex h-6 w-6 items-center justify-center
-          rounded-full text-white shadow-lg transition active:scale-90
-          ${isFollowing
-            ? "bg-white/25 backdrop-blur-md"
-            : "bg-action-500 hover:bg-action-600"}
-        `}
-      >
-        {isFollowing ? <UserCheck size={13} /> : <UserPlus size={13} />}
-      </button>
     </div>
   );
 }
@@ -789,24 +768,24 @@ function InfoCardShell({
   return (
     <div
       className="
-        relative overflow-hidden rounded-3xl border border-white/15
-        bg-gradient-to-br from-ink/85 via-brand-900/75 to-ink/85
-        p-3 shadow-2xl backdrop-blur-2xl
+        relative overflow-hidden rounded-3xl border border-white/10
+        bg-gradient-to-br from-ink/65 via-brand-900/55 to-ink/65
+        px-3 py-2.5 shadow-2xl backdrop-blur-xl
       "
     >
       {/* لمسة برتقالية - شريط رفيع علوي بهوية براتشو */}
       <div
         aria-hidden="true"
-        className="absolute inset-x-6 top-0 h-0.5 rounded-b-full bg-gradient-to-r from-transparent via-action-500 to-transparent"
+        className="absolute inset-x-8 top-0 h-px rounded-b-full bg-gradient-to-r from-transparent via-action-500/80 to-transparent"
       />
 
-      {/* السطر العلوي: شارة النوع + السعر + المدينة في صف واحد */}
+      {/* السطر العلوي: شارة النوع + المدينة يميناً، السعر يساراً */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2">
+        <div className="flex min-w-0 items-center gap-1.5">
           <span
             className={`
               inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5
-              text-[10px] font-black text-white shadow-md
+              text-[10px] font-black text-white
               ${badge.bg}
             `}
           >
@@ -814,7 +793,7 @@ function InfoCardShell({
             {badge.label}
           </span>
           {city ? (
-            <span className="inline-flex min-w-0 items-center gap-1 text-[11px] font-bold text-white/85">
+            <span className="inline-flex min-w-0 items-center gap-0.5 text-[11px] font-bold text-white/85">
               <MapPin size={11} className="shrink-0 text-action-400" />
               <span className="truncate">{city}</span>
             </span>
@@ -825,7 +804,7 @@ function InfoCardShell({
           <span
             className="
               inline-flex shrink-0 items-center rounded-full bg-gradient-to-r
-              from-action-500 to-action-600 px-2.5 py-0.5 text-xs font-black
+              from-action-500 to-action-600 px-2.5 py-0.5 text-[12px] font-black
               text-white shadow-action
             "
           >
@@ -835,19 +814,19 @@ function InfoCardShell({
       </div>
 
       {/* العنوان - سطر واحد فقط */}
-      <h3 className="mt-1.5 line-clamp-1 text-sm font-black leading-snug text-white">
+      <h3 className="mt-1 line-clamp-1 text-[13px] font-black leading-snug text-white">
         {title}
       </h3>
 
-      {/* أزرار التواصل */}
+      {/* أزرار التواصل - أقل ارتفاعاً ومرتّبة */}
       {(phone || wa || listingHref) && (
-        <div className="mt-2 flex gap-2">
+        <div className="mt-2 flex gap-1.5">
           {listingHref ? (
             <Link
               href={listingHref}
               className="
-                inline-flex h-10 flex-1 items-center justify-center gap-1.5
-                rounded-2xl bg-white px-3 text-xs font-black text-brand-800
+                inline-flex h-9 flex-1 items-center justify-center gap-1
+                rounded-xl bg-white px-2 text-[11px] font-black text-brand-800
                 shadow-md transition active:scale-[0.97]
               "
             >
@@ -858,13 +837,13 @@ function InfoCardShell({
             <a
               href={`tel:${phone}`}
               className="
-                inline-flex h-10 flex-1 items-center justify-center gap-1.5
-                rounded-2xl border border-white/20 bg-white/15 px-3 text-xs
+                inline-flex h-9 flex-1 items-center justify-center gap-1
+                rounded-xl border border-white/15 bg-white/10 px-2 text-[11px]
                 font-black text-white backdrop-blur transition
-                active:scale-[0.97] hover:bg-white/25
+                active:scale-[0.97] hover:bg-white/20
               "
             >
-              <Phone size={14} />
+              <Phone size={13} />
               اتصال
             </a>
           ) : null}
@@ -874,12 +853,12 @@ function InfoCardShell({
               target="_blank"
               rel="noreferrer"
               className="
-                inline-flex h-10 flex-1 items-center justify-center gap-1.5
-                rounded-2xl bg-emerald-500 px-3 text-xs font-black text-white
+                inline-flex h-9 flex-1 items-center justify-center gap-1
+                rounded-xl bg-emerald-500 px-2 text-[11px] font-black text-white
                 shadow-md transition active:scale-[0.97] hover:bg-emerald-600
               "
             >
-              <MessageCircle size={14} />
+              <MessageCircle size={13} />
               واتساب
             </a>
           ) : null}
