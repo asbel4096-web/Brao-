@@ -51,7 +51,7 @@ interface Props {
   onViewedStory?: (storyId: string) => void;
 }
 
-const SWIPE_DOWN_THRESHOLD = 80; // px قبل اعتبار السحب لأسفل إغلاقاً
+const SWIPE_DOWN_THRESHOLD = 80;
 
 export function StoryViewer({
   stories,
@@ -72,7 +72,6 @@ export function StoryViewer({
   const startedAtRef = useRef<number>(Date.now());
   const elapsedBeforePauseRef = useRef<number>(0);
   const viewedStoryIdsRef = useRef<Set<string>>(new Set());
-  // كشف السحب لأسفل لإغلاق العارض (مثل تطبيقات الستوري الحديثة).
   const touchStartRef = useRef<{ x: number; y: number; t: number } | null>(null);
 
   const currentPage = pages[index];
@@ -83,9 +82,7 @@ export function StoryViewer({
       ? Math.max(3000, currentMedia.durationSec * 1000)
       : STORY_DEFAULT_IMAGE_DURATION_MS;
 
-  // ============================================================
-  // تسجيل المشاهدة (دون تغيير منطق المعاملة الأصلية)
-  // ============================================================
+  // تسجيل المشاهدة
   useEffect(() => {
     if (!currentStory) return;
     onViewedStory?.(currentStory.id);
@@ -104,13 +101,7 @@ export function StoryViewer({
     const recordView = async () => {
       try {
         const storyRef = doc(db, "stories", currentStory.id);
-        const viewerRef = doc(
-          db,
-          "stories",
-          currentStory.id,
-          "viewers",
-          user.uid
-        );
+        const viewerRef = doc(db, "stories", currentStory.id, "viewers", user.uid);
 
         await runTransaction(db, async (transaction) => {
           const viewerSnap = await transaction.get(viewerRef);
@@ -133,16 +124,14 @@ export function StoryViewer({
           });
         });
       } catch {
-        // تجاهل فشل التحليلات حتى لا تتعطل المشاهدة
+        // تجاهل
       }
     };
 
     void recordView();
   }, [currentStory, onViewedStory, user]);
 
-  // ============================================================
-  // شريط التقدّم
-  // ============================================================
+  // تقدّم
   useEffect(() => {
     setProgress(0);
     elapsedBeforePauseRef.current = 0;
@@ -218,9 +207,7 @@ export function StoryViewer({
     }
   };
 
-  // ============================================================
-  // معالجات اللمس: سحب لأسفل = إغلاق
-  // ============================================================
+  // معالجات اللمس
   const handleTouchStart = (e: React.TouchEvent) => {
     const t = e.touches[0];
     touchStartRef.current = { x: t.clientX, y: t.clientY, t: Date.now() };
@@ -233,23 +220,18 @@ export function StoryViewer({
     const t = e.touches[0];
     const dx = t.clientX - start.x;
     const dy = t.clientY - start.y;
-    // إذا كان السحب أفقياً واضحاً، لا نعتبره سحباً لأسفل.
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 20) {
       setDragOffsetY(0);
       return;
     }
-    if (dy > 0) {
-      setDragOffsetY(dy);
-    }
+    if (dy > 0) setDragOffsetY(dy);
   };
 
   const handleTouchEnd = () => {
     const start = touchStartRef.current;
     touchStartRef.current = null;
     setPaused(false);
-
     if (!start) return;
-
     if (dragOffsetY > SWIPE_DOWN_THRESHOLD) {
       setDragOffsetY(0);
       onClose();
@@ -261,61 +243,96 @@ export function StoryViewer({
   if (!currentPage || !currentStory || !currentMedia) return null;
 
   const ownerPhoto = currentStory.ownerPhotoURL || currentStory.coverUrl;
-  // نسبة شفافية الخلفية حسب مسافة السحب
   const dragOpacity = Math.max(0.4, 1 - dragOffsetY / 400);
 
   return (
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-[140] flex items-center justify-center"
+      className="fixed inset-0 z-[140] overflow-hidden"
       onMouseDown={() => setPaused(true)}
       onMouseUp={() => setPaused(false)}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      style={{ backgroundColor: `rgba(0,0,0,${dragOpacity})` }}
+      style={{ backgroundColor: `rgba(2,6,23,${dragOpacity})` }}
     >
-      {/* خلفية مموّهة من نفس الصورة لإحساس فخم */}
-      <div
-        className="absolute inset-0 scale-110 bg-cover bg-center bg-no-repeat opacity-30 blur-xl"
-        style={{
-          backgroundImage: `url(${currentMedia.thumbnailUrl || currentStory.coverUrl})`,
-        }}
-        aria-hidden="true"
-      />
-      <div
-        className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/80"
-        aria-hidden="true"
-      />
-
       {/*
-        إطار المحتوى المركزي - على الديسكتوب يظهر بنسبة قريبة من 9:16،
-        وعلى الهاتف يملأ الشاشة تقريباً.
+        ====== الصورة fullscreen ======
+        لا إطار، لا حواف ناعمة، الصورة تملأ الشاشة بالكامل بهوية فخمة.
       */}
       <div
-        className="relative z-10 flex h-full max-h-[100dvh] w-full max-w-md flex-col text-white"
+        className="absolute inset-0"
         style={{
           transform: dragOffsetY > 0 ? `translateY(${dragOffsetY}px)` : undefined,
           transition: dragOffsetY === 0 ? "transform 200ms ease-out" : "none",
         }}
       >
-        {/* ============================================================
-            الهيدر العلوي: progress bars + owner + close
-            ============================================================ */}
-        <div
-          className="px-3 pt-2"
-          style={{ paddingTop: "max(0.5rem, env(safe-area-inset-top))" }}
-        >
+        {currentMedia.kind === "video" ? (
+          <video
+            ref={videoRef}
+            src={currentMedia.url}
+            className="h-full w-full object-cover"
+            playsInline
+            muted
+            autoPlay
+            onEnded={next}
+          />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={currentMedia.url}
+            alt={currentStory.ownerName}
+            className="h-full w-full object-cover"
+            referrerPolicy="no-referrer"
+          />
+        )}
+      </div>
+
+      {/* تظليل علوي بهوية براتشو — بدرجة الأزرق الداكن قليلاً */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-ink/85 via-ink/40 to-transparent"
+      />
+
+      {/* تظليل سفلي عميق ليبرز كارد المعلومات */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-72 bg-gradient-to-t from-black/90 via-black/55 to-transparent"
+      />
+
+      {/* مناطق النقر للتنقّل */}
+      <button
+        type="button"
+        onClick={prev}
+        className="absolute inset-y-0 right-0 z-10 w-1/3"
+        aria-label="السابق"
+      />
+      <button
+        type="button"
+        onClick={next}
+        className="absolute inset-y-0 left-0 z-10 w-1/3"
+        aria-label="التالي"
+      />
+
+      {/*
+        ====== الهيدر العلوي ======
+        أشرطة التقدّم + زر X + بطاقة المالك + شارة المشاهدات للمالك
+      */}
+      <div
+        className="absolute inset-x-0 top-0 z-30 px-3"
+        style={{ paddingTop: "max(0.5rem, env(safe-area-inset-top))" }}
+      >
+        <div className="mx-auto w-full max-w-md">
           {/* أشرطة التقدّم */}
           <div className="flex gap-1">
             {pages.map((page, pageIndex) => (
               <div
                 key={page.pageId}
-                className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/25"
+                className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/20"
               >
                 <div
-                  className="h-full bg-white"
+                  className="h-full bg-white shadow-[0_0_4px_rgba(255,255,255,0.6)]"
                   style={{
                     width:
                       pageIndex < index
@@ -330,12 +347,38 @@ export function StoryViewer({
             ))}
           </div>
 
-          {/* صف صاحب الستوري */}
-          <div className="mt-2 flex items-center gap-2.5 pb-2">
+          <div className="mt-2.5 flex items-center gap-2 pb-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="
+                inline-flex h-9 w-9 shrink-0 items-center justify-center
+                rounded-full bg-white/15 backdrop-blur-md transition
+                active:scale-95 hover:bg-white/25
+              "
+              aria-label="إغلاق"
+            >
+              <X size={18} />
+            </button>
+
+            <OwnerOnly ownerId={currentStory.ownerId}>
+              <div className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-bold backdrop-blur-md">
+                <Eye size={12} />
+                {formatStoryCount(Number(currentStory.viewsCount || 0))}
+              </div>
+            </OwnerOnly>
+
+            <div className="flex-1" />
+
+            {/* بطاقة المالك المصغّرة */}
             <Link
               href={`/traders/${currentStory.ownerId}`}
               onClick={onClose}
-              className="flex min-w-0 flex-1 items-center gap-2.5"
+              className="
+                flex min-w-0 max-w-[65%] items-center gap-2
+                rounded-full border border-white/10 bg-white/10 py-1 pl-1 pr-3
+                backdrop-blur-md transition active:scale-[0.97]
+              "
             >
               {ownerPhoto ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -343,118 +386,59 @@ export function StoryViewer({
                   src={ownerPhoto}
                   alt={currentStory.ownerName}
                   referrerPolicy="no-referrer"
-                  className="h-9 w-9 shrink-0 rounded-full object-cover ring-2 ring-white/60"
+                  className="h-7 w-7 shrink-0 rounded-full object-cover ring-2 ring-action-500"
                 />
               ) : (
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-700 to-brand-500 text-xs font-black ring-2 ring-white/60">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-700 to-brand-500 text-[10px] font-black ring-2 ring-action-500">
                   {(currentStory.ownerName || "م").charAt(0).toUpperCase()}
                 </div>
               )}
-
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-black leading-tight">
+              <div className="min-w-0 text-right">
+                <p className="truncate text-[12px] font-black leading-tight text-white">
                   {currentStory.ownerName}
                 </p>
-                <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-white/75">
-                  <span>{timeAgo(currentStory.createdAtMs)}</span>
-                  <span aria-hidden="true">•</span>
-                  <span>
-                    {currentPage.mediaIndex + 1}/{currentPage.totalMedia}
-                  </span>
-                </div>
+                <p className="truncate text-[10px] leading-tight text-white/70">
+                  {timeAgo(currentStory.createdAtMs)} • {currentPage.mediaIndex + 1}/
+                  {currentPage.totalMedia}
+                </p>
               </div>
             </Link>
-
-            <OwnerOnly ownerId={currentStory.ownerId}>
-              <div className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1 text-[11px] font-bold backdrop-blur-sm">
-                <Eye size={12} />
-                {formatStoryCount(Number(currentStory.viewsCount || 0))}
-              </div>
-            </OwnerOnly>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/15 backdrop-blur transition active:scale-95 hover:bg-white/25"
-              aria-label="إغلاق"
-            >
-              <X size={18} />
-            </button>
           </div>
         </div>
+      </div>
 
-        {/* ============================================================
-            منطقة المحتوى مع منصّتَي اللمس للتنقّل
-            ============================================================ */}
-        <div className="relative flex-1 overflow-hidden">
-          {/* مناطق النقر للتنقّل (شفافة، أسفل العناصر الأخرى) */}
-          <button
-            type="button"
-            onClick={prev}
-            className="absolute inset-y-0 right-0 z-20 w-1/3"
-            aria-label="السابق"
-          />
-          <button
-            type="button"
-            onClick={next}
-            className="absolute inset-y-0 left-0 z-20 w-1/3"
-            aria-label="التالي"
-          />
+      {/*
+        ====== علامة Bratsho ======
+        أنيقة، صغيرة، أعلى يسار بعد الهيدر — تأخذ شكل badge مميّز
+      */}
+      <div
+        aria-hidden="true"
+        className="
+          pointer-events-none absolute z-20 inline-flex select-none items-center
+          gap-1 rounded-full border border-action-500/40 bg-black/40
+          px-2 py-0.5 backdrop-blur-md
+        "
+        style={{
+          left: "0.75rem",
+          top: "calc(env(safe-area-inset-top) + 4.5rem)",
+        }}
+      >
+        <span className="h-1.5 w-1.5 rounded-full bg-action-500 shadow-[0_0_6px_rgba(249,115,22,0.8)]" />
+        <span className="text-[9px] font-black tracking-[0.15em] text-white/90">
+          BRATSHO CAR
+        </span>
+      </div>
 
-          {/* إطار المحتوى - حواف ناعمة */}
-          <div className="absolute inset-0 px-3 pb-3">
-            <div className="relative h-full w-full overflow-hidden rounded-3xl bg-black shadow-2xl">
-              {currentMedia.kind === "video" ? (
-                <video
-                  ref={videoRef}
-                  src={currentMedia.url}
-                  className="h-full w-full object-cover"
-                  playsInline
-                  muted
-                  autoPlay
-                  onEnded={next}
-                />
-              ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={currentMedia.url}
-                  alt={currentStory.ownerName}
-                  className="h-full w-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
-              )}
+      {/* ====== الشريط الجانبي للتفاعل ====== */}
+      <StoryActionsRail story={currentStory} onClose={onClose} />
 
-              {/* تظليل علوي خفيف */}
-              <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/45 to-transparent" />
-
-              {/* تظليل سفلي خفيف لمكان شريط المعلومات */}
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-
-              {/* علامة براتشو خفيفة جداً */}
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute left-3 top-3 inline-flex select-none items-center gap-1 rounded-full bg-black/30 px-2 py-0.5 backdrop-blur-sm"
-              >
-                <span className="h-1 w-1 rounded-full bg-action-500" />
-                <span className="text-[9px] font-black tracking-wider text-white/80">
-                  BRATSHO
-                </span>
-              </div>
-
-              {/* الشريط الجانبي للتفاعل */}
-              <StoryActionsRail story={currentStory} onClose={onClose} />
-
-              {/* بطاقة المعلومات السفلية */}
-              <div
-                className="absolute inset-x-0 bottom-0 p-3"
-                style={{
-                  paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
-                }}
-              >
-                <StoryInfoCard story={currentStory} />
-              </div>
-            </div>
-          </div>
+      {/* ====== بطاقة المعلومات السفلية ====== */}
+      <div
+        className="absolute inset-x-0 bottom-0 z-20 px-3"
+        style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+      >
+        <div className="mx-auto w-full max-w-md">
+          <StoryInfoCard story={currentStory} />
         </div>
       </div>
     </div>
@@ -462,7 +446,7 @@ export function StoryViewer({
 }
 
 /* ============================================================
-   الشريط الجانبي للتفاعل (TikTok/Instagram style بهوية براتشو)
+   الشريط الجانبي للتفاعل — عصري، أنيق، بهوية براتشو
    ============================================================ */
 
 function StoryActionsRail({
@@ -476,10 +460,8 @@ function StoryActionsRail({
   const toast = useToast();
   const isOwn = !!user && user.uid === story.ownerId;
 
-  // متابعة التاجر — متاحة لأي مستخدم غير المالك.
   const { isFollowing, toggleFollow } = useFollowTraderState(story.ownerId);
 
-  // الإعجاب/الحفظ/التعليق متاحة فقط للستوري المرتبطة بإعلان.
   const linkedListingId =
     story.type === "car"
       ? (story.payload as CarStoryPayload).listingId
@@ -498,7 +480,7 @@ function StoryActionsRail({
         toast.success("تم نسخ الرابط");
       }
     } catch {
-      /* المستخدم ألغى المشاركة */
+      /* المستخدم ألغى */
     }
   };
 
@@ -516,8 +498,15 @@ function StoryActionsRail({
   };
 
   return (
-    <div className="pointer-events-none absolute bottom-32 right-2 z-30 flex flex-col items-center gap-3">
-      {/* متابعة - فقط لغير المالك ولمستخدم مسجّل */}
+    <div
+      className="
+        pointer-events-none absolute z-30 flex flex-col items-center gap-4
+        right-2 sm:right-3
+      "
+      style={{
+        bottom: "calc(env(safe-area-inset-bottom) + 13rem)",
+      }}
+    >
       {!isOwn && user && (
         <RailButton
           label={isFollowing ? "متابَع" : "متابعة"}
@@ -528,7 +517,6 @@ function StoryActionsRail({
         </RailButton>
       )}
 
-      {/* إعجاب/تعليق/حفظ - فقط للستوري المرتبطة بإعلان */}
       {linkedListingId && (
         <>
           <RailLikeButton listingId={linkedListingId} story={story} />
@@ -543,7 +531,6 @@ function StoryActionsRail({
         </>
       )}
 
-      {/* مشاركة - دائماً */}
       <RailButton label="مشاركة" onClick={handleShare}>
         <Share2 size={20} />
       </RailButton>
@@ -566,24 +553,28 @@ function RailButton({
 }) {
   const toneClass =
     tone === "action"
-      ? "bg-action-500 text-white hover:bg-action-600"
+      ? "bg-action-500 text-white ring-2 ring-action-500/30 hover:bg-action-600"
       : tone === "like" && active
-      ? "bg-rose-500/95 text-white"
+      ? "bg-rose-500 text-white ring-2 ring-rose-500/30"
       : "bg-white/15 text-white backdrop-blur-md hover:bg-white/25";
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className="pointer-events-auto flex flex-col items-center gap-0.5"
+      className="pointer-events-auto flex flex-col items-center gap-1"
       aria-label={label}
     >
       <span
-        className={`inline-flex h-10 w-10 items-center justify-center rounded-full transition active:scale-90 ${toneClass}`}
+        className={`
+          inline-flex h-11 w-11 items-center justify-center rounded-full
+          shadow-lg transition active:scale-90
+          ${toneClass}
+        `}
       >
         {children}
       </span>
-      <span className="text-[10px] font-bold text-white drop-shadow">
+      <span className="text-[10px] font-black text-white drop-shadow-md">
         {label}
       </span>
     </button>
@@ -606,13 +597,13 @@ function RailLink({
       href={href}
       onClick={onClose}
       prefetch={false}
-      className="pointer-events-auto flex flex-col items-center gap-0.5"
+      className="pointer-events-auto flex flex-col items-center gap-1"
       aria-label={label}
     >
-      <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-md transition active:scale-90 hover:bg-white/25">
+      <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white shadow-lg backdrop-blur-md transition active:scale-90 hover:bg-white/25">
         {children}
       </span>
-      <span className="text-[10px] font-bold text-white drop-shadow">
+      <span className="text-[10px] font-black text-white drop-shadow-md">
         {label}
       </span>
     </Link>
@@ -692,18 +683,18 @@ function RailFavoriteButton({
 }
 
 /* ============================================================
-   بطاقة المعلومات السفلية الاحترافية
+   بطاقة المعلومات السفلية الاحترافية (Glassmorphism بهوية براتشو)
    ============================================================ */
 
 function StoryInfoCard({ story }: { story: StoryDisplayItem }) {
   const typeBadge = {
-    car: { label: "سيارة", icon: <Tag size={11} />, bg: "bg-brand-700/90" },
+    car: { label: "سيارة", icon: <Tag size={11} />, bg: "bg-brand-700" },
     service: {
       label: "خدمة",
       icon: <Wrench size={11} />,
-      bg: "bg-emerald-500/90",
+      bg: "bg-emerald-600",
     },
-    offer: { label: "عرض", icon: <Tag size={11} />, bg: "bg-action-500/90" },
+    offer: { label: "عرض", icon: <Tag size={11} />, bg: "bg-action-500" },
   }[story.type];
 
   if (story.type === "car") {
@@ -773,30 +764,52 @@ function InfoCardShell({
   const wa = normalizeLibyanPhone(whatsapp || phone || "");
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/45 p-3 backdrop-blur-md">
+    <div
+      className="
+        relative overflow-hidden rounded-3xl border border-white/15
+        bg-gradient-to-br from-ink/85 via-brand-900/75 to-ink/85
+        p-3.5 shadow-2xl backdrop-blur-2xl
+      "
+    >
+      {/* لمسة برتقالية - شريط رفيع علوي بهوية براتشو */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-x-6 top-0 h-0.5 rounded-b-full bg-gradient-to-r from-transparent via-action-500 to-transparent"
+      />
+
       {/* السطر الأول: شارة النوع + السعر */}
       <div className="flex items-center justify-between gap-2">
         <span
-          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-black text-white ${badge.bg}`}
+          className={`
+            inline-flex items-center gap-1 rounded-full px-2.5 py-1
+            text-[11px] font-black text-white shadow-md
+            ${badge.bg}
+          `}
         >
           {badge.icon}
           {badge.label}
         </span>
         {price ? (
-          <span className="rounded-full bg-action-500 px-2.5 py-1 text-sm font-black text-white shadow-action">
+          <span
+            className="
+              inline-flex items-center rounded-full bg-gradient-to-r
+              from-action-500 to-action-600 px-3 py-1 text-sm font-black
+              text-white shadow-action
+            "
+          >
             {price}
           </span>
         ) : null}
       </div>
 
       {/* العنوان + المدينة */}
-      <div className="mt-2">
-        <h3 className="line-clamp-1 text-base font-black leading-tight text-white">
+      <div className="mt-2.5">
+        <h3 className="line-clamp-2 text-base font-black leading-snug text-white sm:text-lg">
           {title}
         </h3>
         {city ? (
-          <div className="mt-1 inline-flex items-center gap-1 text-[11px] text-white/80">
-            <MapPin size={11} />
+          <div className="mt-1.5 inline-flex items-center gap-1 text-[12px] font-bold text-white/85">
+            <MapPin size={12} className="text-action-400" />
             {city}
           </div>
         ) : null}
@@ -804,14 +817,14 @@ function InfoCardShell({
 
       {/* أزرار التواصل */}
       {(phone || wa || listingHref) && (
-        <div className="mt-2.5 flex gap-2">
+        <div className="mt-3 flex gap-2">
           {listingHref ? (
             <Link
               href={listingHref}
               className="
-                flex-1 inline-flex h-10 items-center justify-center gap-1.5
-                rounded-xl bg-white px-3 text-xs font-black text-brand-800
-                transition active:scale-[0.97]
+                inline-flex h-11 flex-1 items-center justify-center gap-1.5
+                rounded-2xl bg-white px-3 text-xs font-black text-brand-800
+                shadow-md transition active:scale-[0.97]
               "
             >
               فتح الإعلان
@@ -821,8 +834,8 @@ function InfoCardShell({
             <a
               href={`tel:${phone}`}
               className="
-                flex-1 inline-flex h-10 items-center justify-center gap-1.5
-                rounded-xl border border-white/20 bg-white/15 px-3 text-xs
+                inline-flex h-11 flex-1 items-center justify-center gap-1.5
+                rounded-2xl border border-white/20 bg-white/15 px-3 text-xs
                 font-black text-white backdrop-blur transition
                 active:scale-[0.97] hover:bg-white/25
               "
@@ -837,9 +850,9 @@ function InfoCardShell({
               target="_blank"
               rel="noreferrer"
               className="
-                flex-1 inline-flex h-10 items-center justify-center gap-1.5
-                rounded-xl bg-emerald-500 px-3 text-xs font-black text-white
-                transition active:scale-[0.97] hover:bg-emerald-600
+                inline-flex h-11 flex-1 items-center justify-center gap-1.5
+                rounded-2xl bg-emerald-500 px-3 text-xs font-black text-white
+                shadow-md transition active:scale-[0.97] hover:bg-emerald-600
               "
             >
               <MessageCircle size={14} />
