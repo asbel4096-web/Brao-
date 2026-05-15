@@ -49,6 +49,8 @@ export interface UserProfile {
   city?: string;
   bio?: string;
   photoURL?: string;
+  /** صورة غلاف اختيارية يرفعها المستخدم لصفحته الشخصية. */
+  coverURL?: string;
   businessName?: string;
   isOnline?: boolean;
   lastSeenAt?: Timestamp | null;

@@ -91,6 +91,7 @@ service cloud.firestore {
             'email',
             'phone',
             'photoURL',
+            'coverURL',
             'businessName',
             'city',
             'bio',

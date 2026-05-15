@@ -205,7 +205,7 @@ function SiteHeaderImpl() {
 
           {/* الإجراءات على اليسار */}
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-            {/* الإشعارات - sm+ فقط */}
+            {/* الإشعارات - تظهر على كل المقاسات */}
             {user && (
               <Link
                 href="/notifications"
@@ -216,13 +216,12 @@ function SiteHeaderImpl() {
                     : "الإشعارات"
                 }
                 className="
-                  relative hidden h-10 w-10 items-center justify-center
+                  relative inline-flex h-10 w-10 items-center justify-center
                   rounded-2xl border border-slate-200 text-slate-600
                   transition hover:border-brand-300 hover:text-brand-700
                   active:scale-95
                   dark:border-slate-700 dark:text-slate-300
                   dark:hover:border-brand-700 dark:hover:text-brand-300
-                  sm:inline-flex
                 "
               >
                 <Bell size={17} />
@@ -236,16 +235,14 @@ function SiteHeaderImpl() {
                       dark:border-slate-950
                     "
                   >
-                    {unreadNotifications > 9 ? "9+" : unreadNotifications}
+                    {unreadNotifications > 99 ? "+99" : unreadNotifications}
                   </span>
                 )}
               </Link>
             )}
 
-            {/* Theme - sm+ فقط */}
-            <div className="hidden sm:block">
-              <ThemeToggle />
-            </div>
+            {/* Theme - يظهر على كل المقاسات */}
+            <ThemeToggle />
 
             {/* زر إضافة إعلان - sm+ فقط (في الموبايل موجود في bottom-nav) */}
             <Link

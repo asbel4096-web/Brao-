@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Maximize2, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Maximize2, X } from "lucide-react";
 
 const FALLBACK = "/icons/car-card.svg";
 
@@ -202,19 +202,43 @@ export function ImageGallery({ images, alt }: Props) {
 
           {/* maximize للـ lightbox */}
           {!isFallback && (
-            <button
-              type="button"
-              onClick={() => setLightbox(true)}
-              aria-label="تكبير"
-              className="
-                absolute left-3 top-3 inline-flex h-9 w-9
-                items-center justify-center rounded-full border
-                border-white/20 bg-black/50 text-white backdrop-blur-md
-                transition hover:bg-black/70 active:scale-95
-              "
-            >
-              <Maximize2 size={16} />
-            </button>
+            <div className="absolute left-3 top-3 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setLightbox(true)}
+                aria-label="تكبير"
+                className="
+                  inline-flex h-9 w-9
+                  items-center justify-center rounded-full border
+                  border-white/20 bg-black/50 text-white backdrop-blur-md
+                  transition hover:bg-black/70 active:scale-95
+                "
+              >
+                <Maximize2 size={16} />
+              </button>
+
+              {/*
+                زر حفظ الصورة على الهاتف.
+                - أندرويد/ديسكتوب: ينزّل مباشرة عبر <a download>.
+                - iOS Safari: يفتح الصورة في تبويب جديد فيستطيع المستخدم
+                  ضغطها مطوّلاً واختيار "حفظ في الصور".
+              */}
+              <a
+                href={list[idx]}
+                download
+                target="_blank"
+                rel="noreferrer"
+                aria-label="حفظ الصورة"
+                className="
+                  inline-flex h-9 w-9
+                  items-center justify-center rounded-full border
+                  border-white/20 bg-black/50 text-white backdrop-blur-md
+                  transition hover:bg-black/70 active:scale-95
+                "
+              >
+                <Download size={16} />
+              </a>
+            </div>
           )}
 
           {/* chevrons للديسكتوب — تظهر على hover فقط */}
@@ -340,8 +364,24 @@ export function ImageGallery({ images, alt }: Props) {
             <X size={22} />
           </button>
 
-          <div className="absolute top-4 right-4 rounded-full bg-white/10 px-3 py-1.5 text-sm font-bold text-white backdrop-blur">
-            {idx + 1} / {list.length}
+          <div className="absolute top-4 right-4 flex items-center gap-2">
+            <a
+              href={list[idx]}
+              download
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              aria-label="حفظ الصورة"
+              className="
+                inline-flex h-11 w-11 items-center justify-center
+                rounded-full bg-white/10 text-white transition hover:bg-white/20
+              "
+            >
+              <Download size={20} />
+            </a>
+            <div className="rounded-full bg-white/10 px-3 py-1.5 text-sm font-bold text-white backdrop-blur">
+              {idx + 1} / {list.length}
+            </div>
           </div>
 
           {list.length > 1 && (

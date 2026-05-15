@@ -2,20 +2,26 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { signOut } from "firebase/auth";
 import {
   collection,
+  doc,
   onSnapshot,
   query,
+  serverTimestamp,
+  updateDoc,
   where,
 } from "firebase/firestore";
+import { getDownloadURL, ref as storageRef, uploadBytes } from "firebase/storage";
 import {
   Bell,
   Bookmark,
+  Camera,
   ChevronLeft,
   Copy,
   FileText,
+  Loader2,
   LogOut,
   MessageSquare,
   Pencil,
@@ -26,7 +32,7 @@ import {
   ShieldCheck,
   Star,
 } from "lucide-react";
-import { auth, db } from "@/lib/firebase";
+import { auth, db, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/components/confirm-dialog";
@@ -61,6 +67,47 @@ export default function ProfilePage() {
     favorites: 0,
     unreadChats: 0,
   });
+
+  /* ----------------------------------------------------------
+   * رفع صورة الغلاف
+   * ---------------------------------------------------------- */
+  const coverInputRef = useRef<HTMLInputElement | null>(null);
+  const [uploadingCover, setUploadingCover] = useState(false);
+
+  const handlePickCover = () => coverInputRef.current?.click();
+
+  const handleCoverChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // اسمح بإعادة اختيار نفس الملف لاحقاً
+    if (!file || !user) return;
+
+    // قيود بسيطة: 5MB كحد أعلى، نوع صورة فقط — متوافق مع storage.rules.
+    if (!file.type.startsWith("image/")) {
+      toast.error("اختر صورة فقط.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("الحجم الأعلى للغلاف 5 ميجابايت.");
+      return;
+    }
+
+    try {
+      setUploadingCover(true);
+      const path = `users/${user.uid}/cover-${Date.now()}`;
+      const sref = storageRef(storage, path);
+      await uploadBytes(sref, file, { contentType: file.type });
+      const url = await getDownloadURL(sref);
+      await updateDoc(doc(db, "users", user.uid), {
+        coverURL: url,
+        updatedAt: serverTimestamp(),
+      });
+      toast.success("تم تحديث صورة الغلاف.");
+    } catch (err: any) {
+      toast.error(err?.message || "تعذّر رفع الغلاف.");
+    } finally {
+      setUploadingCover(false);
+    }
+  };
 
   /* ----------------------------------------------------------
    * Auth guard
@@ -223,7 +270,7 @@ export default function ProfilePage() {
             بطاقة المستخدم - Header الرئيسي
            ============================================================ */}
         <div className="card overflow-hidden p-0">
-          {/* غلاف Bratsho Car: تدرّج مع طبقات زخرفية خفيفة + شعار BC مائي */}
+          {/* غلاف Bratsho Car: صورة مرفوعة إن وُجدت، وإلا نمط براتشو الافتراضي */}
           <div
             className="
               relative h-28 overflow-hidden
@@ -231,55 +278,101 @@ export default function ProfilePage() {
               sm:h-36
             "
           >
-            {/* طبقة ضوء قُطْري */}
-            <div
-              aria-hidden="true"
-              className="
-                pointer-events-none absolute -top-10 -right-10 h-44 w-44
-                rounded-full bg-brand-400/25 blur-2xl
-              "
+            {profile?.coverURL ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={profile.coverURL}
+                  alt="غلاف الحساب"
+                  referrerPolicy="no-referrer"
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+                {/* تظليل بسيط لضمان قراءة الأزرار فوق أي صورة */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20"
+                />
+              </>
+            ) : (
+              <>
+                {/* النمط الافتراضي بهوية براتشو */}
+                <div
+                  aria-hidden="true"
+                  className="
+                    pointer-events-none absolute -top-10 -right-10 h-44 w-44
+                    rounded-full bg-brand-400/25 blur-2xl
+                  "
+                />
+                <div
+                  aria-hidden="true"
+                  className="
+                    pointer-events-none absolute -bottom-12 -left-12 h-44 w-44
+                    rounded-full bg-action-500/15 blur-2xl
+                  "
+                />
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 opacity-[0.18]"
+                  style={{
+                    backgroundImage:
+                      "radial-gradient(rgba(255,255,255,0.9) 1px, transparent 1px)",
+                    backgroundSize: "18px 18px",
+                  }}
+                />
+                <div
+                  aria-hidden="true"
+                  className="
+                    pointer-events-none absolute left-4 top-1/2 -translate-y-1/2
+                    select-none text-[64px] font-black leading-none text-white/10
+                    sm:left-6 sm:text-[80px]
+                  "
+                >
+                  BC
+                </div>
+                <div
+                  aria-hidden="true"
+                  className="
+                    pointer-events-none absolute bottom-3 left-4 hidden
+                    items-center gap-1.5 sm:flex
+                  "
+                >
+                  <span className="text-[11px] font-black tracking-wider text-white/70">
+                    BRATSHO CAR
+                  </span>
+                  <span className="h-1 w-1 rounded-full bg-action-500" />
+                </div>
+              </>
+            )}
+
+            {/* زر تغيير الغلاف */}
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={handleCoverChange}
             />
-            <div
-              aria-hidden="true"
+            <button
+              type="button"
+              onClick={handlePickCover}
+              disabled={uploadingCover}
+              aria-label="تغيير صورة الغلاف"
               className="
-                pointer-events-none absolute -bottom-12 -left-12 h-44 w-44
-                rounded-full bg-action-500/15 blur-2xl
-              "
-            />
-            {/* شبكة نقاط ناعمة بهوية براتشو */}
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 opacity-[0.18]"
-              style={{
-                backgroundImage:
-                  "radial-gradient(rgba(255,255,255,0.9) 1px, transparent 1px)",
-                backgroundSize: "18px 18px",
-              }}
-            />
-            {/* شعار BC مائي ناعم */}
-            <div
-              aria-hidden="true"
-              className="
-                pointer-events-none absolute left-4 top-1/2 -translate-y-1/2
-                select-none text-[64px] font-black leading-none text-white/10
-                sm:left-6 sm:text-[80px]
+                absolute right-3 top-3 z-10 inline-flex h-9 items-center gap-1.5
+                rounded-full border border-white/20 bg-black/35 px-2.5 text-white
+                backdrop-blur transition hover:bg-black/55 active:scale-95
+                disabled:opacity-60
               "
             >
-              BC
-            </div>
-            {/* اسم الهوية بشكل أنيق */}
-            <div
-              aria-hidden="true"
-              className="
-                pointer-events-none absolute bottom-3 left-4 hidden
-                items-center gap-1.5 sm:flex
-              "
-            >
-              <span className="text-[11px] font-black tracking-wider text-white/70">
-                BRATSHO CAR
+              {uploadingCover ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Camera size={14} />
+              )}
+              <span className="text-[11px] font-black">
+                {uploadingCover ? "جارٍ الرفع..." : profile?.coverURL ? "تغيير الغلاف" : "إضافة غلاف"}
               </span>
-              <span className="h-1 w-1 rounded-full bg-action-500" />
-            </div>
+            </button>
 
             <button
               type="button"

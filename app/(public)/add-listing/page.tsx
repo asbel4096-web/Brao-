@@ -29,8 +29,9 @@ import {
   libyaCities,
   listingCategories,
   transmissionTypes,
+  getAddListingConfig,
 } from "@/lib/categories";
-import { formatPrice, normalizeLibyanPhone, inferListingEntityType } from "@/lib/utils";
+import { formatPrice, normalizeLibyanPhone } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
 interface FormState {
@@ -132,6 +133,10 @@ export default function AddListingPage() {
 
   const set = (k: keyof FormState, v: string) =>
     setForm((p) => ({ ...p, [k]: v }));
+
+  // إعدادات النموذج حسب القسم المختار: نص إرشادي + إظهار حقول المركبة +
+  // نوع الكيان المخزَّن. لا يغيّر التصميم — فقط يظهر/يخفي مجموعات موجودة.
+  const categoryConfig = getAddListingConfig(form.category);
 
   /* ----------------------------------------------------------
    * Image handling
@@ -318,13 +323,9 @@ export default function AddListingPage() {
         ownerName,
         ownerAvatar,
         ownerEmail: user.email || "",
-        // Derived from category/title so the trader page can split
-        // listings vs services reliably without a new UI field.
-        entityType: inferListingEntityType({
-          category: form.category,
-          title: form.title,
-          description: form.description,
-        }),
+        // نوع الكيان مشتق من مجموعة القسم المختار (خدمات => service،
+        // غير ذلك => listing) حتى تنقسم الإعلانات والخدمات بشكل صحيح.
+        entityType: categoryConfig.entityType,
         status: "pending",
         featured: false,
         views: 0,
@@ -568,6 +569,11 @@ export default function AddListingPage() {
                 </div>
               </div>
 
+              {/* نص إرشادي يتغيّر حسب القسم المختار */}
+              <div className="rounded-2xl border border-brand-200 bg-brand-50/60 p-3 text-xs leading-6 font-bold text-brand-800 dark:border-brand-800 dark:bg-brand-950/30 dark:text-brand-200">
+                {categoryConfig.helper}
+              </div>
+
               <NavButtons onNext={goNext} step={step} />
             </div>
           )}
@@ -576,100 +582,117 @@ export default function AddListingPage() {
           {step === 2 && (
             <div className="card animate-fade-in space-y-5 p-4 sm:p-6">
               <SectionHeader
-                title="مواصفات المركبة"
-                hint="اترك ما لا ينطبق فارغاً (اختياري)"
+                title={
+                  categoryConfig.showVehicleSpecs
+                    ? "مواصفات المركبة"
+                    : "تفاصيل إضافية"
+                }
+                hint={
+                  categoryConfig.showVehicleSpecs
+                    ? "اترك ما لا ينطبق فارغاً (اختياري)"
+                    : "هذا القسم لا يحتاج مواصفات مركبة"
+                }
               />
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <Label>الماركة</Label>
-                  <input
-                    className="input"
-                    value={form.brand}
-                    onChange={(e) => set("brand", e.target.value)}
-                    placeholder="هونداي"
-                  />
-                </div>
-                <div>
-                  <Label>الموديل</Label>
-                  <input
-                    className="input"
-                    value={form.model}
-                    onChange={(e) => set("model", e.target.value)}
-                    placeholder="سبورتاج"
-                  />
-                </div>
-              </div>
+              {categoryConfig.showVehicleSpecs ? (
+                <>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <Label>الماركة</Label>
+                      <input
+                        className="input"
+                        value={form.brand}
+                        onChange={(e) => set("brand", e.target.value)}
+                        placeholder="هونداي"
+                      />
+                    </div>
+                    <div>
+                      <Label>الموديل</Label>
+                      <input
+                        className="input"
+                        value={form.model}
+                        onChange={(e) => set("model", e.target.value)}
+                        placeholder="سبورتاج"
+                      />
+                    </div>
+                  </div>
 
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div>
-                  <Label>سنة الصنع</Label>
-                  <input
-                    className="input"
-                    type="number"
-                    inputMode="numeric"
-                    value={form.year}
-                    onChange={(e) => set("year", e.target.value)}
-                    placeholder="2020"
-                  />
-                </div>
-                <div>
-                  <Label>اللون</Label>
-                  <input
-                    className="input"
-                    value={form.color}
-                    onChange={(e) => set("color", e.target.value)}
-                    placeholder="أبيض"
-                  />
-                </div>
-                <div>
-                  <Label>المحرك</Label>
-                  <input
-                    className="input"
-                    value={form.engine}
-                    onChange={(e) => set("engine", e.target.value)}
-                    placeholder="2.0L"
-                  />
-                </div>
-              </div>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div>
+                      <Label>سنة الصنع</Label>
+                      <input
+                        className="input"
+                        type="number"
+                        inputMode="numeric"
+                        value={form.year}
+                        onChange={(e) => set("year", e.target.value)}
+                        placeholder="2020"
+                      />
+                    </div>
+                    <div>
+                      <Label>اللون</Label>
+                      <input
+                        className="input"
+                        value={form.color}
+                        onChange={(e) => set("color", e.target.value)}
+                        placeholder="أبيض"
+                      />
+                    </div>
+                    <div>
+                      <Label>المحرك</Label>
+                      <input
+                        className="input"
+                        value={form.engine}
+                        onChange={(e) => set("engine", e.target.value)}
+                        placeholder="2.0L"
+                      />
+                    </div>
+                  </div>
 
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div>
-                  <Label>المسافة المقطوعة (كم)</Label>
-                  <input
-                    className="input"
-                    type="number"
-                    inputMode="numeric"
-                    value={form.mileage}
-                    onChange={(e) => set("mileage", e.target.value)}
-                    placeholder="120000"
-                  />
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div>
+                      <Label>المسافة المقطوعة (كم)</Label>
+                      <input
+                        className="input"
+                        type="number"
+                        inputMode="numeric"
+                        value={form.mileage}
+                        onChange={(e) => set("mileage", e.target.value)}
+                        placeholder="120000"
+                      />
+                    </div>
+                    <div>
+                      <Label>نوع الوقود</Label>
+                      <select
+                        className="input"
+                        value={form.fuel}
+                        onChange={(e) => set("fuel", e.target.value)}
+                      >
+                        {fuelTypes.map((f) => (
+                          <option key={f}>{f}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <Label>ناقل الحركة</Label>
+                      <select
+                        className="input"
+                        value={form.transmission}
+                        onChange={(e) => set("transmission", e.target.value)}
+                      >
+                        {transmissionTypes.map((t) => (
+                          <option key={t}>{t}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-7 font-bold text-slate-600 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-300">
+                  لا حاجة لمواصفات مركبة في هذا القسم. تابع لإضافة الوصف
+                  والصور وبيانات التواصل في الخطوات التالية.
                 </div>
-                <div>
-                  <Label>نوع الوقود</Label>
-                  <select
-                    className="input"
-                    value={form.fuel}
-                    onChange={(e) => set("fuel", e.target.value)}
-                  >
-                    {fuelTypes.map((f) => (
-                      <option key={f}>{f}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <Label>ناقل الحركة</Label>
-                  <select
-                    className="input"
-                    value={form.transmission}
-                    onChange={(e) => set("transmission", e.target.value)}
-                  >
-                    {transmissionTypes.map((t) => (
-                      <option key={t}>{t}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+              )}
 
               <NavButtons onNext={goNext} onPrev={goPrev} step={step} />
             </div>
