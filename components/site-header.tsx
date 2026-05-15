@@ -110,29 +110,41 @@ function SiteHeaderImpl() {
       <div className="container">
         {/* ============== الصف العلوي ============== */}
         <div className="flex items-center gap-3 py-2.5 sm:py-3.5">
-          {/* Logo */}
+          {/* Logo + اسم العلامة — يظهر على كل المقاسات بهوية براتشو كار */}
           <Link
             href="/"
             prefetch={false}
             aria-label="الصفحة الرئيسية"
-            className="flex shrink-0 items-center gap-2.5"
+            className="flex shrink-0 items-center gap-2"
           >
             <div
               className="
-                flex h-10 w-10 items-center justify-center
+                relative flex h-10 w-10 items-center justify-center
                 rounded-2xl bg-gradient-to-br from-brand-700 to-ink
                 text-base font-black text-white shadow-blue
                 sm:h-11 sm:w-11
               "
             >
               <span className="leading-none">BC</span>
+              {/* نقطة برتقالية صغيرة - لمسة هوية براتشو */}
+              <span
+                aria-hidden="true"
+                className="
+                  absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5
+                  rounded-full bg-action-500 ring-2 ring-white
+                  dark:ring-slate-950
+                "
+              />
             </div>
-            <div className="hidden leading-tight sm:block">
-              <div className="text-base font-black text-slate-950 dark:text-white sm:text-lg">
+            <div className="leading-tight">
+              <div className="text-sm font-black text-slate-950 dark:text-white sm:text-lg">
                 براتشو كار
               </div>
-              <div className="text-[10px] text-slate-500 dark:text-slate-400">
+              <div className="hidden text-[10px] text-slate-500 dark:text-slate-400 sm:block">
                 سوق السيارات في ليبيا
+              </div>
+              <div className="text-[9px] font-black tracking-wider text-action-600 dark:text-action-400 sm:hidden">
+                BRATSHO CAR
               </div>
             </div>
           </Link>
