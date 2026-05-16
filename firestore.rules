@@ -169,6 +169,19 @@ service cloud.firestore {
         allow create, update, delete: if isMe(userId);
       }
 
+      // تنبيهات سياراتي - تنبيهات البحث الخاصة بكل مستخدم.
+      // المالك فقط يقرأ ويكتب تنبيهاته. لا يوجد فحص متبادل لتنبيهات
+      // الآخرين — كل مستخدم يفحص بياناته الخاصة client-side عند فتح
+      // التطبيق ويُنشئ الإشعار لنفسه.
+      match /searchAlerts/{alertId} {
+        allow read: if isMe(userId);
+        allow create: if isMe(userId)
+          && request.resource.data.userId == userId;
+        allow update: if isMe(userId)
+          && request.resource.data.userId == userId;
+        allow delete: if isMe(userId);
+      }
+
       // Trader reviews. Document id MUST equal the reviewer's uid, so each
       // user has at most one review per trader. A trader cannot review
       // itself. Rating is constrained to 1..5.

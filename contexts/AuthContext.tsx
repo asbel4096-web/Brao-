@@ -13,6 +13,7 @@ import {
 import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { auth, db, isBootstrapAdminEmail } from "@/lib/firebase";
+import { useSearchAlertMatcher } from "@/hooks/useSearchAlertMatcher";
 import type { UserProfile } from "@/lib/types";
 
 interface AuthContextValue {
@@ -185,7 +186,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [user, profile, loading, refreshProfile]
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {/*
+        يشغّل فحص "تنبيهات سياراتي" بعد تسجيل الدخول. يفحص مرة واحدة كل
+        10 دقائق ضمن الجلسة، ويعمل صامتاً (لا UI). إن لم يكن المستخدم
+        مسجّلاً، الـuid يكون null والفحص يتخطّى تلقائياً.
+      */}
+      <SearchAlertMatcherRunner uid={user?.uid ?? null} />
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+/** خفيف: يعزل استدعاء الـhook عن AuthProvider الرئيسي. */
+function SearchAlertMatcherRunner({ uid }: { uid: string | null }) {
+  useSearchAlertMatcher(uid);
+  return null;
 }
 
 export function useAuth() {

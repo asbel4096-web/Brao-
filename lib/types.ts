@@ -170,7 +170,39 @@ export type NotificationType =
   | "new_follower"
   | "new_like"
   | "new_review"
+  | "search_alert_match"
   | "system";
+
+/**
+ * تنبيه بحث: يحفظ معايير المستخدم لسيارة يبحث عنها.
+ * عند ظهور إعلان معتمد يطابق المعايير، نُنشئ إشعاراً للمالك.
+ */
+export interface SearchAlert {
+  id: string;
+  userId: string;
+  /** اسم وصفي اختياري يساعد المستخدم على التمييز بين تنبيهاته. */
+  label?: string;
+  /** الماركة (مثل "هونداي"). يطابق Listing.brand. */
+  brand?: string;
+  /** الموديل (مثل "أفانتي"). يطابق Listing.model. */
+  model?: string;
+  yearFrom?: number;
+  yearTo?: number;
+  priceFrom?: number;
+  priceTo?: number;
+  maxMileage?: number;
+  color?: string;
+  city?: string;
+  transmission?: string;
+  fuelType?: string;
+  condition?: string;
+  isActive: boolean;
+  /** Listing IDs التي أُرسل إشعار عنها سابقاً، لمنع التكرار. */
+  notifiedListingIds?: string[];
+  createdAt?: Timestamp | null;
+  updatedAt?: Timestamp | null;
+  lastMatchedAt?: Timestamp | null;
+}
 
 export interface AppNotification {
   id: string;

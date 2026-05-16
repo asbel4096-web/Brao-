@@ -670,6 +670,12 @@ export default function ProfilePage() {
             color="action"
           />
           <MenuRow
+            href="/alerts"
+            icon={Bell}
+            label="تنبيهات سياراتي"
+            color="brand"
+          />
+          <MenuRow
             href="/notifications"
             icon={Bell}
             label="الإشعارات"
@@ -787,12 +793,14 @@ function MenuRow({
   href: string;
   icon: typeof Plus;
   label: string;
-  color?: "neutral" | "action";
+  color?: "neutral" | "action" | "brand";
   isLast?: boolean;
 }) {
   const iconColor =
     color === "action"
       ? "text-action-600 bg-action-50 dark:bg-action-900/40 dark:text-action-300"
+      : color === "brand"
+      ? "text-brand-700 bg-brand-50 dark:bg-brand-900/40 dark:text-brand-300"
       : "text-slate-700 bg-slate-100 dark:bg-slate-800 dark:text-slate-300";
 
   return (

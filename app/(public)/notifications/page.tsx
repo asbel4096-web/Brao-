@@ -8,6 +8,7 @@ import {
 } from "firebase/firestore";
 import {
   Bell, CheckCheck, MessageCircle, Check, X, Trash2, AlertCircle,
+  UserPlus, Heart, Star,
 } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -85,7 +86,7 @@ export default function NotificationsPage() {
   const unreadCount = items.filter((n) => !n.read).length;
 
   return (
-    <section className="container py-6 sm:py-10">
+    <section className="container py-6 pb-28 sm:py-10 sm:pb-32">
       <div className="mx-auto max-w-3xl">
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -128,14 +129,25 @@ export default function NotificationsPage() {
                 n.type === "new_message" ? MessageCircle :
                 n.type === "listing_approved" ? Check :
                 n.type === "listing_rejected" ? X :
+                n.type === "new_follower" ? UserPlus :
+                n.type === "new_like" ? Heart :
+                n.type === "new_comment" ? MessageCircle :
+                n.type === "new_review" ? Star :
+                n.type === "search_alert_match" ? Bell :
                 AlertCircle;
               const tone =
                 n.type === "listing_approved" ? "text-emerald-700 dark:text-emerald-300" :
                 n.type === "listing_rejected" ? "text-rose-700 dark:text-rose-300" :
+                n.type === "new_like" ? "text-rose-600 dark:text-rose-300" :
+                n.type === "new_review" ? "text-amber-600 dark:text-amber-300" :
+                n.type === "search_alert_match" ? "text-action-600 dark:text-action-300" :
                 "text-brand-700 dark:text-brand-300";
               const iconBg =
                 n.type === "listing_approved" ? "bg-emerald-50 dark:bg-emerald-900/30" :
                 n.type === "listing_rejected" ? "bg-rose-50 dark:bg-rose-900/30" :
+                n.type === "new_like" ? "bg-rose-50 dark:bg-rose-900/30" :
+                n.type === "new_review" ? "bg-amber-50 dark:bg-amber-900/30" :
+                n.type === "search_alert_match" ? "bg-action-50 dark:bg-action-900/30" :
                 "bg-brand-50 dark:bg-brand-900/30";
 
               return (
