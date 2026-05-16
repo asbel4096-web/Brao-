@@ -304,7 +304,13 @@ service cloud.firestore {
         allow create: if signedIn()
           && request.resource.data.senderId == request.auth.uid
           && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
-        allow update, delete: if false;
+        // التحديث مسموح فقط لحقل reactions، وفقط للمشتركين في المحادثة.
+        // هذا يسمح بإضافة/إزالة قلب على رسالة، ولا يسمح بتعديل نصها أو
+        // أي حقل آخر. نتحقق من ذلك عبر affectedKeys() ≤ {reactions}.
+        allow update: if signedIn()
+          && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions']);
+        allow delete: if false;
       }
     }
 

@@ -13,6 +13,7 @@ import { useParams, useRouter } from "next/navigation";
 import {
   addDoc,
   collection,
+  deleteField,
   doc,
   getDoc,
   increment,
@@ -26,11 +27,16 @@ import { getDownloadURL, ref as storageRef, uploadBytes } from "firebase/storage
 import {
   ArrowRight,
   Camera,
+  CornerDownLeft,
+  ExternalLink,
+  Heart,
+  Image as ImageIcon,
   Mic,
   MessageCircle,
-  Paperclip,
   Phone,
   Send,
+  Star,
+  Video as VideoIcon,
   X,
 } from "lucide-react";
 import { auth, db, storage } from "@/lib/firebase";
@@ -38,7 +44,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { createNotification } from "@/lib/notifications";
 import { formatDateTime, normalizeLibyanPhone } from "@/lib/utils";
-import type { ChatMessage, ChatMessageKind, ChatThread } from "@/lib/types";
+import type {
+  ChatMessage,
+  ChatMessageKind,
+  ChatReplyRef,
+  ChatThread,
+  UserProfile,
+} from "@/lib/types";
+import { onlineShortLabel } from "@/lib/online";
 import { ChatTipsBanner } from "@/components/chat/chat-tips-banner";
 import { AudioRecorder } from "@/components/chat/audio-recorder";
 import { ChatMessageBubble } from "@/components/chat/chat-message-bubble";
@@ -62,9 +75,17 @@ export default function ChatRoomPage() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const [recording, setRecording] = useState(false);
+  // الرسالة التي يجري الرد عليها — تظهر معاينة فوق حقل الكتابة.
+  const [replyTarget, setReplyTarget] = useState<ChatMessage | null>(null);
+  // الرسالة المختارة لفتح قائمة Reply/React (long-press).
+  const [actionSheetMsg, setActionSheetMsg] = useState<ChatMessage | null>(null);
+  // الملف الشخصي للطرف الآخر (للحصول على حالة "متصل الآن").
+  const [otherProfile, setOtherProfile] = useState<UserProfile | null>(null);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const videoInputRef = useRef<HTMLInputElement | null>(null);
 
   /* ----------------------------------------------------------
    * تحميل المحادثة + الرسائل
@@ -135,6 +156,28 @@ export default function ChatRoomPage() {
   }, [user, authLoading, params.chatId, router]);
 
   /* ----------------------------------------------------------
+   * اشتراك مباشر بملف الطرف الآخر (لعرض حالة "متصل الآن"
+   * أو "آخر ظهور منذ ..." في الهيدر).
+   * ---------------------------------------------------------- */
+  useEffect(() => {
+    if (!thread || !user) return;
+    const otherUid = thread.participants.find((p) => p !== user.uid);
+    if (!otherUid) return;
+    const unsub = onSnapshot(
+      doc(db, "users", otherUid),
+      (snap) => {
+        if (snap.exists()) {
+          setOtherProfile({ uid: snap.id, ...(snap.data() as any) });
+        }
+      },
+      () => {
+        /* تجاهل خطأ القراءة - الهيدر يكتفي بـ participantsInfo */
+      }
+    );
+    return () => unsub();
+  }, [thread, user]);
+
+  /* ----------------------------------------------------------
    * Helper موحَّد لإنشاء رسالة
    * ---------------------------------------------------------- */
   const writeMessage = async (
@@ -177,6 +220,13 @@ export default function ChatRoomPage() {
       docPayload.audioUrl = payload.audioUrl;
       docPayload.audioDurationSec = payload.audioDurationSec ?? null;
     }
+    if (payload.videoUrl) {
+      docPayload.videoUrl = payload.videoUrl;
+      docPayload.videoDurationSec = payload.videoDurationSec ?? null;
+    }
+    if (payload.replyTo) {
+      docPayload.replyTo = payload.replyTo;
+    }
 
     await addDoc(
       collection(db, "chats", params.chatId, "messages"),
@@ -201,6 +251,31 @@ export default function ChatRoomPage() {
   };
 
   /* ----------------------------------------------------------
+   * بناء كائن replyTo من الرسالة الهدف الحالية
+   * ---------------------------------------------------------- */
+  const buildReplyTo = (): ChatReplyRef | undefined => {
+    if (!replyTarget) return undefined;
+    const kind = replyTarget.kind || "text";
+    let textPreview = "";
+    if (kind === "text") {
+      textPreview = (replyTarget.text || "").slice(0, 80);
+    } else if (kind === "image") {
+      textPreview = replyTarget.text?.slice(0, 80) || "📷 صورة";
+    } else if (kind === "video") {
+      textPreview = replyTarget.text?.slice(0, 80) || "🎬 فيديو";
+    } else if (kind === "audio") {
+      textPreview = "🎙️ مقطع صوتي";
+    }
+    return {
+      messageId: replyTarget.id,
+      kind,
+      textPreview,
+      imageUrl: replyTarget.imageUrl,
+      senderName: replyTarget.senderName,
+    };
+  };
+
+  /* ----------------------------------------------------------
    * إرسال نص
    * ---------------------------------------------------------- */
   const handleSendText = async (e?: FormEvent) => {
@@ -215,8 +290,10 @@ export default function ChatRoomPage() {
         kind: "text",
         text: content,
         lastPreview: content,
+        replyTo: buildReplyTo(),
       });
       setText("");
+      setReplyTarget(null);
     } catch (err: any) {
       toast.error(err?.message || "تعذّر إرسال الرسالة.");
     } finally {
@@ -279,7 +356,9 @@ export default function ChatRoomPage() {
         imageWidth: dims?.width,
         imageHeight: dims?.height,
         lastPreview: "📷 صورة",
+        replyTo: buildReplyTo(),
       });
+      setReplyTarget(null);
     } catch (err: any) {
       const msg =
         err?.code === "storage/unauthorized"
@@ -339,7 +418,9 @@ export default function ChatRoomPage() {
         audioUrl: url,
         audioDurationSec: seconds,
         lastPreview: `🎤 رسالة صوتية (${formatted})`,
+        replyTo: buildReplyTo(),
       });
+      setReplyTarget(null);
 
       setRecording(false);
     } catch (err: any) {
@@ -350,6 +431,78 @@ export default function ChatRoomPage() {
       toast.error(msg);
     } finally {
       setSending(false);
+    }
+  };
+
+  /* ----------------------------------------------------------
+   * إرسال فيديو
+   * ---------------------------------------------------------- */
+  const handleVideoChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !user || !thread) return;
+
+    if (!file.type.startsWith("video/")) {
+      toast.error("الرجاء اختيار ملف فيديو.");
+      return;
+    }
+    const MAX_VIDEO = 25 * 1024 * 1024;
+    if (file.size > MAX_VIDEO) {
+      toast.error("حجم الفيديو يتجاوز 25 ميجابايت.");
+      return;
+    }
+
+    try {
+      setSending(true);
+      const path = `chat-media/${params.chatId}/${user.uid}/video-${Date.now()}-${file.name.replace(/\s+/g, "-")}`;
+      const ref = storageRef(storage, path);
+      await uploadBytes(ref, file, { contentType: file.type });
+      const url = await getDownloadURL(ref);
+
+      await writeMessage({
+        kind: "video",
+        text: "",
+        videoUrl: url,
+        lastPreview: "🎬 فيديو",
+        replyTo: buildReplyTo(),
+      });
+      setReplyTarget(null);
+    } catch (err: any) {
+      const msg =
+        err?.code === "storage/unauthorized"
+          ? "صلاحية الرفع مرفوضة. تأكد من قواعد Storage."
+          : err?.message || "تعذّر إرسال الفيديو.";
+      toast.error(msg);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  /* ----------------------------------------------------------
+   * تبديل التفاعل (قلب) على رسالة
+   * ---------------------------------------------------------- */
+  const handleToggleReaction = async (message: ChatMessage) => {
+    if (!user) return;
+    const liveUser = auth.currentUser;
+    if (!liveUser || liveUser.uid !== user.uid) {
+      toast.error("انتهت جلستك. يُرجى تسجيل الدخول من جديد.");
+      return;
+    }
+    const existing = message.reactions?.[user.uid];
+    try {
+      const msgRef = doc(db, "chats", params.chatId, "messages", message.id);
+      if (existing) {
+        // إزالة - نستخدم deleteField لمسح المفتاح فقط
+        await updateDoc(msgRef, {
+          [`reactions.${user.uid}`]: deleteField(),
+        });
+      } else {
+        await updateDoc(msgRef, {
+          [`reactions.${user.uid}`]: "❤️",
+        });
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "تعذّر تنفيذ العملية.");
     }
   };
 
@@ -386,79 +539,109 @@ export default function ChatRoomPage() {
   const groupedMessages = groupMessagesByDay(messages);
   // phone قد لا يكون موجوداً في participantsInfo حسب نوع ChatThread.
   // نقرؤه بطريقة آمنة في حال أضافه كود إنشاء المحادثة في المستقبل.
-  const otherPhone = (other as { phone?: string } | undefined)?.phone;
+  const otherPhone =
+    (other as { phone?: string } | undefined)?.phone || otherProfile?.phone;
+  const otherWhatsapp = otherProfile?.whatsapp
+    ? normalizeLibyanPhone(otherProfile.whatsapp)
+    : null;
+  // حالة النشاط: "متصل الآن" / "آخر ظهور منذ ..." / "غير متصل"
+  const statusLabel = onlineShortLabel(otherProfile);
 
   return (
     <section className="container py-2 sm:py-4">
       <div className="mx-auto flex max-w-3xl flex-col h-[calc(100dvh-120px)] sm:h-[calc(100dvh-140px)]">
         {/* ================ Header ================ */}
-        <div className="flex items-center gap-3 rounded-3xl rounded-b-none border border-b-0 border-slate-200/80 bg-white p-3 shadow-card dark:border-slate-700/80 dark:bg-slate-900 sm:p-4">
+        <div className="flex items-center gap-2 rounded-3xl rounded-b-none border border-b-0 border-slate-200/80 bg-white p-2.5 shadow-card dark:border-slate-700/80 dark:bg-slate-900 sm:gap-3 sm:p-3">
           <Link
             href="/messages"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-2xl text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
             aria-label="رجوع"
           >
             <ArrowRight size={20} />
           </Link>
 
-          <div className="min-w-0 flex-1">
-            <Link
-              href={`/traders/${otherUid}`}
-              className="flex items-center justify-end gap-2"
-            >
-              <span className="truncate text-sm font-black text-slate-900 dark:text-white sm:text-base">
-                {other?.name || "مستخدم"}
-              </span>
+          {/* صورة + اسم + حالة النشاط (كل الكتلة قابلة للنقر لفتح صفحة التاجر) */}
+          <Link
+            href={`/traders/${otherUid}`}
+            className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl px-1 py-0.5 transition active:scale-[0.98]"
+          >
+            <div className="relative shrink-0">
               {other?.photoURL ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={other.photoURL}
                   alt={other.name}
                   referrerPolicy="no-referrer"
-                  className="h-9 w-9 rounded-full object-cover ring-2 ring-brand-100 dark:ring-brand-900/40"
+                  className="h-10 w-10 rounded-full object-cover ring-2 ring-brand-100 dark:ring-brand-900/40"
                 />
               ) : (
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-brand-700 to-brand-500 text-xs font-black text-white">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-brand-700 to-brand-500 text-xs font-black text-white">
                   {(other?.name || "م").charAt(0).toUpperCase()}
                 </div>
               )}
-            </Link>
-          </div>
+              {/* نقطة "متصل الآن" */}
+              {statusLabel === "متصل الآن" && (
+                <span
+                  aria-hidden="true"
+                  className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500 dark:border-slate-900"
+                />
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-black text-slate-900 dark:text-white sm:text-[15px]">
+                {other?.name || "مستخدم"}
+              </p>
+              <p
+                className={cn(
+                  "truncate text-[11px] font-bold",
+                  statusLabel === "متصل الآن"
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-slate-500 dark:text-slate-400"
+                )}
+              >
+                {statusLabel}
+              </p>
+            </div>
+          </Link>
 
-          {otherPhone && (
-            <a
-              href={`tel:${otherPhone}`}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-2xl text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
-              aria-label="اتصال"
-            >
-              <Phone size={18} />
-            </a>
-          )}
+          {/* أزرار الإجراءات */}
+          <div className="flex shrink-0 items-center gap-1">
+            {/* الإعلان المرتبط */}
+            {thread.listingId && (
+              <Link
+                href={`/listings/${thread.listingId}`}
+                aria-label="عرض الإعلان"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                <ExternalLink size={18} />
+              </Link>
+            )}
+            {/* واتساب */}
+            {otherWhatsapp && (
+              <a
+                href={`https://wa.me/${otherWhatsapp}`}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="واتساب"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl text-emerald-600 transition hover:bg-emerald-50 dark:hover:bg-emerald-900/30"
+              >
+                <MessageCircle size={18} />
+              </a>
+            )}
+            {/* اتصال */}
+            {otherPhone && (
+              <a
+                href={`tel:${otherPhone}`}
+                aria-label="اتصال"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                <Phone size={18} />
+              </a>
+            )}
+          </div>
         </div>
 
-        {/* ================ Listing summary chip ================ */}
-        {thread.listingTitle && (
-          <Link
-            href={`/listings/${thread.listingId}`}
-            className="
-              flex items-center gap-3 border-x border-slate-200/80 bg-white px-4 py-2.5
-              text-xs transition hover:bg-slate-50
-              dark:border-slate-700/80 dark:bg-slate-900 dark:hover:bg-slate-800
-            "
-          >
-            {thread.listingImage && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={thread.listingImage}
-                alt={thread.listingTitle}
-                className="h-9 w-12 shrink-0 rounded-lg object-cover"
-              />
-            )}
-            <span className="truncate font-bold text-slate-700 dark:text-slate-200">
-              {thread.listingTitle}
-            </span>
-          </Link>
-        )}
+        {/* الإعلان المرتبط يظهر داخل ProfilePreviewCard أسفل */}
 
         {/* ================ Messages area ================ */}
         <div
@@ -467,6 +650,20 @@ export default function ChatRoomPage() {
         >
           {/* بانر النصائح - يظهر دائماً في أعلى المحادثة */}
           <ChatTipsBanner />
+
+          {/* بطاقة تعريف الطرف الآخر - تظهر مرة واحدة في أعلى المحادثة */}
+          <ProfilePreviewCard
+            otherUid={otherUid}
+            otherName={other?.name || "مستخدم"}
+            otherPhoto={other?.photoURL}
+            city={otherProfile?.city}
+            ratingsCount={otherProfile?.ratingsCount}
+            averageRating={otherProfile?.averageRating}
+            listingsCount={otherProfile?.listingsCount}
+            listingId={thread.listingId}
+            listingTitle={thread.listingTitle}
+            listingImage={thread.listingImage}
+          />
 
           {messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
@@ -497,6 +694,9 @@ export default function ChatRoomPage() {
                         message={m}
                         mine={mine}
                         isFirstOfRun={isFirstOfRun}
+                        myUid={user.uid}
+                        onLongPress={setActionSheetMsg}
+                        onToggleReaction={handleToggleReaction}
                       />
                     );
                   })}
@@ -531,81 +731,133 @@ export default function ChatRoomPage() {
         )}
 
         {/* ================ Composer ================ */}
-        <div className="rounded-3xl rounded-t-none border border-t-0 border-slate-200/80 bg-white p-2.5 shadow-card dark:border-slate-700/80 dark:bg-slate-900">
-          {recording ? (
-            <AudioRecorder
-              onSubmit={handleAudioSubmit}
-              onCancel={() => setRecording(false)}
-            />
-          ) : (
-            <form
-              onSubmit={handleSendText}
-              className="flex items-center gap-2"
-            >
-              {/* مرفقات (صورة) */}
+        <div className="rounded-3xl rounded-t-none border border-t-0 border-slate-200/80 bg-white shadow-card dark:border-slate-700/80 dark:bg-slate-900">
+          {/* معاينة الرد فوق حقل الكتابة */}
+          {replyTarget && (
+            <div className="flex items-start gap-2 border-b border-slate-200/70 px-3 pt-2 pb-2 dark:border-slate-700/70">
+              <div className="mt-0.5 h-full w-0.5 shrink-0 rounded-full bg-brand-500" />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1 text-[10px] font-black text-brand-700 dark:text-brand-300">
+                  <CornerDownLeft size={11} />
+                  رد على {replyTarget.senderName}
+                </div>
+                <p className="line-clamp-1 text-[11px] text-slate-600 dark:text-slate-300">
+                  {(replyTarget.kind || "text") === "text"
+                    ? replyTarget.text
+                    : (replyTarget.kind === "image"
+                        ? "📷 صورة"
+                        : replyTarget.kind === "video"
+                        ? "🎬 فيديو"
+                        : "🎙️ مقطع صوتي")}
+                </p>
+              </div>
+              {replyTarget.imageUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={replyTarget.imageUrl}
+                  alt=""
+                  className="h-8 w-8 shrink-0 rounded-md object-cover"
+                />
+              )}
               <button
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={sending}
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 active:scale-95 disabled:opacity-60 dark:text-slate-300 dark:hover:bg-slate-800"
-                aria-label="إرفاق صورة"
+                onClick={() => setReplyTarget(null)}
+                className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                aria-label="إلغاء الرد"
               >
-                <Paperclip size={18} />
+                <X size={14} />
               </button>
-
-              {/* حقل النص */}
-              <div className="flex flex-1 items-center rounded-full bg-slate-100 px-4 py-1 dark:bg-slate-800">
-                <input
-                  type="text"
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      void handleSendText();
-                    }
-                  }}
-                  placeholder="أرسل رسالة جديدة"
-                  className="flex-1 bg-transparent py-2 text-sm outline-none placeholder:text-slate-400 dark:text-white"
-                  disabled={sending}
-                />
-
-                {/* زر صورة سريع داخل الحقل */}
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={sending}
-                  className="ml-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-brand-700 transition hover:bg-brand-100 active:scale-95 disabled:opacity-60 dark:text-brand-300 dark:hover:bg-brand-900/40"
-                  aria-label="إرسال صورة"
-                >
-                  <Camera size={18} />
-                </button>
-              </div>
-
-              {/* إذا كان النص فارغ → زر مايك. إذا في نص → زر إرسال */}
-              {text.trim() ? (
-                <button
-                  type="submit"
-                  disabled={sending}
-                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-700 text-white shadow-blue transition active:scale-95 hover:bg-brand-600 disabled:opacity-60"
-                  aria-label="إرسال"
-                >
-                  <Send size={18} />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setRecording(true)}
-                  disabled={sending}
-                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-700 text-white shadow-blue transition active:scale-95 hover:bg-brand-600 disabled:opacity-60"
-                  aria-label="تسجيل صوتي"
-                >
-                  <Mic size={18} />
-                </button>
-              )}
-            </form>
+            </div>
           )}
 
+          <div className="p-2.5">
+            {recording ? (
+              <AudioRecorder
+                onSubmit={handleAudioSubmit}
+                onCancel={() => setRecording(false)}
+              />
+            ) : (
+              <form
+                onSubmit={handleSendText}
+                className="flex items-center gap-1.5"
+              >
+                {/* حقل النص */}
+                <div className="flex flex-1 items-center rounded-full bg-slate-100 px-4 dark:bg-slate-800">
+                  <input
+                    type="text"
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        void handleSendText();
+                      }
+                    }}
+                    placeholder="اكتب رسالة..."
+                    className="flex-1 bg-transparent py-2.5 text-sm outline-none placeholder:text-slate-400 dark:text-white"
+                    disabled={sending}
+                  />
+                </div>
+
+                {/* إذا في نص → فقط زر إرسال. إذا فارغ → مايك + صورة + كاميرا + فيديو */}
+                {text.trim() ? (
+                  <button
+                    type="submit"
+                    disabled={sending}
+                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-700 text-white shadow-blue transition active:scale-95 hover:bg-brand-600 disabled:opacity-60"
+                    aria-label="إرسال"
+                  >
+                    <Send size={18} />
+                  </button>
+                ) : (
+                  <div className="flex shrink-0 items-center gap-0.5">
+                    {/* مايك - تسجيل صوتي */}
+                    <button
+                      type="button"
+                      onClick={() => setRecording(true)}
+                      disabled={sending}
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100 active:scale-95 disabled:opacity-60 dark:text-slate-300 dark:hover:bg-slate-800"
+                      aria-label="تسجيل صوتي"
+                    >
+                      <Mic size={18} />
+                    </button>
+                    {/* صورة من المعرض */}
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={sending}
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100 active:scale-95 disabled:opacity-60 dark:text-slate-300 dark:hover:bg-slate-800"
+                      aria-label="إرسال صورة"
+                    >
+                      <ImageIcon size={18} />
+                    </button>
+                    {/* كاميرا - التقاط مباشر */}
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      disabled={sending}
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100 active:scale-95 disabled:opacity-60 dark:text-slate-300 dark:hover:bg-slate-800"
+                      aria-label="كاميرا"
+                    >
+                      <Camera size={18} />
+                    </button>
+                    {/* فيديو */}
+                    <button
+                      type="button"
+                      onClick={() => videoInputRef.current?.click()}
+                      disabled={sending}
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100 active:scale-95 disabled:opacity-60 dark:text-slate-300 dark:hover:bg-slate-800"
+                      aria-label="إرسال فيديو"
+                    >
+                      <VideoIcon size={18} />
+                    </button>
+                  </div>
+                )}
+              </form>
+            )}
+          </div>
+
+          {/* مدخلات الملفات المخفية */}
           <input
             ref={fileInputRef}
             type="file"
@@ -613,8 +865,96 @@ export default function ChatRoomPage() {
             onChange={handleImageChange}
             className="sr-only"
           />
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleImageChange}
+            className="sr-only"
+          />
+          <input
+            ref={videoInputRef}
+            type="file"
+            accept="video/*"
+            onChange={handleVideoChange}
+            className="sr-only"
+          />
         </div>
       </div>
+
+      {/* ================ Action Sheet (Reply / React) ================ */}
+      {actionSheetMsg && (
+        <div
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 backdrop-blur-sm sm:items-center"
+          onClick={() => setActionSheetMsg(null)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="
+              w-full max-w-md rounded-t-3xl border border-slate-200/80
+              bg-white p-3 shadow-2xl dark:border-slate-700/80 dark:bg-slate-900
+              sm:rounded-3xl
+            "
+            style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* مقبض السحب */}
+            <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-slate-300 dark:bg-slate-700 sm:hidden" />
+
+            {/* صف القلب الكبير */}
+            <button
+              type="button"
+              onClick={() => {
+                void handleToggleReaction(actionSheetMsg);
+                setActionSheetMsg(null);
+              }}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl py-3 transition hover:bg-rose-50 dark:hover:bg-rose-900/20"
+            >
+              <Heart
+                size={28}
+                className={cn(
+                  actionSheetMsg.reactions?.[user.uid]
+                    ? "fill-rose-500 text-rose-500"
+                    : "text-slate-400 dark:text-slate-500"
+                )}
+              />
+              <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                {actionSheetMsg.reactions?.[user.uid]
+                  ? "إزالة الإعجاب"
+                  : "إعجاب ❤️"}
+              </span>
+            </button>
+
+            <div className="my-1 h-px bg-slate-200 dark:bg-slate-700" />
+
+            {/* رد */}
+            <button
+              type="button"
+              onClick={() => {
+                setReplyTarget(actionSheetMsg);
+                setActionSheetMsg(null);
+              }}
+              className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-right transition hover:bg-slate-50 dark:hover:bg-slate-800"
+            >
+              <CornerDownLeft size={20} className="text-brand-700 dark:text-brand-300" />
+              <span className="flex-1 text-sm font-bold text-slate-700 dark:text-slate-200">
+                رد
+              </span>
+            </button>
+
+            {/* إلغاء */}
+            <button
+              type="button"
+              onClick={() => setActionSheetMsg(null)}
+              className="mt-1 flex w-full items-center justify-center rounded-2xl bg-slate-100 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+            >
+              إلغاء
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
@@ -681,4 +1021,127 @@ function groupMessagesByDay(messages: ChatMessage[]) {
   }
 
   return groups;
+}
+
+/* ============================================================
+ * ProfilePreviewCard - بطاقة تعريف الطرف الآخر في أعلى المحادثة
+ * ============================================================ */
+function ProfilePreviewCard({
+  otherUid,
+  otherName,
+  otherPhoto,
+  city,
+  ratingsCount,
+  averageRating,
+  listingsCount,
+  listingId,
+  listingTitle,
+  listingImage,
+}: {
+  otherUid: string;
+  otherName: string;
+  otherPhoto?: string;
+  city?: string;
+  ratingsCount?: number;
+  averageRating?: number;
+  listingsCount?: number;
+  listingId?: string;
+  listingTitle?: string;
+  listingImage?: string;
+}) {
+  const hasRating = typeof averageRating === "number" && averageRating > 0;
+  return (
+    <div className="mb-3 flex flex-col items-center rounded-2xl border border-slate-200/80 bg-white p-4 text-center shadow-sm dark:border-slate-700/80 dark:bg-slate-900">
+      {/* الصورة الشخصية */}
+      <Link href={`/traders/${otherUid}`} aria-label={otherName}>
+        {otherPhoto ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={otherPhoto}
+            alt={otherName}
+            referrerPolicy="no-referrer"
+            className="h-16 w-16 rounded-full object-cover ring-2 ring-brand-100 dark:ring-brand-900/40"
+          />
+        ) : (
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-brand-700 to-brand-500 text-lg font-black text-white">
+            {(otherName || "م").charAt(0).toUpperCase()}
+          </div>
+        )}
+      </Link>
+
+      {/* الاسم */}
+      <p className="mt-2 text-sm font-black text-slate-900 dark:text-white">
+        {otherName}
+      </p>
+
+      {/* المدينة + التقييم/الإعلانات */}
+      <div className="mt-1 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+        {city ? <span>{city}</span> : null}
+        {city && (hasRating || (listingsCount && listingsCount > 0)) ? (
+          <span aria-hidden="true">•</span>
+        ) : null}
+        {hasRating ? (
+          <span className="inline-flex items-center gap-0.5">
+            <Star size={11} className="fill-amber-400 text-amber-400" />
+            {averageRating!.toFixed(1)}
+            {ratingsCount ? ` (${ratingsCount})` : ""}
+          </span>
+        ) : null}
+        {hasRating && listingsCount && listingsCount > 0 ? (
+          <span aria-hidden="true">•</span>
+        ) : null}
+        {listingsCount && listingsCount > 0 ? (
+          <span>{listingsCount} إعلان</span>
+        ) : null}
+      </div>
+
+      {/* أزرار سريعة */}
+      <div className="mt-3 flex w-full max-w-xs flex-wrap items-center justify-center gap-2">
+        <Link
+          href={`/traders/${otherUid}`}
+          className="
+            inline-flex h-9 flex-1 items-center justify-center rounded-xl
+            border border-slate-200 bg-white px-3 text-xs font-black
+            text-slate-700 transition hover:bg-slate-50
+            dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200
+            dark:hover:bg-slate-700
+          "
+        >
+          عرض الملف
+        </Link>
+        {listingId && (
+          <Link
+            href={`/listings/${listingId}`}
+            className="
+              inline-flex h-9 flex-1 items-center justify-center gap-1.5
+              rounded-xl bg-brand-700 px-3 text-xs font-black text-white
+              shadow-blue transition hover:bg-brand-600
+            "
+          >
+            عرض الإعلان
+          </Link>
+        )}
+      </div>
+
+      {/* بطاقة الإعلان المرتبط - مصغّرة */}
+      {listingId && listingTitle && (
+        <Link
+          href={`/listings/${listingId}`}
+          className="mt-3 flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2 text-right transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
+        >
+          {listingImage && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={listingImage}
+              alt={listingTitle}
+              className="h-10 w-14 shrink-0 rounded-lg object-cover"
+            />
+          )}
+          <span className="line-clamp-1 flex-1 text-xs font-bold text-slate-700 dark:text-slate-200">
+            {listingTitle}
+          </span>
+        </Link>
+      )}
+    </div>
+  );
 }

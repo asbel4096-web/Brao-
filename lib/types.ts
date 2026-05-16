@@ -112,7 +112,21 @@ export interface ChatThread {
   createdAt?: Timestamp | null;
 }
 
-export type ChatMessageKind = "text" | "image" | "audio";
+export type ChatMessageKind = "text" | "image" | "audio" | "video";
+
+/** اقتباس صغير لرسالة مرجعية عند الرد. */
+export interface ChatReplyRef {
+  /** معرّف الرسالة الأصلية. */
+  messageId: string;
+  /** نوع الرسالة الأصلية لاختيار رمز/معاينة. */
+  kind: ChatMessageKind;
+  /** نصّ مختصر للعرض فوق الرد (≤ 80 حرف). */
+  textPreview: string;
+  /** صورة الرسالة الأصلية إن كانت صورة. */
+  imageUrl?: string;
+  /** اسم مرسل الرسالة الأصلية. */
+  senderName: string;
+}
 
 export interface ChatMessage {
   id: string;
@@ -129,6 +143,17 @@ export interface ChatMessage {
   audioUrl?: string;
   /** مدة الصوت بالثواني */
   audioDurationSec?: number;
+  /** رابط الفيديو (kind=video) */
+  videoUrl?: string;
+  /** مدة الفيديو بالثواني */
+  videoDurationSec?: number;
+  /** اقتباس رسالة سابقة عند الرد. */
+  replyTo?: ChatReplyRef;
+  /**
+   * تفاعلات الرسالة. المفتاح uid، القيمة رمز التفاعل.
+   * نقتصر حالياً على القلب "❤️".
+   */
+  reactions?: { [uid: string]: "❤️" };
   senderId: string;
   senderName: string;
   createdAt?: Timestamp | null;
