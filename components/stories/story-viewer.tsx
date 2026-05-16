@@ -66,6 +66,9 @@ export function StoryViewer({
   const [progress, setProgress] = useState(0);
   const [paused, setPaused] = useState(false);
   const [dragOffsetY, setDragOffsetY] = useState(0);
+  // نسبة الصورة/الفيديو (height / width). > 1 يعني طولية، < 1 عرضية.
+  // null حتى يُحمَّل المحتوى. تُحدَّد عبر onLoad/onLoadedMetadata.
+  const [mediaAspect, setMediaAspect] = useState<number | null>(null);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -136,6 +139,8 @@ export function StoryViewer({
     setProgress(0);
     elapsedBeforePauseRef.current = 0;
     startedAtRef.current = Date.now();
+    // أعد ضبط النسبة كي تُكتشف من جديد للوسيط الحالي
+    setMediaAspect(null);
   }, [index]);
 
   useEffect(() => {
@@ -244,6 +249,16 @@ export function StoryViewer({
 
   const dragOpacity = Math.max(0.4, 1 - dragOffsetY / 400);
 
+  /**
+   * اختيار object-fit الذكي حسب نسبة الصورة:
+   * - نسبة ≥ 1.6 (طولية قريبة من 9:16): cover — تملأ الشاشة طبيعياً.
+   * - نسبة < 1.6 (3:4، مربعة، أفقية): contain — تظهر كاملة بدون قص،
+   *   والخلفية المموّهة تملأ ما حولها.
+   * - النسبة null (لم تُحمَّل بعد): contain — آمن افتراضياً.
+   */
+  const isPortraitFullscreen = mediaAspect !== null && mediaAspect >= 1.6;
+  const fitClass = isPortraitFullscreen ? "object-cover" : "object-contain";
+
   return (
     <div
       role="dialog"
@@ -258,20 +273,26 @@ export function StoryViewer({
     >
       {/*
         ====== خلفية مموّهة من نفس الصورة ======
-        تملأ المساحات الفارغة عندما تكون نسبة الصورة مختلفة عن 9:16،
-        فلا يظهر شريط أسود قبيح. مثل Instagram/TikTok.
+        تظهر فقط عندما تكون الصورة contain (نسبة ليست 9:16) لتملأ الفراغ
+        بدل ظهور شريط أسود/رمادي قبيح أعلى وأسفل الصورة. مثل Instagram.
       */}
       <div
-        className="absolute inset-0 scale-110 bg-cover bg-center bg-no-repeat opacity-60 blur-2xl"
+        className="absolute inset-0 scale-110 bg-cover bg-center bg-no-repeat opacity-70 blur-2xl"
         style={{
           backgroundImage: `url(${currentMedia.thumbnailUrl || currentMedia.url})`,
         }}
         aria-hidden="true"
       />
+      {/* طبقة تعتيم خفيفة على الخلفية المموّهة لزيادة وضوح النصوص */}
+      <div
+        className="absolute inset-0 bg-black/35"
+        aria-hidden="true"
+      />
 
       {/*
-        ====== الصورة fullscreen مع object-contain ======
-        تُعرض كامل الصورة بدون قص — مهمة جداً للسيارات حتى لا تُقطع.
+        ====== المحتوى ======
+        - 9:16 (طولية): cover يملأ الشاشة.
+        - 3:4، مربعة، أفقية: contain يُظهرها كاملة + خلفية blur حولها.
       */}
       <div
         className="absolute inset-0"
@@ -284,19 +305,31 @@ export function StoryViewer({
           <video
             ref={videoRef}
             src={currentMedia.url}
-            className="h-full w-full object-contain"
+            className={`h-full w-full ${fitClass}`}
             playsInline
             muted
             autoPlay
             onEnded={next}
+            onLoadedMetadata={(e) => {
+              const v = e.currentTarget;
+              if (v.videoWidth && v.videoHeight) {
+                setMediaAspect(v.videoHeight / v.videoWidth);
+              }
+            }}
           />
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={currentMedia.url}
             alt={currentStory.ownerName}
-            className="h-full w-full object-contain"
+            className={`h-full w-full ${fitClass}`}
             referrerPolicy="no-referrer"
+            onLoad={(e) => {
+              const img = e.currentTarget;
+              if (img.naturalWidth && img.naturalHeight) {
+                setMediaAspect(img.naturalHeight / img.naturalWidth);
+              }
+            }}
           />
         )}
       </div>
