@@ -46,6 +46,8 @@ export interface UserProfile {
   name: string;
   email: string;
   phone: string;
+  /** رقم واتساب اختياري قد يختلف عن رقم الهاتف. */
+  whatsapp?: string;
   city?: string;
   bio?: string;
   photoURL?: string;
