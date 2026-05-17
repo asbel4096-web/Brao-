@@ -125,7 +125,7 @@ export function VerifiedDealersRow() {
 function VerifyYourDealerCta() {
   return (
     <Link
-      href="/contact"
+      href="/dealer-verification"
       className="
         group flex w-[120px] shrink-0 flex-col items-center gap-1.5
         rounded-2xl border-2 border-dashed border-brand-300 bg-brand-50/40
@@ -148,7 +148,7 @@ function VerifyYourDealerCta() {
         وثّق معرضك
       </p>
       <p className="line-clamp-1 w-full text-center text-[10px] text-slate-500 dark:text-slate-400">
-        تواصل معنا
+        اطلب التوثيق
       </p>
     </Link>
   );

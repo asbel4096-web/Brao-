@@ -348,6 +348,19 @@ service cloud.firestore {
       allow delete: if signedIn() && resource.data.userId == request.auth.uid;
     }
 
+    // طلبات توثيق المعارض - يرسلها المستخدم من /dealer-verification.
+    // المستخدم ينشئ طلبه فقط (مع userId == auth.uid + status بدء pending)،
+    // ويقرأ طلباته فقط. الأدمن يقرأ كل الطلبات ويُحدّث/يحذف.
+    match /dealerVerificationRequests/{requestId} {
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'pending';
+      allow read: if signedIn() && (
+        resource.data.userId == request.auth.uid || isAdmin()
+      );
+      allow update, delete: if isAdmin();
+    }
+
     // شعارات الماركات - public read، فقط الأدمن يكتب/يحذف.
     // وثيقة واحدة لكل brand id (مثل brandLogos/toyota).
     // البنية: { brandId: string, logoUrl: string, updatedAt }
