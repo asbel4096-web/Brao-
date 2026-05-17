@@ -11,6 +11,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import {
+  BadgeCheck,
   Search,
   Shield,
   ShieldOff,
@@ -30,6 +31,8 @@ interface UserRow {
   phone?: string;
   photoURL?: string;
   isAdmin?: boolean;
+  isVerifiedDealer?: boolean;
+  dealerName?: string;
   lastLoginAt?: any;
   createdAt?: any;
 }
@@ -43,6 +46,8 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
+  // فلتر: عرض المعارض الموثَّقة فقط (يفيد لمراجعة قائمة الموثَّقين الحاليين).
+  const [showOnlyVerified, setShowOnlyVerified] = useState(false);
 
   useEffect(() => {
     const q = query(collection(db, "users"), orderBy("createdAt", "desc"));
@@ -65,6 +70,7 @@ export default function AdminUsersPage() {
   }, []);
 
   const filtered = users.filter((u) => {
+    if (showOnlyVerified && !u.isVerifiedDealer) return false;
     if (!search.trim()) return true;
     const s = search.toLowerCase();
     return (
@@ -72,7 +78,8 @@ export default function AdminUsersPage() {
       u.email?.toLowerCase().includes(s) ||
       u.phone?.includes(s) ||
       u.uid?.toLowerCase().includes(s) ||
-      u.id?.toLowerCase().includes(s)
+      u.id?.toLowerCase().includes(s) ||
+      u.dealerName?.toLowerCase().includes(s)
     );
   });
 
@@ -114,6 +121,44 @@ export default function AdminUsersPage() {
     }
   };
 
+  /**
+   * توثيق المعرض أو إلغاء التوثيق.
+   * فقط الأدمن يستطيع هذا - مفروض في firestore.rules عبر فرع isAdmin().
+   * عند التوثيق: نضع isVerifiedDealer=true + verifiedAt=now.
+   * عند الإلغاء: نضع isVerifiedDealer=false (نُبقي verifiedAt كسجلّ).
+   */
+  const toggleVerified = async (u: UserRow) => {
+    if (!currentUser) return;
+    const next = !u.isVerifiedDealer;
+
+    const ok = await confirm({
+      title: next ? "توثيق المعرض؟" : "إلغاء توثيق المعرض؟",
+      message: next
+        ? `سيظهر "${u.dealerName || u.name || "هذا المستخدم"}" في قسم المعارض الموثقة بعلامة زرقاء.`
+        : `سيتم إخفاء "${u.dealerName || u.name || "هذا المستخدم"}" من قسم المعارض الموثقة وستُزال علامة التوثيق.`,
+      confirmLabel: next ? "توثيق" : "إلغاء التوثيق",
+      cancelLabel: "إلغاء",
+      tone: next ? "info" : "warning",
+    });
+    if (!ok) return;
+
+    try {
+      setBusyId(u.id);
+      const payload: any = {
+        isVerifiedDealer: next,
+        updatedAt: serverTimestamp(),
+      };
+      // نضبط verifiedAt فقط عند التوثيق - عند الإلغاء نُبقيه للسجلّ.
+      if (next) payload.verifiedAt = serverTimestamp();
+      await updateDoc(doc(db, "users", u.id), payload);
+      toast.success(next ? "تم توثيق المعرض." : "تم إلغاء التوثيق.");
+    } catch (err: any) {
+      toast.error(err?.message || "تعذّر تحديث التوثيق.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   return (
     <div className="space-y-5">
       <div>
@@ -124,14 +169,29 @@ export default function AdminUsersPage() {
         </p>
       </div>
 
-      <div className="relative max-w-md">
-        <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input
-          className="input pr-10"
-          placeholder="ابحث بالاسم أو البريد أو الهاتف..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative w-full max-w-md">
+          <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            className="input pr-10"
+            placeholder="ابحث بالاسم أو البريد أو الهاتف أو اسم المعرض..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowOnlyVerified((v) => !v)}
+          aria-pressed={showOnlyVerified}
+          className={
+            showOnlyVerified
+              ? "inline-flex items-center gap-1.5 rounded-2xl border border-brand-300 bg-brand-50 px-3 py-2 text-xs font-black text-brand-700 transition hover:bg-brand-100 dark:border-brand-700 dark:bg-brand-900/30 dark:text-brand-300"
+              : "inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+          }
+        >
+          <BadgeCheck size={13} />
+          {showOnlyVerified ? "الموثَّقون فقط" : "كل المستخدمين"}
+        </button>
       </div>
 
       {loading ? (
@@ -145,29 +205,47 @@ export default function AdminUsersPage() {
           {filtered.map((u) => {
             // ✅ المصدر الوحيد للأدمن
             const isAdmin = u.isAdmin === true;
+            const isVerified = u.isVerifiedDealer === true;
             const isMe = u.id === currentUser?.uid;
             const isBusy = busyId === u.id;
 
             return (
               <div key={u.id} className="card flex items-center gap-3 p-4">
-                {u.photoURL ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={u.photoURL}
-                    alt={u.name}
-                    className="h-12 w-12 shrink-0 rounded-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-700 text-white">
-                    <UserIcon size={18} />
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <div className="truncate text-sm font-black dark:text-white">
-                      {u.name || "بدون اسم"}
+                <div className="relative shrink-0">
+                  {u.photoURL ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={u.photoURL}
+                      alt={u.name}
+                      className="h-12 w-12 rounded-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-700 text-white">
+                      <UserIcon size={18} />
                     </div>
+                  )}
+                  {/* شارة توثيق صغيرة على الصورة */}
+                  {isVerified && (
+                    <span
+                      aria-label="معرض موثق"
+                      className="absolute -bottom-0.5 -left-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-brand-700 text-white dark:border-slate-900"
+                    >
+                      <BadgeCheck size={10} strokeWidth={2.5} />
+                    </span>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <div className="truncate text-sm font-black dark:text-white">
+                      {u.dealerName || u.name || "بدون اسم"}
+                    </div>
+                    {isVerified && (
+                      <span className="inline-flex items-center gap-0.5 rounded-full bg-brand-50 px-1.5 py-0.5 text-[10px] font-black text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
+                        <BadgeCheck size={10} strokeWidth={2.5} />
+                        موثَّق
+                      </span>
+                    )}
                     {isAdmin && (
                       <span className="badge-action !text-[10px]">
                         <Shield size={10} className="ml-1" /> مشرف
@@ -178,12 +256,31 @@ export default function AdminUsersPage() {
                     )}
                   </div>
                   <div className="truncate text-xs text-slate-500">
+                    {u.dealerName && u.name && u.dealerName !== u.name ? `${u.name} • ` : ""}
                     {u.email || "—"} {u.phone ? `• ${u.phone}` : ""}
                   </div>
                   <div className="mt-0.5 truncate text-[11px] text-slate-400">
                     آخر دخول: {formatDateTime(u.lastLoginAt)}
                   </div>
                 </div>
+
+                {/* زر التوثيق - متاح لكل المستخدمين بمن فيهم الأدمن نفسه */}
+                <button
+                  type="button"
+                  onClick={() => void toggleVerified(u)}
+                  disabled={isBusy}
+                  aria-label={isVerified ? "إلغاء التوثيق" : "توثيق"}
+                  className={
+                    isVerified
+                      ? "inline-flex shrink-0 items-center gap-1 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-200 dark:hover:bg-slate-800"
+                      : "inline-flex shrink-0 items-center gap-1 rounded-2xl border border-brand-200 bg-brand-50 px-3 py-2 text-xs font-bold text-brand-700 transition hover:bg-brand-100 disabled:opacity-60 dark:border-brand-700 dark:bg-brand-900/30 dark:text-brand-300 dark:hover:bg-brand-900/50"
+                  }
+                >
+                  <BadgeCheck size={13} />
+                  <span className="hidden sm:inline">
+                    {isVerified ? "إلغاء" : "توثيق"}
+                  </span>
+                </button>
 
                 {/* زر منح/سحب الأدمن */}
                 {!isMe && (
