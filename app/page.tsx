@@ -1,3 +1,4 @@
+import { BrowseByBrand } from "@/components/browse-by-brand";
 import { CategoryGrid } from "@/components/category-grid";
 import { CTASection } from "@/components/cta-section";
 import { Hero } from "@/components/hero";
@@ -12,6 +13,7 @@ export default function HomePage() {
       <StoriesRow />
       <Hero />
       <CategoryGrid />
+      <BrowseByBrand />
       <VerifiedDealersRow />
       <ListingsGrid />
       <CTASection />

@@ -33,6 +33,7 @@ import {
   resolveCategorySlug,
 } from "@/lib/categories";
 import { ListingCard } from "@/components/listing-card";
+import { getBrandById, inferBrandId } from "@/lib/car-brands";
 import type { Listing } from "@/lib/types";
 
 const MAX_LISTINGS = 200;
@@ -61,6 +62,8 @@ function ListingsContent() {
   const sort0 = (params.get("sort") || "newest") as SortKey;
   const min0 = params.get("min") || "";
   const max0 = params.get("max") || "";
+  // الماركة - id معياري (مثل "toyota"). يأتي من قسم "تصفح حسب الماركة".
+  const brand0 = (params.get("brand") || "").toLowerCase();
 
   const [search, setSearch] = useState(q0);
   const [category, setCategory] = useState(cat0);
@@ -68,6 +71,7 @@ function ListingsContent() {
   const [sort, setSort] = useState<SortKey>(sort0);
   const [minPrice, setMinPrice] = useState(min0);
   const [maxPrice, setMaxPrice] = useState(max0);
+  const [brand, setBrand] = useState(brand0);
 
   const deferredSearch = useDeferredValue(search);
 
@@ -79,7 +83,8 @@ function ListingsContent() {
     setSort(sort0);
     setMinPrice(min0);
     setMaxPrice(max0);
-  }, [q0, cat0, city0, sort0, min0, max0]);
+    setBrand(brand0);
+  }, [q0, cat0, city0, sort0, min0, max0, brand0]);
 
   // جلب الإعلانات (snapshot واحد للجلسة)
   useEffect(() => {
@@ -125,6 +130,11 @@ function ListingsContent() {
       const max = Number(maxPrice);
       arr = arr.filter((it) => Number(it.price) <= max);
     }
+    // فلتر الماركة - يستخدم inferBrandId كي يطابق إعلانات قديمة
+    // قد تكون مخزَّنة بـ"Toyota" أو "تويوتا" بدل id المعياري "toyota".
+    if (brand) {
+      arr = arr.filter((it) => inferBrandId(it.brand) === brand);
+    }
 
     if (sort === "price_asc" || sort === "price_desc") {
       arr = [...arr];
@@ -132,7 +142,7 @@ function ListingsContent() {
       arr.sort((a, b) => (Number(a.price) - Number(b.price)) * factor);
     }
     return arr;
-  }, [listings, deferredSearch, category, city, sort, minPrice, maxPrice]);
+  }, [listings, deferredSearch, category, city, sort, minPrice, maxPrice, brand]);
 
   /**
    * تطبيق الفلاتر مباشرة + تحديث الـ URL.
@@ -146,6 +156,7 @@ function ListingsContent() {
       sort?: SortKey;
       minPrice?: string;
       maxPrice?: string;
+      brand?: string;
     }) => {
       const sp = new URLSearchParams();
       const next = {
@@ -155,6 +166,7 @@ function ListingsContent() {
         sort: overrides?.sort ?? sort,
         minPrice: overrides?.minPrice ?? minPrice,
         maxPrice: overrides?.maxPrice ?? maxPrice,
+        brand: overrides?.brand ?? brand,
       };
       if (next.search) sp.set("q", next.search);
       if (next.category) {
@@ -165,11 +177,12 @@ function ListingsContent() {
       if (next.sort && next.sort !== "newest") sp.set("sort", next.sort);
       if (next.minPrice) sp.set("min", next.minPrice);
       if (next.maxPrice) sp.set("max", next.maxPrice);
+      if (next.brand) sp.set("brand", next.brand);
       router.push(`/listings${sp.toString() ? "?" + sp.toString() : ""}`, {
         scroll: false,
       });
     },
-    [search, category, city, sort, minPrice, maxPrice, router]
+    [search, category, city, sort, minPrice, maxPrice, brand, router]
   );
 
   const clearAll = useCallback(() => {
@@ -179,6 +192,7 @@ function ListingsContent() {
     setSort("newest");
     setMinPrice("");
     setMaxPrice("");
+    setBrand("");
     router.push("/listings", { scroll: false });
     setShowFilters(false);
   }, [router]);
@@ -189,6 +203,17 @@ function ListingsContent() {
   };
 
   const activeFilters: { key: string; label: string; clear: () => void }[] = [];
+  if (brand) {
+    const b = getBrandById(brand);
+    activeFilters.push({
+      key: "brand",
+      label: b ? b.nameAr : brand,
+      clear: () => {
+        setBrand("");
+        updateUrl({ brand: "" });
+      },
+    });
+  }
   if (category)
     activeFilters.push({
       key: "category",
