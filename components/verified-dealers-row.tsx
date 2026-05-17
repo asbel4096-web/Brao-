@@ -9,7 +9,7 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import { BadgeCheck, ChevronLeft, MapPin, Star } from "lucide-react";
+import { BadgeCheck, ChevronLeft, MapPin, Plus, Star } from "lucide-react";
 import { db } from "@/lib/firebase";
 import type { UserProfile } from "@/lib/types";
 import { getTraderDisplayName, formatNumber } from "@/lib/utils";
@@ -70,41 +70,87 @@ export function VerifiedDealersRow() {
   // إخفاء القسم كلياً عند التحميل أو عدم وجود معارض.
   if (loading || dealers.length === 0) return null;
 
+  // عندما يكون عدد المعارض قليلاً (1-3)، نُضيف بطاقة CTA "وثّق معرضك"
+  // كي لا يظهر الصف فارغاً وتُستغلّ المساحة بطريقة مفيدة (دعوة لمزيد
+  // من المعارض للانضمام بدلاً من ترك فجوة بصرية كبيرة).
+  const showCta = dealers.length <= 3;
+
   return (
-    <section className="container py-4 sm:py-6">
-      <div className="mx-auto max-w-6xl">
+    <section className="py-4 sm:py-5">
+      <div className="container">
         {/* رأس القسم */}
-        <div className="flex items-center justify-between gap-3 px-1">
-          <h2 className="inline-flex items-center gap-2 text-lg font-black text-slate-900 dark:text-white sm:text-xl">
+        <div className="mb-3 flex items-center justify-between gap-3 px-1">
+          <h2 className="inline-flex items-center gap-2 text-base font-black text-slate-900 dark:text-white sm:text-lg">
             <BadgeCheck
-              size={20}
+              size={18}
               className="text-brand-700 dark:text-brand-300"
             />
             معارض السيارات الموثقة
           </h2>
           <Link
             href="/traders"
-            className="inline-flex items-center gap-1 text-xs font-black text-brand-700 transition hover:text-brand-600 dark:text-brand-300 dark:hover:text-brand-200"
+            className="inline-flex items-center gap-0.5 text-xs font-black text-brand-700 transition hover:text-brand-600 dark:text-brand-300 dark:hover:text-brand-200"
           >
             عرض الكل
             <ChevronLeft size={14} />
           </Link>
         </div>
+      </div>
 
-        {/* الشريط الأفقي */}
-        <div
-          className="
-            -mx-2 mt-3 flex gap-3 overflow-x-auto px-2 pb-2
-            scrollbar-hide [&::-webkit-scrollbar]:hidden
-          "
-          style={{ scrollbarWidth: "none" }}
-        >
-          {dealers.map((dealer) => (
-            <DealerCard key={dealer.uid} dealer={dealer} />
-          ))}
-        </div>
+      {/*
+        الشريط الأفقي - يخرج من الـcontainer ليصل إلى حواف الشاشة
+        مع padding يضمن ظهور أول وآخر بطاقة بالكامل.
+      */}
+      <div
+        className="
+          flex gap-3 overflow-x-auto px-4 pb-2
+          scrollbar-hide [&::-webkit-scrollbar]:hidden
+          sm:px-6
+        "
+        style={{ scrollbarWidth: "none" }}
+      >
+        {dealers.map((dealer) => (
+          <DealerCard key={dealer.uid} dealer={dealer} />
+        ))}
+        {showCta && <VerifyYourDealerCta />}
       </div>
     </section>
+  );
+}
+
+/* ============================================================
+ * VerifyYourDealerCta - بطاقة دعوة لتوثيق معرض
+ * تظهر عندما يكون عدد المعارض الموثقة قليلاً.
+ * ============================================================ */
+function VerifyYourDealerCta() {
+  return (
+    <Link
+      href="/contact"
+      className="
+        group flex w-[120px] shrink-0 flex-col items-center gap-1.5
+        rounded-2xl border-2 border-dashed border-brand-300 bg-brand-50/40
+        p-1.5 transition active:scale-[0.97] hover:bg-brand-50
+        dark:border-brand-700 dark:bg-brand-900/20
+        dark:hover:bg-brand-900/40
+        sm:w-[130px]
+      "
+    >
+      <div
+        className="
+          flex h-[78px] w-[78px] items-center justify-center
+          rounded-full bg-action-500 text-white shadow-action transition
+          group-hover:bg-action-600 sm:h-[84px] sm:w-[84px]
+        "
+      >
+        <Plus size={28} strokeWidth={2.5} />
+      </div>
+      <p className="line-clamp-1 w-full text-center text-[12px] font-black text-brand-700 dark:text-brand-300 sm:text-[13px]">
+        وثّق معرضك
+      </p>
+      <p className="line-clamp-1 w-full text-center text-[10px] text-slate-500 dark:text-slate-400">
+        تواصل معنا
+      </p>
+    </Link>
   );
 }
 

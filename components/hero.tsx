@@ -35,12 +35,12 @@ export function Hero() {
   };
 
   return (
-    <section className="container pt-4 sm:pt-6">
+    <section className="container pt-3 sm:pt-6">
       <div
         className="
           relative overflow-hidden rounded-[2rem]
           bg-gradient-to-br from-[#071133] via-[#0a1d55] to-[#1c389c]
-          px-5 py-7 text-white shadow-blue
+          px-5 py-5 text-white shadow-blue
           sm:px-8 sm:py-10 lg:px-10 lg:py-12
         "
       >
@@ -75,7 +75,7 @@ export function Hero() {
           <form
             onSubmit={handleSearch}
             className="
-              mt-5 flex items-stretch gap-2
+              mt-3 flex items-stretch gap-2
               rounded-2xl border border-white/15 bg-white/95 p-1.5
               shadow-2xl backdrop-blur
               sm:mt-6 sm:rounded-[20px]
@@ -149,7 +149,7 @@ export function Hero() {
           </div>
 
           {/* CTA ثانوي */}
-          <div className="mt-5 flex flex-wrap items-center gap-2 sm:mt-6">
+          <div className="mt-3 flex flex-wrap items-center gap-2 sm:mt-6">
             <Link
               href="/add-listing"
               className="

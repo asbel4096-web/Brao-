@@ -40,9 +40,9 @@ export function BrowseByBrand() {
 
       <div
         className="
-          flex gap-2.5 overflow-x-auto px-4 pb-1
+          flex gap-2 overflow-x-auto px-4 pb-1
           scrollbar-hide [&::-webkit-scrollbar]:hidden
-          sm:gap-3 sm:px-6
+          sm:gap-2.5 sm:px-6
         "
         style={{ scrollbarWidth: "none" }}
       >
@@ -51,13 +51,13 @@ export function BrowseByBrand() {
             key={brand.id}
             href={`/listings?brand=${brand.id}`}
             className="
-              group flex w-[82px] shrink-0 flex-col items-center gap-1.5
-              rounded-2xl border border-slate-200/70 bg-white p-2.5
+              group flex w-[76px] shrink-0 flex-col items-center gap-1.5
+              rounded-2xl border border-slate-200/70 bg-white p-2
               transition hover:border-brand-300 hover:shadow-card
               active:scale-[0.97]
               dark:border-slate-700/70 dark:bg-slate-900
               dark:hover:border-brand-600
-              sm:w-[92px] sm:p-3
+              sm:w-[88px] sm:p-3
             "
           >
             <BrandLogo

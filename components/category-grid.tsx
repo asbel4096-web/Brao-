@@ -40,14 +40,15 @@ export function CategoryGrid() {
       </div>
 
       {/*
-        الشريط الأفقي - نخرج من الـcontainer قليلاً كي تتمدّد الحواف
-        إلى نهاية الشاشة على الهاتف (تجربة سحب طبيعية).
+        الشريط الأفقي - يخرج من الـcontainer ليصل إلى حواف الشاشة.
+        padding كبير على الحواف يضمن ظهور أول وآخر بطاقة بالكامل
+        عند بداية ونهاية السحب، ويعطي إحساس "peek" طبيعي بأن هناك المزيد.
       */}
       <div
         className="
-          flex gap-2.5 overflow-x-auto px-4 pb-1
+          flex gap-2 overflow-x-auto px-4 pb-1
           scrollbar-hide [&::-webkit-scrollbar]:hidden
-          sm:gap-3 sm:px-6
+          sm:gap-2.5 sm:px-6
         "
         style={{ scrollbarWidth: "none" }}
       >
@@ -58,14 +59,14 @@ export function CategoryGrid() {
               key={c.slug}
               href={`/listings?category=${c.slug}`}
               className="
-                group flex w-[82px] shrink-0 flex-col items-center
+                group flex w-[76px] shrink-0 flex-col items-center
                 justify-center gap-1.5 rounded-2xl border border-slate-200/70
-                bg-white p-2.5 text-center transition
+                bg-white p-2 text-center transition
                 hover:border-brand-300 hover:bg-brand-50/40 hover:shadow-card
                 active:scale-[0.97]
                 dark:border-slate-700/70 dark:bg-slate-900
                 dark:hover:border-brand-700 dark:hover:bg-brand-950/30
-                sm:w-[92px] sm:p-3
+                sm:w-[88px] sm:p-3
               "
             >
               <div
