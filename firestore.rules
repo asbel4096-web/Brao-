@@ -348,6 +348,14 @@ service cloud.firestore {
       allow delete: if signedIn() && resource.data.userId == request.auth.uid;
     }
 
+    // شعارات الماركات - public read، فقط الأدمن يكتب/يحذف.
+    // وثيقة واحدة لكل brand id (مثل brandLogos/toyota).
+    // البنية: { brandId: string, logoUrl: string, updatedAt }
+    match /brandLogos/{brandId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

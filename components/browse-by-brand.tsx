@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { CAR_BRANDS, searchBrands } from "@/lib/car-brands";
 import { BrandLogo } from "@/components/brand-logo";
+import { useBrandLogos } from "@/hooks/useBrandLogos";
 
 /**
  * قسم "تصفح حسب الماركة" — يظهر في الصفحة الرئيسية.
@@ -13,9 +14,11 @@ import { BrandLogo } from "@/components/brand-logo";
  * - شريط بحث يدعم العربي والإنجليزي والمرادفات.
  * - شبكة بطاقات: شعار فوق + اسم عربي تحت.
  * - النقر على بطاقة يفتح /listings?brand={id} لتصفية الإعلانات.
+ * - الشعارات تُقرأ من Firestore (brandLogos) ويديرها الأدمن من /admin/brands.
  */
 export function BrowseByBrand() {
   const [query, setQuery] = useState("");
+  const logos = useBrandLogos();
 
   const filtered = useMemo(() => {
     return query.trim() ? searchBrands(query) : CAR_BRANDS;
@@ -70,7 +73,7 @@ export function BrowseByBrand() {
                   dark:hover:border-brand-600
                 "
               >
-                <BrandLogo brand={brand} size={56} />
+                <BrandLogo brand={brand} size={56} overrideUrl={logos[brand.id]} />
                 <span className="line-clamp-1 w-full text-center text-[12px] font-black text-slate-900 dark:text-white">
                   {brand.nameAr}
                 </span>

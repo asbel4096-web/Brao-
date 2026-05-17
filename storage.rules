@@ -65,6 +65,15 @@ service firebase.storage {
         );
     }
 
+    // شعارات الماركات - الكل يقرأ (لتظهر في الصفحة الرئيسية للضيوف).
+    // الرفع متاح لأي مستخدم مسجَّل تقنياً، لكن Firestore تمنع غير الأدمن
+    // من ربط الرابط بـbrandLogos/{brandId} - وبالتالي الشعار لن يظهر.
+    // النتيجة: ملفات يتيمة محتملة لو حاول مستخدم غير أدمن، نُنظّفها يدوياً.
+    match /brand-logos/{file} {
+      allow read: if true;
+      allow write: if signedIn() && imageUnder(2 * 1024 * 1024);
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }

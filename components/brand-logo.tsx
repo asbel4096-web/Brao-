@@ -9,21 +9,28 @@ interface Props {
   size?: number;
   /** كلاسات إضافية على الإطار الخارجي. */
   className?: string;
+  /**
+   * رابط الشعار من Firestore (collection brandLogos) - له الأولوية على
+   * brand.logoUrl الثابت في القائمة. يُمرَّر من المكوّن الأعلى الذي
+   * يستخدم useBrandLogos().
+   */
+  overrideUrl?: string;
 }
 
 /**
  * مكوّن شعار الماركة الموحَّد.
  *
- * - إذا وُجد `logoUrl` يعرض الصورة على خلفية بيضاء داخل إطار بحدود ناعمة.
- *   هذا يطابق نمط لقطة المرجع (شعارات داكنة على خلفية فاتحة).
- * - إذا غاب الـlogoUrl أو فشل تحميل الصورة، يعرض fallback أنيق:
- *   * خلفية متدرّجة بهوية براتشو (brand-700 → brand-500).
- *   * أول حرف من الاسم الإنجليزي بخط أبيض ثقيل.
- *   * لا "صورة مكسورة" أبداً.
+ * أولوية مصدر الصورة:
+ * 1) overrideUrl (من Firestore، يديره الأدمن من /admin/brands).
+ * 2) brand.logoUrl (ثابت في lib/car-brands.ts).
+ * 3) Fallback: دائرة بهوية براتشو + الحرف الأول.
+ *
+ * onError يقفز للـfallback إذا فشل تحميل الصورة.
  */
-export function BrandLogo({ brand, size = 64, className = "" }: Props) {
+export function BrandLogo({ brand, size = 64, className = "", overrideUrl }: Props) {
   const [failed, setFailed] = useState(false);
-  const showImage = !!brand.logoUrl && !failed;
+  const src = overrideUrl || brand.logoUrl;
+  const showImage = !!src && !failed;
   const initial = brand.nameEn.charAt(0).toUpperCase();
 
   return (
@@ -40,7 +47,7 @@ export function BrandLogo({ brand, size = 64, className = "" }: Props) {
       {showImage ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={brand.logoUrl}
+          src={src}
           alt={brand.nameEn}
           loading="lazy"
           referrerPolicy="no-referrer"
