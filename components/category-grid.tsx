@@ -10,42 +10,46 @@ function getIcon(name: string) {
 }
 
 /**
- * شبكة الأقسام موحَّدة:
+ * تصفّح حسب القسم - شريط أفقي قابل للسحب.
  *
- * - 2 أعمدة على الجوال، 4 على الديسكتوب.
- * - بطاقات نظيفة بأيقونة كبيرة + اسم.
- * - hover يلوّن brand بشكل خفيف.
- * - نفس التجربة على كل الأجهزة (إزالة chips/cards الازدواجية).
+ * - بطاقة عمودية مدمجة: أيقونة + اسم.
+ * - عرض كل بطاقة ثابت (~88px على الهاتف) للسحب الناعم.
+ * - السكروول مخفي بصرياً لتجنّب ظهور scrollbar.
+ * - مسافات أصغر من النسخة السابقة (py-4 بدل py-7) لتقليل طول الصفحة.
  */
-
 export function CategoryGrid() {
   return (
-    <section className="container py-7 sm:py-10">
-      <div className="flex items-end justify-between gap-3">
-        <div>
-          <h2 className="section-title">تصفّح حسب القسم</h2>
-          <p className="section-subtitle">
-            اختر القسم المناسب وابدأ التصفّح فوراً.
-          </p>
+    <section className="py-4 sm:py-5">
+      <div className="container">
+        {/* رأس القسم */}
+        <div className="mb-3 flex items-center justify-between gap-3 px-1">
+          <h2 className="text-base font-black text-slate-900 dark:text-white sm:text-lg">
+            تصفّح حسب القسم
+          </h2>
+          <Link
+            href="/categories"
+            className="
+              inline-flex items-center gap-0.5 text-xs font-black
+              text-brand-700 transition hover:text-brand-800
+              dark:text-brand-300 dark:hover:text-brand-200
+            "
+          >
+            عرض الكل ←
+          </Link>
         </div>
-        <Link
-          href="/categories"
-          className="
-            inline-flex items-center gap-1 text-sm font-bold
-            text-brand-700 hover:text-brand-800
-            dark:text-brand-300 dark:hover:text-brand-200
-          "
-        >
-          عرض الكل ←
-        </Link>
       </div>
 
+      {/*
+        الشريط الأفقي - نخرج من الـcontainer قليلاً كي تتمدّد الحواف
+        إلى نهاية الشاشة على الهاتف (تجربة سحب طبيعية).
+      */}
       <div
         className="
-          mt-5 grid grid-cols-3 gap-2.5
-          sm:mt-6 sm:grid-cols-4 sm:gap-3
-          lg:grid-cols-8
+          flex gap-2.5 overflow-x-auto px-4 pb-1
+          scrollbar-hide [&::-webkit-scrollbar]:hidden
+          sm:gap-3 sm:px-6
         "
+        style={{ scrollbarWidth: "none" }}
       >
         {categories.map((c) => {
           const Icon = getIcon(c.icon);
@@ -54,34 +58,32 @@ export function CategoryGrid() {
               key={c.slug}
               href={`/listings?category=${c.slug}`}
               className="
-                group flex flex-col items-center justify-center gap-2
-                rounded-2xl border border-slate-200/70 bg-white
-                p-3 text-center transition-all
-                hover:-translate-y-0.5 hover:border-brand-300
-                hover:bg-brand-50/40 hover:shadow-card
+                group flex w-[82px] shrink-0 flex-col items-center
+                justify-center gap-1.5 rounded-2xl border border-slate-200/70
+                bg-white p-2.5 text-center transition
+                hover:border-brand-300 hover:bg-brand-50/40 hover:shadow-card
                 active:scale-[0.97]
                 dark:border-slate-700/70 dark:bg-slate-900
                 dark:hover:border-brand-700 dark:hover:bg-brand-950/30
-                sm:p-4
+                sm:w-[92px] sm:p-3
               "
             >
               <div
                 className="
-                  flex h-11 w-11 shrink-0 items-center justify-center
-                  rounded-2xl bg-brand-50 text-brand-700
-                  transition-colors
+                  flex h-10 w-10 shrink-0 items-center justify-center
+                  rounded-xl bg-brand-50 text-brand-700 transition-colors
                   group-hover:bg-brand-100
                   dark:bg-brand-900/40 dark:text-brand-300
                   dark:group-hover:bg-brand-900/60
-                  sm:h-12 sm:w-12
+                  sm:h-11 sm:w-11
                 "
               >
-                <Icon size={20} aria-hidden="true" />
+                <Icon size={18} aria-hidden="true" />
               </div>
               <span
                 className="
-                  line-clamp-1 text-[11px] font-bold text-slate-800
-                  dark:text-slate-100 sm:text-xs
+                  line-clamp-2 w-full text-[11px] font-bold leading-tight
+                  text-slate-800 dark:text-slate-100 sm:text-[12px]
                 "
               >
                 {c.name}
