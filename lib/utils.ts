@@ -99,6 +99,13 @@ export function inferListingEntityType(listing?: Partial<Listing> | null): Listi
   return serviceKeywords.some((keyword) => source.includes(keyword)) ? "service" : "listing";
 }
 
-export function getTraderDisplayName(profile?: { businessName?: string; name?: string } | null): string {
-  return profile?.businessName?.trim() || profile?.name?.trim() || "تاجر براتشو كار";
+export function getTraderDisplayName(
+  profile?: { dealerName?: string; businessName?: string; name?: string } | null
+): string {
+  return (
+    profile?.dealerName?.trim() ||
+    profile?.businessName?.trim() ||
+    profile?.name?.trim() ||
+    "تاجر براتشو كار"
+  );
 }

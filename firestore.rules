@@ -86,7 +86,7 @@ service cloud.firestore {
 
       allow update: if (
           isMe(userId)
-          && unchanged(['uid', 'isAdmin', 'createdAt'])
+          && unchanged(['uid', 'isAdmin', 'createdAt', 'isVerifiedDealer', 'verifiedAt'])
           && request.resource.data.keys().hasOnly([
             'uid',
             'name',
@@ -95,6 +95,10 @@ service cloud.firestore {
             'photoURL',
             'coverURL',
             'businessName',
+            'dealerName',
+            'dealerLogo',
+            'isVerifiedDealer',
+            'verifiedAt',
             'city',
             'bio',
             'whatsapp',
@@ -115,6 +119,12 @@ service cloud.firestore {
             'lastSeenAt',
             'role'
           ])
+        )
+        || (
+          // الأدمن يستطيع تعديل أي حقل في ملف أي مستخدم — بما في ذلك
+          // حقول التوثيق (isVerifiedDealer, verifiedAt). هذا الفرع
+          // الوحيد الذي يسمح بتغيير حالة التوثيق.
+          isAdmin()
         )
         || (
           // A different signed-in user may ONLY nudge the follow counters

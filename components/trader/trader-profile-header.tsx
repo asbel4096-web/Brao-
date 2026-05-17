@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import Image from "next/image";
-import { MapPin, Phone, MessageCircle, Star, UserPlus, UserCheck, Clock3, FileText, BriefcaseBusiness } from "lucide-react";
+import { MapPin, Phone, MessageCircle, Star, UserPlus, UserCheck, Clock3, FileText, BriefcaseBusiness, BadgeCheck } from "lucide-react";
 import { getTraderDisplayName, normalizeLibyanPhone, formatNumber } from "@/lib/utils";
 import { onlineStatusText, onlineShortLabel, isProfileOnline } from "@/lib/online";
 import type { UserProfile } from "@/lib/types";
@@ -69,12 +69,27 @@ export function TraderProfileHeader({
         <div className="-mt-12 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
             <div className="relative h-24 w-24 overflow-hidden rounded-[28px] border-4 border-white bg-white shadow-xl dark:border-slate-900 dark:bg-slate-900">
-              {profile.photoURL ? (
-                <Image src={profile.photoURL} alt={displayName} fill className="object-cover" sizes="96px" />
+              {(profile.dealerLogo || profile.photoURL) ? (
+                <Image
+                  src={(profile.dealerLogo || profile.photoURL) as string}
+                  alt={displayName}
+                  fill
+                  className="object-cover"
+                  sizes="96px"
+                />
               ) : (
                 <div className="flex h-full w-full items-center justify-center bg-brand-700 text-3xl font-black text-white">
                   {displayName.charAt(0)}
                 </div>
+              )}
+              {/* علامة التوثيق على ركن الصورة - تظهر فقط للمعارض الموثقة */}
+              {profile.isVerifiedDealer && (
+                <span
+                  aria-label="معرض موثق"
+                  className="absolute -bottom-1 -left-1 inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-brand-700 text-white shadow-md dark:border-slate-900"
+                >
+                  <BadgeCheck size={15} strokeWidth={2.5} />
+                </span>
               )}
             </div>
 
@@ -83,6 +98,15 @@ export function TraderProfileHeader({
                 <h1 className="text-2xl font-black text-slate-950 dark:text-white sm:text-3xl">
                   {displayName}
                 </h1>
+                {profile.isVerifiedDealer && (
+                  <span
+                    className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-3 py-1 text-xs font-black text-brand-700 dark:bg-brand-900/30 dark:text-brand-300"
+                    aria-label="معرض موثق"
+                  >
+                    <BadgeCheck size={13} strokeWidth={2.5} />
+                    موثَّق
+                  </span>
+                )}
                 <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-black ${online ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}>
                   <Clock3 size={12} />
                   {statusText}

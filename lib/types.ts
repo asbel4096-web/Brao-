@@ -54,6 +54,18 @@ export interface UserProfile {
   /** صورة غلاف اختيارية يرفعها المستخدم لصفحته الشخصية. */
   coverURL?: string;
   businessName?: string;
+  /**
+   * توثيق المعرض - يُضبط من قبل الأدمن فقط. عندما يكون true يظهر
+   * المستخدم في قسم "معارض السيارات الموثقة" ومع شارة توثيق على
+   * صفحته. لا يستطيع المستخدم تفعيله بنفسه (قاعدة Firestore تمنع).
+   */
+  isVerifiedDealer?: boolean;
+  /** اسم المعرض الرسمي للمعارض الموثقة (يُعرض بدل الاسم الشخصي). */
+  dealerName?: string;
+  /** شعار المعرض - يُعرض بدل صورة الحساب في قائمة المعارض الموثقة. */
+  dealerLogo?: string;
+  /** وقت التوثيق - يضبطه الأدمن. */
+  verifiedAt?: Timestamp | null;
   isOnline?: boolean;
   lastSeenAt?: Timestamp | null;
   followersCount?: number;

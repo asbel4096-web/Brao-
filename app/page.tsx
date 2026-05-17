@@ -4,6 +4,7 @@ import { Hero } from "@/components/hero";
 import { ListingsGrid } from "@/components/listings-grid";
 import { SiteFooter } from "@/components/site-footer";
 import { StoriesRow } from "@/components/stories/stories-row";
+import { VerifiedDealersRow } from "@/components/verified-dealers-row";
 
 export default function HomePage() {
   return (
@@ -11,6 +12,7 @@ export default function HomePage() {
       <StoriesRow />
       <Hero />
       <CategoryGrid />
+      <VerifiedDealersRow />
       <ListingsGrid />
       <CTASection />
       <SiteFooter />
