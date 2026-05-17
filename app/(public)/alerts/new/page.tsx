@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import {
   addDoc,
   collection,
@@ -55,6 +55,24 @@ const initial: FormState = {
 };
 
 export default function AlertFormPage() {
+  // useSearchParams يتطلّب Suspense boundary في Next.js 14 App Router
+  // وإلا يفشل static prerendering. هذا التغليف هو الحل القياسي الموثَّق.
+  return (
+    <Suspense
+      fallback={
+        <section className="container py-10">
+          <div className="card mx-auto max-w-md p-8 text-center text-slate-500">
+            جارٍ التحميل...
+          </div>
+        </section>
+      }
+    >
+      <AlertFormInner />
+    </Suspense>
+  );
+}
+
+function AlertFormInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get("id");
