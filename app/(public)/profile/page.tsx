@@ -15,6 +15,7 @@ import {
 } from "firebase/firestore";
 import { getDownloadURL, ref as storageRef, uploadBytes } from "firebase/storage";
 import {
+  BadgeCheck,
   Bell,
   Bookmark,
   Camera,
@@ -649,6 +650,48 @@ export default function ProfilePage() {
             <ChevronLeft
               size={18}
               className="shrink-0 text-action-700 dark:text-action-300"
+              aria-hidden="true"
+            />
+          </Link>
+        )}
+
+        {/* ============================================================
+            بطاقة توثيق المعرض - تظهر للمستخدم غير الموثَّق فقط.
+            من وثّق معرضه لا يرى الدعوة (لا فائدة منها).
+           ============================================================ */}
+        {!profile?.isVerifiedDealer && (
+          <Link
+            href="/dealer-verification"
+            className="
+              group relative flex items-center gap-3 overflow-hidden
+              rounded-3xl border border-brand-200/70 bg-gradient-to-l
+              from-brand-50 via-brand-50/60 to-white p-3.5
+              transition active:scale-[0.99] hover:border-brand-300
+              dark:border-brand-800/40 dark:from-brand-900/30
+              dark:via-brand-900/10 dark:to-slate-900
+              dark:hover:border-brand-700
+            "
+          >
+            <div
+              className="
+                flex h-11 w-11 shrink-0 items-center justify-center
+                rounded-2xl bg-brand-700 text-white shadow-blue
+                transition group-hover:bg-brand-600
+              "
+            >
+              <BadgeCheck size={22} strokeWidth={2.5} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-black text-slate-950 dark:text-white">
+                وثّق معرضك
+              </div>
+              <div className="text-[11px] leading-5 text-slate-600 dark:text-slate-300">
+                ارفع ثقة العملاء واظهر ضمن معارض السيارات الموثقة.
+              </div>
+            </div>
+            <ChevronLeft
+              size={18}
+              className="shrink-0 text-brand-700 dark:text-brand-300"
               aria-hidden="true"
             />
           </Link>
