@@ -96,6 +96,26 @@ export interface UserProfile {
   lastLoginAt?: Timestamp | null;
   isAdmin?: boolean;
   role?: "admin" | "user" | "moderator";
+  /**
+   * هل أكمل المستخدم الـonboarding (شاشة /profile/complete)؟
+   * يُضبط مرة واحدة عند الضغط على "حفظ وإكمال" ولا يُلمس بعد ذلك.
+   * يمنع تكرار ظهور صفحة الإكمال عند كل تسجيل دخول.
+   */
+  profileCompleted?: boolean;
+  /**
+   * تعطيل ناعم (soft delete) - يضبطه الأدمن لحسابات الاحتيال أو الانتحال.
+   * عند true:
+   *  - المستخدم لا يستطيع تسجيل الدخول (AuthContext يخرجه تلقائياً).
+   *  - قواعد Firestore تمنع كتابة جديدة منه.
+   *  - قابل للإرجاع بسهولة من نفس صفحة الأدمن.
+   */
+  disabled?: boolean;
+  /** سبب التعطيل - يُسجَّل للمراجعة. */
+  disabledReason?: string;
+  /** وقت التعطيل. */
+  disabledAt?: Timestamp | null;
+  /** uid الأدمن الذي عطّل الحساب - للمحاسبة. */
+  disabledBy?: string;
 }
 
 export interface TraderReview {

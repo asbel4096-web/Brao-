@@ -86,7 +86,11 @@ service cloud.firestore {
 
       allow update: if (
           isMe(userId)
-          && unchanged(['uid', 'isAdmin', 'createdAt', 'isVerifiedDealer', 'verifiedAt'])
+          && unchanged([
+            'uid', 'isAdmin', 'createdAt',
+            'isVerifiedDealer', 'verifiedAt',
+            'disabled', 'disabledReason', 'disabledAt', 'disabledBy'
+          ])
           && request.resource.data.keys().hasOnly([
             'uid',
             'name',
@@ -103,6 +107,10 @@ service cloud.firestore {
             'locationUrl',
             'isVerifiedDealer',
             'verifiedAt',
+            'disabled',
+            'disabledReason',
+            'disabledAt',
+            'disabledBy',
             'city',
             'bio',
             'whatsapp',
@@ -121,7 +129,8 @@ service cloud.firestore {
             'servicesCount',
             'isOnline',
             'lastSeenAt',
-            'role'
+            'role',
+            'profileCompleted'
           ])
         )
         || (

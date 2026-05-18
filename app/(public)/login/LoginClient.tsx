@@ -61,7 +61,12 @@ export default function LoginClient() {
   useEffect(() => {
     if (loading || !user) return;
 
-    const isProfileComplete = Boolean(profile?.name?.trim());
+    // مصدر الحقيقة: العلامة الصريحة profileCompleted.
+    // fallback للحسابات القديمة قبل إضافة الـflag: لو اسم موجود اعتبره
+    // مكتملاً (يحفظ تجربة المستخدمين الحاليين بدون إجبارهم على إعادة الـonboarding).
+    const isProfileComplete =
+      profile?.profileCompleted === true ||
+      (profile?.profileCompleted === undefined && Boolean(profile?.name?.trim()));
 
     if (!isProfileComplete) {
       router.replace(

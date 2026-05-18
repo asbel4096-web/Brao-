@@ -75,13 +75,24 @@ function CompleteProfilePageInner() {
       return;
     }
 
+    // لو المستخدم أكمل الـonboarding سابقاً، لا تعرض الصفحة - وجّهه
+    // مباشرة. fallback للحسابات القديمة (قبل إضافة الـflag): اعتبر
+    // وجود name كافياً للاكتمال حتى لا نعطّل أحداً.
+    if (
+      profile?.profileCompleted === true ||
+      (profile?.profileCompleted === undefined && profile?.name?.trim())
+    ) {
+      router.replace(redirectTo);
+      return;
+    }
+
     // pre-fill من profile
     setName(profile?.name || user.displayName || "");
     setEmail(profile?.email || user.email || "");
     setPhone(profile?.phone || user.phoneNumber || "");
     setBio(profile?.bio || "");
     setPhotoURL(profile?.photoURL || user.photoURL || "");
-  }, [user, profile, authLoading, router]);
+  }, [user, profile, authLoading, router, redirectTo]);
 
   /* ----------------------------------------------------------
    * Image preview
@@ -164,6 +175,10 @@ function CompleteProfilePageInner() {
           phone: phone.trim() || user.phoneNumber || "",
           bio: bio.trim(),
           photoURL: finalPhotoURL,
+          // العلامة الصريحة: المستخدم أكمل الـonboarding. هذا يمنع تكرار
+          // ظهور هذه الصفحة عند تسجيل الدخول لاحقاً، حتى لو كان أحد
+          // الحقول فارغاً (مثل الإيميل لمستخدمي تسجيل الدخول بالهاتف).
+          profileCompleted: true,
           updatedAt: serverTimestamp(),
         },
         { merge: true }
