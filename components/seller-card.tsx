@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, MapPin, ShieldCheck, Star, Store, Users } from "lucide-react";
 import type { UserProfile } from "@/lib/types";
 import { getTraderDisplayName } from "@/lib/utils";
@@ -42,10 +43,11 @@ export function SellerCard({ ownerId, seller, fallbackName }: Props) {
         {/* الجزء العلوي: صورة + اسم + شارة + chevron */}
         <div className="flex items-center gap-3 p-4 sm:p-5">
           {seller?.photoURL ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={seller.photoURL}
               alt={name}
+              width={56}
+              height={56}
               referrerPolicy="no-referrer"
               className="h-14 w-14 shrink-0 rounded-2xl object-cover ring-2 ring-brand-100 dark:ring-brand-900/40"
             />

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Edit2, Trash2, Eye, Calendar, MapPin, AlertCircle, CheckCircle2, Clock } from "lucide-react";
 import type { Listing } from "@/lib/types";
 import { formatPrice, timeAgo } from "@/lib/utils";
@@ -57,15 +58,16 @@ export function MyListingCard({ listing, onDelete }: MyListingCardProps) {
     >
       {/* الصورة */}
       <div className="relative aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-800">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={img}
           alt={listing.title}
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           loading="lazy"
           className={
             isFallback
-              ? "h-full w-full object-contain p-10 opacity-50"
-              : "h-full w-full object-cover transition duration-500 group-hover:scale-105"
+              ? "object-contain p-10 opacity-50"
+              : "object-cover transition duration-500 group-hover:scale-105"
           }
         />
 

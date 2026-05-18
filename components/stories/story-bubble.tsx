@@ -1,6 +1,7 @@
 "use client";
 
 import { memo } from "react";
+import Image from "next/image";
 import { Play, Wrench } from "lucide-react";
 import type { StoryDisplayItem } from "@/lib/stories/types";
 
@@ -33,10 +34,11 @@ function StoryBubbleImpl({ stories, seen = false, onClick }: Props) {
         ].join(" ")}
       >
         <div className="relative rounded-full bg-white p-[2px] dark:bg-slate-950">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src={cover}
             alt={owner}
+            width={68}
+            height={68}
             referrerPolicy="no-referrer"
             className="h-16 w-16 rounded-full object-cover sm:h-[68px] sm:w-[68px]"
           />
