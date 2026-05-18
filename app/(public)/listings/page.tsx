@@ -11,8 +11,8 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   collection,
+  getDocs,
   limit,
-  onSnapshot,
   orderBy,
   query,
   where,
@@ -86,26 +86,68 @@ function ListingsContent() {
     setBrand(brand0);
   }, [q0, cat0, city0, sort0, min0, max0, brand0]);
 
-  // جلب الإعلانات (snapshot واحد للجلسة)
+  // جلب الإعلانات - getDocs مرة واحدة + cache في sessionStorage.
+  // الفلترة كلها client-side، فلا داعي لاشتراك realtime مفتوح يستهلك
+  // قراءات Firestore عند كل تحديث في collection ضخمة.
   useEffect(() => {
+    const CACHE_KEY = "bratsho:listings-page:v1";
+    const CACHE_TTL_MS = 2 * 60 * 1000; // دقيقتان
+
+    // 1) cache فوري إن وُجد.
+    try {
+      const raw = sessionStorage.getItem(CACHE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { ts: number; list: Listing[] };
+        if (parsed && Date.now() - parsed.ts < CACHE_TTL_MS) {
+          setListings(parsed.list);
+          setLoading(false);
+          return;
+        }
+        if (Array.isArray(parsed.list)) {
+          setListings(parsed.list);
+          setLoading(false);
+        }
+      }
+    } catch {
+      /* تجاهل */
+    }
+
+    let cancelled = false;
     const qRef = query(
       collection(db, "listings"),
       where("status", "==", "approved"),
       orderBy("createdAt", "desc"),
       limit(MAX_LISTINGS)
     );
-    const unsub = onSnapshot(
-      qRef,
-      (snap) => {
-        setListings(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })));
+
+    void (async () => {
+      try {
+        const snap = await getDocs(qRef);
+        if (cancelled) return;
+        const list: Listing[] = snap.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as any),
+        }));
+        setListings(list);
         setLoading(false);
-      },
-      (err) => {
-        setError(err.message || "تعذّر تحميل الإعلانات.");
+        try {
+          sessionStorage.setItem(
+            CACHE_KEY,
+            JSON.stringify({ ts: Date.now(), list })
+          );
+        } catch {
+          /* تجاهل */
+        }
+      } catch (err: any) {
+        if (cancelled) return;
+        setError(err?.message || "تعذّر تحميل الإعلانات.");
         setLoading(false);
       }
-    );
-    return () => unsub();
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // فلترة محلية

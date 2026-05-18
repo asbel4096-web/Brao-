@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   collection,
+  getDocs,
   limit,
-  onSnapshot,
   orderBy,
   query,
   where,
@@ -30,24 +30,72 @@ export function ListingsGrid() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    /* ============================================================
+     * استبدال onSnapshot بـgetDocs:
+     * - الإعلانات لا تحتاج realtime (تتم الموافقة من الأدمن، فالظهور
+     *   ليس فوري). تحديث كل دقيقتين أكثر من كافٍ.
+     * - cache في sessionStorage يجعل العودة للرئيسية فورية.
+     * - لا اشتراك مفتوح يستهلك بيانات الجوّال.
+     * ============================================================ */
+    const CACHE_KEY = "bratsho:home-listings:v1";
+    const CACHE_TTL_MS = 2 * 60 * 1000; // دقيقتان
+
+    // 1) عرض الـcache فوراً لو موجود (stale-while-revalidate).
+    try {
+      const raw = sessionStorage.getItem(CACHE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { ts: number; list: Listing[] };
+        if (parsed && Date.now() - parsed.ts < CACHE_TTL_MS) {
+          setItems(parsed.list);
+          setLoading(false);
+          return; // cache صالح، لا حاجة لـquery.
+        }
+        // cache منتهي - اعرضه مؤقتاً ثم اجلب جديداً.
+        if (Array.isArray(parsed.list)) {
+          setItems(parsed.list);
+          setLoading(false);
+        }
+      }
+    } catch {
+      /* تجاهل أخطاء parsing */
+    }
+
+    let cancelled = false;
     const q = query(
       collection(db, "listings"),
       where("status", "==", "approved"),
       orderBy("createdAt", "desc"),
       limit(8)
     );
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        setItems(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })));
+
+    void (async () => {
+      try {
+        const snap = await getDocs(q);
+        if (cancelled) return;
+        const list: Listing[] = snap.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as any),
+        }));
+        setItems(list);
         setLoading(false);
-      },
-      (err) => {
-        setError(err.message || "تعذّر تحميل الإعلانات.");
+        try {
+          sessionStorage.setItem(
+            CACHE_KEY,
+            JSON.stringify({ ts: Date.now(), list })
+          );
+        } catch {
+          /* تجاهل */
+        }
+      } catch (err: any) {
+        if (cancelled) return;
+        setError(err?.message || "تعذّر تحميل الإعلانات.");
         setLoading(false);
       }
-    );
-    return () => unsub();
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
