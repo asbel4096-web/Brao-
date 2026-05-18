@@ -40,7 +40,7 @@ export function Hero() {
         className="
           relative overflow-hidden rounded-[2rem]
           bg-gradient-to-br from-[#071133] via-[#0a1d55] to-[#1c389c]
-          px-5 py-5 text-white shadow-blue
+          px-5 py-4 text-white shadow-blue
           sm:px-8 sm:py-10 lg:px-10 lg:py-12
         "
       >
@@ -61,12 +61,12 @@ export function Hero() {
           </span>
 
           {/* العنوان */}
-          <h1 className="mt-3 text-2xl font-black leading-tight sm:text-4xl lg:text-5xl">
+          <h1 className="mt-2 text-xl font-black leading-tight sm:mt-3 sm:text-4xl lg:text-5xl">
             سوق السيارات الاحترافي
             <span className="block text-white/85 sm:mt-1">في ليبيا</span>
           </h1>
 
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-white/80 sm:mt-4 sm:text-base sm:leading-8">
+          <p className="mt-2 max-w-2xl text-xs leading-6 text-white/80 sm:mt-4 sm:text-base sm:leading-8">
             ابحث، تصفّح، وتواصل مباشرة مع التجّار والورش — أسرع طريقة لشراء أو
             بيع سيارة في ليبيا.
           </p>

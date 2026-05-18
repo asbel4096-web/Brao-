@@ -9,19 +9,63 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import { BadgeCheck, ChevronLeft, MapPin, Plus, Star } from "lucide-react";
+import { BadgeCheck, ChevronLeft, MapPin, Star } from "lucide-react";
 import { db } from "@/lib/firebase";
 import type { UserProfile } from "@/lib/types";
 import { getTraderDisplayName, formatNumber } from "@/lib/utils";
 
 /** نحصر العدد كي لا يثقل الصفحة الرئيسية. */
 const MAX_DEALERS = 12;
+/* ============================================================
+ * cache بسيط في sessionStorage - يتفادى استعلام Firestore
+ * عند كل ركوب للصفحة الرئيسية ضمن نفس الجلسة. الـTTL القصير
+ * (5 دقائق) يضمن أن الإضافات الجديدة تظهر سريعاً.
+ * ============================================================ */
+const CACHE_KEY = "bratsho:verified-dealers:v1";
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+function readCache(): UserProfile[] | null {
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { ts: number; list: UserProfile[] };
+    if (!parsed || typeof parsed !== "object") return null;
+    if (Date.now() - parsed.ts > CACHE_TTL_MS) return null;
+    return Array.isArray(parsed.list) ? parsed.list : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(list: UserProfile[]) {
+  try {
+    sessionStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({ ts: Date.now(), list })
+    );
+  } catch {
+    /* تجاهل */
+  }
+}
 
 export function VerifiedDealersRow() {
-  const [dealers, setDealers] = useState<UserProfile[]>([]);
-  const [loading, setLoading] = useState(true);
+  // البدء بالـcache إن وُجد - يتفادى flicker للحالة الفارغة.
+  const [dealers, setDealers] = useState<UserProfile[]>(() => {
+    if (typeof window === "undefined") return [];
+    return readCache() || [];
+  });
+  const [loading, setLoading] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return readCache() === null;
+  });
 
   useEffect(() => {
+    // لو الـcache صالح، تخطّى الـquery.
+    if (readCache() !== null) {
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
 
     const fetchDealers = async () => {
@@ -52,6 +96,7 @@ export function VerifiedDealersRow() {
         });
 
         setDealers(list);
+        writeCache(list);
       } catch (err) {
         // إخفاء صامت - وجود قسم فارغ أفضل من رسالة خطأ مزعجة في الواجهة.
         // eslint-disable-next-line no-console
@@ -69,11 +114,6 @@ export function VerifiedDealersRow() {
 
   // إخفاء القسم كلياً عند التحميل أو عدم وجود معارض.
   if (loading || dealers.length === 0) return null;
-
-  // عندما يكون عدد المعارض قليلاً (1-3)، نُضيف بطاقة CTA "وثّق معرضك"
-  // كي لا يظهر الصف فارغاً وتُستغلّ المساحة بطريقة مفيدة (دعوة لمزيد
-  // من المعارض للانضمام بدلاً من ترك فجوة بصرية كبيرة).
-  const showCta = dealers.length <= 3;
 
   return (
     <section className="py-4 sm:py-5">
@@ -112,45 +152,8 @@ export function VerifiedDealersRow() {
         {dealers.map((dealer) => (
           <DealerCard key={dealer.uid} dealer={dealer} />
         ))}
-        {showCta && <VerifyYourDealerCta />}
       </div>
     </section>
-  );
-}
-
-/* ============================================================
- * VerifyYourDealerCta - بطاقة دعوة لتوثيق معرض
- * تظهر عندما يكون عدد المعارض الموثقة قليلاً.
- * ============================================================ */
-function VerifyYourDealerCta() {
-  return (
-    <Link
-      href="/dealer-verification"
-      className="
-        group flex w-[120px] shrink-0 flex-col items-center gap-1.5
-        rounded-2xl border-2 border-dashed border-brand-300 bg-brand-50/40
-        p-1.5 transition active:scale-[0.97] hover:bg-brand-50
-        dark:border-brand-700 dark:bg-brand-900/20
-        dark:hover:bg-brand-900/40
-        sm:w-[130px]
-      "
-    >
-      <div
-        className="
-          flex h-[78px] w-[78px] items-center justify-center
-          rounded-full bg-action-500 text-white shadow-action transition
-          group-hover:bg-action-600 sm:h-[84px] sm:w-[84px]
-        "
-      >
-        <Plus size={28} strokeWidth={2.5} />
-      </div>
-      <p className="line-clamp-1 w-full text-center text-[12px] font-black text-brand-700 dark:text-brand-300 sm:text-[13px]">
-        وثّق معرضك
-      </p>
-      <p className="line-clamp-1 w-full text-center text-[10px] text-slate-500 dark:text-slate-400">
-        اطلب التوثيق
-      </p>
-    </Link>
   );
 }
 
@@ -164,24 +167,26 @@ function DealerCard({ dealer }: { dealer: UserProfile }) {
   const initial = (name || "م").charAt(0).toUpperCase();
   const hasRating =
     typeof dealer.averageRating === "number" && dealer.averageRating > 0;
+  const hasFollowers =
+    typeof dealer.followersCount === "number" && dealer.followersCount > 0;
 
   return (
     <Link
       href={`/traders/${dealer.uid}`}
       className="
-        group flex w-[120px] shrink-0 flex-col items-center gap-1.5
-        rounded-2xl p-1.5 transition active:scale-[0.97]
-        sm:w-[130px]
+        group flex w-[104px] shrink-0 flex-col items-center gap-1
+        rounded-2xl p-1 transition active:scale-[0.97]
+        sm:w-[116px]
       "
     >
       {/* الصورة الدائرية + شارة التوثيق */}
       <div className="relative">
         <div
           className="
-            relative h-[78px] w-[78px] overflow-hidden rounded-full
+            relative h-[72px] w-[72px] overflow-hidden rounded-full
             ring-2 ring-slate-200 transition group-hover:ring-brand-300
             dark:ring-slate-700 dark:group-hover:ring-brand-600
-            sm:h-[84px] sm:w-[84px]
+            sm:h-[80px] sm:w-[80px]
           "
         >
           {photo ? (
@@ -204,13 +209,14 @@ function DealerCard({ dealer }: { dealer: UserProfile }) {
         <span
           aria-label="معرض موثق"
           className="
-            absolute -bottom-0.5 -left-0.5 inline-flex h-6 w-6 items-center
+            absolute -bottom-0.5 -left-0.5 inline-flex h-5 w-5 items-center
             justify-center rounded-full border-2 border-white bg-brand-700
             text-white shadow-md
             dark:border-slate-900
+            sm:h-6 sm:w-6
           "
         >
-          <BadgeCheck size={13} strokeWidth={2.5} />
+          <BadgeCheck size={11} strokeWidth={2.5} />
         </span>
       </div>
 
@@ -219,36 +225,25 @@ function DealerCard({ dealer }: { dealer: UserProfile }) {
         {name}
       </p>
 
-      {/* المدينة + التقييم في سطر صغير */}
-      <div className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 text-[10px] text-slate-500 dark:text-slate-400">
-        {dealer.city ? (
-          <span className="inline-flex items-center gap-0.5">
-            <MapPin size={9} />
-            {dealer.city}
-          </span>
-        ) : null}
+      {/*
+        سطر معلومات واحد فقط: المدينة + التقييم + المتابعون.
+        أيهم أكثر إفادة يظهر أولاً (التقييم له الأولوية).
+      */}
+      <div className="flex items-center justify-center gap-x-1.5 text-[10px] text-slate-500 dark:text-slate-400">
         {hasRating ? (
           <span className="inline-flex items-center gap-0.5">
             <Star size={9} className="fill-amber-400 text-amber-400" />
             {dealer.averageRating!.toFixed(1)}
           </span>
+        ) : hasFollowers ? (
+          <span>{formatNumber(dealer.followersCount!)} متابع</span>
+        ) : dealer.city ? (
+          <span className="inline-flex items-center gap-0.5">
+            <MapPin size={9} />
+            {dealer.city}
+          </span>
         ) : null}
       </div>
-
-      {/* عدد الإعلانات + المتابعين كنص صغير جداً */}
-      {(dealer.listingsCount || dealer.followersCount) ? (
-        <div className="flex flex-wrap items-center justify-center gap-x-1.5 text-[9px] font-bold text-slate-400 dark:text-slate-500">
-          {dealer.listingsCount ? (
-            <span>{formatNumber(dealer.listingsCount)} إعلان</span>
-          ) : null}
-          {dealer.listingsCount && dealer.followersCount ? (
-            <span aria-hidden="true">•</span>
-          ) : null}
-          {dealer.followersCount ? (
-            <span>{formatNumber(dealer.followersCount)} متابع</span>
-          ) : null}
-        </div>
-      ) : null}
     </Link>
   );
 }

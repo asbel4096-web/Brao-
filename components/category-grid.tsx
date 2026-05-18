@@ -59,32 +59,32 @@ export function CategoryGrid() {
               key={c.slug}
               href={`/listings?category=${c.slug}`}
               className="
-                group flex w-[76px] shrink-0 flex-col items-center
-                justify-center gap-1.5 rounded-2xl border border-slate-200/70
-                bg-white p-2 text-center transition
+                group flex w-[68px] shrink-0 flex-col items-center
+                justify-center gap-1 rounded-xl border border-slate-200/70
+                bg-white p-1.5 text-center transition
                 hover:border-brand-300 hover:bg-brand-50/40 hover:shadow-card
                 active:scale-[0.97]
                 dark:border-slate-700/70 dark:bg-slate-900
                 dark:hover:border-brand-700 dark:hover:bg-brand-950/30
-                sm:w-[88px] sm:p-3
+                sm:w-[82px] sm:gap-1.5 sm:p-2.5
               "
             >
               <div
                 className="
-                  flex h-10 w-10 shrink-0 items-center justify-center
-                  rounded-xl bg-brand-50 text-brand-700 transition-colors
+                  flex h-9 w-9 shrink-0 items-center justify-center
+                  rounded-lg bg-brand-50 text-brand-700 transition-colors
                   group-hover:bg-brand-100
                   dark:bg-brand-900/40 dark:text-brand-300
                   dark:group-hover:bg-brand-900/60
-                  sm:h-11 sm:w-11
+                  sm:h-10 sm:w-10
                 "
               >
-                <Icon size={18} aria-hidden="true" />
+                <Icon size={16} aria-hidden="true" />
               </div>
               <span
                 className="
-                  line-clamp-2 w-full text-[11px] font-bold leading-tight
-                  text-slate-800 dark:text-slate-100 sm:text-[12px]
+                  line-clamp-2 w-full text-[10px] font-bold leading-tight
+                  text-slate-800 dark:text-slate-100 sm:text-[11px]
                 "
               >
                 {c.name}
