@@ -3,8 +3,16 @@
 import { useMemo, useState } from "react";
 import type { Listing, TraderReview, UserProfile } from "@/lib/types";
 import { ListingCard } from "@/components/listing-card";
-import { Star } from "lucide-react";
-import { timeAgo, formatNumber } from "@/lib/utils";
+import {
+  BadgeCheck,
+  Clock3,
+  ExternalLink,
+  MapPin,
+  MessageCircle,
+  Phone,
+  Star,
+} from "lucide-react";
+import { timeAgo, formatNumber, normalizeLibyanPhone } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useTraderReview } from "@/hooks/useTraderReview";
@@ -76,16 +84,23 @@ export function TraderTabs({
       */}
       <div className="-mx-4 sm:-mx-6">
         <div className="flex gap-2 overflow-x-auto no-scrollbar scroll-px-4 px-4 sm:px-6">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActive(tab.id)}
-              className={`shrink-0 whitespace-nowrap rounded-2xl px-4 py-3 text-sm font-black transition ${active === tab.id ? "bg-brand-700 text-white shadow-blue" : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"}`}
-            >
-              {tab.label}
-            </button>
-          ))}
+          {tabs.map((tab) => {
+            // للمعارض الموثقة: تبويب "about" يحمل عنوان "حول المعرض" بدل "حول التاجر".
+            const label =
+              tab.id === "about" && profile.isVerifiedDealer
+                ? "حول المعرض"
+                : tab.label;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActive(tab.id)}
+                className={`shrink-0 whitespace-nowrap rounded-2xl px-4 py-3 text-sm font-black transition ${active === tab.id ? "bg-brand-700 text-white shadow-blue" : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"}`}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -368,6 +383,23 @@ function AboutTrader({
   servicesCount: number;
   reviewsCount: number;
 }) {
+  // ============================================================
+  // النسخة الموثَّقة: 3 بطاقات مخصّصة + بيانات عامة.
+  // ============================================================
+  if (profile.isVerifiedDealer) {
+    return (
+      <DealerAbout
+        profile={profile}
+        listingsCount={listingsCount}
+        servicesCount={servicesCount}
+        reviewsCount={reviewsCount}
+      />
+    );
+  }
+
+  // ============================================================
+  // النسخة الافتراضية - مستخدم عادي (غير موثَّق).
+  // ============================================================
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950/40">
@@ -386,6 +418,231 @@ function AboutTrader({
         </div>
       </div>
     </div>
+  );
+}
+
+/* ============================================================
+ * DealerAbout - تبويب "حول المعرض" للمعارض الموثقة.
+ * ============================================================ */
+function DealerAbout({
+  profile,
+  listingsCount,
+  servicesCount,
+  reviewsCount,
+}: {
+  profile: UserProfile;
+  listingsCount: number;
+  servicesCount: number;
+  reviewsCount: number;
+}) {
+  const bio = profile.dealerBio?.trim() || profile.bio?.trim();
+  const wa = normalizeLibyanPhone(profile.phone || profile.whatsapp || "");
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      {/* ===================== نبذة عن المعرض ===================== */}
+      <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950/40">
+        <h3 className="inline-flex items-center gap-2 text-base font-black text-slate-950 dark:text-white">
+          <BadgeCheck size={18} className="text-brand-700 dark:text-brand-300" />
+          نبذة عن المعرض
+        </h3>
+        {bio ? (
+          <p className="mt-3 text-sm leading-8 text-slate-600 dark:text-slate-200">
+            {bio}
+          </p>
+        ) : (
+          <p className="mt-3 text-sm leading-7 text-slate-500 dark:text-slate-400">
+            لم يقم المعرض بإضافة نبذة بعد.
+          </p>
+        )}
+        {/* خط فاصل + بيانات سريعة أسفل النبذة */}
+        <div className="mt-4 grid gap-2 border-t border-slate-200 pt-4 dark:border-slate-800 sm:grid-cols-2">
+          <AboutItem label="المدينة" value={profile.city || "غير مذكور"} />
+          <AboutItem
+            label="حالة المعرض"
+            value={profile.isVerifiedDealer ? "موثَّق" : "—"}
+          />
+          <AboutItem label="عدد الإعلانات" value={formatNumber(listingsCount)} />
+          <AboutItem label="عدد الخدمات" value={formatNumber(servicesCount)} />
+          <AboutItem label="عدد التقييمات" value={formatNumber(reviewsCount)} />
+          <AboutItem
+            label="المتابعين"
+            value={formatNumber(profile.followersCount || 0)}
+          />
+        </div>
+      </div>
+
+      {/* ===================== ساعات العمل + التواصل (عمود ثاني) ===================== */}
+      <div className="space-y-4">
+        {/* ساعات العمل */}
+        <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950/40">
+          <h3 className="inline-flex items-center gap-2 text-base font-black text-slate-950 dark:text-white">
+            <Clock3 size={18} className="text-brand-700 dark:text-brand-300" />
+            ساعات العمل
+          </h3>
+          <WorkingHoursList workingHours={profile.workingHours} />
+        </div>
+
+        {/* معلومات التواصل */}
+        <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950/40">
+          <h3 className="inline-flex items-center gap-2 text-base font-black text-slate-950 dark:text-white">
+            <Phone size={18} className="text-brand-700 dark:text-brand-300" />
+            معلومات التواصل
+          </h3>
+          <div className="mt-4 space-y-2">
+            {profile.phone ? (
+              <ContactRow
+                icon={<Phone size={16} />}
+                label="اتصال"
+                value={profile.phone}
+                href={`tel:${profile.phone}`}
+                dir="ltr"
+              />
+            ) : null}
+            {wa ? (
+              <ContactRow
+                icon={<MessageCircle size={16} />}
+                label="واتساب"
+                value={wa}
+                href={`https://wa.me/${wa}`}
+                external
+                dir="ltr"
+              />
+            ) : null}
+            {profile.locationUrl ? (
+              <ContactRow
+                icon={<MapPin size={16} />}
+                label="الموقع على الخريطة"
+                value="فتح الخرائط"
+                href={profile.locationUrl}
+                external
+              />
+            ) : null}
+            {!profile.phone && !wa && !profile.locationUrl ? (
+              <p className="text-sm leading-7 text-slate-500 dark:text-slate-400">
+                لم يتم إضافة بيانات تواصل بعد.
+              </p>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const DAY_LABELS: Record<string, string> = {
+  sat: "السبت",
+  sun: "الأحد",
+  mon: "الإثنين",
+  tue: "الثلاثاء",
+  wed: "الأربعاء",
+  thu: "الخميس",
+  fri: "الجمعة",
+};
+const DAY_ORDER: Array<keyof NonNullable<UserProfile["workingHours"]>> = [
+  "sat",
+  "sun",
+  "mon",
+  "tue",
+  "wed",
+  "thu",
+  "fri",
+];
+
+function WorkingHoursList({
+  workingHours,
+}: {
+  workingHours?: UserProfile["workingHours"];
+}) {
+  if (!workingHours || Object.keys(workingHours).length === 0) {
+    return (
+      <p className="mt-3 text-sm leading-7 text-slate-500 dark:text-slate-400">
+        لم يتم تحديد ساعات العمل.
+      </p>
+    );
+  }
+
+  return (
+    <ul className="mt-4 space-y-1.5">
+      {DAY_ORDER.map((day) => {
+        const v = workingHours[day];
+        if (!v) return null;
+        const isClosed = v === "closed";
+        const label = DAY_LABELS[day];
+        return (
+          <li
+            key={day}
+            className="flex items-center justify-between rounded-2xl bg-white px-3.5 py-2 text-sm dark:bg-slate-900"
+          >
+            <span className="font-black text-slate-700 dark:text-slate-200">
+              {label}
+            </span>
+            {isClosed ? (
+              <span className="text-xs font-bold text-rose-600 dark:text-rose-400">
+                مغلق
+              </span>
+            ) : (
+              <span
+                className="text-xs font-bold text-slate-600 dark:text-slate-300"
+                dir="ltr"
+              >
+                {v.open} – {v.close}
+              </span>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function ContactRow({
+  icon,
+  label,
+  value,
+  href,
+  external,
+  dir,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  href: string;
+  external?: boolean;
+  dir?: "ltr" | "rtl";
+}) {
+  return (
+    <a
+      href={href}
+      target={external ? "_blank" : undefined}
+      rel={external ? "noreferrer" : undefined}
+      className="
+        group flex items-center gap-3 rounded-2xl bg-white px-3.5 py-2.5
+        transition hover:bg-brand-50/60
+        dark:bg-slate-900 dark:hover:bg-slate-800
+      "
+    >
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
+        {icon}
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+          {label}
+        </div>
+        <div
+          className="truncate text-sm font-black text-slate-900 dark:text-white"
+          dir={dir}
+        >
+          {value}
+        </div>
+      </div>
+      {external ? (
+        <ExternalLink
+          size={14}
+          className="shrink-0 text-slate-400 group-hover:text-brand-700 dark:group-hover:text-brand-300"
+        />
+      ) : null}
+    </a>
   );
 }
 

@@ -64,104 +64,293 @@ export function TraderProfileHeader({
 
   return (
     <section className="card overflow-hidden">
-      <div className="h-24 bg-gradient-to-l from-brand-700 via-brand-600 to-action-500" />
-      <div className="relative z-10 px-5 pb-5 sm:px-6 sm:pb-6">
-        <div className="-mt-12 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-            <div className="relative h-24 w-24 overflow-hidden rounded-[28px] border-4 border-white bg-white shadow-xl dark:border-slate-900 dark:bg-slate-900">
-              {(profile.dealerLogo || profile.photoURL) ? (
-                <Image
-                  src={(profile.dealerLogo || profile.photoURL) as string}
-                  alt={displayName}
-                  fill
-                  className="object-cover"
-                  sizes="96px"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center bg-brand-700 text-3xl font-black text-white">
-                  {displayName.charAt(0)}
-                </div>
-              )}
-              {/* علامة التوثيق على ركن الصورة - تظهر فقط للمعارض الموثقة */}
-              {profile.isVerifiedDealer && (
-                <span
-                  aria-label="معرض موثق"
-                  className="absolute -bottom-1 -left-1 inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-brand-700 text-white shadow-md dark:border-slate-900"
-                >
-                  <BadgeCheck size={15} strokeWidth={2.5} />
-                </span>
-              )}
-            </div>
+      {profile.isVerifiedDealer ? (
+        /* ============================================================
+         * VERIFIED DEALER VARIANT
+         * - صورة غلاف كبيرة (dealerCover) أو fallback تدرّج هوية براتشو.
+         * - شعار دائري متراكب فوق الغلاف (يستخدم dealerLogo أولاً ثم photoURL).
+         * - شارة توثيق على الشعار + بادج "موثَّق" بجانب الاسم.
+         * - معلومات منظَّمة (مدينة + تقييم + متابعون + إعلانات).
+         * - أزرار: متابعة، مراسلة، اتصال، واتساب.
+         * - StatCards الإحصائية تحتها كما هي.
+         * ============================================================ */
+        <>
+          {/* الغلاف */}
+          <div className="relative h-32 w-full overflow-hidden sm:h-44">
+            {profile.dealerCover || profile.coverURL ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={(profile.dealerCover || profile.coverURL) as string}
+                alt=""
+                className="h-full w-full object-cover"
+                referrerPolicy="no-referrer"
+                loading="eager"
+              />
+            ) : (
+              <div className="h-full w-full bg-gradient-to-l from-brand-800 via-brand-700 to-action-500" />
+            )}
+            {/* غطاء تدرّج لقراءة أفضل للعناصر الأمامية إن وُجدت */}
+            <div
+              aria-hidden="true"
+              className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/30 to-transparent"
+            />
+          </div>
 
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-black text-slate-950 dark:text-white sm:text-3xl">
-                  {displayName}
-                </h1>
-                {profile.isVerifiedDealer && (
+          <div className="relative px-5 pb-5 sm:px-6 sm:pb-6">
+            {/* الشعار المتراكب فوق الغلاف */}
+            <div className="-mt-12 flex flex-col gap-4 sm:-mt-14 sm:flex-row sm:items-end sm:justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-3xl border-4 border-white bg-white shadow-xl dark:border-slate-900 dark:bg-slate-900 sm:h-28 sm:w-28">
+                  {(profile.dealerLogo || profile.photoURL) ? (
+                    <Image
+                      src={(profile.dealerLogo || profile.photoURL) as string}
+                      alt={displayName}
+                      fill
+                      className="object-cover"
+                      sizes="112px"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-brand-700 text-3xl font-black text-white">
+                      {displayName.charAt(0)}
+                    </div>
+                  )}
+                  {/* شارة التوثيق على ركن الشعار */}
                   <span
-                    className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-3 py-1 text-xs font-black text-brand-700 dark:bg-brand-900/30 dark:text-brand-300"
                     aria-label="معرض موثق"
+                    className="absolute -bottom-1 -left-1 inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-brand-700 text-white shadow-md dark:border-slate-900"
                   >
-                    <BadgeCheck size={13} strokeWidth={2.5} />
-                    موثَّق
+                    <BadgeCheck size={15} strokeWidth={2.5} />
                   </span>
-                )}
-                <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-black ${online ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}>
-                  <Clock3 size={12} />
-                  {statusText}
-                </span>
+                </div>
+
+                <div className="min-w-0 space-y-1.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h1 className="text-xl font-black text-slate-950 dark:text-white sm:text-2xl">
+                      {displayName}
+                    </h1>
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-black text-brand-700 dark:bg-brand-900/30 dark:text-brand-300"
+                      aria-label="معرض موثق"
+                    >
+                      <BadgeCheck size={12} strokeWidth={2.5} />
+                      موثَّق
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-300 sm:text-sm">
+                    {profile.city ? (
+                      <span className="inline-flex items-center gap-1">
+                        <MapPin size={13} />
+                        {profile.city}
+                      </span>
+                    ) : null}
+                    <span className="inline-flex items-center gap-1">
+                      <Star size={13} className="fill-amber-400 text-amber-500" />
+                      {ratingText}
+                      {reviewsCount > 0 ? ` (${formatNumber(reviewsCount)})` : ""}
+                    </span>
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                        online
+                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                          : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                      }`}
+                    >
+                      <Clock3 size={11} />
+                      {statusText}
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500 dark:text-slate-300">
-                {profile.city ? (
-                  <span className="inline-flex items-center gap-1"><MapPin size={14} />{profile.city}</span>
+              {/* أزرار العمليات */}
+              <div className="flex flex-wrap gap-2">
+                {!isOwnProfile ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleFollow()}
+                    className={isFollowing ? "btn-secondary" : "btn-primary"}
+                  >
+                    {isFollowing ? <UserCheck size={16} /> : <UserPlus size={16} />}
+                    {isFollowing ? "إلغاء المتابعة" : "متابعة"}
+                  </button>
                 ) : null}
-                <span className="inline-flex items-center gap-1"><Star size={14} className="text-amber-500" />{ratingText} متوسط التقييم{reviewsCount > 0 ? ` (${formatNumber(reviewsCount)})` : ""}</span>
+                <button
+                  type="button"
+                  onClick={() => void onMessage()}
+                  className="btn-action"
+                >
+                  <MessageCircle size={16} />
+                  مراسلة
+                </button>
+                {phone ? (
+                  <a href={`tel:${phone}`} className="btn-secondary">
+                    <Phone size={16} />
+                    اتصال
+                  </a>
+                ) : null}
+                {wa ? (
+                  <a
+                    href={`https://wa.me/${wa}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn-secondary"
+                  >
+                    <MessageCircle size={16} />
+                    واتساب
+                  </a>
+                ) : null}
               </div>
+            </div>
 
-              {profile.bio ? (
-                <p className="max-w-3xl text-sm leading-7 text-slate-600 dark:text-slate-200">{profile.bio}</p>
-              ) : (
-                <p className="max-w-3xl text-sm leading-7 text-slate-500 dark:text-slate-400">تاجر في براتشو كار يعرض سيارات وخدماته بشكل احترافي داخل المنصة.</p>
-              )}
+            {/* الإحصائيات السريعة */}
+            <div className="mt-5 grid grid-cols-2 gap-2.5 sm:mt-6 sm:gap-3 sm:grid-cols-3 xl:grid-cols-5">
+              <StatCard
+                icon={<FileText size={18} />}
+                label="الإعلانات"
+                value={formatNumber(listingsCount)}
+              />
+              <StatCard
+                icon={<BriefcaseBusiness size={18} />}
+                label="الخدمات"
+                value={formatNumber(servicesCount)}
+              />
+              <StatCard
+                icon={<UserPlus size={18} />}
+                label="المتابعين"
+                value={formatNumber(profile.followersCount || 0)}
+              />
+              <StatCard
+                icon={<Star size={18} />}
+                label="التقييم"
+                value={`${ratingText} (${formatNumber(reviewsCount)})`}
+              />
+              <StatCard
+                icon={<Clock3 size={18} />}
+                label="الحالة"
+                value={onlineShortLabel(profile)}
+              />
             </div>
           </div>
+        </>
+      ) : (
+        /* ============================================================
+         * DEFAULT VARIANT - المستخدم العادي (غير موثَّق).
+         * الـlayout القديم كما هو بدون تغيير.
+         * ============================================================ */
+        <>
+          <div className="h-24 bg-gradient-to-l from-brand-700 via-brand-600 to-action-500" />
+          <div className="relative z-10 px-5 pb-5 sm:px-6 sm:pb-6">
+            <div className="-mt-12 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+                <div className="relative h-24 w-24 overflow-hidden rounded-[28px] border-4 border-white bg-white shadow-xl dark:border-slate-900 dark:bg-slate-900">
+                  {(profile.dealerLogo || profile.photoURL) ? (
+                    <Image
+                      src={(profile.dealerLogo || profile.photoURL) as string}
+                      alt={displayName}
+                      fill
+                      className="object-cover"
+                      sizes="96px"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-brand-700 text-3xl font-black text-white">
+                      {displayName.charAt(0)}
+                    </div>
+                  )}
+                </div>
 
-          <div className="flex flex-wrap gap-2">
-            {!isOwnProfile ? (
-              <button type="button" onClick={() => void handleFollow()} className={isFollowing ? "btn-secondary" : "btn-primary"}>
-                {isFollowing ? <UserCheck size={16} /> : <UserPlus size={16} />}
-                {isFollowing ? "إلغاء المتابعة" : "متابعة"}
-              </button>
-            ) : null}
-            <button type="button" onClick={() => void onMessage()} className="btn-action">
-              <MessageCircle size={16} />
-              مراسلة
-            </button>
-            {phone ? (
-              <a href={`tel:${phone}`} className="btn-secondary">
-                <Phone size={16} />
-                اتصال
-              </a>
-            ) : null}
-            {wa ? (
-              <a href={`https://wa.me/${wa}`} target="_blank" rel="noreferrer" className="btn-secondary">
-                <MessageCircle size={16} />
-                واتساب
-              </a>
-            ) : null}
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h1 className="text-2xl font-black text-slate-950 dark:text-white sm:text-3xl">
+                      {displayName}
+                    </h1>
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-black ${
+                        online
+                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                          : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                      }`}
+                    >
+                      <Clock3 size={12} />
+                      {statusText}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500 dark:text-slate-300">
+                    {profile.city ? (
+                      <span className="inline-flex items-center gap-1">
+                        <MapPin size={14} />
+                        {profile.city}
+                      </span>
+                    ) : null}
+                    <span className="inline-flex items-center gap-1">
+                      <Star size={14} className="text-amber-500" />
+                      {ratingText} متوسط التقييم
+                      {reviewsCount > 0 ? ` (${formatNumber(reviewsCount)})` : ""}
+                    </span>
+                  </div>
+
+                  {profile.bio ? (
+                    <p className="max-w-3xl text-sm leading-7 text-slate-600 dark:text-slate-200">
+                      {profile.bio}
+                    </p>
+                  ) : (
+                    <p className="max-w-3xl text-sm leading-7 text-slate-500 dark:text-slate-400">
+                      تاجر في براتشو كار يعرض سيارات وخدماته بشكل احترافي داخل المنصة.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {!isOwnProfile ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleFollow()}
+                    className={isFollowing ? "btn-secondary" : "btn-primary"}
+                  >
+                    {isFollowing ? <UserCheck size={16} /> : <UserPlus size={16} />}
+                    {isFollowing ? "إلغاء المتابعة" : "متابعة"}
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => void onMessage()}
+                  className="btn-action"
+                >
+                  <MessageCircle size={16} />
+                  مراسلة
+                </button>
+                {phone ? (
+                  <a href={`tel:${phone}`} className="btn-secondary">
+                    <Phone size={16} />
+                    اتصال
+                  </a>
+                ) : null}
+                {wa ? (
+                  <a
+                    href={`https://wa.me/${wa}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn-secondary"
+                  >
+                    <MessageCircle size={16} />
+                    واتساب
+                  </a>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-2.5 sm:mt-6 sm:gap-3 sm:grid-cols-3 xl:grid-cols-5">
+              <StatCard icon={<FileText size={18} />} label="الإعلانات" value={formatNumber(listingsCount)} />
+              <StatCard icon={<BriefcaseBusiness size={18} />} label="الخدمات" value={formatNumber(servicesCount)} />
+              <StatCard icon={<UserPlus size={18} />} label="المتابعين" value={formatNumber(profile.followersCount || 0)} />
+              <StatCard icon={<Star size={18} />} label="التقييم" value={`${ratingText} (${formatNumber(reviewsCount)})`} />
+              <StatCard icon={<Clock3 size={18} />} label="الحالة" value={onlineShortLabel(profile)} />
+            </div>
           </div>
-        </div>
-
-        <div className="mt-5 grid grid-cols-2 gap-2.5 sm:mt-6 sm:gap-3 sm:grid-cols-3 xl:grid-cols-5">
-          <StatCard icon={<FileText size={18} />} label="الإعلانات" value={formatNumber(listingsCount)} />
-          <StatCard icon={<BriefcaseBusiness size={18} />} label="الخدمات" value={formatNumber(servicesCount)} />
-          <StatCard icon={<UserPlus size={18} />} label="المتابعين" value={formatNumber(profile.followersCount || 0)} />
-          <StatCard icon={<Star size={18} />} label="التقييم" value={`${ratingText} (${formatNumber(reviewsCount)})`} />
-          <StatCard icon={<Clock3 size={18} />} label="الحالة" value={onlineShortLabel(profile)} />
-        </div>
-      </div>
+        </>
+      )}
     </section>
   );
 }

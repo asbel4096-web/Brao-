@@ -64,6 +64,21 @@ export interface UserProfile {
   dealerName?: string;
   /** شعار المعرض - يُعرض بدل صورة الحساب في قائمة المعارض الموثقة. */
   dealerLogo?: string;
+  /** صورة غلاف المعرض - تُعرض كبانر فوق الـheader في صفحة المعرض. */
+  dealerCover?: string;
+  /** نبذة عن المعرض - تظهر في تبويب "حول المعرض" للمعارض الموثقة. */
+  dealerBio?: string;
+  /**
+   * ساعات عمل المعرض. مفتاح الأيام: sat/sun/mon/tue/wed/thu/fri.
+   * القيمة: {open, close} بتنسيق "HH:mm" أو "closed" للأيام المغلقة.
+   * يُملأ يدوياً حالياً (لا UI إدخال).
+   */
+  workingHours?: Record<
+    "sat" | "sun" | "mon" | "tue" | "wed" | "thu" | "fri",
+    { open: string; close: string } | "closed"
+  >;
+  /** رابط موقع المعرض على خرائط Google (نص). */
+  locationUrl?: string;
   /** وقت التوثيق - يضبطه الأدمن. */
   verifiedAt?: Timestamp | null;
   isOnline?: boolean;
