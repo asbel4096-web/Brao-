@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   collection,
   getDocs,
@@ -13,6 +13,7 @@ import {
 import { Sparkles } from "lucide-react";
 import { db } from "@/lib/firebase";
 import type { Listing } from "@/lib/types";
+import { isListingFeatured } from "@/lib/utils";
 import { ListingCard } from "./listing-card";
 
 /**
@@ -98,6 +99,19 @@ export function ListingsGrid() {
     };
   }, []);
 
+  // ترتيب المميزة أولاً ثم العادية - الترتيب داخل كل مجموعة محفوظ
+  // من Firestore (orderBy createdAt desc). التمييز يُفحص client-side
+  // بفترة الانتهاء أيضاً، فالمنتهي لا يبقى في القمة.
+  const sortedItems = useMemo(() => {
+    const featured: Listing[] = [];
+    const regular: Listing[] = [];
+    for (const it of items) {
+      if (isListingFeatured(it)) featured.push(it);
+      else regular.push(it);
+    }
+    return [...featured, ...regular];
+  }, [items]);
+
   return (
     <section className="container py-7 sm:py-10">
       <div className="flex items-end justify-between gap-3">
@@ -139,7 +153,7 @@ export function ListingsGrid() {
         </div>
       ) : (
         <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {items.map((it, idx) => (
+          {sortedItems.map((it, idx) => (
             <ListingCard key={it.id} listing={it} priority={idx < 2} />
           ))}
         </div>

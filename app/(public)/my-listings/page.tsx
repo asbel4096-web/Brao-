@@ -4,7 +4,17 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  collection, deleteDoc, doc, onSnapshot, orderBy, query, where,
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  limit,
+  onSnapshot,
+  orderBy,
+  query,
+  serverTimestamp,
+  where,
 } from "firebase/firestore";
 import {
   Plus, LayoutGrid, CheckCircle2, Clock, AlertCircle, Eye, FileText,
@@ -62,6 +72,78 @@ export default function MyListingsPage() {
       toast.success("تم حذف الإعلان.");
     } catch (err: any) {
       toast.error(err?.message || "تعذّر حذف الإعلان.");
+    }
+  };
+
+  // ============================================================
+  // طلبات التمييز الـpending الخاصة بالمستخدم.
+  // الـSet للأداء - lookup O(1) في الـrender. lazy initializer من الـcache.
+  // ============================================================
+  const [pendingFeaturedIds, setPendingFeaturedIds] = useState<Set<string>>(
+    new Set()
+  );
+  const [requestingFeaturedId, setRequestingFeaturedId] = useState<string | null>(
+    null
+  );
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const snap = await getDocs(
+          query(
+            collection(db, "featuredRequests"),
+            where("ownerId", "==", user.uid),
+            where("status", "==", "pending"),
+            limit(100)
+          )
+        );
+        if (cancelled) return;
+        const ids = new Set<string>();
+        snap.docs.forEach((d) => {
+          const data = d.data() as { listingId?: string };
+          if (data.listingId) ids.add(data.listingId);
+        });
+        setPendingFeaturedIds(ids);
+      } catch {
+        /* تجاهل صامت - الحالة الافتراضية "لا طلب" */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  const handleRequestFeatured = async (listingId: string) => {
+    if (!user) return;
+    if (pendingFeaturedIds.has(listingId)) return; // حماية مزدوجة
+
+    const listing = items.find((i) => i.id === listingId);
+    if (!listing) return;
+
+    try {
+      setRequestingFeaturedId(listingId);
+      await addDoc(collection(db, "featuredRequests"), {
+        listingId,
+        listingTitle: listing.title || "",
+        ownerId: user.uid,
+        ownerName: listing.sellerName || "",
+        ownerEmail: user.email || "",
+        status: "pending",
+        createdAt: serverTimestamp(),
+      });
+      // تحديث الـstate فوراً ليرى المستخدم "في انتظار الموافقة" بدون refresh.
+      setPendingFeaturedIds((prev) => {
+        const next = new Set(prev);
+        next.add(listingId);
+        return next;
+      });
+      toast.success("تم إرسال طلب التمييز للمراجعة.");
+    } catch (err: any) {
+      toast.error(err?.message || "تعذّر إرسال طلب التمييز.");
+    } finally {
+      setRequestingFeaturedId(null);
     }
   };
 
@@ -163,7 +245,16 @@ export default function MyListingsPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((it) => (
-            <MyListingCard key={it.id} listing={it} onDelete={handleDelete} />
+            <MyListingCard
+              key={it.id}
+              listing={it}
+              onDelete={handleDelete}
+              featuredState={
+                pendingFeaturedIds.has(it.id) ? { kind: "pending" } : { kind: "none" }
+              }
+              onRequestFeatured={handleRequestFeatured}
+              requestingFeatured={requestingFeaturedId === it.id}
+            />
           ))}
         </div>
       )}

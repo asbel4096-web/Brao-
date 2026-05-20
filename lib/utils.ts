@@ -109,3 +109,25 @@ export function getTraderDisplayName(
     "تاجر براتشو كار"
   );
 }
+
+/**
+ * هل الإعلان مميز حالياً؟ يفحص العلامة + تاريخ الانتهاء client-side.
+ * عند انتهاء featuredUntil يُعامَل كإعلان عادي (لا rerun لـCloud Function
+ * مطلوب - الفلترة في الواجهة كافية).
+ */
+export function isListingFeatured(listing: {
+  featured?: boolean;
+  featuredUntil?: Timestamp | null;
+}): boolean {
+  if (!listing.featured) return false;
+  const until = listing.featuredUntil;
+  if (!until) return false;
+  try {
+    const expiresMs = (until as any).toMillis
+      ? (until as any).toMillis()
+      : new Date(until as any).getTime();
+    return Number.isFinite(expiresMs) && expiresMs > Date.now();
+  } catch {
+    return false;
+  }
+}

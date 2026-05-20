@@ -30,7 +30,15 @@ export interface Listing {
   ownerId: string;
   ownerEmail?: string;
   status: ListingStatus;
+  /**
+   * تمييز الإعلان (إعلان مميز) - يضبطه الأدمن فقط بعد موافقة على طلب
+   * في collection `featuredRequests`. عند انتهاء featuredUntil يُعامَل
+   * كإعلان عادي (الفلترة client-side في عرض القوائم).
+   */
   featured?: boolean;
+  featuredAt?: Timestamp | null;
+  featuredUntil?: Timestamp | null;
+  featuredBy?: string;
   views?: number;
   favoritesCount?: number;
   likesCount?: number;
@@ -284,4 +292,27 @@ export interface SubscriptionPlan {
   duration: string;
   features: string[];
   popular?: boolean;
+}
+
+/**
+ * طلب تمييز إعلان - ينشئه المستخدم لإعلانه، يوافق عليه الأدمن.
+ * عند الموافقة، يُحدّث الأدمن الإعلان نفسه بحقول featured + featuredUntil
+ * ويضبط هذه الوثيقة على status: "approved".
+ */
+export interface FeaturedRequest {
+  id?: string;
+  listingId: string;
+  listingTitle: string;
+  ownerId: string;
+  ownerName?: string;
+  ownerEmail?: string;
+  status: "pending" | "approved" | "rejected";
+  /** مدة الإبراز بالأيام - يضبطها الأدمن عند الموافقة (3/7/14). */
+  durationDays?: number;
+  /** سبب الرفض - اختياري. */
+  rejectionReason?: string;
+  /** uid الأدمن الذي راجع الطلب. */
+  reviewedBy?: string;
+  createdAt?: Timestamp | null;
+  reviewedAt?: Timestamp | null;
 }

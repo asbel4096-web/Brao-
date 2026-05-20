@@ -14,6 +14,7 @@ import type { Listing } from "@/lib/types";
 import {
   formatPrice,
   getTraderDisplayName,
+  isListingFeatured,
   normalizeLibyanPhone,
 } from "@/lib/utils";
 import { FavoriteButton } from "./favorite-button";
@@ -95,8 +96,8 @@ function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
           </>
         )}
 
-        {/* شارة "مميز" */}
-        {listing.featured && (
+        {/* شارة "مميز" - تظهر فقط أثناء فترة التمييز الفعلية. */}
+        {isListingFeatured(listing) && (
           <span
             className="
               absolute right-3 top-3 inline-flex items-center

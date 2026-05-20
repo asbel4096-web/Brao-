@@ -35,6 +35,7 @@ import {
 import { ListingCard } from "@/components/listing-card";
 import { getBrandById, inferBrandId } from "@/lib/car-brands";
 import type { Listing } from "@/lib/types";
+import { isListingFeatured } from "@/lib/utils";
 
 const MAX_LISTINGS = 200;
 
@@ -183,7 +184,16 @@ function ListingsContent() {
       const factor = sort === "price_asc" ? 1 : -1;
       arr.sort((a, b) => (Number(a.price) - Number(b.price)) * factor);
     }
-    return arr;
+
+    // الإعلانات المميزة أولاً (يحتفظ بالترتيب الداخلي بعد كل الفلاتر/sort).
+    // نفصلهم ثم نُلصقهم مع الباقي - stable sort.
+    const featuredArr: Listing[] = [];
+    const regularArr: Listing[] = [];
+    for (const it of arr) {
+      if (isListingFeatured(it)) featuredArr.push(it);
+      else regularArr.push(it);
+    }
+    return [...featuredArr, ...regularArr];
   }, [listings, deferredSearch, category, city, sort, minPrice, maxPrice, brand]);
 
   /**
