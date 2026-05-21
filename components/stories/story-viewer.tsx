@@ -7,6 +7,7 @@ import {
   Bookmark,
   Eye,
   Heart,
+  Loader2,
   MapPin,
   MessageCircle,
   MessageSquare,
@@ -15,6 +16,8 @@ import {
   Tag,
   UserPlus,
   UserCheck,
+  Volume2,
+  VolumeX,
   Wrench,
   X,
 } from "lucide-react";
@@ -69,6 +72,16 @@ export function StoryViewer({
   // نسبة الصورة/الفيديو (height / width). > 1 يعني طولية، < 1 عرضية.
   // null حتى يُحمَّل المحتوى. تُحدَّد عبر onLoad/onLoadedMetadata.
   const [mediaAspect, setMediaAspect] = useState<number | null>(null);
+
+  // كتم الفيديو - افتراضي true لضمان عمل autoplay على كل المتصفحات.
+  // يُحفظ في الـstate لأن المستخدم قد يُفعّل الصوت بنقرة، ويبقى مفعّلاً
+  // لباقي الستوريز في الجلسة (نمط Instagram).
+  const [muted, setMuted] = useState(true);
+
+  // حالة تحميل الفيديو لعرض loading/error overlay.
+  const [videoStatus, setVideoStatus] = useState<"idle" | "loading" | "ready" | "error">(
+    "idle"
+  );
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -141,7 +154,9 @@ export function StoryViewer({
     startedAtRef.current = Date.now();
     // أعد ضبط النسبة كي تُكتشف من جديد للوسيط الحالي
     setMediaAspect(null);
-  }, [index]);
+    // أعد ضبط حالة الفيديو - الستوري الجديد قد يكون صورة أو فيديو.
+    setVideoStatus(currentMedia?.kind === "video" ? "loading" : "idle");
+  }, [index, currentMedia?.kind]);
 
   useEffect(() => {
     if (paused) {
@@ -156,7 +171,14 @@ export function StoryViewer({
     startedAtRef.current = Date.now();
 
     if (currentMedia?.kind === "video" && videoRef.current) {
-      void videoRef.current.play().catch(() => undefined);
+      // محاولة play مع log الخطأ بدلاً من ابتلاع صامت.
+      // أبرز سبب فشل: المتصفح يمنع autoplay مع صوت.
+      // الـmuted=true في الـstate يحلّ ذلك.
+      void videoRef.current.play().catch((err) => {
+        // eslint-disable-next-line no-console
+        console.warn("[StoryViewer] فشل تشغيل الفيديو:", err);
+        setVideoStatus("error");
+      });
     }
 
     intervalRef.current = setInterval(() => {
@@ -302,21 +324,51 @@ export function StoryViewer({
         }}
       >
         {currentMedia.kind === "video" ? (
-          <video
-            ref={videoRef}
-            src={currentMedia.url}
-            className={`h-full w-full ${fitClass}`}
-            playsInline
-            muted
-            autoPlay
-            onEnded={next}
-            onLoadedMetadata={(e) => {
-              const v = e.currentTarget;
-              if (v.videoWidth && v.videoHeight) {
-                setMediaAspect(v.videoHeight / v.videoWidth);
-              }
-            }}
-          />
+          <>
+            <video
+              ref={videoRef}
+              src={currentMedia.url}
+              className={`h-full w-full ${fitClass}`}
+              playsInline
+              muted={muted}
+              autoPlay
+              preload="auto"
+              onEnded={next}
+              onLoadedMetadata={(e) => {
+                const v = e.currentTarget;
+                if (v.videoWidth && v.videoHeight) {
+                  setMediaAspect(v.videoHeight / v.videoWidth);
+                }
+              }}
+              onCanPlay={() => setVideoStatus("ready")}
+              onWaiting={() => setVideoStatus("loading")}
+              onPlaying={() => setVideoStatus("ready")}
+              onError={(e) => {
+                // eslint-disable-next-line no-console
+                console.warn(
+                  "[StoryViewer] خطأ تحميل الفيديو:",
+                  e.currentTarget.error
+                );
+                setVideoStatus("error");
+              }}
+            />
+
+            {/* Overlay: جارٍ التحميل / تعذّر التشغيل */}
+            {videoStatus === "loading" && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                <Loader2 size={32} className="animate-spin text-white" />
+              </div>
+            )}
+            {videoStatus === "error" && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60 px-6 text-center text-white">
+                <X size={32} className="opacity-80" />
+                <p className="text-sm font-black">تعذّر تشغيل الفيديو</p>
+                <p className="text-xs text-white/70">
+                  قد تكون شبكتك بطيئة، أو الصيغة غير مدعومة.
+                </p>
+              </div>
+            )}
+          </>
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -405,6 +457,33 @@ export function StoryViewer({
             >
               <X size={18} />
             </button>
+
+            {/* زر الصوت - يظهر فقط للستوريز التي هي فيديو.
+                النقر يبدّل muted state ويُفعّل الصوت على عنصر الفيديو فوراً. */}
+            {currentMedia.kind === "video" && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMuted((prev) => {
+                    const next = !prev;
+                    // طبّق على عنصر الفيديو مباشرة لتفادي تأخّر الـrerender.
+                    if (videoRef.current) {
+                      videoRef.current.muted = next;
+                    }
+                    return next;
+                  });
+                }}
+                className="
+                  inline-flex h-9 w-9 shrink-0 items-center justify-center
+                  rounded-full bg-white/15 backdrop-blur-md transition
+                  active:scale-95 hover:bg-white/25
+                "
+                aria-label={muted ? "تفعيل الصوت" : "كتم الصوت"}
+              >
+                {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+              </button>
+            )}
 
             <OwnerOnly ownerId={currentStory.ownerId}>
               <div className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-1 text-[11px] font-bold backdrop-blur-md">
