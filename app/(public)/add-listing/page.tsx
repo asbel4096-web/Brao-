@@ -616,18 +616,23 @@ export default function AddListingPage() {
           {/* ============ Step 2: مواصفات المركبة ============ */}
           {step === 2 && (
             <div className="card animate-fade-in space-y-5 p-4 sm:p-6">
-              <SectionHeader
-                title={
-                  categoryConfig.showVehicleSpecs
-                    ? "مواصفات المركبة"
-                    : "تفاصيل إضافية"
-                }
-                hint={
-                  categoryConfig.showVehicleSpecs
-                    ? "اترك ما لا ينطبق فارغاً (اختياري)"
-                    : "هذا القسم لا يحتاج مواصفات مركبة"
-                }
-              />
+              {/* العنوان العام يظهر فقط للأقسام التي ليست ساحبة سيارات.
+                  الساحبة لها قسم خاص (TowTruckFieldsSection) بعنوانه الخاص،
+                  لذا نتجنّب الازدواج. */}
+              {!categoryConfig.showTowTruckFields && (
+                <SectionHeader
+                  title={
+                    categoryConfig.showVehicleSpecs
+                      ? "مواصفات المركبة"
+                      : "تفاصيل إضافية"
+                  }
+                  hint={
+                    categoryConfig.showVehicleSpecs
+                      ? "اترك ما لا ينطبق فارغاً (اختياري)"
+                      : "هذا القسم لا يحتاج مواصفات مركبة"
+                  }
+                />
+              )}
 
               {categoryConfig.showVehicleSpecs ? (
                 <>
@@ -722,12 +727,12 @@ export default function AddListingPage() {
                     </div>
                   </div>
                 </>
-              ) : (
+              ) : !categoryConfig.showTowTruckFields ? (
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-7 font-bold text-slate-600 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-300">
                   لا حاجة لمواصفات مركبة في هذا القسم. تابع لإضافة الوصف
                   والصور وبيانات التواصل في الخطوات التالية.
                 </div>
-              )}
+              ) : null}
 
               {/* ============ قسم خاص بخدمة الساحبات ============
                   يظهر فقط عند اختيار "ساحبة سيارات".
