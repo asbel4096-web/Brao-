@@ -107,6 +107,8 @@ export const transmissionTypes = ["أوتوماتيك", "عادي", "نصف أو
 export interface AddListingCategoryConfig {
   helper: string;
   showVehicleSpecs: boolean;
+  /** يظهر قسم خاص بالساحبات (إحداثيات، متاح الآن، مناطق التغطية...). */
+  showTowTruckFields?: boolean;
   entityType: "listing" | "service";
 }
 
@@ -140,8 +142,23 @@ export const addListingConfigByGroup: Record<
   },
 };
 
+/**
+ * Overrides خاصة بـcategory محدّدة (وليس بـgroup كاملة).
+ * مثل "ساحبة سيارات" التي تحتاج حقولاً إضافية (إحداثيات، متاح الآن).
+ */
+const addListingConfigBySlug: Partial<Record<string, Partial<AddListingCategoryConfig>>> = {
+  "tow-truck": {
+    helper:
+      "أضف بيانات خدمة السحب أو السطحة: المدينة، المناطق التي تغطيها، رقم التواصل، وحالة التوفر. يمكنك إضافة موقعك لتظهر للمستخدمين الأقرب إليك.",
+    showTowTruckFields: true,
+  },
+};
+
 /** يرجع إعدادات النموذج المناسبة لاسم القسم العربي. */
 export function getAddListingConfig(categoryName: string): AddListingCategoryConfig {
   const cat = findCategoryByName(categoryName);
-  return addListingConfigByGroup[cat?.group ?? "special"];
+  const baseConfig = addListingConfigByGroup[cat?.group ?? "special"];
+  // طبّق override لو موجود (مثل ساحبة سيارات)
+  const overrides = cat ? addListingConfigBySlug[cat.slug] : undefined;
+  return overrides ? { ...baseConfig, ...overrides } : baseConfig;
 }

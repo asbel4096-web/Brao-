@@ -19,6 +19,8 @@ import {
   ChevronLeft,
   ImagePlus,
   Loader2,
+  MapPin,
+  ShieldCheck,
   Tag,
   X,
 } from "lucide-react";
@@ -56,6 +58,13 @@ interface FormState {
   whatsapp: string;
   features: string;
   defects: string;
+  // حقول خاصة بالساحبات - تُملأ فقط عند اختيار "ساحبة سيارات".
+  area: string;
+  coverageAreas: string;
+  availableNow: boolean;
+  latitude: string;
+  longitude: string;
+  locationUrl: string;
 }
 
 const initialState: FormState = {
@@ -79,6 +88,12 @@ const initialState: FormState = {
   whatsapp: "",
   features: "",
   defects: "",
+  area: "",
+  coverageAreas: "",
+  availableNow: true,
+  latitude: "",
+  longitude: "",
+  locationUrl: "",
 };
 
 const MAX_IMAGES = 20;
@@ -133,6 +148,10 @@ export default function AddListingPage() {
   }, [step]);
 
   const set = (k: keyof FormState, v: string) =>
+    setForm((p) => ({ ...p, [k]: v }));
+
+  // helper منفصل للحقول boolean (مثل availableNow في خدمات الساحبات).
+  const setBool = (k: keyof FormState, v: boolean) =>
     setForm((p) => ({ ...p, [k]: v }));
 
   // إعدادات النموذج حسب القسم المختار: نص إرشادي + إظهار حقول المركبة +
@@ -329,6 +348,19 @@ export default function AddListingPage() {
         // نوع الكيان مشتق من مجموعة القسم المختار (خدمات => service،
         // غير ذلك => listing) حتى تنقسم الإعلانات والخدمات بشكل صحيح.
         entityType: categoryConfig.entityType,
+        // حقول إضافية للساحبات - تُحفظ فقط لما القسم يدعمها (شرط
+        // showTowTruckFields). نُرسل القيم دائماً (بقيم افتراضية فارغة)
+        // عندما القسم ساحبة، حتى تكون متاحة للقراءة لاحقاً.
+        ...(categoryConfig.showTowTruckFields
+          ? {
+              availableNow: form.availableNow === true,
+              area: form.area.trim(),
+              coverageAreas: form.coverageAreas.trim(),
+              locationUrl: form.locationUrl.trim(),
+              latitude: form.latitude ? Number(form.latitude) : null,
+              longitude: form.longitude ? Number(form.longitude) : null,
+            }
+          : {}),
         status: "pending",
         featured: false,
         views: 0,
@@ -695,6 +727,18 @@ export default function AddListingPage() {
                   لا حاجة لمواصفات مركبة في هذا القسم. تابع لإضافة الوصف
                   والصور وبيانات التواصل في الخطوات التالية.
                 </div>
+              )}
+
+              {/* ============ قسم خاص بخدمة الساحبات ============
+                  يظهر فقط عند اختيار "ساحبة سيارات".
+                  يحوي: المنطقة، المناطق المغطاة، toggle "متاح الآن"،
+                  زر "استخدم موقعي الحالي كموقع الخدمة"، رابط الخريطة. */}
+              {categoryConfig.showTowTruckFields && (
+                <TowTruckFieldsSection
+                  form={form}
+                  set={set}
+                  setBool={setBool}
+                />
               )}
 
               <NavButtons onNext={goNext} onPrev={goPrev} step={step} />
@@ -1068,5 +1112,215 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
         {value || "—"}
       </span>
     </li>
+  );
+}
+
+/* ============================================================
+ * TowTruckFieldsSection
+ *
+ * قسم يظهر فقط لخدمات الساحبات في الخطوة 2.
+ * يحوي حقولاً خاصة بهذا النوع من الخدمات:
+ *  - المنطقة داخل المدينة (area)
+ *  - المناطق المغطاة (coverageAreas - نص حر)
+ *  - toggle "متاح الآن"
+ *  - زر "استخدم موقعي الحالي" للحصول على إحداثيات الخدمة
+ *  - latitude/longitude للعرض/التعديل اليدوي
+ *  - locationUrl - رابط Google Maps اختياري
+ *
+ * عن الإحداثيات: يستخدم Browser Geolocation API. الموقع الذي يلتقطه
+ * صاحب الخدمة هنا هو موقع *الخدمة الثابت* (موقع مكتبه/سيارته الأساسي)،
+ * ليس موقعه الحالي كمستخدم. يُحفظ في Firestore. كل عملية إنشاء/تعديل
+ * طوعية ومُبدأة بنقرة المالك.
+ * ============================================================ */
+function TowTruckFieldsSection({
+  form,
+  set,
+  setBool,
+}: {
+  form: FormState;
+  set: (k: keyof FormState, v: string) => void;
+  setBool: (k: keyof FormState, v: boolean) => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [locError, setLocError] = useState("");
+
+  const handleUseMyLocation = () => {
+    if (typeof window === "undefined") return;
+    if (!("geolocation" in navigator)) {
+      setLocError("جهازك لا يدعم تحديد الموقع.");
+      return;
+    }
+    setBusy(true);
+    setLocError("");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        set("latitude", pos.coords.latitude.toFixed(6));
+        set("longitude", pos.coords.longitude.toFixed(6));
+        setBusy(false);
+      },
+      (err) => {
+        setBusy(false);
+        if (err.code === 1) {
+          setLocError("لم يتم السماح بالوصول للموقع.");
+        } else if (err.code === 2) {
+          setLocError("تعذّر تحديد الموقع. تأكد من تفعيل GPS.");
+        } else {
+          setLocError("حدث خطأ أثناء تحديد الموقع.");
+        }
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  };
+
+  return (
+    <div className="space-y-4 rounded-2xl border border-action-200 bg-action-50/40 p-4 dark:border-action-800/40 dark:bg-action-900/10">
+      <div className="flex items-start gap-2">
+        <div className="mt-0.5 text-action-600 dark:text-action-300">⚡</div>
+        <div>
+          <h3 className="text-sm font-black text-slate-900 dark:text-white">
+            تفاصيل خدمة الساحبة
+          </h3>
+          <p className="mt-0.5 text-[11px] text-slate-600 dark:text-slate-300">
+            ساعد المستخدمين على إيجاد ساحبتك بسرعة عند الحاجة.
+          </p>
+        </div>
+      </div>
+
+      {/* الحالة + المنطقة */}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <Label>المنطقة داخل المدينة</Label>
+          <input
+            className="input"
+            value={form.area}
+            onChange={(e) => set("area", e.target.value)}
+            placeholder="حي الأندلس، طريق المطار..."
+            maxLength={80}
+          />
+        </div>
+
+        <div>
+          <Label>متاح الآن للاستلام؟</Label>
+          <button
+            type="button"
+            onClick={() => setBool("availableNow", !form.availableNow)}
+            className={`flex h-11 w-full items-center justify-between rounded-2xl border px-3 text-sm font-black transition active:scale-[0.99] ${
+              form.availableNow
+                ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700/40 dark:bg-emerald-900/20 dark:text-emerald-300"
+                : "border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+            }`}
+          >
+            <span>
+              {form.availableNow ? "نعم، متاح الآن" : "غير متاح حالياً"}
+            </span>
+            <span
+              aria-hidden="true"
+              className={`relative inline-block h-6 w-11 rounded-full transition ${
+                form.availableNow ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 inline-block h-5 w-5 rounded-full bg-white shadow transition ${
+                  form.availableNow ? "right-0.5" : "right-5"
+                }`}
+              />
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* المناطق التي تغطيها */}
+      <div>
+        <Label hint="نص حر يصف نطاق التغطية">
+          المناطق التي تغطيها
+        </Label>
+        <textarea
+          className="input min-h-[70px] resize-y"
+          value={form.coverageAreas}
+          onChange={(e) => set("coverageAreas", e.target.value)}
+          placeholder="مثال: طرابلس، عين زارة، تاجوراء، السواني..."
+          maxLength={300}
+        />
+        <p className="mt-1 text-[10px] text-slate-500">
+          {form.coverageAreas.length}/300
+        </p>
+      </div>
+
+      {/* الإحداثيات + زر استخدم موقعي */}
+      <div className="space-y-2">
+        <Label hint="يظهر المسافة للمستخدمين القريبين">
+          موقع الخدمة (اختياري)
+        </Label>
+        <p className="inline-flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400">
+          <ShieldCheck size={10} />
+          الموقع الذي تلتقطه يُحفظ كموقع ثابت لخدمتك (مكتبك أو سيارتك).
+        </p>
+
+        <button
+          type="button"
+          onClick={handleUseMyLocation}
+          disabled={busy}
+          className="
+            inline-flex h-11 w-full items-center justify-center gap-1.5
+            rounded-2xl border border-action-300 bg-white text-sm font-black
+            text-action-700 transition active:scale-95 hover:bg-action-50
+            disabled:opacity-60
+            dark:border-action-800/40 dark:bg-slate-900 dark:text-action-300
+            dark:hover:bg-action-900/20
+          "
+        >
+          {busy ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : (
+            <MapPin size={16} />
+          )}
+          {busy ? "جارٍ تحديد الموقع..." : "استخدم موقعي الحالي كموقع الخدمة"}
+        </button>
+
+        {locError && (
+          <p className="text-[11px] text-rose-600 dark:text-rose-300">{locError}</p>
+        )}
+
+        {(form.latitude || form.longitude) && (
+          <div className="grid gap-2 sm:grid-cols-2">
+            <div>
+              <Label>خط العرض (latitude)</Label>
+              <input
+                className="input"
+                value={form.latitude}
+                onChange={(e) => set("latitude", e.target.value)}
+                placeholder="32.880000"
+                inputMode="decimal"
+                dir="ltr"
+              />
+            </div>
+            <div>
+              <Label>خط الطول (longitude)</Label>
+              <input
+                className="input"
+                value={form.longitude}
+                onChange={(e) => set("longitude", e.target.value)}
+                placeholder="13.180000"
+                inputMode="decimal"
+                dir="ltr"
+              />
+            </div>
+          </div>
+        )}
+
+        <div>
+          <Label hint="رابط من Google Maps">
+            رابط الموقع على الخريطة (اختياري)
+          </Label>
+          <input
+            className="input"
+            value={form.locationUrl}
+            onChange={(e) => set("locationUrl", e.target.value)}
+            placeholder="https://maps.google.com/..."
+            dir="ltr"
+          />
+        </div>
+      </div>
+    </div>
   );
 }
