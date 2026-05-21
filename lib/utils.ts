@@ -131,3 +131,47 @@ export function isListingFeatured(listing: {
     return false;
   }
 }
+
+/**
+ * حساب المسافة بالكيلومتر بين نقطتين جغرافيتين باستخدام معادلة Haversine.
+ * المعادلة مناسبة لكل المسافات على الكرة الأرضية (لا تتأثر بالقطبية).
+ * تُرجع المسافة بالكيلومتر، أو null لو أحد المدخلات ليس رقماً صالحاً.
+ *
+ * مثال: calculateDistanceKm(32.88, 13.18, 32.85, 13.20) → ~3.7
+ */
+export function calculateDistanceKm(
+  lat1: number | null | undefined,
+  lng1: number | null | undefined,
+  lat2: number | null | undefined,
+  lng2: number | null | undefined
+): number | null {
+  if (
+    lat1 == null || lng1 == null || lat2 == null || lng2 == null ||
+    !Number.isFinite(lat1) || !Number.isFinite(lng1) ||
+    !Number.isFinite(lat2) || !Number.isFinite(lng2)
+  ) {
+    return null;
+  }
+  const R = 6371; // نصف قطر الأرض بالكيلومتر
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+/**
+ * يُنسّق المسافة لعرضها للمستخدم. أمثلة:
+ *  - 0.45 → "450 م"
+ *  - 1.2  → "1.2 كم"
+ *  - 12.7 → "13 كم"
+ */
+export function formatDistance(km: number | null | undefined): string {
+  if (km == null || !Number.isFinite(km)) return "";
+  if (km < 1) return `${Math.round(km * 1000)} م`;
+  if (km < 10) return `${km.toFixed(1)} كم`;
+  return `${Math.round(km)} كم`;
+}

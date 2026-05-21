@@ -6,6 +6,7 @@ import { Hero } from "@/components/hero";
 import { ListingsGrid } from "@/components/listings-grid";
 import { SiteFooter } from "@/components/site-footer";
 import { StoriesRow } from "@/components/stories/stories-row";
+import { TowTrucksCTA } from "@/components/tow-trucks-cta";
 import { VerifiedDealersRow } from "@/components/verified-dealers-row";
 
 /**
@@ -13,15 +14,16 @@ import { VerifiedDealersRow } from "@/components/verified-dealers-row";
  *
  * 1) StoriesRow - الستوريز في القمة (التفاعل اليومي).
  * 2) Hero       - البانر/البحث.
- * 3) VerifiedDealersRow - المعارض الموثقة مباشرة بعد البانر (ثقة).
- * 4) CategoryGrid - تصفّح حسب القسم (شريط أفقي).
- * 5) BrowseByBrand - تصفّح حسب الماركة (شريط أفقي).
- * 6) FeaturedListingsSection - إعلانات مميزة (تُخفي نفسها لو لا توجد).
- * 7) ListingsGrid - أحدث الإعلانات (تشمل المميزة أيضاً - نمط dubizzle/OpenSooq).
- * 8) CTASection - بانر "ابدأ البيع".
- * 9) SiteFooter - الفوتر.
+ * 3) TowTrucksCTA - بانر "تعطّلت سيارتك؟" - مرئي مباشرة بعد البحث (حاجة طارئة).
+ * 4) VerifiedDealersRow - المعارض الموثقة (ثقة).
+ * 5) CategoryGrid - تصفّح حسب القسم (شريط أفقي).
+ * 6) BrowseByBrand - تصفّح حسب الماركة (شريط أفقي).
+ * 7) FeaturedListingsSection - إعلانات مميزة (تُخفي نفسها لو لا توجد).
+ * 8) ListingsGrid - أحدث الإعلانات (تشمل المميزة أيضاً - نمط dubizzle/OpenSooq).
+ * 9) CTASection - بانر "ابدأ البيع".
+ * 10) SiteFooter - الفوتر.
  *
- * الأقسام 3 و 4 و 5 تستخدم Horizontal Scroll لتقليل طول الصفحة.
+ * الأقسام 4 و 5 و 6 تستخدم Horizontal Scroll لتقليل طول الصفحة.
  * VerifiedDealersRow و FeaturedListingsSection يخفيان نفسيهما عند عدم وجود محتوى.
  */
 export default function HomePage() {
@@ -29,6 +31,7 @@ export default function HomePage() {
     <>
       <StoriesRow />
       <Hero />
+      <TowTrucksCTA />
       <VerifiedDealersRow />
       <CategoryGrid />
       <BrowseByBrand />

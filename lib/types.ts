@@ -47,6 +47,21 @@ export interface Listing {
   createdAt?: Timestamp | null;
   updatedAt?: Timestamp | null;
   rejectionReason?: string;
+
+  // حقول إضافية خاصة بخدمات الساحبات (tow-truck) - كلها اختيارية
+  // ويمكن استخدامها مستقبلاً لخدمات أخرى تحتاج موقعاً جغرافياً.
+  /** هل الخدمة متاحة الآن للاستلام؟ يديره صاحب الخدمة يدوياً. */
+  availableNow?: boolean;
+  /** المناطق التي تغطيها الخدمة (نص حر، مثلاً "حي الأندلس، طريق المطار"). */
+  coverageAreas?: string;
+  /** المنطقة داخل المدينة (مثلاً "حي الأندلس"). */
+  area?: string;
+  /** خط العرض الجغرافي للخدمة (لحساب المسافة من المستخدم). */
+  latitude?: number;
+  /** خط الطول الجغرافي للخدمة. */
+  longitude?: number;
+  /** رابط الموقع على خرائط Google (اختياري، يفتحه المستخدم بنقرة). */
+  locationUrl?: string;
 }
 
 export interface UserProfile {

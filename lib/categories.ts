@@ -27,6 +27,7 @@ export const categories: CategoryDef[] = [
   { slug: "oils", name: "زيوت ومواد مضافة", icon: "Droplet", group: "parts" },
   { slug: "tires", name: "إطارات وجنوط", icon: "CircleDot", group: "parts" },
   { slug: "mobile-mechanic", name: "ميكانيكي متنقل", icon: "Wrench", group: "services" },
+  { slug: "tow-truck", name: "ساحبة سيارات", icon: "Truck", group: "services" },
   { slug: "bodywork", name: "سمكرة وزواق", icon: "PaintBucket", group: "services" },
   { slug: "workshops", name: "ورش ميكانيكا", icon: "Settings", group: "services" },
   { slug: "auto-electric", name: "فني كهربائي سيارات", icon: "Plug", group: "services" },
