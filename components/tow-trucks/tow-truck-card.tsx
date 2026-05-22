@@ -19,8 +19,6 @@ import {
   normalizeLibyanPhone,
 } from "@/lib/utils";
 
-const FALLBACK = "/icons/car-card.svg";
-
 interface TowTruckCardProps {
   listing: Listing;
   /** موقع المستخدم - لو متوفر تظهر المسافة. */
@@ -35,7 +33,6 @@ function TowTruckCardImpl({
   userLng,
   priority = false,
 }: TowTruckCardProps) {
-  const cover = (listing.images && listing.images[0]) || FALLBACK;
   const phone = listing.phone || "";
   const wa = normalizeLibyanPhone(listing.whatsapp || phone);
   const available = listing.availableNow === true;
@@ -67,11 +64,11 @@ function TowTruckCardImpl({
       {/* الصورة */}
       <Link
         href={`/tow-trucks/${listing.id}`}
-        className="relative block aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-800"
+        className="relative block aspect-[4/3] overflow-hidden"
       >
         {listing.images && listing.images[0] ? (
           <Image
-            src={cover}
+            src={listing.images[0]}
             alt={listing.title || "ساحبة سيارات"}
             fill
             className="object-cover transition group-hover:scale-105"
@@ -79,8 +76,14 @@ function TowTruckCardImpl({
             priority={priority}
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-slate-400">
-            <Truck size={48} strokeWidth={1.5} />
+          /* placeholder مخصّص للساحبات - بهوية البرند بدلاً من رمادي.
+             تدرّج أزرق-برتقالي خفيف + أيقونة Truck بيضاء كبيرة. يستخدَم
+             عندما لا يرفع المالك صورة لخدمته. */
+          <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-gradient-to-br from-brand-700 via-brand-600 to-action-500 text-white">
+            <Truck size={40} strokeWidth={2} className="opacity-90" />
+            <span className="text-[10px] font-black opacity-90">
+              ساحبة سيارات
+            </span>
           </div>
         )}
 

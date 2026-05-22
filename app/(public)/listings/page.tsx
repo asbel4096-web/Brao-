@@ -154,6 +154,12 @@ function ListingsContent() {
   // فلترة محلية
   const filtered = useMemo(() => {
     let arr = listings;
+    // استبعاد خدمات الساحبات من قائمة الإعلانات العامة - لها صفحة
+    // مخصّصة /tow-trucks. الاستثناء: لو المستخدم *اختار* صراحة قسم
+    // ساحبة سيارات من الفلتر، نسمح بظهورها (للأدمن أو لاستكشاف يدوي).
+    if (category !== "ساحبة سيارات") {
+      arr = arr.filter((it) => it.category !== "ساحبة سيارات");
+    }
     const s = deferredSearch.trim().toLowerCase();
     if (s) {
       arr = arr.filter((it) => {

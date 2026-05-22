@@ -156,8 +156,11 @@ export function FeaturedListingsSection() {
   }, []);
 
   // فلترة المنتهي client-side + ترتيب حسب آخر تمييز + قص للحدّ الأقصى.
+  // الساحبات مستبعدة - لها صفحتها المخصّصة /tow-trucks.
   const visible = useMemo(() => {
-    const active = items.filter((l) => isListingFeatured(l));
+    const active = items.filter(
+      (l) => isListingFeatured(l) && l.category !== "ساحبة سيارات"
+    );
     active.sort((a, b) => {
       const ta = tsToMs(a.featuredAt) || 0;
       const tb = tsToMs(b.featuredAt) || 0;

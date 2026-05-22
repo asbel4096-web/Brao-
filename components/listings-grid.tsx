@@ -102,10 +102,14 @@ export function ListingsGrid() {
   // ترتيب المميزة أولاً ثم العادية - الترتيب داخل كل مجموعة محفوظ
   // من Firestore (orderBy createdAt desc). التمييز يُفحص client-side
   // بفترة الانتهاء أيضاً، فالمنتهي لا يبقى في القمة.
+  // ملاحظة: خدمات الساحبات (category == "ساحبة سيارات") تُستبعَد كلياً -
+  // لها صفحة مخصّصة /tow-trucks بتصميم مختلف، ولا يجب أن تظهر هنا
+  // مع إعلانات السيارات العادية.
   const sortedItems = useMemo(() => {
     const featured: Listing[] = [];
     const regular: Listing[] = [];
     for (const it of items) {
+      if (it.category === "ساحبة سيارات") continue;
       if (isListingFeatured(it)) featured.push(it);
       else regular.push(it);
     }
