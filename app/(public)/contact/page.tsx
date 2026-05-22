@@ -14,6 +14,7 @@ import {
   Instagram,
   Mail,
   MessageCircle,
+  Pencil,
   Phone,
   Send,
 } from "lucide-react";
@@ -88,15 +89,36 @@ export default function ContactPage() {
     <section className="container py-4 sm:py-8">
       <div className="mx-auto max-w-2xl space-y-5">
         {/* ============================================================
-            Hero
+            Hero - عنوان + نص توضيحي. للأدمن يظهر زر اختصار لصفحة
+            تعديل معلومات التواصل (/admin/contact-info). يستخدم نفس
+            هوية البرند ولا يلفت نظر المستخدم العادي (لا يراه أصلاً).
            ============================================================ */}
-        <div>
-          <h1 className="text-2xl font-black text-slate-950 dark:text-white sm:text-3xl">
-            هل تحتاج إلى مساعدة؟
-          </h1>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-            فريق براتشو كار جاهز للرد على استفساراتك ومقترحاتك.
-          </p>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-2xl font-black text-slate-950 dark:text-white sm:text-3xl">
+              هل تحتاج إلى مساعدة؟
+            </h1>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+              فريق براتشو كار جاهز للرد على استفساراتك ومقترحاتك.
+            </p>
+          </div>
+
+          {profile?.isAdmin && (
+            <Link
+              href="/admin/contact-info"
+              aria-label="تعديل معلومات التواصل (للأدمن فقط)"
+              className="
+                inline-flex h-9 shrink-0 items-center gap-1.5 rounded-2xl
+                border border-action-300 bg-action-50 px-3 text-xs font-black
+                text-action-700 transition active:scale-95 hover:bg-action-100
+                dark:border-action-800/40 dark:bg-action-900/20 dark:text-action-300
+                dark:hover:bg-action-900/30
+              "
+            >
+              <Pencil size={12} />
+              تعديل
+            </Link>
+          )}
         </div>
 
         {/* ============================================================
