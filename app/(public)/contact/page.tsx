@@ -11,6 +11,7 @@ import {
   AtSign,
   CheckCircle2,
   Facebook,
+  Instagram,
   Mail,
   MessageCircle,
   Phone,
@@ -19,29 +20,27 @@ import {
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
+import { useContactSettings } from "@/hooks/useContactSettings";
 
 /**
  * صفحة الدعم والتواصل - بسيطة وعملية.
  *
- * الهدف: المستخدم يجد طريقة التواصل المناسبة بسرعة.
- *
- * البنية:
- *  1. Hero بسيط بدون ازدحام
- *  2. 3 بطاقات تواصل سريع: واتساب (الأبرز) + اتصال + إيميل
- *  3. نموذج اقتراح/مشكلة
- *  4. وسائل التواصل الاجتماعي (compact)
- *  5. روابط أسفل: الأسئلة الشائعة، نصائح الأمان، شروط الاستخدام
+ * معلومات التواصل (هاتف، واتساب، إيميل، روابط social) تأتي من
+ * Firestore (settings/contact). الأدمن يعدّلها من /admin/contact-info،
+ * أي حقل فارغ يخفي بطاقته من الواجهة.
  */
-
-const SUPPORT_PHONE = "+218912345678";
-const SUPPORT_WHATSAPP = "218912345678";
-const SUPPORT_EMAIL = "support@bratshocar.com";
 
 type ContactType = "suggestion" | "issue" | "other";
 
 export default function ContactPage() {
   const { user, profile } = useAuth();
   const toast = useToast();
+  const { settings } = useContactSettings();
+
+  // اشتقاق القيم من الإعدادات - نتحقق من وجود قيمة قبل عرض البطاقة.
+  const SUPPORT_PHONE = settings.phone || "";
+  const SUPPORT_WHATSAPP = settings.whatsapp || "";
+  const SUPPORT_EMAIL = settings.email || "";
 
   const [type, setType] = useState<ContactType>("issue");
   const [name, setName] = useState(profile?.name || user?.displayName || "");
@@ -104,7 +103,8 @@ export default function ContactPage() {
             3 بطاقات تواصل سريع
            ============================================================ */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {/* واتساب - الأبرز */}
+          {/* واتساب - الأبرز - يخفى لو الأدمن لم يضع رقماً */}
+          {SUPPORT_WHATSAPP && (
           <a
             href={`https://wa.me/${SUPPORT_WHATSAPP}`}
             target="_blank"
@@ -136,8 +136,10 @@ export default function ContactPage() {
               </div>
             </div>
           </a>
+          )}
 
           {/* اتصال هاتفي */}
+          {SUPPORT_PHONE && (
           <a
             href={`tel:${SUPPORT_PHONE}`}
             className="
@@ -170,8 +172,10 @@ export default function ContactPage() {
               </div>
             </div>
           </a>
+          )}
 
           {/* إيميل */}
+          {SUPPORT_EMAIL && (
           <a
             href={`mailto:${SUPPORT_EMAIL}`}
             className="
@@ -202,6 +206,7 @@ export default function ContactPage() {
               </div>
             </div>
           </a>
+          )}
         </div>
 
         {/* ============================================================
@@ -338,31 +343,45 @@ export default function ContactPage() {
         </div>
 
         {/* ============================================================
-            وسائل التواصل الاجتماعي
+            وسائل التواصل الاجتماعي - تظهر فقط لو الأدمن وضع رابطاً.
            ============================================================ */}
         <div className="card p-5 sm:p-6">
           <h3 className="mb-3 text-sm font-black text-slate-900 dark:text-white">
             تابعنا على
           </h3>
           <div className="flex flex-wrap gap-2">
-            <SocialChip
-              href="https://facebook.com/bratshocar"
-              icon={<Facebook size={16} />}
-              label="Facebook"
-              color="bg-[#1877F2] text-white"
-            />
-            <SocialChip
-              href={`https://wa.me/${SUPPORT_WHATSAPP}`}
-              icon={<MessageCircle size={16} />}
-              label="WhatsApp"
-              color="bg-emerald-500 text-white"
-            />
-            <SocialChip
-              href={`mailto:${SUPPORT_EMAIL}`}
-              icon={<Mail size={16} />}
-              label="Email"
-              color="bg-slate-700 text-white dark:bg-slate-600"
-            />
+            {settings.facebookUrl && (
+              <SocialChip
+                href={settings.facebookUrl}
+                icon={<Facebook size={16} />}
+                label="Facebook"
+                color="bg-[#1877F2] text-white"
+              />
+            )}
+            {settings.instagramUrl && (
+              <SocialChip
+                href={settings.instagramUrl}
+                icon={<Instagram size={16} />}
+                label="Instagram"
+                color="bg-gradient-to-tr from-pink-500 to-orange-400 text-white"
+              />
+            )}
+            {SUPPORT_WHATSAPP && (
+              <SocialChip
+                href={`https://wa.me/${SUPPORT_WHATSAPP}`}
+                icon={<MessageCircle size={16} />}
+                label="WhatsApp"
+                color="bg-emerald-500 text-white"
+              />
+            )}
+            {SUPPORT_EMAIL && (
+              <SocialChip
+                href={`mailto:${SUPPORT_EMAIL}`}
+                icon={<Mail size={16} />}
+                label="Email"
+                color="bg-slate-700 text-white dark:bg-slate-600"
+              />
+            )}
           </div>
         </div>
 

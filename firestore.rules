@@ -91,47 +91,46 @@ service cloud.firestore {
             'isVerifiedDealer', 'verifiedAt',
             'disabled', 'disabledReason', 'disabledAt', 'disabledBy'
           ])
-          && request.resource.data.keys().hasOnly([
-            'uid',
-            'name',
-            'email',
-            'phone',
-            'photoURL',
-            'coverURL',
-            'businessName',
-            'dealerName',
-            'dealerLogo',
-            'dealerCover',
-            'dealerBio',
-            'workingHours',
-            'locationUrl',
-            'isVerifiedDealer',
-            'verifiedAt',
-            'disabled',
-            'disabledReason',
-            'disabledAt',
-            'disabledBy',
-            'city',
-            'bio',
-            'whatsapp',
-            'rating',
-            'reviewsCount',
-            'ratingsCount',
-            'averageRating',
-            'phoneVerified',
-            'updatedAt',
-            'lastLoginAt',
-            'isAdmin',
-            'createdAt',
-            'followersCount',
-            'followingCount',
-            'listingsCount',
-            'servicesCount',
-            'isOnline',
-            'lastSeenAt',
-            'role',
-            'profileCompleted'
-          ])
+          // المالك يستطيع تعديل أي حقل في ملف نفسه - بما في ذلك حقول
+          // مستحدثة لم نعرفها بعد. الحقول الحرجة محميّة بـunchanged() أعلاه.
+          // affectedKeys.hasOnly تفحص فقط الحقول التي *تغيّرت* (ليس كل
+          // حقول الوثيقة) - هذا يمنع كسر القاعدة بسبب حقول قديمة موجودة
+          // في الوثيقة لم يلمسها هذا التحديث.
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly([
+                 'name',
+                 'email',
+                 'phone',
+                 'photoURL',
+                 'coverURL',
+                 'businessName',
+                 'dealerName',
+                 'dealerLogo',
+                 'dealerCover',
+                 'dealerBio',
+                 'workingHours',
+                 'locationUrl',
+                 'city',
+                 'bio',
+                 'whatsapp',
+                 'rating',
+                 'reviewsCount',
+                 'ratingsCount',
+                 'averageRating',
+                 'phoneVerified',
+                 'updatedAt',
+                 'lastLoginAt',
+                 'followersCount',
+                 'followingCount',
+                 'listingsCount',
+                 'servicesCount',
+                 'isOnline',
+                 'lastSeenAt',
+                 'role',
+                 'profileCompleted',
+                 'membership',
+                 'providerIds'
+               ])
         )
         || (
           // الأدمن يستطيع تعديل أي حقل في ملف أي مستخدم — بما في ذلك
@@ -394,6 +393,14 @@ service cloud.firestore {
     // وثيقة واحدة لكل brand id (مثل brandLogos/toyota).
     // البنية: { brandId: string, logoUrl: string, updatedAt }
     match /brandLogos/{brandId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // إعدادات عامة للموقع (settings/contact، settings/...).
+    // أي مستخدم يقرأ (عام)، الأدمن فقط يكتب.
+    // الوثيقة الرئيسية: settings/contact مع phone/whatsapp/email/...
+    match /settings/{docId} {
       allow read: if true;
       allow create, update, delete: if isAdmin();
     }

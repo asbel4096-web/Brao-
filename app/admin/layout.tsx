@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Shield, ListChecks, Users, CreditCard, LayoutDashboard, Sparkles, Tag } from "lucide-react";
+import { Shield, ListChecks, Users, CreditCard, LayoutDashboard, Sparkles, Tag, Headphones } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -53,6 +53,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin/featured-requests", label: "طلبات التمييز", Icon: Sparkles },
     { href: "/admin/users", label: "المستخدمون", Icon: Users },
     { href: "/admin/brands", label: "شعارات الماركات", Icon: Tag },
+    { href: "/admin/contact-info", label: "معلومات التواصل", Icon: Headphones },
     { href: "/admin/subscriptions", label: "الاشتراكات", Icon: CreditCard },
   ];
 

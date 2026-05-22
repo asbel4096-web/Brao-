@@ -331,3 +331,23 @@ export interface FeaturedRequest {
   createdAt?: Timestamp | null;
   reviewedAt?: Timestamp | null;
 }
+
+/**
+ * إعدادات معلومات التواصل العامة - وثيقة واحدة في settings/contact.
+ * كل المستخدمين يقرؤونها، الأدمن فقط يعدّل.
+ * الحقل الفارغ يعني "أخفِ هذا في صفحة التواصل".
+ */
+export interface ContactSettings {
+  /** رقم الاتصال بصيغة دولية مثل +218912345678. */
+  phone?: string;
+  /** رقم واتساب بدون + وبدون أصفار. مثلاً 218912345678. */
+  whatsapp?: string;
+  /** بريد دعم الفني. */
+  email?: string;
+  /** رابط كامل لصفحة Facebook. */
+  facebookUrl?: string;
+  /** رابط كامل لصفحة Instagram. */
+  instagramUrl?: string;
+  updatedAt?: Timestamp | null;
+  updatedBy?: string;
+}
