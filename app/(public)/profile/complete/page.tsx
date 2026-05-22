@@ -166,10 +166,11 @@ function CompleteProfilePageInner() {
       }
 
       // حفظ في Firestore
+      // ملاحظة: لا نُرسل uid أو isAdmin أو createdAt - هذه حقول محمية
+      // بـunchanged() في القواعد. الـmerge:true يحافظ على القيم القديمة.
       await setDoc(
         doc(db, "users", user.uid),
         {
-          uid: user.uid,
           name: name.trim(),
           email: email.trim() || user.email || "",
           phone: phone.trim() || user.phoneNumber || "",

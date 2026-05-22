@@ -10,7 +10,7 @@ import {
   useRef,
   ReactNode,
 } from "react";
-import { onAuthStateChanged, User } from "firebase/auth";
+import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { auth, db, isBootstrapAdminEmail } from "@/lib/firebase";
 import { useSearchAlertMatcher } from "@/hooks/useSearchAlertMatcher";
@@ -82,7 +82,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // مستخدم موجود - تحديث lastLoginAt + الحضور فقط، لا نلمس isAdmin
+      // مستخدم موجود - تحقّق من حالة التعطيل أولاً.
+      const existingData = snap.data() as UserProfile;
+      if (existingData.disabled === true) {
+        // الحساب معطَّل من قبل الأدمن (احتيال/انتحال). سجّل خروج فوري
+        // ولا تُحمّل الـprofile - تجربة "كأن الحساب غير موجود".
+        // eslint-disable-next-line no-console
+        console.warn("[Auth] Account is disabled. Signing out.");
+        try {
+          await signOut(auth);
+        } catch {
+          /* تجاهل أخطاء الخروج - الـAuth state سيتحدّث على أي حال */
+        }
+        setProfile(null);
+        if (typeof window !== "undefined") {
+          // رسالة بسيطة للمستخدم. لا نكشف السبب لتجنّب جدال مع المحتالين.
+          alert("تم تعطيل هذا الحساب. للمزيد تواصل مع إدارة براتشو كار.");
+        }
+        return;
+      }
+
+      // مستخدم موجود غير معطّل - تحديث lastLoginAt + الحضور فقط، لا نلمس isAdmin
       await setDoc(
         userRef,
         {
@@ -93,9 +113,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         { merge: true }
       );
       setProfile({ uid: currentUser.uid, ...(snap.data() as any) });
-    } catch (err) {
+    } catch (err: any) {
       // eslint-disable-next-line no-console
       console.error("[Auth] loadProfile error:", err);
+      // طباعة معلومات تشخيصية إضافية لمساعدة التتبّع.
+      // code يعطي نوع الخطأ (permission-denied / unavailable / ...)
+      // message يعطي السبب التفصيلي.
+      if (err && typeof err === "object") {
+        // eslint-disable-next-line no-console
+        console.error("[Auth] loadProfile error code:", err.code || "(unknown)");
+        // eslint-disable-next-line no-console
+        console.error("[Auth] loadProfile error message:", err.message || "(no message)");
+      }
       setProfile(null);
     }
   }, []);
