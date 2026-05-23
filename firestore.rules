@@ -80,7 +80,11 @@ service cloud.firestore {
       allow create: if isMe(userId)
         && request.resource.data.uid == request.auth.uid
         && (
-          request.resource.data.isAdmin == false
+          // الحالة العادية: المستخدم لا يرسل isAdmin أو يرسله false.
+          // الحالة الثانية: المستخدم في قائمة Bootstrap Admin يستطيع
+          // إرسال isAdmin=true مرة واحدة فقط عند الإنشاء.
+          !('isAdmin' in request.resource.data)
+          || request.resource.data.isAdmin == false
           || (request.resource.data.isAdmin == true && isBootstrapAdminCreate())
         );
 
@@ -99,10 +103,13 @@ service cloud.firestore {
           && request.resource.data.diff(resource.data).affectedKeys()
                .hasOnly([
                  'name',
+                 'displayName',
                  'email',
                  'phone',
                  'photoURL',
+                 'avatarUrl',
                  'coverURL',
+                 'accountCode',
                  'businessName',
                  'dealerName',
                  'dealerLogo',
@@ -128,6 +135,12 @@ service cloud.firestore {
                  'lastSeenAt',
                  'role',
                  'profileCompleted',
+                 'termsAccepted',
+                 'privacyAccepted',
+                 'termsAcceptedAt',
+                 'privacyAcceptedAt',
+                 'acceptedTermsVersion',
+                 'acceptedPrivacyVersion',
                  'membership',
                  'providerIds'
                ])
