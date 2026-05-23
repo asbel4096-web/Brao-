@@ -12,7 +12,8 @@ import {
 } from "react";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
-import { auth, db, isBootstrapAdminEmail } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import { getApp } from "firebase/app";
 import { useSearchAlertMatcher } from "@/hooks/useSearchAlertMatcher";
 import type { UserProfile } from "@/lib/types";
 
@@ -51,58 +52,111 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * - مستخدم موجود: يُحدّث lastLoginAt فقط، **لا يُلمَس isAdmin** أبداً.
    */
   const loadProfile = useCallback(async (currentUser: User) => {
+    // ================================================================
+    // تشخيص: نطبع projectId/uid/المسار قبل أي عملية Firestore.
+    // هذه السطور حاسمة للتأكد أن:
+    //  - الـapp يستخدم نفس projectId المتوقع (وليس مشروع آخر بقواعد قديمة).
+    //  - الـuid الذي نقرأ به فعلاً يطابق request.auth.uid.
+    //  - المسار يقرأ users/{uid} فقط ولا شيء آخر.
+    // ================================================================
+    let projectId = "(unknown)";
     try {
-      const userRef = doc(db, "users", currentUser.uid);
-      const snap = await getDoc(userRef);
+      projectId = getApp().options.projectId || "(missing)";
+    } catch {
+      /* تجاهل - لو لم يُهيَّأ الـapp بعد */
+    }
+    const path = `users/${currentUser.uid}`;
+    // eslint-disable-next-line no-console
+    console.log("[Auth] projectId:", projectId);
+    // eslint-disable-next-line no-console
+    console.log("[Auth] loadProfile uid:", currentUser.uid);
+    // eslint-disable-next-line no-console
+    console.log("[Auth] loadProfile path:", path);
 
-      if (!snap.exists()) {
-        // مستخدم جديد - إنشاء + bootstrap admin إذا كان إيميله مسجَّلاً
-        const shouldBootstrapAdmin = isBootstrapAdminEmail(currentUser.email);
+    const userRef = doc(db, "users", currentUser.uid);
 
-        await setDoc(
-          userRef,
-          {
-            uid: currentUser.uid,
-            name: currentUser.displayName || "",
-            email: currentUser.email || "",
-            phone: currentUser.phoneNumber || "",
-            photoURL: currentUser.photoURL || "",
-            isAdmin: shouldBootstrapAdmin, // مصدر الحقيقة الوحيد
-            isOnline: true,
-            lastSeenAt: serverTimestamp(),
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-            lastLoginAt: serverTimestamp(),
-          },
-          { merge: true }
-        );
+    // ----------------------------------------------------------------
+    // مرحلة 1: قراءة users/{uid}.
+    // معزولة في try خاص حتى نعرف *بالضبط* أن الفشل من القراءة لا من
+    // الكتابة. القاعدة المنشورة لـ users/{userId} هي:
+    //   allow read: if true;
+    // إن فشلت هذه بـpermission-denied فالقواعد المنشورة في Firebase
+    // *ليست* القواعد الموجودة في firestore.rules بالريبو (لم يتم deploy)
+    // أو الـprojectId يشير لمشروع آخر.
+    // ----------------------------------------------------------------
+    let snap;
+    try {
+      snap = await getDoc(userRef);
+    } catch (err: any) {
+      // eslint-disable-next-line no-console
+      console.error("[Auth] loadProfile READ failed at", path);
+      // eslint-disable-next-line no-console
+      console.error("[Auth] loadProfile READ error code:", err?.code || "(unknown)");
+      // eslint-disable-next-line no-console
+      console.error("[Auth] loadProfile READ error message:", err?.message || "(no message)");
+      // مهم: لا نُلقي toast هنا ولا نُعيد رمي الخطأ.
+      // الـprofile يبقى null والـflow يُكمل إلى /profile/complete الذي
+      // يستطيع إنشاء الوثيقة عبر setDoc(merge:true).
+      setProfile(null);
+      return;
+    }
 
-        const fresh = await getDoc(userRef);
-        setProfile({ uid: currentUser.uid, ...(fresh.data() as any) });
-        return;
+    if (!snap.exists()) {
+      // ------------------------------------------------------------
+      // مستخدم جديد. لا نُنشئ الوثيقة هنا — نترك صفحة /profile/complete
+      // تُنشئها عند الحفظ. هذا يتجنّب writes صامتة قد تكسر القواعد
+      // (مثلاً إذا تغيّرت قائمة الحقول المسموحة لـcreate).
+      //
+      // كل ما نحتاجه الآن: تعيين profile مبدئي بالحد الأدنى من البيانات
+      // المعروفة من Auth، حتى تتدفّق الواجهة بشكل طبيعي إلى
+      // /profile/complete (مدفوع من LoginClient/profile/page).
+      // ------------------------------------------------------------
+      // eslint-disable-next-line no-console
+      console.log("[Auth] loadProfile: no doc yet at", path, "- letting /profile/complete create it");
+      setProfile({
+        uid: currentUser.uid,
+        name: currentUser.displayName || "",
+        email: currentUser.email || "",
+        phone: currentUser.phoneNumber || "",
+        photoURL: currentUser.photoURL || "",
+        isAdmin: false,
+        profileCompleted: false,
+      } as UserProfile);
+      return;
+    }
+
+    // مستخدم موجود - تحقّق من حالة التعطيل أولاً.
+    const existingData = snap.data() as UserProfile;
+    if (existingData.disabled === true) {
+      // الحساب معطَّل من قبل الأدمن (احتيال/انتحال). سجّل خروج فوري
+      // ولا تُحمّل الـprofile - تجربة "كأن الحساب غير موجود".
+      // eslint-disable-next-line no-console
+      console.warn("[Auth] Account is disabled. Signing out.");
+      try {
+        await signOut(auth);
+      } catch {
+        /* تجاهل أخطاء الخروج - الـAuth state سيتحدّث على أي حال */
       }
-
-      // مستخدم موجود - تحقّق من حالة التعطيل أولاً.
-      const existingData = snap.data() as UserProfile;
-      if (existingData.disabled === true) {
-        // الحساب معطَّل من قبل الأدمن (احتيال/انتحال). سجّل خروج فوري
-        // ولا تُحمّل الـprofile - تجربة "كأن الحساب غير موجود".
-        // eslint-disable-next-line no-console
-        console.warn("[Auth] Account is disabled. Signing out.");
-        try {
-          await signOut(auth);
-        } catch {
-          /* تجاهل أخطاء الخروج - الـAuth state سيتحدّث على أي حال */
-        }
-        setProfile(null);
-        if (typeof window !== "undefined") {
-          // رسالة بسيطة للمستخدم. لا نكشف السبب لتجنّب جدال مع المحتالين.
-          alert("تم تعطيل هذا الحساب. للمزيد تواصل مع إدارة براتشو كار.");
-        }
-        return;
+      setProfile(null);
+      if (typeof window !== "undefined") {
+        // رسالة بسيطة للمستخدم. لا نكشف السبب لتجنّب جدال مع المحتالين.
+        alert("تم تعطيل هذا الحساب. للمزيد تواصل مع إدارة براتشو كار.");
       }
+      return;
+    }
 
-      // مستخدم موجود غير معطّل - تحديث lastLoginAt + الحضور فقط، لا نلمس isAdmin
+    // ----------------------------------------------------------------
+    // مرحلة 2: تعيين الـprofile من القراءة *قبل* أي كتابة.
+    // الواجهة تتدفّق فوراً، وأي فشل في الكتابة (lastLoginAt) لن يعطّل
+    // المستخدم — هي عملية تجميل لا حرجة.
+    // ----------------------------------------------------------------
+    setProfile({ uid: currentUser.uid, ...(existingData as any) });
+
+    // ----------------------------------------------------------------
+    // مرحلة 3: تحديث lastLoginAt + الحضور (best-effort).
+    // معزول حتى لو فشلت القواعد على حقل غير متوقع، لا نعرض toast.
+    // ----------------------------------------------------------------
+    try {
       await setDoc(
         userRef,
         {
@@ -112,20 +166,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
         { merge: true }
       );
-      setProfile({ uid: currentUser.uid, ...(snap.data() as any) });
     } catch (err: any) {
       // eslint-disable-next-line no-console
-      console.error("[Auth] loadProfile error:", err);
-      // طباعة معلومات تشخيصية إضافية لمساعدة التتبّع.
-      // code يعطي نوع الخطأ (permission-denied / unavailable / ...)
-      // message يعطي السبب التفصيلي.
-      if (err && typeof err === "object") {
-        // eslint-disable-next-line no-console
-        console.error("[Auth] loadProfile error code:", err.code || "(unknown)");
-        // eslint-disable-next-line no-console
-        console.error("[Auth] loadProfile error message:", err.message || "(no message)");
-      }
-      setProfile(null);
+      console.warn("[Auth] loadProfile lastLoginAt update failed (non-fatal):", err?.code || "", err?.message || "");
     }
   }, []);
 

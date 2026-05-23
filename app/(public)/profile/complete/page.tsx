@@ -2,11 +2,11 @@
 
 import { Suspense, ChangeEvent, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { updateProfile } from "firebase/auth";
 import { Camera } from "lucide-react";
-import { db, storage } from "@/lib/firebase";
+import { db, storage, isBootstrapAdminEmail } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { AuthLayout } from "@/components/auth/auth-layout";
@@ -165,31 +165,89 @@ function CompleteProfilePageInner() {
         finalPhotoURL = await getDownloadURL(fileRef);
       }
 
-      // حفظ في Firestore
-      // ملاحظة: لا نُرسل uid أو isAdmin أو createdAt - هذه حقول محمية
-      // بـunchanged() في القواعد. الـmerge:true يحافظ على القيم القديمة.
-      await setDoc(
-        doc(db, "users", user.uid),
-        {
-          name: name.trim(),
-          email: email.trim() || user.email || "",
-          phone: phone.trim() || user.phoneNumber || "",
-          bio: bio.trim(),
-          photoURL: finalPhotoURL,
-          // العلامة الصريحة: المستخدم أكمل الـonboarding. هذا يمنع تكرار
-          // ظهور هذه الصفحة عند تسجيل الدخول لاحقاً، حتى لو كان أحد
-          // الحقول فارغاً (مثل الإيميل لمستخدمي تسجيل الدخول بالهاتف).
-          profileCompleted: true,
-          updatedAt: serverTimestamp(),
-        },
-        { merge: true }
-      );
+      const userRef = doc(db, "users", user.uid);
+
+      // نفحص أولاً وجود الوثيقة عبر قراءة users/{uid}.
+      // القاعدة المنشورة: allow read: if true; فلن تفشل بـpermission-denied
+      // إلا إذا كان الـprojectId خاطئاً أو القواعد لم تُنشَر بعد.
+      let existed = false;
+      try {
+        const snap = await getDoc(userRef);
+        existed = snap.exists();
+      } catch (err: any) {
+        // eslint-disable-next-line no-console
+        console.error(
+          "[CompleteProfile] pre-check getDoc failed:",
+          err?.code,
+          err?.message
+        );
+        // نُكمل كأنها غير موجودة - الـcreate path سيُعطي خطأً واضحاً
+        // إن كان فعلاً موجود (already exists / unauthorized).
+      }
+
+      // نبني الحمولة بدون undefined نهائياً. القواعد لا تتقبّل قيم
+      // غير معروفة على create، وindex على undefined يُلقى تلقائياً
+      // من Firestore SDK لكن نتحاشى ذلك صراحةً.
+      const trimmedName = name.trim();
+      const trimmedEmail = email.trim() || user.email || "";
+      const trimmedPhone = phone.trim() || user.phoneNumber || "";
+      const trimmedBio = bio.trim();
+      const safePhoto = finalPhotoURL || user.photoURL || "";
+
+      if (!existed) {
+        // ----------------------------------------------------------
+        // مسار الإنشاء: القاعدة allow create تتطلب:
+        //   - isMe(userId)
+        //   - request.resource.data.uid == request.auth.uid
+        //   - isAdmin إما غير موجود، أو false، أو true عند bootstrap.
+        // لذلك نُرسل uid + isAdmin صراحةً هنا (ليس في الـupdate).
+        // ----------------------------------------------------------
+        const shouldBootstrapAdmin = isBootstrapAdminEmail(user.email);
+
+        await setDoc(
+          userRef,
+          {
+            uid: user.uid,
+            name: trimmedName,
+            email: trimmedEmail,
+            phone: trimmedPhone,
+            bio: trimmedBio,
+            photoURL: safePhoto,
+            isAdmin: shouldBootstrapAdmin,
+            isOnline: true,
+            lastSeenAt: serverTimestamp(),
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            lastLoginAt: serverTimestamp(),
+            profileCompleted: true,
+          },
+          { merge: true }
+        );
+      } else {
+        // ----------------------------------------------------------
+        // مسار التحديث: لا نُرسل uid/isAdmin/createdAt — محميّة بـunchanged().
+        // كل الحقول هنا مدرجة في hasOnly في القواعد.
+        // ----------------------------------------------------------
+        await setDoc(
+          userRef,
+          {
+            name: trimmedName,
+            email: trimmedEmail,
+            phone: trimmedPhone,
+            bio: trimmedBio,
+            photoURL: safePhoto,
+            profileCompleted: true,
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+      }
 
       // تحديث displayName
       try {
         await updateProfile(user, {
-          displayName: name.trim(),
-          photoURL: finalPhotoURL || user.photoURL || "",
+          displayName: trimmedName,
+          photoURL: safePhoto,
         });
       } catch {
         /* non-fatal */
@@ -199,6 +257,12 @@ function CompleteProfilePageInner() {
       toast.success("تم إكمال حسابك بنجاح!");
       router.replace(redirectTo);
     } catch (err: any) {
+      // eslint-disable-next-line no-console
+      console.error(
+        "[CompleteProfile] save failed:",
+        err?.code,
+        err?.message
+      );
       toast.error(err?.message || "حدث خطأ أثناء الحفظ.");
     } finally {
       setSaving(false);
