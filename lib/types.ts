@@ -166,6 +166,21 @@ export interface ListingComment {
   reported?: boolean;
   reportedCount?: number;
   lastReportedAt?: Timestamp | null;
+  /**
+   * تفاعلات التعليق. المفتاح uid المُتفاعل، القيمة مفتاح التفاعل من
+   * `lib/comment-reactions.ts` (مثل "like" / "love" / ...).
+   *
+   * نخزّن المفتاح النصّي وليس الإيموجي مباشرة حتى نستطيع تغيير الإيموجي
+   * لاحقاً (مثلاً تحويل "love" من ❤️ إلى أي رمز آخر) دون migration.
+   * كذلك يجعل الفلترة والعد أنظف.
+   */
+  reactions?: { [uid: string]: string };
+  /**
+   * معرّف التعليق الأب إن كان هذا رداً. تعليق المستوى الأول = null/undefined.
+   * نُسطّح الردود في نفس الـcollection بدلاً من sub-collection لتسهيل
+   * الاستعلام والعرض الزمني.
+   */
+  parentId?: string | null;
 }
 
 export interface ChatThread {

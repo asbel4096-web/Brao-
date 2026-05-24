@@ -280,15 +280,31 @@ service cloud.firestore {
           get(/databases/$(database)/documents/listings/$(listingId)).data.ownerId == request.auth.uid ||
           isAdmin()
         );
-        // Reporting a comment: a signed-in user who is NOT the author may
-        // only touch the report fields, and reportedCount may only go up.
+        // التحديثات المسموحة على التعليق:
+        //  (1) بلاغ: أي مستخدم ليس صاحب التعليق يستطيع رفع reportedCount
+        //      بواحد + تعيين reported=true. الحقول المسموحة فقط:
+        //      reported / reportedCount / lastReportedAt.
+        //  (2) تفاعلات: أي مُسجَّل يستطيع تعديل خريطة `reactions` (مفتاحها
+        //      uid، قيمتها مفتاح التفاعل). نسمح لأي uid بتعديل reactions
+        //      ككلٍّ لأن تقييد كل مفتاح لكل uid صعب التحقق في rules. الضرر
+        //      المحتمل (حذف تفاعل شخص آخر) محدود وقابل للتعافي بإعادة
+        //      التفاعل. النص والـuserId/userName لا يمكن أن يتغيّروا.
+        //  (3) الأدمن: أي تعديل.
         allow update: if (
+          // (1) report
           signedIn()
           && resource.data.userId != request.auth.uid
           && request.resource.data.diff(resource.data).affectedKeys()
                .hasOnly(['reported', 'reportedCount', 'lastReportedAt'])
           && request.resource.data.reported == true
           && request.resource.data.reportedCount == resource.data.reportedCount + 1
+        ) || (
+          // (2) reactions
+          signedIn()
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['reactions'])
+          // النص والمعرّف لا يتغيّران (محميّان ضمنياً بـhasOnly أعلاه لكن
+          // نذكّر بأن أي حقل خارج reactions يفشل).
         ) || isAdmin();
       }
 
