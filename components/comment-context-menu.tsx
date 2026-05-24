@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ComponentType } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   Reply,
@@ -10,6 +10,7 @@ import {
   Flag,
   ChevronDown,
   MoreHorizontal,
+  type LucideIcon,
 } from "lucide-react";
 
 /**
@@ -49,7 +50,7 @@ const GAP = 8;
 interface MenuItem {
   key: CommentMenuAction;
   label: string;
-  icon: ComponentType<{ size?: number; className?: string }>;
+  icon: LucideIcon;
   danger?: boolean;
 }
 
@@ -71,12 +72,12 @@ export function CommentContextMenu({
   const primary: MenuItem[] = [
     { key: "reply", label: "رد", icon: Reply },
     ...(canDelete
-      ? [{ key: "delete" as const, label: "حذف", icon: Trash2, danger: true }]
-      : []),
+      ? ([{ key: "delete", label: "حذف", icon: Trash2, danger: true }] as MenuItem[])
+      : ([] as MenuItem[])),
     { key: "share", label: "مشاركة التعليق", icon: Share2 },
     ...(!isOwnComment
-      ? [{ key: "report" as const, label: "الإبلاغ عن تعليق", icon: Flag }]
-      : []),
+      ? ([{ key: "report", label: "الإبلاغ عن تعليق", icon: Flag }] as MenuItem[])
+      : ([] as MenuItem[])),
   ];
 
   // البنود الثانوية (تحت "المزيد")
