@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { db } from "@/lib/firebase";
 import type { Listing } from "@/lib/types";
-import { calculateDistanceKm } from "@/lib/utils";
+import { calculateDistanceKm, normalizeLibyanPhone } from "@/lib/utils";
 import { libyaCities } from "@/lib/categories";
 import { TowTruckCard } from "@/components/tow-trucks/tow-truck-card";
 import { useMyLocation } from "@/components/tow-trucks/use-my-location";
@@ -134,7 +134,8 @@ export default function TowTrucksPage() {
   const rest = location ? filtered.slice(3) : filtered;
 
   // النقاط للخريطة - نُحوّل الـlistings إلى شكل تقبله MiniMap.
-  // نُمرّر فقط الساحبات التي تحوي إحداثيات، حتى 8 (الباقي يُهمل بصرياً).
+  // نُمرّر فقط الساحبات التي تحوي إحداثيات. حد 50 كافٍ للأداء، فوقه
+  // يصبح الـmarkers مزدحماً بصرياً ويبطّئ pan/zoom على الموبايل.
   const mapPoints = useMemo(
     () =>
       filtered
@@ -142,12 +143,16 @@ export default function TowTrucksPage() {
           (it) =>
             typeof it.latitude === "number" && typeof it.longitude === "number"
         )
-        .slice(0, 8)
+        .slice(0, 50)
         .map((it) => ({
           id: it.id,
           lat: it.latitude as number,
           lng: it.longitude as number,
+          name: it.title || "ساحبة سيارات",
+          city: it.city,
           available: it.availableNow === true,
+          phone: it.phone || undefined,
+          whatsapp: normalizeLibyanPhone(it.whatsapp || it.phone || "") || undefined,
         })),
     [filtered]
   );
