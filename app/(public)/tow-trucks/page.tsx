@@ -24,6 +24,9 @@ import { TowTruckCard } from "@/components/tow-trucks/tow-truck-card";
 import { useMyLocation } from "@/components/tow-trucks/use-my-location";
 import { TowTrucksMiniMap } from "@/components/tow-trucks/mini-map";
 import { NearestTowCard } from "@/components/tow-trucks/nearest-tow-card";
+import { FavoritesStrip } from "@/components/tow-trucks/favorites-strip";
+import { useTowFavorites } from "@/hooks/use-tow-favorites";
+import { useToast } from "@/contexts/ToastContext";
 
 /**
  * صفحة الساحبات (tow trucks).
@@ -133,6 +136,45 @@ export default function TowTrucksPage() {
   const top3 = location ? filtered.slice(0, 3) : [];
   const rest = location ? filtered.slice(3) : filtered;
 
+  // ============================================================
+  // المفضلة: hook + اشتقاق قائمة الـlistings الفعلية للشريط
+  // ============================================================
+  const {
+    ids: favoriteIds,
+    orderedIds: orderedFavoriteIds,
+    toggle: toggleFavorite,
+    signedIn,
+  } = useTowFavorites();
+  const toast = useToast();
+
+  // نُحوّل orderedFavoriteIds إلى listings كاملة (للعرض في الشريط).
+  // نأخذها من `items` الكاملة (وليس filtered) - المفضلة يجب أن تظهر حتى
+  // لو خرجت من فلتر المدينة/متاح الآن الحالي.
+  // الـorder: نتبع orderedFavoriteIds (الأحدث إضافةً أولاً).
+  const favoriteListings = useMemo(() => {
+    if (orderedFavoriteIds.length === 0) return [];
+    const byId = new Map(items.map((it) => [it.id, it]));
+    return orderedFavoriteIds
+      .map((id) => byId.get(id))
+      .filter((it): it is Listing => Boolean(it));
+  }, [orderedFavoriteIds, items]);
+
+  // handler يُمرَّر للخريطة - يلتقط الـtoggle ويعرض toast مناسب.
+  const handleMapToggleFavorite = async (id: string) => {
+    if (!signedIn) {
+      toast.warning("سجّل الدخول لحفظ ساحباتك المفضلة.");
+      return;
+    }
+    try {
+      const becameFav = await toggleFavorite(id);
+      if (becameFav) {
+        toast.success("تمت إضافة الساحبة إلى مفضلتك.");
+      }
+    } catch {
+      toast.error("تعذّر تحديث المفضلة.");
+    }
+  };
+
   // النقاط للخريطة - نُحوّل الـlistings إلى شكل تقبله MiniMap.
   // نُمرّر فقط الساحبات التي تحوي إحداثيات. حد 50 كافٍ للأداء، فوقه
   // يصبح الـmarkers مزدحماً بصرياً ويبطّئ pan/zoom على الموبايل.
@@ -173,6 +215,10 @@ export default function TowTrucksPage() {
           </p>
         </div>
       </div>
+
+      {/* ============ ساحباتي المفضلة ============
+          يظهر فقط للمسجَّل دخوله ولديه >= 1 محفوظة. مخفي تلقائياً للزوار. */}
+      <FavoritesStrip items={favoriteListings} />
 
       {/* بطاقة "استخدم موقعي" */}
       <div className="
@@ -244,6 +290,8 @@ export default function TowTrucksPage() {
           userLat={location?.latitude ?? null}
           userLng={location?.longitude ?? null}
           points={mapPoints}
+          favoriteIds={signedIn ? favoriteIds : undefined}
+          onToggleFavorite={handleMapToggleFavorite}
         />
       </div>
 

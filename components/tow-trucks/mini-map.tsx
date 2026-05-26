@@ -40,6 +40,15 @@ interface Props {
   userLat: number | null;
   userLng: number | null;
   points: TowPoint[];
+  /**
+   * IDs الساحبات المضافة لمفضلة المستخدم. لو undefined نُخفي زر القلب
+   * من الـpopup (للزوار غير المسجَّلين).
+   */
+  favoriteIds?: Set<string>;
+  /**
+   * يُستدعى عند ضغط زر القلب في popup. المكوّن الأب يتولّى التوست + Firestore.
+   */
+  onToggleFavorite?: (listingId: string) => void;
 }
 
 /** مركز ليبيا الافتراضي - يُستخدم عند عدم توفر موقع ولا أي ساحبة بإحداثيات. */
@@ -47,7 +56,13 @@ const DEFAULT_CENTER: [number, number] = [26.3351, 17.2283];
 const DEFAULT_ZOOM = 6;
 const USER_ZOOM = 13;
 
-export function TowTrucksMiniMap({ userLat, userLng, points }: Props) {
+export function TowTrucksMiniMap({
+  userLat,
+  userLng,
+  points,
+  favoriteIds,
+  onToggleFavorite,
+}: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   // نحفظ نسخة الـmap + الـmarkers في refs (وليس state) لتجنّب re-renders
   // عند كل تغيير في الخريطة. Leaflet يتحكّم بـDOM بنفسه.
@@ -56,6 +71,15 @@ export function TowTrucksMiniMap({ userLat, userLng, points }: Props) {
   const userMarkerRef = useRef<any>(null);
   const userCircleRef = useRef<any>(null);
   const LRef = useRef<any>(null);
+
+  // refs لـfavoriteIds و callback - تُحدَّث على كل render، تُقرَأ من داخل
+  // event handlers في الـpopup. هكذا الـcallback يُشير دائماً للأحدث.
+  const favoriteIdsRef = useRef<Set<string> | undefined>(favoriteIds);
+  const onToggleRef = useRef<typeof onToggleFavorite>(onToggleFavorite);
+  useEffect(() => {
+    favoriteIdsRef.current = favoriteIds;
+    onToggleRef.current = onToggleFavorite;
+  }, [favoriteIds, onToggleFavorite]);
 
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -238,6 +262,16 @@ export function TowTrucksMiniMap({ userLat, userLng, points }: Props) {
         ? `<div class="brao-popup-avail">● متاحة الآن</div>`
         : "";
 
+      // زر المفضلة - يظهر فقط لو الـuser مسجَّل دخول (favoriteIds معرَّفة).
+      // نضع data-favorited بقيمة current state وقت بناء HTML. الـclick
+      // handler يقرأ القيمة من favoriteIdsRef الحالية (وليس closure).
+      const favBtn =
+        favoriteIdsRef.current !== undefined
+          ? `<button type="button" class="brao-popup-fav" data-tow-fav-id="${escapeAttr(p.id)}" data-favorited="${favoriteIdsRef.current.has(p.id) ? "1" : "0"}" aria-label="إضافة للمفضلة">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="${favoriteIdsRef.current.has(p.id) ? "#f43f5e" : "none"}" stroke="${favoriteIdsRef.current.has(p.id) ? "#f43f5e" : "currentColor"}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </button>`
+          : "";
+
       const actions: string[] = [];
       if (p.phone) {
         actions.push(
@@ -258,7 +292,10 @@ export function TowTrucksMiniMap({ userLat, userLng, points }: Props) {
 
       const html = `
         <div class="brao-popup" dir="rtl">
-          <div class="brao-popup-name">${safeName}</div>
+          <div class="brao-popup-head">
+            <div class="brao-popup-name">${safeName}</div>
+            ${favBtn}
+          </div>
           ${cityLine}
           ${availLine}
           ${actions.length ? `<div class="brao-popup-actions">${actions.join("")}</div>` : ""}
@@ -275,6 +312,66 @@ export function TowTrucksMiniMap({ userLat, userLng, points }: Props) {
       markersRef.current.push(marker);
     }
   }, [points, ready]);
+
+  // ============================================================
+  // المفضلة: event delegation + مزامنة الأيقونة في popup مفتوح
+  // ============================================================
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !ready) return;
+
+    // مُعالج delegation - يلتقط ضغطات على زر القلب داخل أي popup مفتوح.
+    // الفائدة: لا نحتاج إعادة ربط handler عند فتح كل popup.
+    const onClick = (e: Event) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      const btn = target.closest<HTMLButtonElement>("button.brao-popup-fav");
+      if (!btn) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const id = btn.getAttribute("data-tow-fav-id");
+      if (!id) return;
+
+      const cb = onToggleRef.current;
+      if (!cb) return;
+
+      // تحديث بصري optimistic - الـheart يتبدّل فوراً.
+      // إذا فشل toggle لاحقاً (في الـparent) ستُحدّث الـfavoriteIds للوضع
+      // الصحيح ويُزامن effect أدناه الأيقونة مرة أخرى.
+      const wasFav = btn.getAttribute("data-favorited") === "1";
+      const newFav = !wasFav;
+      btn.setAttribute("data-favorited", newFav ? "1" : "0");
+      updateHeartIcon(btn, newFav);
+
+      cb(id);
+    };
+
+    container.addEventListener("click", onClick);
+    return () => container.removeEventListener("click", onClick);
+  }, [ready]);
+
+  // مزامنة الأيقونة عند تغيّر favoriteIds (مثلاً من toggle على بطاقة
+  // أخرى، أو realtime من جهاز ثانٍ، أو فشل الكتابة).
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !ready || !favoriteIds) return;
+
+    const btns = container.querySelectorAll<HTMLButtonElement>(
+      "button.brao-popup-fav[data-tow-fav-id]"
+    );
+    btns.forEach((btn) => {
+      const id = btn.getAttribute("data-tow-fav-id");
+      if (!id) return;
+      const shouldBeFav = favoriteIds.has(id);
+      const currentlyFav = btn.getAttribute("data-favorited") === "1";
+      if (shouldBeFav !== currentlyFav) {
+        btn.setAttribute("data-favorited", shouldBeFav ? "1" : "0");
+        updateHeartIcon(btn, shouldBeFav);
+      }
+    });
+  }, [favoriteIds, ready, points]);
 
   return (
     <>
@@ -377,9 +474,31 @@ export function TowTrucksMiniMap({ userLat, userLng, points }: Props) {
           padding: 4px !important;
         }
         .leaflet-popup-content { margin: 10px 12px !important; }
+        .brao-popup-head {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 8px;
+        }
         .brao-popup-name {
           font-weight: 900; font-size: 14px;
           color: #0f172a; line-height: 1.3;
+          flex: 1;
+        }
+        .brao-popup-fav {
+          display: inline-flex; align-items: center; justify-content: center;
+          width: 28px; height: 28px;
+          border-radius: 9999px;
+          background: rgba(244, 63, 94, 0.08);
+          color: #64748b;
+          border: none;
+          cursor: pointer;
+          flex-shrink: 0;
+          transition: transform 0.15s, background 0.15s;
+        }
+        .brao-popup-fav:active { transform: scale(0.9); }
+        .brao-popup-fav[data-favorited="1"] {
+          background: rgba(244, 63, 94, 0.15);
         }
         .brao-popup-city {
           margin-top: 2px; font-size: 11px; color: #64748b;
@@ -442,4 +561,20 @@ function escapeHtml(s: string): string {
 /** Escape attribute (نفس الـescape لكن نُبقي الـAPI واضحاً). */
 function escapeAttr(s: string): string {
   return escapeHtml(s);
+}
+
+/**
+ * يبدّل svg القلب داخل زر popup بين حالتين (مملوء/فارغ).
+ * أبسط من إعادة بناء popup HTML كاملاً.
+ */
+function updateHeartIcon(btn: HTMLButtonElement, favorited: boolean) {
+  const svg = btn.querySelector("svg");
+  if (!svg) return;
+  if (favorited) {
+    svg.setAttribute("fill", "#f43f5e");
+    svg.setAttribute("stroke", "#f43f5e");
+  } else {
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+  }
 }

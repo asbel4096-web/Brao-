@@ -16,6 +16,7 @@ import {
   formatDistance,
   normalizeLibyanPhone,
 } from "@/lib/utils";
+import { FavoriteButton } from "@/components/tow-trucks/favorite-button";
 
 /**
  * البطاقة الأفقية لقسم "أقرب الساحبات إليك".
@@ -89,29 +90,37 @@ function NearestTowCardImpl({
       )}
 
       <div className="flex gap-3 p-3 sm:gap-4 sm:p-4">
-        {/* الصورة - يمين بحكم RTL */}
-        <Link
-          href={`/tow-trucks/${listing.id}`}
-          className="
-            relative block aspect-[4/3] w-32 shrink-0 overflow-hidden
-            rounded-2xl sm:w-40
-          "
-        >
-          {listing.images && listing.images[0] ? (
-            <Image
-              src={listing.images[0]}
-              alt={listing.title || "ساحبة سيارات"}
-              fill
-              className="object-cover"
-              sizes="(max-width: 640px) 128px, 160px"
-              priority={priority}
-            />
-          ) : (
-            <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-gradient-to-br from-brand-700 via-brand-600 to-action-500 text-white">
-              <Truck size={32} strokeWidth={2} />
-            </div>
-          )}
-        </Link>
+        {/* الصورة - يمين بحكم RTL، مع زر مفضلة فوقها */}
+        <div className="relative shrink-0">
+          <Link
+            href={`/tow-trucks/${listing.id}`}
+            className="
+              relative block aspect-[4/3] w-32 overflow-hidden
+              rounded-2xl sm:w-40
+            "
+          >
+            {listing.images && listing.images[0] ? (
+              <Image
+                src={listing.images[0]}
+                alt={listing.title || "ساحبة سيارات"}
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) 128px, 160px"
+                priority={priority}
+              />
+            ) : (
+              <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-gradient-to-br from-brand-700 via-brand-600 to-action-500 text-white">
+                <Truck size={32} strokeWidth={2} />
+              </div>
+            )}
+          </Link>
+
+          {/* زر المفضلة - فوق الصورة، يمين علوي (RTL: الموقع البصري بعيد عن
+              زاوية isClosest الـbadge) */}
+          <div className="absolute right-1.5 top-1.5">
+            <FavoriteButton listingId={listing.id} size="sm" onDarkBg />
+          </div>
+        </div>
 
         {/* التفاصيل + الأزرار - يسار */}
         <div className="flex min-w-0 flex-1 flex-col">

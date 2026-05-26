@@ -204,6 +204,15 @@ service cloud.firestore {
         allow create, update, delete: if isMe(userId);
       }
 
+      // ساحباتي المفضلة - قائمة منفصلة عن likedListings (التي للسيارات).
+      // كل وثيقة معرّفها = listingId للساحبة. بنية الوثيقة:
+      //   { listingId: string, addedAt: timestamp }
+      // المالك فقط يقرأ ويكتب مفضلته. لا يقرأ أحد آخر (خصوصية).
+      match /towFavorites/{listingId} {
+        allow read: if isMe(userId);
+        allow create, update, delete: if isMe(userId);
+      }
+
       // تنبيهات سياراتي - تنبيهات البحث الخاصة بكل مستخدم.
       // المالك فقط يقرأ ويكتب تنبيهاته. لا يوجد فحص متبادل لتنبيهات
       // الآخرين — كل مستخدم يفحص بياناته الخاصة client-side عند فتح

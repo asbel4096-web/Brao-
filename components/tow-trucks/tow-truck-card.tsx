@@ -18,6 +18,7 @@ import {
   formatPrice,
   normalizeLibyanPhone,
 } from "@/lib/utils";
+import { FavoriteButton } from "@/components/tow-trucks/favorite-button";
 
 interface TowTruckCardProps {
   listing: Listing;
@@ -61,63 +62,72 @@ function TowTruckCardImpl({
         dark:border-slate-700/70 dark:bg-slate-900
       "
     >
-      {/* الصورة */}
-      <Link
-        href={`/tow-trucks/${listing.id}`}
-        className="relative block aspect-[4/3] overflow-hidden"
-      >
-        {listing.images && listing.images[0] ? (
-          <Image
-            src={listing.images[0]}
-            alt={listing.title || "ساحبة سيارات"}
-            fill
-            className="object-cover transition group-hover:scale-105"
-            sizes="(max-width: 640px) 50vw, 33vw"
-            priority={priority}
-          />
-        ) : (
-          /* placeholder مخصّص للساحبات - بهوية البرند بدلاً من رمادي.
-             تدرّج أزرق-برتقالي خفيف + أيقونة Truck بيضاء كبيرة. يستخدَم
-             عندما لا يرفع المالك صورة لخدمته. */
-          <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-gradient-to-br from-brand-700 via-brand-600 to-action-500 text-white">
-            <Truck size={40} strokeWidth={2} className="opacity-90" />
-            <span className="text-[10px] font-black opacity-90">
-              ساحبة سيارات
-            </span>
-          </div>
-        )}
+      {/* الصورة - مع زر مفضلة overlay فوقها */}
+      <div className="relative">
+        <Link
+          href={`/tow-trucks/${listing.id}`}
+          className="relative block aspect-[4/3] overflow-hidden"
+        >
+          {listing.images && listing.images[0] ? (
+            <Image
+              src={listing.images[0]}
+              alt={listing.title || "ساحبة سيارات"}
+              fill
+              className="object-cover transition group-hover:scale-105"
+              sizes="(max-width: 640px) 50vw, 33vw"
+              priority={priority}
+            />
+          ) : (
+            /* placeholder مخصّص للساحبات - بهوية البرند بدلاً من رمادي.
+               تدرّج أزرق-برتقالي خفيف + أيقونة Truck بيضاء كبيرة. يستخدَم
+               عندما لا يرفع المالك صورة لخدمته. */
+            <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-gradient-to-br from-brand-700 via-brand-600 to-action-500 text-white">
+              <Truck size={40} strokeWidth={2} className="opacity-90" />
+              <span className="text-[10px] font-black opacity-90">
+                ساحبة سيارات
+              </span>
+            </div>
+          )}
 
-        {/* بادج "متاح الآن" */}
-        {available && (
-          <span
-            className="
-              absolute right-3 top-3 inline-flex items-center gap-1
-              rounded-full bg-emerald-500 px-2.5 py-1
-              text-[10px] font-black text-white shadow-md
-            "
-          >
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-white" />
+          {/* بادج "متاح الآن" */}
+          {available && (
+            <span
+              className="
+                absolute right-3 top-3 inline-flex items-center gap-1
+                rounded-full bg-emerald-500 px-2.5 py-1
+                text-[10px] font-black text-white shadow-md
+              "
+            >
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-white" />
+              </span>
+              متاح الآن
             </span>
-            متاح الآن
-          </span>
-        )}
+          )}
 
-        {/* بادج المسافة */}
-        {distanceText && (
-          <span
-            className="
-              absolute left-3 top-3 inline-flex items-center gap-1
-              rounded-full bg-brand-700 px-2.5 py-1
-              text-[10px] font-black text-white shadow-md
-            "
-          >
-            <Navigation size={10} />
-            {distanceText}
-          </span>
-        )}
-      </Link>
+          {/* بادج المسافة */}
+          {distanceText && (
+            <span
+              className="
+                absolute left-3 top-3 inline-flex items-center gap-1
+                rounded-full bg-brand-700 px-2.5 py-1
+                text-[10px] font-black text-white shadow-md
+              "
+            >
+              <Navigation size={10} />
+              {distanceText}
+            </span>
+          )}
+        </Link>
+
+        {/* زر المفضلة - منفصل عن الـLink لتفادي عناصر تفاعلية متداخلة.
+            موضع: يسار سفلي (RTL: بصرياً يمين سفلي على شاشة عربية).
+            z-10 ليكون فوق صورة Next/Image. */}
+        <div className="absolute bottom-3 left-3 z-10">
+          <FavoriteButton listingId={listing.id} size="sm" onDarkBg />
+        </div>
+      </div>
 
       {/* المحتوى */}
       <div className="flex flex-1 flex-col p-3">
