@@ -213,6 +213,16 @@ service cloud.firestore {
         allow create, update, delete: if isMe(userId);
       }
 
+      // FCM tokens - Web Push tokens للمستخدم. كل وثيقة:
+      //   { token: string, tokenId, platform, userAgent, createdAt, lastSeenAt }
+      // المالك فقط يكتب/يقرأ tokenاته. الـserver (Firebase Admin) يقرأ كل
+      // التوكنات لإرسال push (يتجاوز القواعد لأنه يستخدم service account).
+      // لذا لا حاجة لـrule خاصة بـserver-side reads.
+      match /fcmTokens/{tokenId} {
+        allow read: if isMe(userId);
+        allow create, update, delete: if isMe(userId);
+      }
+
       // تنبيهات سياراتي - تنبيهات البحث الخاصة بكل مستخدم.
       // المالك فقط يقرأ ويكتب تنبيهاته. لا يوجد فحص متبادل لتنبيهات
       // الآخرين — كل مستخدم يفحص بياناته الخاصة client-side عند فتح

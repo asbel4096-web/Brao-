@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { timeAgo } from "@/lib/utils";
 import type { AppNotification } from "@/lib/types";
+import { PushPermissionBanner } from "@/components/push-permission-banner";
 
 export default function NotificationsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -105,6 +106,13 @@ export default function NotificationsPage() {
             </button>
           )}
         </div>
+
+        {/* بانر تفعيل الإشعارات (Push). يخفي نفسه تلقائياً عند:
+            - الإذن ممنوح (compact mode لا يعرض granted)
+            - المتصفح غير مدعوم
+            - المستخدم رفضه عبر زر "ليس الآن"
+            متى يظهر: عند default/needs-pwa/denied/error. */}
+        <PushPermissionBanner variant="compact" dismissible />
 
         {loading ? (
           <div className="space-y-3">

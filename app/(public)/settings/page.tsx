@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/components/confirm-dialog";
+import { PushPermissionBanner } from "@/components/push-permission-banner";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -55,6 +56,13 @@ export default function SettingsPage() {
           <h1 className="section-title">الإعدادات</h1>
           <p className="section-subtitle">إدارة تفضيلاتك في براتشو كار.</p>
         </div>
+
+        {/* بانر تفعيل/إدارة Push Notifications. يظهر بصيغة مختلفة حسب الحالة:
+            - default: زر "تفعيل الإشعارات" بارز
+            - granted: حالة + زر إيقاف
+            - denied/needs-pwa/error: تعليمات مناسبة
+            - unsupported: مخفي تماماً */}
+        <PushPermissionBanner variant="settings" showWhenGranted />
 
         <div className="card divide-y divide-slate-200 dark:divide-slate-700">
           <Row
