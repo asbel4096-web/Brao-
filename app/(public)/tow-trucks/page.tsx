@@ -22,6 +22,8 @@ import { calculateDistanceKm } from "@/lib/utils";
 import { libyaCities } from "@/lib/categories";
 import { TowTruckCard } from "@/components/tow-trucks/tow-truck-card";
 import { useMyLocation } from "@/components/tow-trucks/use-my-location";
+import { TowTrucksMiniMap } from "@/components/tow-trucks/mini-map";
+import { NearestTowCard } from "@/components/tow-trucks/nearest-tow-card";
 
 /**
  * صفحة الساحبات (tow trucks).
@@ -126,6 +128,30 @@ export default function TowTrucksPage() {
 
   const isLocationLoading = locationStatus === "loading";
 
+  // أقرب 3 ساحبات للعرض في القسم المميز - تظهر فقط لو الموقع متاح وفي
+  // النتائج بعد الفلترة أكثر من واحدة. الباقي يُعرض في الـgrid السفلي.
+  const top3 = location ? filtered.slice(0, 3) : [];
+  const rest = location ? filtered.slice(3) : filtered;
+
+  // النقاط للخريطة - نُحوّل الـlistings إلى شكل تقبله MiniMap.
+  // نُمرّر فقط الساحبات التي تحوي إحداثيات، حتى 8 (الباقي يُهمل بصرياً).
+  const mapPoints = useMemo(
+    () =>
+      filtered
+        .filter(
+          (it) =>
+            typeof it.latitude === "number" && typeof it.longitude === "number"
+        )
+        .slice(0, 8)
+        .map((it) => ({
+          id: it.id,
+          lat: it.latitude as number,
+          lng: it.longitude as number,
+          available: it.availableNow === true,
+        })),
+    [filtered]
+  );
+
   return (
     <section className="container py-4 pb-24 sm:py-6">
       {/* العنوان */}
@@ -205,6 +231,15 @@ export default function TowTrucksPage() {
             )}
           </>
         )}
+      </div>
+
+      {/* الخريطة المصغّرة - تظهر دائماً (placeholder قبل الإذن، خريطة بعد) */}
+      <div className="mb-4">
+        <TowTrucksMiniMap
+          userLat={location?.latitude ?? null}
+          userLng={location?.longitude ?? null}
+          points={mapPoints}
+        />
       </div>
 
       {/* الفلاتر */}
@@ -289,17 +324,55 @@ export default function TowTrucksPage() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((it, idx) => (
-            <TowTruckCard
-              key={it.id}
-              listing={it}
-              userLat={location?.latitude ?? null}
-              userLng={location?.longitude ?? null}
-              priority={idx < 2}
-            />
-          ))}
-        </div>
+        <>
+          {/* قسم "أقرب 3" - فقط عندما يكون الموقع متاحاً */}
+          {top3.length > 0 && (
+            <div className="mb-5">
+              <h2 className="mb-2.5 flex items-center justify-between gap-2 px-1">
+                <span className="text-sm font-black text-slate-900 dark:text-white">
+                  أقرب الساحبات إليك
+                </span>
+                <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                  متاحة
+                </span>
+              </h2>
+              <div className="space-y-3">
+                {top3.map((it, idx) => (
+                  <NearestTowCard
+                    key={it.id}
+                    listing={it}
+                    userLat={location?.latitude ?? null}
+                    userLng={location?.longitude ?? null}
+                    isClosest={idx === 0}
+                    priority={idx === 0}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* باقي القائمة - grid */}
+          {rest.length > 0 && (
+            <div>
+              {top3.length > 0 && (
+                <h2 className="mb-2.5 px-1 text-sm font-black text-slate-900 dark:text-white">
+                  كل الساحبات
+                </h2>
+              )}
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {rest.map((it, idx) => (
+                  <TowTruckCard
+                    key={it.id}
+                    listing={it}
+                    userLat={location?.latitude ?? null}
+                    userLng={location?.longitude ?? null}
+                    priority={idx < 2 && top3.length === 0}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </section>
   );
