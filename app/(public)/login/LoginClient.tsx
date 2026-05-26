@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   browserLocalPersistence,
@@ -397,6 +398,33 @@ export default function LoginClient() {
             <GoogleIcon />
             {googleLoading ? "جارٍ فتح Google..." : "المتابعة باستخدام Google"}
           </button>
+
+          {/* ============ موافقة قانونية مباشرة تحت أزرار الدخول ============ */}
+          {/*
+              نضع الجملة هنا (وليس فقط في الـfooter العام لـAuthLayout) حتى
+              يراها المستخدم في نقطة القرار: لحظة ما يفكّر يضغط على Google
+              أو يكمل التحقّق برقمه. الـlinks تفتح صفحات /terms و /privacy
+              الفعلية، وعمداً نتركها inline بنفس flow الصفحة (وليس popup)
+              لأن المعيار الرائج في تطبيقات السيارات/التجارة.
+          */}
+          <p className="text-center text-[12px] leading-6 text-slate-500 dark:text-slate-400">
+            عند إنشاء حساب أو تسجيل الدخول، فأنت توافق على{" "}
+            <Link
+              href="/terms"
+              className="font-bold text-brand-700 underline-offset-4 hover:underline dark:text-brand-300"
+            >
+              اتفاقية الاستخدام
+            </Link>{" "}
+            و
+            <Link
+              href="/privacy"
+              className="font-bold text-brand-700 underline-offset-4 hover:underline dark:text-brand-300"
+            >
+              {" "}
+              سياسة الخصوصية
+            </Link>
+            .
+          </p>
 
           {/* ============ Sell tagline ============ */}
           <div
