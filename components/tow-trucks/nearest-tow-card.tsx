@@ -4,7 +4,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { memo } from "react";
 import {
-  BadgeCheck,
   Clock,
   MapPin,
   MessageCircle,
@@ -116,7 +115,7 @@ function NearestTowCardImpl({
 
         {/* التفاصيل + الأزرار - يسار */}
         <div className="flex min-w-0 flex-1 flex-col">
-          {/* العنوان + توثيق */}
+          {/* العنوان */}
           <div className="flex items-start justify-between gap-1.5">
             <Link
               href={`/tow-trucks/${listing.id}`}
@@ -124,12 +123,6 @@ function NearestTowCardImpl({
             >
               {listing.title || "ساحبة سيارات"}
             </Link>
-            {listing.verified && (
-              <BadgeCheck
-                size={16}
-                className="shrink-0 text-brand-600 dark:text-brand-400"
-              />
-            )}
           </div>
 
           {/* حالة "متاح الآن" */}
