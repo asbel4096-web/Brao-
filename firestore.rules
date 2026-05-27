@@ -453,6 +453,19 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // ============================================================
+    // Broadcasts - سجلّ الإشعارات الجماعية التي يُرسلها الأدمن.
+    // الكتابة تتم حصراً من API route عبر Firebase Admin SDK (يتجاوز
+    // القواعد)، لذلك الـallow create/update/delete = false للـclient.
+    // القراءة: الأدمن فقط (لعرض السجلّ في صفحة الإدارة لاحقاً).
+    // ============================================================
+    match /broadcasts/{broadcastId} {
+      allow read: if isAdmin();
+      // الكتابة من client ممنوعة - حتى الأدمن يستخدم API route الذي
+      // يكتب server-side. هذا يضمن نفس الـvalidation تطبَّق دائماً.
+      allow create, update, delete: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

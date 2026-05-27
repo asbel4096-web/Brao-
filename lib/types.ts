@@ -256,7 +256,47 @@ export type NotificationType =
   | "new_like"
   | "new_review"
   | "search_alert_match"
-  | "system";
+  | "system"
+  // ============================================================
+  // Broadcast من الأدمن - يصل لكل المستخدمين
+  // ============================================================
+  /** إعلان مميز جديد تم نشره */
+  | "broadcast_featured"
+  /** خدمة جديدة (ورشة، قطع غيار، ساحبة) */
+  | "broadcast_service"
+  /** حملة ترويجية أو خصم */
+  | "broadcast_campaign"
+  /** إعلان عام من الإدارة */
+  | "broadcast_general";
+
+/**
+ * أنواع broadcast التي يستطيع الأدمن إرسالها. يُستخدم في صفحة
+ * /admin/broadcast لتوحيد الـlabels والـicons في كل مكان.
+ */
+export const BROADCAST_TYPES = [
+  {
+    key: "broadcast_featured" as const,
+    label: "إعلان مميز",
+    description: "إعلان جديد تم تمييزه ويستحق الانتباه",
+  },
+  {
+    key: "broadcast_service" as const,
+    label: "خدمة جديدة",
+    description: "ورشة، قطع غيار، ساحبة، أو خدمة سيارات أخرى",
+  },
+  {
+    key: "broadcast_campaign" as const,
+    label: "حملة ترويجية",
+    description: "خصومات أو عروض من معارض/خدمات",
+  },
+  {
+    key: "broadcast_general" as const,
+    label: "إعلان عام",
+    description: "رسالة عامة من إدارة براتشو كار",
+  },
+] as const;
+
+export type BroadcastTypeKey = (typeof BROADCAST_TYPES)[number]["key"];
 
 /**
  * تنبيه بحث: يحفظ معايير المستخدم لسيارة يبحث عنها.

@@ -8,7 +8,7 @@ import {
 } from "firebase/firestore";
 import {
   Bell, CheckCheck, MessageCircle, Check, X, Trash2, AlertCircle,
-  UserPlus, Heart, Star,
+  UserPlus, Heart, Star, Sparkles, Wrench, Tag, Megaphone,
 } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -142,6 +142,11 @@ export default function NotificationsPage() {
                 n.type === "new_comment" ? MessageCircle :
                 n.type === "new_review" ? Star :
                 n.type === "search_alert_match" ? Bell :
+                // أيقونات broadcast من الأدمن
+                n.type === "broadcast_featured" ? Sparkles :
+                n.type === "broadcast_service" ? Wrench :
+                n.type === "broadcast_campaign" ? Tag :
+                n.type === "broadcast_general" ? Megaphone :
                 AlertCircle;
               const tone =
                 n.type === "listing_approved" ? "text-emerald-700 dark:text-emerald-300" :
@@ -149,6 +154,10 @@ export default function NotificationsPage() {
                 n.type === "new_like" ? "text-rose-600 dark:text-rose-300" :
                 n.type === "new_review" ? "text-amber-600 dark:text-amber-300" :
                 n.type === "search_alert_match" ? "text-action-600 dark:text-action-300" :
+                // ألوان broadcast - تطابق صفحة /admin/broadcast
+                n.type === "broadcast_featured" ? "text-action-700 dark:text-action-300" :
+                n.type === "broadcast_service" ? "text-emerald-700 dark:text-emerald-300" :
+                n.type === "broadcast_campaign" ? "text-rose-700 dark:text-rose-300" :
                 "text-brand-700 dark:text-brand-300";
               const iconBg =
                 n.type === "listing_approved" ? "bg-emerald-50 dark:bg-emerald-900/30" :
@@ -156,6 +165,9 @@ export default function NotificationsPage() {
                 n.type === "new_like" ? "bg-rose-50 dark:bg-rose-900/30" :
                 n.type === "new_review" ? "bg-amber-50 dark:bg-amber-900/30" :
                 n.type === "search_alert_match" ? "bg-action-50 dark:bg-action-900/30" :
+                n.type === "broadcast_featured" ? "bg-action-50 dark:bg-action-900/30" :
+                n.type === "broadcast_service" ? "bg-emerald-50 dark:bg-emerald-900/30" :
+                n.type === "broadcast_campaign" ? "bg-rose-50 dark:bg-rose-900/30" :
                 "bg-brand-50 dark:bg-brand-900/30";
 
               return (
