@@ -299,6 +299,34 @@ export const BROADCAST_TYPES = [
 export type BroadcastTypeKey = (typeof BROADCAST_TYPES)[number]["key"];
 
 /**
+ * سجلّ broadcast واحد كما يُخزَّن في collection /broadcasts.
+ * يُكتب server-side فقط (Admin SDK)، ويُقرأ من /admin/broadcast/history.
+ */
+export interface BroadcastRecord {
+  id: string;
+  title: string;
+  body: string;
+  type: BroadcastTypeKey;
+  link?: string;
+  createdBy: string;
+  createdByEmail?: string;
+  createdAt?: Timestamp | null;
+  completedAt?: Timestamp | null;
+  /** "processing" أثناء الإرسال، "completed" بعد الانتهاء. */
+  status: "processing" | "completed";
+  /** عدد المستخدمين الذين كُتب لهم notification in-app. */
+  recipientCount: number;
+  /** عدد push التي نجح إرسالها. */
+  pushSentCount: number;
+  /** عدد push التي فشلت. */
+  pushFailedCount: number;
+  /** عدد الـtokens التي حاولنا الإرسال إليها (قبل النجاح/الفشل). */
+  tokensConsidered?: number;
+  /** عدد الـtokens المنتهية التي نُظّفت. */
+  invalidTokensCleaned?: number;
+}
+
+/**
  * تنبيه بحث: يحفظ معايير المستخدم لسيارة يبحث عنها.
  * عند ظهور إعلان معتمد يطابق المعايير، نُنشئ إشعاراً للمالك.
  */

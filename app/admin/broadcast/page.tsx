@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import NextLink from "next/link";
 import {
   Megaphone,
   Sparkles,
@@ -10,6 +11,7 @@ import {
   Send,
   AlertCircle,
   CheckCircle2,
+  History,
   Link as LinkIcon,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -153,18 +155,33 @@ export default function AdminBroadcastPage() {
   return (
     <section className="container py-4 pb-24 sm:py-6">
       {/* العنوان */}
-      <div className="mb-5 flex items-center gap-3">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-action-50 text-action-700 dark:bg-action-900/30 dark:text-action-300">
-          <Megaphone size={24} strokeWidth={2.2} />
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-action-50 text-action-700 dark:bg-action-900/30 dark:text-action-300">
+            <Megaphone size={24} strokeWidth={2.2} />
+          </div>
+          <div>
+            <h1 className="text-lg font-black text-slate-900 dark:text-white sm:text-xl">
+              إرسال إشعار لكل المستخدمين
+            </h1>
+            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
+              يصل الإشعار لجميع مسجّلي براتشو كار، داخل التطبيق + push للجوال.
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-lg font-black text-slate-900 dark:text-white sm:text-xl">
-            إرسال إشعار لكل المستخدمين
-          </h1>
-          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
-            يصل الإشعار لجميع مسجّلي براتشو كار، داخل التطبيق + push للجوال.
-          </p>
-        </div>
+        <NextLink
+          href="/admin/broadcast/history"
+          className="
+            inline-flex h-10 shrink-0 items-center gap-1.5 rounded-2xl
+            border border-slate-200 bg-white px-4 text-xs font-black
+            text-slate-700 transition hover:bg-slate-50
+            dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200
+            dark:hover:bg-slate-800
+          "
+        >
+          <History size={14} />
+          السجلّ
+        </NextLink>
       </div>
 
       <div className="mx-auto max-w-2xl space-y-5">
