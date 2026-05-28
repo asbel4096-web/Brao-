@@ -1,91 +1,137 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import { Shield, ListChecks, Users, CreditCard, LayoutDashboard, Sparkles, Tag, Headphones, Megaphone } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAdminRole } from "@/hooks/admin/use-admin-role";
+import { AdminSidebar } from "@/components/admin/layout/admin-sidebar";
+import { AdminTopbar } from "@/components/admin/layout/admin-topbar";
+import { AdminMobileNav } from "@/components/admin/layout/admin-mobile-nav";
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading, isAdmin } = useAuth();
+/**
+ * Layout موحَّد لكل صفحات /admin/*.
+ *
+ * البنية:
+ *  - Desktop (lg+): Sidebar ثابت يمين + topbar + content
+ *  - Mobile/Tablet: Topbar + content، الـsidebar drawer منزلق
+ *
+ * Auth guard:
+ *  - بدون login → redirect لـ /login
+ *  - مع login بدون role → "غير مخوّل"
+ *  - مع role → نعرض الـlayout
+ *
+ * تذكير: الـsidebar نفسه يفلتر الـlinks حسب permissions، لكن الـguard هنا
+ * يمنع وصول non-admin أساساً للـlayout. كل صفحة فردية يجب أن تتحقق من
+ * صلاحيتها الخاصة (دفاع متعدد الطبقات).
+ */
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { user, loading: authLoading } = useAuth();
+  const { isAdminUser, loading: roleLoading } = useAdminRole();
   const router = useRouter();
-  const pathname = usePathname();
 
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Auth guard: redirect إذا لا login
   useEffect(() => {
-    if (loading) return;
+    if (authLoading || roleLoading) return;
     if (!user) {
-      router.replace("/login?redirect=" + encodeURIComponent(pathname));
-      return;
+      router.replace("/login?next=/admin");
     }
-    if (!isAdmin) {
-      router.replace("/");
-    }
-  }, [user, loading, isAdmin, router, pathname]);
+  }, [user, authLoading, roleLoading, router]);
 
-  if (loading) {
+  // قراءة تفضيل الطي من localStorage (تستمر بين الجلسات)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const stored = window.localStorage.getItem("bratsho:admin-sidebar-collapsed");
+      if (stored === "1") setCollapsed(true);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const handleCollapsedChange = (next: boolean) => {
+    setCollapsed(next);
+    try {
+      window.localStorage.setItem(
+        "bratsho:admin-sidebar-collapsed",
+        next ? "1" : "0"
+      );
+    } catch {
+      /* ignore */
+    }
+  };
+
+  if (authLoading || roleLoading) {
     return (
-      <section className="container py-10">
-        <div className="card mx-auto max-w-md p-8 text-center text-slate-500">
-          جارٍ التحقق من الصلاحيات...
-        </div>
-      </section>
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <div className="text-sm text-slate-500">جارٍ التحميل...</div>
+      </div>
     );
   }
 
-  if (!user || !isAdmin) {
+  if (!user) {
+    // الـredirect يحدث في الـeffect أعلاه - هنا فقط حالة عابرة
+    return null;
+  }
+
+  if (!isAdminUser) {
     return (
-      <section className="container py-10">
-        <div className="card mx-auto max-w-md p-8 text-center">
-          <Shield size={42} className="mx-auto text-rose-600" />
-          <p className="mt-4 font-bold text-rose-700">صلاحيات غير كافية</p>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-            هذه الصفحة مخصّصة للمشرفين فقط.
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6 dark:bg-slate-950">
+        <div className="max-w-md text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="28"
+              height="28"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
+          <h1 className="text-xl font-black text-slate-900 dark:text-white">
+            غير مخوَّل
+          </h1>
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            لا تملك صلاحية الوصول إلى لوحة الإدارة.
           </p>
-          <Link href="/" className="btn-secondary mt-4 inline-flex">العودة للرئيسية</Link>
         </div>
-      </section>
+      </div>
     );
   }
-
-  const links = [
-    { href: "/admin", label: "نظرة عامة", Icon: LayoutDashboard },
-    { href: "/admin/listings", label: "الإعلانات", Icon: ListChecks },
-    { href: "/admin/featured-requests", label: "طلبات التمييز", Icon: Sparkles },
-    { href: "/admin/broadcast", label: "إرسال إشعارات", Icon: Megaphone },
-    { href: "/admin/users", label: "المستخدمون", Icon: Users },
-    { href: "/admin/brands", label: "شعارات الماركات", Icon: Tag },
-    { href: "/admin/contact-info", label: "معلومات التواصل", Icon: Headphones },
-    { href: "/admin/subscriptions", label: "الاشتراكات", Icon: CreditCard },
-  ];
 
   return (
-    <div className="container py-6 sm:py-8">
-      <div className="mb-5 flex items-center gap-2 rounded-2xl border border-action-200 bg-action-50 px-4 py-3 text-sm text-action-700 dark:bg-action-700/20 dark:text-action-200 dark:border-action-700/40">
-        <Shield size={16} /> أنت في وضع الإدارة
+    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950" dir="rtl">
+      {/* Sidebar ثابت - desktop فقط */}
+      <div className="hidden lg:flex lg:flex-shrink-0">
+        <AdminSidebar
+          collapsed={collapsed}
+          onCollapsedChange={handleCollapsedChange}
+        />
       </div>
-      <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
-        <aside className="card p-3 lg:p-4 lg:sticky lg:top-24 lg:self-start">
-          <nav className="flex gap-2 overflow-x-auto no-scrollbar lg:flex-col lg:overflow-visible">
-            {links.map(({ href, label, Icon }) => {
-              const active = pathname === href;
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`shrink-0 inline-flex items-center gap-2 rounded-2xl px-3 py-2.5 text-sm font-bold transition ${
-                    active
-                      ? "bg-brand-700 text-white shadow-blue"
-                      : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
-                  }`}
-                >
-                  <Icon size={16} />
-                  {label}
-                </Link>
-              );
-            })}
-          </nav>
-        </aside>
-        <div className="min-w-0">{children}</div>
+
+      {/* Mobile drawer */}
+      <AdminMobileNav
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+      />
+
+      {/* المحتوى */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <AdminTopbar onMenuClick={() => setMobileOpen(true)} />
+        <main className="flex-1 overflow-y-auto px-3 py-4 sm:px-5 sm:py-6">
+          {children}
+        </main>
       </div>
     </div>
   );

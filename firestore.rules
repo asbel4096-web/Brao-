@@ -17,6 +17,26 @@ service cloud.firestore {
     }
 
     // ------------------------------------------------------------------
+    // Role-based access. الـrole field على وثيقة users/{uid} يحدّد دور
+    // الأدمن بدقة (super_admin, admin, moderator, support, analytics).
+    // الـbootstrap الأولي يجعل أول أدمن super_admin.
+    //
+    // isSuperAdmin: للإجراءات الحساسة جداً (تعيين الأدوار، إدارة النظام).
+    // hasRole(r): للفحوصات الـgranular في rules محدّدة.
+    // ------------------------------------------------------------------
+    function isSuperAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin';
+    }
+
+    function hasRole(roleName) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == roleName;
+    }
+
+    // ------------------------------------------------------------------
     // Bootstrap Admin allowlist.
     // Must mirror NEXT_PUBLIC_ADMIN_EMAILS used by the client for the
     // first-login bootstrap in contexts/AuthContext.tsx.
@@ -93,7 +113,11 @@ service cloud.firestore {
           && unchanged([
             'uid', 'isAdmin', 'createdAt',
             'isVerifiedDealer', 'verifiedAt',
-            'disabled', 'disabledReason', 'disabledAt', 'disabledBy'
+            'disabled', 'disabledReason', 'disabledAt', 'disabledBy',
+            // Role + ban fields - تُدار من الأدمن server-side فقط.
+            // المستخدم لا يستطيع رفع نفسه دوراً أو إزالة الحظر.
+            'role', 'banned', 'bannedAt', 'bannedBy', 'banReason',
+            'lastActiveAt', 'deviceInfo'
           ])
           // المالك يستطيع تعديل أي حقل في ملف نفسه - بما في ذلك حقول
           // مستحدثة لم نعرفها بعد. الحقول الحرجة محميّة بـunchanged() أعلاه.
@@ -149,7 +173,14 @@ service cloud.firestore {
           // الأدمن يستطيع تعديل أي حقل في ملف أي مستخدم — بما في ذلك
           // حقول التوثيق (isVerifiedDealer, verifiedAt). هذا الفرع
           // الوحيد الذي يسمح بتغيير حالة التوثيق.
+          // استثناء: تعيين 'role' (دور الأدمن) يحتاج super_admin حصراً،
+          // لمنع تصعيد الصلاحيات. أي admin عادي لا يستطيع تعيين
+          // super_admin/admin لشخص آخر - يتطلب صلاحية أعلى.
           isAdmin()
+          && (
+            !('role' in request.resource.data.diff(resource.data).affectedKeys())
+            || isSuperAdmin()
+          )
         )
         || (
           // A different signed-in user may ONLY nudge the follow counters
@@ -463,6 +494,75 @@ service cloud.firestore {
       allow read: if isAdmin();
       // الكتابة من client ممنوعة - حتى الأدمن يستخدم API route الذي
       // يكتب server-side. هذا يضمن نفس الـvalidation تطبَّق دائماً.
+      allow create, update, delete: if false;
+    }
+
+    // ============================================================
+    // Admin module collections (المرحلة 1 من الـAdmin Panel الجديد)
+    // ============================================================
+
+    // adminLogs - سجلّ كل إجراءات الأدمن (audit trail).
+    //   {adminUid, action, targetType, targetId, before, after, reason, createdAt}
+    // القراءة: للأدمن. الكتابة: server-side فقط.
+    match /adminLogs/{logId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    // featureFlags - تشغيل/إيقاف ميزات بدون نشر.
+    //   {key, enabled, description, updatedBy, updatedAt}
+    // القراءة: public (لتعمل في كل الصفحات بسرعة).
+    // الكتابة: للأدمن المخوّل (features.toggle).
+    match /featureFlags/{flagKey} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // reports - بلاغات المستخدمين على إعلانات/تعليقات/مستخدمين.
+    //   {reporterId, targetType, targetId, reason, description, status, ...}
+    // القراءة: الأدمن + المُبلِّغ نفسه (يرى بلاغاته فقط).
+    // الكتابة:
+    //   - create: أي مستخدم مسجَّل، شرط reporterId == نفسه + status='pending'
+    //   - update/delete: الأدمن فقط (لتحديث status)
+    match /reports/{reportId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.reporterId == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.reporterId == request.auth.uid
+        && request.resource.data.status == 'pending';
+      allow update, delete: if isAdmin();
+    }
+
+    // bannedWords - فلترة الكلمات في التعليقات والإعلانات.
+    //   {word, severity, addedBy, addedAt}
+    // القراءة: للأدمن فقط (الـbanned list سرّية لتجنّب التحايل).
+    // الكتابة: للأدمن.
+    match /bannedWords/{wordId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // homepageConfig - بنرات + ترتيب الأقسام في الصفحة الرئيسية.
+    //   وثيقة واحدة: homepageConfig/main
+    // القراءة: public (الصفحة الرئيسية تقرأها).
+    // الكتابة: للأدمن (homepage.edit).
+    match /homepageConfig/{configId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // cmsPages - صفحات المحتوى الديناميكي (privacy, terms, faq, ...).
+    //   {slug, title, contentMarkdown, updatedBy, updatedAt}
+    // القراءة: public. الكتابة: للأدمن (content.edit).
+    match /cmsPages/{slug} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // analytics/daily/{YYYY-MM-DD} - لقطات يومية للتحليلات.
+    // تُكتب server-side (cron). القراءة: للأدمن.
+    match /analytics/{docId} {
+      allow read: if isAdmin();
       allow create, update, delete: if false;
     }
 
