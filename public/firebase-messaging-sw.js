@@ -1,25 +1,23 @@
 /* eslint-disable no-undef */
 /**
- * Service Worker لاستقبال إشعارات Firebase Cloud Messaging في الـbackground.
+ * Service Worker لـFirebase Cloud Messaging (background push).
  *
- * متى يُشغَّل؟
- *  - عندما يكون التطبيق مغلقاً أو الـtab غير نشط، ويصل push.
- *  - الـbrowser يُشغّل هذا الـSW تلقائياً ويسلّمه payload.
+ * كيف يحصل على Firebase config؟
+ *  - بدلاً من قيم مكتوبة يدوياً (عرضة للخطأ وتحتاج تحديث عند تغيير المشروع)،
+ *    نقرأ القيم من query params في رابط تسجيل الـSW.
+ *  - الـclient يُسجّل الـSW هكذا:
+ *      navigator.serviceWorker.register(
+ *        `/firebase-messaging-sw.js?apiKey=...&projectId=...&...`
+ *      )
+ *  - نقرأها هنا من self.location.search.
  *
- * متى لا يُشغَّل؟
- *  - عندما يكون التطبيق مفتوحاً ونشطاً - في هذه الحالة `onMessage`
- *    في كود الـclient (use-push-notifications.ts) يلتقط الإشعار.
+ * لماذا هذا أفضل؟
+ *  - لا قيم مكتوبة في الملف (يبقى generic).
+ *  - القيم تأتي من نفس مصدر الـclient (env vars) - لا تضارب.
+ *  - تغيير المشروع = تغيير env فقط، لا لمس هذا الملف.
  *
- * مهم:
- *  - هذا الملف يجب أن يكون في public/ ليُخدَم من الجذر `/firebase-messaging-sw.js`.
- *  - لا يدعم ES modules بأناقة على بعض المتصفحات - نستخدم importScripts.
- *  - النسخة المثبّتة من firebase JS SDK يجب أن تطابق نسخة الـclient app.
- *
- * تحديثات على Firebase config:
- *  - عند تغيير projectId/apiKey في .env، يجب تحديث الأرقام أدناه أيضاً
- *    لأن الـSW لا يقرأ environment variables.
- *  - الـapiKey و projectId و messagingSenderId و appId عامة (تظهر في
- *    bundles الـclient) - لا حساسية أمنية في وضعها هنا.
+ * القيم العامة (apiKey, projectId, ...) آمنة في URL - تظهر في bundle
+ * الـclient على أي حال. لا أسرار هنا.
  */
 
 importScripts(
@@ -29,56 +27,54 @@ importScripts(
   "https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging-compat.js"
 );
 
-// =============================================================================
-// IMPORTANT: استبدلي هذه القيم بقيم مشروعك من Firebase Console:
-//   Project Settings → General → Your apps → Web app → SDK setup
-// =============================================================================
-firebase.initializeApp({
-  apiKey: "REPLACE_WITH_NEXT_PUBLIC_FIREBASE_API_KEY",
-  authDomain: "REPLACE_WITH_NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN",
-  projectId: "bratsho-car",
-  storageBucket: "REPLACE_WITH_NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET",
-  messagingSenderId: "REPLACE_WITH_NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID",
-  appId: "REPLACE_WITH_NEXT_PUBLIC_FIREBASE_APP_ID",
-});
+// قراءة config من query params
+const params = new URLSearchParams(self.location.search);
+const firebaseConfig = {
+  apiKey: params.get("apiKey") || "",
+  authDomain: params.get("authDomain") || "",
+  projectId: params.get("projectId") || "",
+  storageBucket: params.get("storageBucket") || "",
+  messagingSenderId: params.get("messagingSenderId") || "",
+  appId: params.get("appId") || "",
+};
 
-const messaging = firebase.messaging();
+// تهيئة Firebase فقط إذا توفّرت القيم الأساسية. خلاف ذلك نتجاهل بهدوء
+// (الـSW يُسجَّل لكن لا messaging - لن يصل push، لكن لا crash).
+let messaging = null;
+if (firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.messagingSenderId) {
+  try {
+    firebase.initializeApp(firebaseConfig);
+    messaging = firebase.messaging();
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error("[SW] firebase init failed:", e);
+  }
+}
 
-/**
- * عند وصول push في background:
- *  - data-only messages: نُنشئ Notification يدوياً (تحكم كامل بالـicon والـclick).
- *  - notification messages: المتصفح يُنشئ الإشعار تلقائياً، لكن مازلنا نتلقى
- *    onBackgroundMessage للـlogging أو تعديل title.
- *
- * نستخدم data-only من الـserver عندنا للسيطرة الكاملة على المظهر.
- */
-messaging.onBackgroundMessage((payload) => {
-  // eslint-disable-next-line no-console
-  console.log("[SW] background message:", payload);
+if (messaging) {
+  messaging.onBackgroundMessage((payload) => {
+    // eslint-disable-next-line no-console
+    console.log("[SW] background message:", payload);
 
-  const title =
-    payload.notification?.title ||
-    payload.data?.title ||
-    "براتشو كار";
-  const body =
-    payload.notification?.body ||
-    payload.data?.body ||
-    "لديك إشعار جديد";
-  const link = payload.fcmOptions?.link || payload.data?.link || "/notifications";
+    const title =
+      payload.notification?.title || payload.data?.title || "براتشو كار";
+    const body =
+      payload.notification?.body || payload.data?.body || "لديك إشعار جديد";
+    const link =
+      payload.fcmOptions?.link || payload.data?.link || "/notifications";
 
-  const options = {
-    body,
-    icon: "/icons/icon-192.png",
-    badge: "/icons/icon-192.png",
-    tag: payload.data?.tag || "bratsho-notif",
-    dir: "rtl",
-    lang: "ar",
-    requireInteraction: false,
-    data: { link, ...payload.data },
-  };
-
-  self.registration.showNotification(title, options);
-});
+    self.registration.showNotification(title, {
+      body,
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      tag: payload.data?.tag || "bratsho-notif",
+      dir: "rtl",
+      lang: "ar",
+      requireInteraction: false,
+      data: { link, ...payload.data },
+    });
+  });
+}
 
 /**
  * عند ضغط الإشعار: نفتح الـtab الموجودة (إن وجدت) أو نفتح جديدة.
@@ -96,7 +92,6 @@ self.addEventListener("notificationclick", (event) => {
         includeUncontrolled: true,
       });
 
-      // أعِد تركيز tab موجود لنفس الـorigin إن أمكن.
       for (const client of allClients) {
         if (client.url.startsWith(self.location.origin) && "focus" in client) {
           await client.focus();
@@ -104,14 +99,12 @@ self.addEventListener("notificationclick", (event) => {
             try {
               await client.navigate(targetUrl);
             } catch {
-              /* بعض المتصفحات تمنع navigate عبر origins؛ تجاهل بأمان. */
+              /* بعض المتصفحات تمنع navigate؛ تجاهل */
             }
           }
           return;
         }
       }
-
-      // لا tab مفتوح - افتح جديدة.
       await self.clients.openWindow(targetUrl);
     })()
   );
