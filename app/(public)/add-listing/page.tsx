@@ -36,6 +36,7 @@ import {
 import { formatPrice, normalizeLibyanPhone } from "@/lib/utils";
 import { applyBratshoWatermark } from "@/lib/image-watermark";
 import { cn } from "@/lib/utils";
+import { useBannedWordsCheck } from "@/hooks/admin/use-banned-words-check";
 
 interface FormState {
   title: string;
@@ -110,6 +111,8 @@ const STEP_LABELS = [
 export default function AddListingPage() {
   const router = useRouter();
   const { user, profile, loading: authLoading } = useAuth();
+  // فحص الكلمات المحظورة. يطبَّق على العنوان + الوصف قبل الإرسال.
+  const { check: checkBannedWords } = useBannedWordsCheck();
 
   const [form, setForm] = useState<FormState>(initialState);
   const [images, setImages] = useState<File[]>([]);
@@ -277,6 +280,21 @@ export default function AddListingPage() {
         setStep(s);
         return;
       }
+    }
+
+    // فحص الكلمات المحظورة في العنوان والوصف. severity="block" يمنع
+    // النشر تماماً. نفحص الحقلين معاً ونُرجع أول مطابقة.
+    const titleHit = checkBannedWords(form.title);
+    if (titleHit && titleHit.severity === "block") {
+      setError(`عنوان الإعلان يحوي كلمة غير مسموحة: "${titleHit.matchedWord}".`);
+      setStep(1);
+      return;
+    }
+    const descHit = checkBannedWords(form.description);
+    if (descHit && descHit.severity === "block") {
+      setError(`وصف الإعلان يحوي كلمة غير مسموحة: "${descHit.matchedWord}".`);
+      setStep(1);
+      return;
     }
 
     try {

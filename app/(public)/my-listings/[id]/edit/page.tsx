@@ -7,6 +7,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
+import { useBannedWordsCheck } from "@/hooks/admin/use-banned-words-check";
 import {
   libyaCities, listingCategories, fuelTypes, transmissionTypes,
 } from "@/lib/categories";
@@ -15,6 +16,8 @@ export default function EditListingPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  // فحص الكلمات المحظورة (نفس الـlist المُستخدمة في الإضافة)
+  const { check: checkBannedWords } = useBannedWordsCheck();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -57,7 +60,23 @@ export default function EditListingPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!user || !form) return;
-    setError(""); setMessage(""); setSaving(true);
+    setError(""); setMessage("");
+
+    // فحص الكلمات المحظورة قبل المتابعة
+    const title = form.title?.trim() || "";
+    const description = form.description?.trim() || "";
+    const titleHit = checkBannedWords(title);
+    if (titleHit && titleHit.severity === "block") {
+      setError(`عنوان الإعلان يحوي كلمة غير مسموحة: "${titleHit.matchedWord}".`);
+      return;
+    }
+    const descHit = checkBannedWords(description);
+    if (descHit && descHit.severity === "block") {
+      setError(`وصف الإعلان يحوي كلمة غير مسموحة: "${descHit.matchedWord}".`);
+      return;
+    }
+
+    setSaving(true);
     try {
       const features = (form.features || []).filter ? form.features : (form._featuresStr || "")
         .split(/[,\n،]/).map((s: string) => s.trim()).filter(Boolean);

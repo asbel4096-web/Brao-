@@ -32,6 +32,7 @@ import {
   type CommentMenuAction,
 } from "@/components/comment-context-menu";
 import { ReportDialog } from "@/components/report/report-dialog";
+import { useBannedWordsCheck } from "@/hooks/admin/use-banned-words-check";
 
 type Props = {
   listingId: string;
@@ -72,6 +73,9 @@ export default function ListingComments({
   const [ui, setUi] = useState<UIState>({ open: null, replyTo: null });
   // التعليق الذي يفتح له dialog الإبلاغ. null = الـdialog مغلق.
   const [reportComment, setReportComment] = useState<ListingComment | null>(null);
+  // فحص الكلمات المحظورة قبل النشر. الـhook يشترك مع باقي الـcomponents
+  // (نفس subscription) فلا تكلفة إضافية على Firestore.
+  const { check: checkBannedWords } = useBannedWordsCheck();
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   // refs لكل عنصر تعليق - نحتاج DOMRect عند فتح الـbar/menu.
@@ -136,6 +140,17 @@ export default function ListingComments({
     }
     if (value.length < 2) {
       toast.warning("اكتب تعليقًا واضحًا.");
+      return;
+    }
+
+    // فحص الكلمات المحظورة. severity="block" يمنع تماماً، "warn" يُسجَّل
+    // فقط لاحقاً (مرحلة قادمة) — حالياً نسمح بالـwarn لكي لا نُحبط
+    // المستخدمين من نقاش مشروع.
+    const bannedHit = checkBannedWords(value);
+    if (bannedHit && bannedHit.severity === "block") {
+      toast.error(
+        `لا يمكن نشر هذا التعليق. الكلمة "${bannedHit.matchedWord}" غير مسموح بها.`
+      );
       return;
     }
 
