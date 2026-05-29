@@ -37,6 +37,21 @@ service cloud.firestore {
     }
 
     // ------------------------------------------------------------------
+    // فحص أن المستخدم الحالي ليس محظوراً ولا محذوفاً.
+    // يُستخدم في كل قاعدة write تخص محتوى عام (إعلانات، تعليقات، رسائل،
+    // متابعات، تفاعلات...) لمنع المستخدمين المحظورين من المساهمة.
+    //
+    // الأدمن مُعفى من هذا الفحص (يستطيع التصرف حتى لو وضع نفسه banned،
+    // وهو سيناريو نادر/غير منطقي على أي حال).
+    // ------------------------------------------------------------------
+    function isActiveUser() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('banned', false) != true
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('deleted', false) != true;
+    }
+
+    // ------------------------------------------------------------------
     // Bootstrap Admin allowlist.
     // Must mirror NEXT_PUBLIC_ADMIN_EMAILS used by the client for the
     // first-login bootstrap in contexts/AuthContext.tsx.

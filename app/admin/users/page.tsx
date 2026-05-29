@@ -1,528 +1,197 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Search, Users as UsersIcon, RefreshCw } from "lucide-react";
+import { useAdminRole } from "@/hooks/admin/use-admin-role";
 import {
-  collection,
-  doc,
-  onSnapshot,
-  orderBy,
-  query,
-  serverTimestamp,
-  updateDoc,
-} from "firebase/firestore";
-import {
-  BadgeCheck,
-  Loader2,
-  Pencil,
-  Search,
-  Shield,
-  ShieldOff,
-  User as UserIcon,
-  X,
-} from "lucide-react";
-import { db } from "@/lib/firebase";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/contexts/ToastContext";
-import { useConfirm } from "@/components/confirm-dialog";
-import { formatDateTime } from "@/lib/utils";
+  useUsersList,
+  type UserFilter,
+} from "@/hooks/admin/use-users-list";
+import { UsersTable } from "@/components/admin/modules/users/users-table";
 
-interface UserRow {
-  id: string;
-  uid?: string;
-  name?: string;
-  email?: string;
-  phone?: string;
-  photoURL?: string;
-  isAdmin?: boolean;
-  isVerifiedDealer?: boolean;
-  dealerName?: string;
-  dealerLogo?: string;
-  lastLoginAt?: any;
-  createdAt?: any;
-}
+/**
+ * صفحة قائمة المستخدمين للأدمن.
+ *
+ * - Tabs للفلترة (الكل / أدمن / محظور / موثَّق / محذوف)
+ * - حقل بحث (client-side في النتائج المحمَّلة)
+ * - Infinite scroll: زر "تحميل المزيد" + IntersectionObserver للـauto-load
+ * - زر refresh يدوي بعد الإجراءات
+ *
+ * صلاحية مطلوبة: users.view (يفحصها الـlayout أيضاً، لكن نُكرّر).
+ */
+
+const FILTERS: { key: UserFilter; label: string }[] = [
+  { key: "all", label: "الكل" },
+  { key: "admins", label: "الإدارة" },
+  { key: "verified", label: "موثَّقون" },
+  { key: "banned", label: "محظورون" },
+  { key: "deleted", label: "محذوفون" },
+];
 
 export default function AdminUsersPage() {
-  const { user: currentUser } = useAuth();
-  const toast = useToast();
-  const confirm = useConfirm();
-
-  const [users, setUsers] = useState<UserRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { can } = useAdminRole();
+  const [filter, setFilter] = useState<UserFilter>("all");
   const [search, setSearch] = useState("");
-  const [busyId, setBusyId] = useState<string | null>(null);
-  // فلتر: عرض المعارض الموثَّقة فقط (يفيد لمراجعة قائمة الموثَّقين الحاليين).
-  const [showOnlyVerified, setShowOnlyVerified] = useState(false);
-  // المستخدم المختار لتعديل بياناته (اسم المعرض + الشعار). null = modal مغلق.
-  const [editingUser, setEditingUser] = useState<UserRow | null>(null);
-  const [editDealerName, setEditDealerName] = useState("");
-  const [editDealerLogo, setEditDealerLogo] = useState("");
-  const [editSaving, setEditSaving] = useState(false);
 
-  const openEditModal = (u: UserRow) => {
-    setEditingUser(u);
-    setEditDealerName(u.dealerName || "");
-    setEditDealerLogo(u.dealerLogo || "");
-  };
+  const {
+    items,
+    rawItems,
+    loading,
+    loadingMore,
+    error,
+    hasMore,
+    loadMore,
+    refresh,
+  } = useUsersList(filter, search);
 
-  const closeEditModal = () => {
-    if (editSaving) return;
-    setEditingUser(null);
-    setEditDealerName("");
-    setEditDealerLogo("");
-  };
-
-  const saveDealerInfo = async () => {
-    if (!editingUser) return;
-    const trimmedName = editDealerName.trim();
-    const trimmedLogo = editDealerLogo.trim();
-
-    // تحقق بسيط: لو الـlogo URL أُدخل، يجب أن يبدأ بـ http(s).
-    if (trimmedLogo && !/^https?:\/\//i.test(trimmedLogo)) {
-      toast.error("رابط الشعار يجب أن يبدأ بـ https://");
-      return;
-    }
-
-    try {
-      setEditSaving(true);
-      // نكتب الحقلين مباشرة. سلسلة فارغة تُحفظ كـ "" - هذا مقبول لأن
-      // قواعد الحقول optional، والواجهة تتعامل مع "" كأنه غير موجود.
-      await updateDoc(doc(db, "users", editingUser.id), {
-        dealerName: trimmedName,
-        dealerLogo: trimmedLogo,
-        updatedAt: serverTimestamp(),
-      });
-      toast.success("تم حفظ بيانات المعرض.");
-      closeEditModal();
-    } catch (err: any) {
-      toast.error(err?.message || "تعذّر الحفظ.");
-    } finally {
-      setEditSaving(false);
-    }
-  };
-
+  // IntersectionObserver للـauto-load عند الوصول لنهاية القائمة
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
-    const q = query(collection(db, "users"), orderBy("createdAt", "desc"));
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        setUsers(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })));
-        setLoading(false);
+    const el = sentinelRef.current;
+    if (!el || !hasMore || loadingMore || loading) return;
+    if (typeof window === "undefined" || !("IntersectionObserver" in window)) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          loadMore();
+        }
       },
-      // fallback لو ما عند createdAt على الـ docs القديمة
-      () => {
-        const unsub2 = onSnapshot(collection(db, "users"), (snap) => {
-          setUsers(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })));
-          setLoading(false);
-        });
-        return unsub2;
-      }
+      { rootMargin: "200px" }
     );
-    return () => unsub();
-  }, []);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMore, loadingMore, loading, loadMore]);
 
-  const filtered = users.filter((u) => {
-    if (showOnlyVerified && !u.isVerifiedDealer) return false;
-    if (!search.trim()) return true;
-    const s = search.toLowerCase();
+  if (!can("users.view")) {
     return (
-      u.name?.toLowerCase().includes(s) ||
-      u.email?.toLowerCase().includes(s) ||
-      u.phone?.includes(s) ||
-      u.uid?.toLowerCase().includes(s) ||
-      u.id?.toLowerCase().includes(s) ||
-      u.dealerName?.toLowerCase().includes(s)
+      <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-center text-sm font-bold text-rose-700 dark:border-rose-900/40 dark:bg-rose-900/20 dark:text-rose-300">
+        لا تملك صلاحية رؤية قائمة المستخدمين.
+      </div>
     );
-  });
-
-  /**
-   * منح أو سحب صلاحيات الأدمن.
-   * يكتب مباشرة على users/{uid}.isAdmin = bool.
-   * هذا هو **الطريق الوحيد** لتعديل صلاحيات الأدمن.
-   */
-  const toggleAdmin = async (u: UserRow) => {
-    if (!currentUser) return;
-
-    if (u.id === currentUser.uid) {
-      toast.warning("لا يمكنك سحب صلاحياتك من نفسك.");
-      return;
-    }
-
-    const next = !u.isAdmin;
-    const ok = await confirm({
-      title: next ? "منح صلاحيات الإدارة؟" : "سحب صلاحيات الإدارة؟",
-      message: next
-        ? `سيصبح ${u.name || u.email || "هذا المستخدم"} أدمناً وله صلاحيات كاملة.`
-        : `سيتم سحب صلاحيات الإدارة من ${u.name || u.email || "هذا المستخدم"}.`,
-      
-      tone: "danger",
-    });
-    if (!ok) return;
-
-    try {
-      setBusyId(u.id);
-      await updateDoc(doc(db, "users", u.id), {
-        isAdmin: next,
-        updatedAt: serverTimestamp(),
-      });
-      toast.success(next ? "تم منح الصلاحيات." : "تم سحب الصلاحيات.");
-    } catch (err: any) {
-      toast.error(err?.message || "تعذّر تحديث الصلاحيات.");
-    } finally {
-      setBusyId(null);
-    }
-  };
-
-  /**
-   * توثيق المعرض أو إلغاء التوثيق.
-   * فقط الأدمن يستطيع هذا - مفروض في firestore.rules عبر فرع isAdmin().
-   * عند التوثيق: نضع isVerifiedDealer=true + verifiedAt=now.
-   * عند الإلغاء: نضع isVerifiedDealer=false (نُبقي verifiedAt كسجلّ).
-   */
-  const toggleVerified = async (u: UserRow) => {
-    if (!currentUser) return;
-    const next = !u.isVerifiedDealer;
-
-    const ok = await confirm({
-      title: next ? "توثيق المعرض؟" : "إلغاء توثيق المعرض؟",
-      message: next
-        ? `سيظهر "${u.dealerName || u.name || "هذا المستخدم"}" في قسم المعارض الموثقة بعلامة زرقاء.`
-        : `سيتم إخفاء "${u.dealerName || u.name || "هذا المستخدم"}" من قسم المعارض الموثقة وستُزال علامة التوثيق.`,
-      confirmLabel: next ? "توثيق" : "إلغاء التوثيق",
-      cancelLabel: "إلغاء",
-      tone: next ? "info" : "warning",
-    });
-    if (!ok) return;
-
-    try {
-      setBusyId(u.id);
-      const payload: any = {
-        isVerifiedDealer: next,
-        updatedAt: serverTimestamp(),
-      };
-      // نضبط verifiedAt فقط عند التوثيق - عند الإلغاء نُبقيه للسجلّ.
-      if (next) payload.verifiedAt = serverTimestamp();
-      await updateDoc(doc(db, "users", u.id), payload);
-      toast.success(next ? "تم توثيق المعرض." : "تم إلغاء التوثيق.");
-    } catch (err: any) {
-      toast.error(err?.message || "تعذّر تحديث التوثيق.");
-    } finally {
-      setBusyId(null);
-    }
-  };
+  }
 
   return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="section-title">المستخدمون</h1>
-        <p className="section-subtitle">
-          قائمة بكل المستخدمين المسجّلين. الأدمن مصدر الحقيقة الوحيد:
-          حقل <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs dark:bg-slate-800">isAdmin</code> في وثيقة المستخدم.
-        </p>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative w-full max-w-md">
-          <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            className="input pr-10"
-            placeholder="ابحث بالاسم أو البريد أو الهاتف أو اسم المعرض..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
+            <UsersIcon size={20} strokeWidth={2.2} />
+          </div>
+          <div>
+            <h1 className="text-lg font-black text-slate-900 dark:text-white sm:text-xl">
+              المستخدمون
+            </h1>
+            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
+              إدارة كل مستخدمي المنصة، تعيين الأدوار، الحظر والتوثيق.
+            </p>
+          </div>
         </div>
         <button
           type="button"
-          onClick={() => setShowOnlyVerified((v) => !v)}
-          aria-pressed={showOnlyVerified}
-          className={
-            showOnlyVerified
-              ? "inline-flex items-center gap-1.5 rounded-2xl border border-brand-300 bg-brand-50 px-3 py-2 text-xs font-black text-brand-700 transition hover:bg-brand-100 dark:border-brand-700 dark:bg-brand-900/30 dark:text-brand-300"
-              : "inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-          }
+          onClick={refresh}
+          disabled={loading}
+          aria-label="تحديث"
+          className="
+            grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-slate-200
+            text-slate-500 transition
+            hover:border-brand-300 hover:text-brand-700
+            dark:border-slate-700 dark:text-slate-400
+            dark:hover:border-brand-700 dark:hover:text-brand-300
+            disabled:opacity-50
+          "
         >
-          <BadgeCheck size={13} />
-          {showOnlyVerified ? "الموثَّقون فقط" : "كل المستخدمين"}
+          <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
         </button>
       </div>
 
-      {loading ? (
-        <div className="space-y-2">
-          {[...Array(4)].map((_, i) => <div key={i} className="skeleton h-20" />)}
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="card p-8 text-center text-slate-500">لا يوجد مستخدمون.</div>
-      ) : (
-        <div className="space-y-2">
-          {filtered.map((u) => {
-            // ✅ المصدر الوحيد للأدمن
-            const isAdmin = u.isAdmin === true;
-            const isVerified = u.isVerifiedDealer === true;
-            const isMe = u.id === currentUser?.uid;
-            const isBusy = busyId === u.id;
-
-            return (
-              <div key={u.id} className="card flex items-center gap-3 p-4">
-                <div className="relative shrink-0">
-                  {u.photoURL ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={u.photoURL}
-                      alt={u.name}
-                      className="h-12 w-12 rounded-full object-cover"
-                      referrerPolicy="no-referrer"
-                    />
-                  ) : (
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-700 text-white">
-                      <UserIcon size={18} />
-                    </div>
-                  )}
-                  {/* شارة توثيق صغيرة على الصورة */}
-                  {isVerified && (
-                    <span
-                      aria-label="معرض موثق"
-                      className="absolute -bottom-0.5 -left-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-brand-700 text-white dark:border-slate-900"
-                    >
-                      <BadgeCheck size={10} strokeWidth={2.5} />
-                    </span>
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <div className="truncate text-sm font-black dark:text-white">
-                      {u.dealerName || u.name || "بدون اسم"}
-                    </div>
-                    {isVerified && (
-                      <span className="inline-flex items-center gap-0.5 rounded-full bg-brand-50 px-1.5 py-0.5 text-[10px] font-black text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
-                        <BadgeCheck size={10} strokeWidth={2.5} />
-                        موثَّق
-                      </span>
-                    )}
-                    {isAdmin && (
-                      <span className="badge-action !text-[10px]">
-                        <Shield size={10} className="ml-1" /> مشرف
-                      </span>
-                    )}
-                    {isMe && (
-                      <span className="badge !text-[10px]">أنت</span>
-                    )}
-                  </div>
-                  <div className="truncate text-xs text-slate-500">
-                    {u.dealerName && u.name && u.dealerName !== u.name ? `${u.name} • ` : ""}
-                    {u.email || "—"} {u.phone ? `• ${u.phone}` : ""}
-                  </div>
-                  <div className="mt-0.5 truncate text-[11px] text-slate-400">
-                    آخر دخول: {formatDateTime(u.lastLoginAt)}
-                  </div>
-                </div>
-
-                {/* زر تعديل بيانات المعرض - اسم وشعار */}
-                <button
-                  type="button"
-                  onClick={() => openEditModal(u)}
-                  disabled={isBusy}
-                  aria-label="تعديل بيانات المعرض"
-                  title="تعديل اسم وشعار المعرض"
-                  className="inline-flex shrink-0 items-center gap-1 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                >
-                  <Pencil size={13} />
-                  <span className="hidden sm:inline">تعديل</span>
-                </button>
-
-                {/* زر التوثيق - متاح لكل المستخدمين بمن فيهم الأدمن نفسه */}
-                <button
-                  type="button"
-                  onClick={() => void toggleVerified(u)}
-                  disabled={isBusy}
-                  aria-label={isVerified ? "إلغاء التوثيق" : "توثيق"}
-                  className={
-                    isVerified
-                      ? "inline-flex shrink-0 items-center gap-1 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-200 dark:hover:bg-slate-800"
-                      : "inline-flex shrink-0 items-center gap-1 rounded-2xl border border-brand-200 bg-brand-50 px-3 py-2 text-xs font-bold text-brand-700 transition hover:bg-brand-100 disabled:opacity-60 dark:border-brand-700 dark:bg-brand-900/30 dark:text-brand-300 dark:hover:bg-brand-900/50"
-                  }
-                >
-                  <BadgeCheck size={13} />
-                  <span className="hidden sm:inline">
-                    {isVerified ? "إلغاء" : "توثيق"}
-                  </span>
-                </button>
-
-                {/* زر منح/سحب الأدمن */}
-                {!isMe && (
-                  <button
-                    type="button"
-                    onClick={() => void toggleAdmin(u)}
-                    disabled={isBusy}
-                    className={
-                      isAdmin
-                        ? "inline-flex shrink-0 items-center gap-1 rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100 disabled:opacity-60 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300"
-                        : "inline-flex shrink-0 items-center gap-1 rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-60 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
-                    }
-                  >
-                    {isAdmin ? (
-                      <>
-                        <ShieldOff size={13} />
-                        <span className="hidden sm:inline">سحب</span>
-                      </>
-                    ) : (
-                      <>
-                        <Shield size={13} />
-                        <span className="hidden sm:inline">منح أدمن</span>
-                      </>
-                    )}
-                  </button>
-                )}
-
-                <div className="hidden font-mono text-[10px] text-slate-400 sm:block">
-                  {u.uid?.slice(0, 8)}…
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      <div className="card border-amber-200 bg-amber-50 p-4 text-xs text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/20 dark:text-amber-200">
-        <strong>كيف تُمنح صلاحيات الأدمن؟</strong>
-        <ul className="mt-2 space-y-1 list-disc pr-4">
-          <li>
-            استخدم زر <strong>"منح أدمن"</strong> أعلاه — يكتب مباشرة على
-            <code className="mx-1 rounded bg-white px-1.5 py-0.5 dark:bg-slate-900">isAdmin: true</code>.
-          </li>
-          <li>
-            للـ bootstrap الأوّل (لا يوجد أدمن في النظام بعد): أضف الإيميل إلى
-            <code className="mx-1 rounded bg-white px-1.5 py-0.5 dark:bg-slate-900">NEXT_PUBLIC_ADMIN_EMAILS</code>{" "}
-            ثم سجّل الدخول لأوّل مرة. سيُكتب isAdmin تلقائياً.
-          </li>
-          <li>
-            بعد ذلك، تغيير قائمة env <strong>لا يؤثر</strong> على الأدمن الحاليين.
-          </li>
-        </ul>
+      {/* Filters */}
+      <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {FILTERS.map((f) => {
+          const active = filter === f.key;
+          return (
+            <button
+              key={f.key}
+              type="button"
+              onClick={() => setFilter(f.key)}
+              className={`
+                shrink-0 rounded-full px-3.5 py-1.5 text-[12px] font-black transition
+                ${active
+                  ? "bg-brand-700 text-white shadow-sm dark:bg-brand-600"
+                  : "border border-slate-200 bg-white text-slate-600 hover:border-brand-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-brand-700"
+                }
+              `}
+            >
+              {f.label}
+            </button>
+          );
+        })}
       </div>
 
-      {/* ================ Modal تعديل بيانات المعرض ================ */}
-      {editingUser && (
-        <div
-          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-          onClick={closeEditModal}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div
-            className="
-              w-full max-w-md overflow-hidden rounded-3xl border border-slate-200
-              bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900
-            "
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* رأس */}
-            <div className="flex items-center gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800/50">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
-                <Pencil size={16} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="truncate text-sm font-black text-slate-900 dark:text-white">
-                  تعديل بيانات المعرض
-                </h3>
-                <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">
-                  {editingUser.name || editingUser.email || "—"}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={closeEditModal}
-                disabled={editSaving}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-200 disabled:opacity-60 dark:hover:bg-slate-700"
-                aria-label="إغلاق"
-              >
-                <X size={16} />
-              </button>
-            </div>
+      {/* بحث */}
+      <div className="relative">
+        <Search
+          size={15}
+          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"
+        />
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="بحث بالاسم، البريد، الهاتف، أو الـID..."
+          className="
+            h-10 w-full rounded-2xl border border-slate-200 bg-white pe-10 ps-3
+            text-sm outline-none transition focus:border-brand-400
+            dark:border-slate-700 dark:bg-slate-900
+          "
+        />
+        {search && (
+          <p className="mt-1 px-1 text-[11px] text-slate-500 dark:text-slate-400">
+            عرض {items.length} من {rawItems.length} محمَّل
+          </p>
+        )}
+      </div>
 
-            {/* المحتوى */}
-            <div className="space-y-4 p-4">
-              <div>
-                <label className="mb-1 block text-xs font-black text-slate-700 dark:text-slate-200">
-                  اسم المعرض
-                </label>
-                <input
-                  type="text"
-                  className="input"
-                  placeholder="مثال: شركة الماسة للسيارات"
-                  value={editDealerName}
-                  onChange={(e) => setEditDealerName(e.target.value)}
-                  maxLength={80}
-                  disabled={editSaving}
-                />
-                <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">
-                  يُعرض في صفحة المعرض وفي قائمة المعارض الموثقة بدل الاسم
-                  الشخصي.
-                </p>
-              </div>
+      {/* محتوى */}
+      {error ? (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-700 dark:border-rose-900/40 dark:bg-rose-900/20 dark:text-rose-300">
+          خطأ: {error}
+        </div>
+      ) : (
+        <UsersTable items={items} loading={loading} />
+      )}
 
-              <div>
-                <label className="mb-1 block text-xs font-black text-slate-700 dark:text-slate-200">
-                  رابط شعار المعرض
-                </label>
-                <input
-                  type="url"
-                  className="input"
-                  placeholder="https://firebasestorage.googleapis.com/..."
-                  value={editDealerLogo}
-                  onChange={(e) => setEditDealerLogo(e.target.value)}
-                  disabled={editSaving}
-                  dir="ltr"
-                />
-                <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">
-                  اتركه فارغاً لاستخدام صورة الحساب العادية.
-                </p>
-              </div>
-
-              {/* معاينة الشعار */}
-              {editDealerLogo.trim() && /^https?:\/\//i.test(editDealerLogo.trim()) && (
-                <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={editDealerLogo.trim()}
-                    alt="معاينة"
-                    className="h-14 w-14 shrink-0 rounded-full border-2 border-white object-cover dark:border-slate-900"
-                    referrerPolicy="no-referrer"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).style.opacity = "0.3";
-                    }}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-black text-slate-700 dark:text-slate-200">
-                      معاينة الشعار
-                    </p>
-                    <p className="truncate text-[10px] text-slate-500 dark:text-slate-400">
-                      لو لم تظهر الصورة، تحقّق من الرابط.
-                    </p>
-                  </div>
-                </div>
+      {/* Sentinel + load more */}
+      {!loading && items.length > 0 && (
+        <div ref={sentinelRef} className="py-4 text-center">
+          {hasMore ? (
+            <button
+              type="button"
+              onClick={loadMore}
+              disabled={loadingMore}
+              className="
+                inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white
+                px-5 py-2 text-xs font-black text-slate-700 transition
+                hover:border-brand-300
+                dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300
+                disabled:opacity-60
+              "
+            >
+              {loadingMore ? (
+                <>
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
+                  جارٍ التحميل...
+                </>
+              ) : (
+                "تحميل المزيد"
               )}
-            </div>
-
-            {/* الأزرار */}
-            <div className="flex gap-2 border-t border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50">
-              <button
-                type="button"
-                onClick={closeEditModal}
-                disabled={editSaving}
-                className="inline-flex h-10 flex-1 items-center justify-center rounded-2xl border border-slate-200 bg-white text-xs font-black text-slate-700 transition hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-              >
-                إلغاء
-              </button>
-              <button
-                type="button"
-                onClick={() => void saveDealerInfo()}
-                disabled={editSaving}
-                className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-2xl bg-brand-700 text-xs font-black text-white shadow-blue transition active:scale-95 hover:bg-brand-600 disabled:opacity-60"
-              >
-                {editSaving ? <Loader2 size={14} className="animate-spin" /> : null}
-                حفظ
-              </button>
-            </div>
-          </div>
+            </button>
+          ) : (
+            <p className="text-[11px] text-slate-400 dark:text-slate-500">
+              وصلتِ لنهاية القائمة
+            </p>
+          )}
         </div>
       )}
     </div>
