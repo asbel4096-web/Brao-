@@ -560,12 +560,20 @@ service cloud.firestore {
     }
 
     // homepageConfig - بنرات + ترتيب الأقسام في الصفحة الرئيسية.
-    //   وثيقة واحدة: homepageConfig/main
+    //   وثيقة رئيسية: homepageConfig/main (يحوي sectionsOrder + featuredListings)
+    //   subcollection: homepageConfig/main/banners/{bannerId} (كل بنر منفصل)
     // القراءة: public (الصفحة الرئيسية تقرأها).
     // الكتابة: للأدمن (homepage.edit).
     match /homepageConfig/{configId} {
       allow read: if true;
       allow create, update, delete: if isAdmin();
+
+      // البنرات في subcollection (نضع القاعدة هنا لتطبيقها على
+      // homepageConfig/main/banners/* تلقائياً)
+      match /banners/{bannerId} {
+        allow read: if true;
+        allow create, update, delete: if isAdmin();
+      }
     }
 
     // cmsPages - صفحات المحتوى الديناميكي (privacy, terms, faq, ...).
