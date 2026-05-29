@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import {
   Clock,
   CheckCircle2,
@@ -14,11 +15,25 @@ import {
   TrendingUp,
   Ban,
   ArrowLeft,
+  BarChart3,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminRole } from "@/hooks/admin/use-admin-role";
 import { useAdminStats } from "@/hooks/admin/use-admin-stats";
+import { useAnalyticsData } from "@/hooks/admin/use-analytics-data";
 import { StatCard } from "@/components/admin/ui/stat-card";
+
+// Chart يُحمَّل dynamically لتقليل bundle الـdashboard
+const GrowthChart = dynamic(
+  () =>
+    import("@/components/admin/charts/growth-chart").then((m) => m.GrowthChart),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[260px] animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-900" />
+    ),
+  }
+);
 
 /**
  * Dashboard الرئيسي للأدمن.
@@ -38,6 +53,7 @@ export default function AdminDashboardPage() {
   const { profile } = useAuth();
   const { can, role } = useAdminRole();
   const stats = useAdminStats();
+  const analytics = useAnalyticsData();
 
   const firstName = profile?.name?.split(" ")[0] || "أيها الأدمن";
 
@@ -180,6 +196,43 @@ export default function AdminDashboardPage() {
           />
         </div>
       </section>
+
+      {/* Mini analytics charts - لمحة سريعة عن النمو */}
+      {can("analytics.view") && (
+        <section>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              نظرة على النمو
+            </h2>
+            <Link
+              href="/admin/analytics"
+              prefetch={false}
+              className="inline-flex items-center gap-1 text-[11px] font-black text-brand-700 hover:underline dark:text-brand-300"
+            >
+              <BarChart3 size={12} />
+              التحليلات الكاملة
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <GrowthChart
+              title="نمو المستخدمين"
+              description="آخر 30 يوم"
+              data={analytics.usersDaily}
+              total={analytics.usersInPeriod}
+              color="brand"
+              loading={analytics.loading}
+            />
+            <GrowthChart
+              title="نمو الإعلانات"
+              description="آخر 30 يوم"
+              data={analytics.listingsDaily}
+              total={analytics.listingsInPeriod}
+              color="action"
+              loading={analytics.loading}
+            />
+          </div>
+        </section>
+      )}
 
       {/* Quick Actions */}
       <section>
