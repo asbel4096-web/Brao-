@@ -26,6 +26,7 @@ import ListingComments from "@/components/listing-comments";
 import { ImageGallery } from "@/components/image-gallery";
 import { FavoriteButton } from "@/components/favorite-button";
 import { ShareButton } from "@/components/share-button";
+import { ReportButton } from "@/components/report/report-button";
 import { ListingQualityCard } from "@/components/listing-quality-card";
 import { OwnerStatsBar } from "@/components/owner-stats-bar";
 
@@ -329,6 +330,19 @@ export default function ListingDetailsPage() {
           </div>
 
           <SafetyTipsCard />
+
+          {/* زر الإبلاغ على الإعلان - يخفي نفسه لصاحب الإعلان */}
+          <div className="flex justify-center">
+            <ReportButton
+              targetType="listing"
+              targetId={listing.id}
+              targetMeta={{
+                title: listing.title,
+                ownerId: listing.ownerId,
+              }}
+              variant="text"
+            />
+          </div>
         </div>
 
         <aside className="space-y-6">

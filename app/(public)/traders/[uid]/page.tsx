@@ -10,6 +10,7 @@ import { useTraderProfile } from "@/hooks/useTraderProfile";
 import { buildChatId, getTraderDisplayName } from "@/lib/utils";
 import { TraderProfileHeader } from "@/components/trader/trader-profile-header";
 import { TraderTabs } from "@/components/trader/trader-tabs";
+import { ReportButton } from "@/components/report/report-button";
 
 export default function TraderPage() {
   const params = useParams<{ uid: string }>();
@@ -121,6 +122,20 @@ export default function TraderPage() {
           averageRating={averageRating}
           reviewsCount={reviewsCount}
         />
+
+        {/* زر الإبلاغ على المستخدم - يخفي نفسه إذا كان المُشاهِد هو نفسه */}
+        <div className="flex justify-center pt-2">
+          <ReportButton
+            targetType="user"
+            targetId={trader.uid}
+            targetMeta={{
+              title:
+                trader.businessName || trader.name || "مستخدم",
+              ownerId: trader.uid,
+            }}
+            variant="text"
+          />
+        </div>
       </div>
     </section>
   );

@@ -31,6 +31,7 @@ import {
   CommentContextMenu,
   type CommentMenuAction,
 } from "@/components/comment-context-menu";
+import { ReportDialog } from "@/components/report/report-dialog";
 
 type Props = {
   listingId: string;
@@ -69,6 +70,8 @@ export default function ListingComments({
   const [sending, setSending] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [ui, setUi] = useState<UIState>({ open: null, replyTo: null });
+  // التعليق الذي يفتح له dialog الإبلاغ. null = الـdialog مغلق.
+  const [reportComment, setReportComment] = useState<ListingComment | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   // refs لكل عنصر تعليق - نحتاج DOMRect عند فتح الـbar/menu.
@@ -272,9 +275,12 @@ export default function ListingComments({
   };
 
   // ----------------------------------------------------------------
-  // بلاغ
+  // بلاغ — يفتح ReportDialog من نظام الإشراف الجديد.
+  // البلاغ يُكتب في collection /reports ويظهر للأدمن في
+  // /admin/moderation/reports. هذا أفضل من الـflag القديم على التعليق
+  // لأنه يحفظ السبب والتفاصيل ويُمكن من اتخاذ إجراء محدّد.
   // ----------------------------------------------------------------
-  const handleReport = async (comment: ListingComment) => {
+  const handleReport = (comment: ListingComment) => {
     if (!user) {
       toast.warning("سجّل الدخول للتبليغ.");
       return;
@@ -283,19 +289,7 @@ export default function ListingComments({
       toast.warning("لا يمكنك التبليغ عن تعليقك.");
       return;
     }
-    try {
-      setBusyId(comment.id);
-      await updateDoc(doc(db, "listings", listingId, "comments", comment.id), {
-        reported: true,
-        reportedCount: increment(1),
-        lastReportedAt: serverTimestamp(),
-      });
-      toast.success("تم إرسال البلاغ.");
-    } catch (error: any) {
-      toast.error(error?.message || "تعذّر إرسال البلاغ.");
-    } finally {
-      setBusyId(null);
-    }
+    setReportComment(comment);
   };
 
   // ----------------------------------------------------------------
@@ -768,6 +762,22 @@ export default function ListingComments({
 
       {/* لاستخدام COMMENT_REACTIONS في الـtsx بدون تحذير "unused" */}
       <span hidden aria-hidden>{COMMENT_REACTIONS.length}</span>
+
+      {/* Dialog الإبلاغ - يُفتح من handleReport ويرسل البلاغ لنظام
+          الإشراف الجديد (/admin/moderation/reports). */}
+      {reportComment && (
+        <ReportDialog
+          open={true}
+          onClose={() => setReportComment(null)}
+          targetType="comment"
+          targetId={reportComment.id}
+          targetMeta={{
+            ownerId: reportComment.userId,
+            parentListingId: listingId,
+            snapshot: reportComment.text,
+          }}
+        />
+      )}
     </div>
   );
 }
