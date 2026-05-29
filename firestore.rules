@@ -550,10 +550,12 @@ service cloud.firestore {
 
     // bannedWords - فلترة الكلمات في التعليقات والإعلانات.
     //   {word, severity, addedBy, addedAt}
-    // القراءة: للأدمن فقط (الـbanned list سرّية لتجنّب التحايل).
-    // الكتابة: للأدمن.
+    // القراءة: public (يحتاج كل المستخدمين قراءتها للفلترة client-side
+    //   عند الكتابة. trade-off معروف: قائمة الكلمات تصبح مرئية، لكن
+    //   هذا مقبول لأن الكلمات تُحظر فعلياً سواء عرفها المستخدم أم لا).
+    // الكتابة: للأدمن فقط.
     match /bannedWords/{wordId} {
-      allow read: if isAdmin();
+      allow read: if true;
       allow create, update, delete: if isAdmin();
     }
 
