@@ -17,6 +17,7 @@ import {
   Settings,
   ShieldAlert,
   Wallet as WalletIcon,
+  Users as UsersGroup,
   BarChart3,
   Image as ImageIcon,
   Wrench,
@@ -165,6 +166,12 @@ const NAV_GROUPS: NavGroup[] = [
         href: "/admin/wallet",
         label: "إدارة المحافظ",
         Icon: WalletIcon,
+        permission: "users.edit",
+      },
+      {
+        href: "/admin/referrals",
+        label: "نظام الإحالات",
+        Icon: UsersGroup,
         permission: "users.edit",
       },
       {

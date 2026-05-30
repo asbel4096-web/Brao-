@@ -6,7 +6,7 @@ import {
   collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, updateDoc,
 } from "firebase/firestore";
 import { CheckCircle, XCircle, Trash2, ExternalLink, X } from "lucide-react";
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { createNotification } from "@/lib/notifications";
 import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/components/confirm-dialog";
@@ -53,6 +53,27 @@ export default function AdminListingsPage() {
           body: `تمت الموافقة على: ${it.title}`,
           link: `/listings/${it.id}`,
         });
+
+        // محاولة صرف مكافأة الإحالة (لو المُعلِن لديه referredBy ولم يقبض بعد).
+        // الـAPI idempotent + يفحص كل الشروط داخلياً، فحتى لو استُدعي
+        // عدة مرات لا يُسبّب مشكلة. الفشل هنا silent (لا يؤثر على
+        // الاعتماد نفسه).
+        try {
+          const idToken = await auth.currentUser?.getIdToken();
+          await fetch("/api/wallet/referrals/claim", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${idToken || ""}`,
+            },
+            body: JSON.stringify({
+              listingId: it.id,
+              uid: it.ownerId,
+            }),
+          });
+        } catch {
+          /* تجاهل - لا يفشل الاعتماد بسبب مكافأة */
+        }
       }
       toast.success("تم اعتماد الإعلان.");
     } catch (e: any) {

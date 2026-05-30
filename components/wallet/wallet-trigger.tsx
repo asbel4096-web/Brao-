@@ -8,6 +8,7 @@ import { useWallet } from "@/hooks/wallet/use-wallet";
 import { useFeatureFlag } from "@/hooks/features/use-feature-flag";
 import { WalletSheet } from "./wallet-sheet";
 import { PlansSheet } from "./plans-sheet";
+import { ReferralsSheet } from "./referrals-sheet";
 import { formatBC } from "@/lib/wallet/types";
 
 /**
@@ -35,6 +36,7 @@ export function WalletTrigger({ variant = "card", className = "" }: Props) {
   const { balance } = useWallet();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [plansOpen, setPlansOpen] = useState(false);
+  const [referralsOpen, setReferralsOpen] = useState(false);
 
   // لا يظهر إذا الـflag مغلق أو المستخدم غير مسجَّل
   if (!enabled || !user) return null;
@@ -58,7 +60,8 @@ export function WalletTrigger({ variant = "card", className = "" }: Props) {
           <span className="text-[10px] opacity-80">BC</span>
         </button>
         <>
-          <WalletSheet open={sheetOpen} onClose={() => setSheetOpen(false)} onOpenPlans={() => { setSheetOpen(false); setPlansOpen(true); }} />
+          <WalletSheet open={sheetOpen} onClose={() => setSheetOpen(false)} onOpenPlans={() => { setSheetOpen(false); setPlansOpen(true); }} onOpenReferrals={() => { setSheetOpen(false); setReferralsOpen(true); }} />
+          <ReferralsSheet open={referralsOpen} onClose={() => setReferralsOpen(false)} />
           <PlansSheet open={plansOpen} onClose={() => setPlansOpen(false)} />
         </>
       </>
@@ -99,7 +102,8 @@ export function WalletTrigger({ variant = "card", className = "" }: Props) {
         </div>
       </motion.button>
       <>
-          <WalletSheet open={sheetOpen} onClose={() => setSheetOpen(false)} onOpenPlans={() => { setSheetOpen(false); setPlansOpen(true); }} />
+          <WalletSheet open={sheetOpen} onClose={() => setSheetOpen(false)} onOpenPlans={() => { setSheetOpen(false); setPlansOpen(true); }} onOpenReferrals={() => { setSheetOpen(false); setReferralsOpen(true); }} />
+          <ReferralsSheet open={referralsOpen} onClose={() => setReferralsOpen(false)} />
           <PlansSheet open={plansOpen} onClose={() => setPlansOpen(false)} />
         </>
     </>

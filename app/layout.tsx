@@ -4,9 +4,9 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { ConfirmProvider } from "@/components/confirm-dialog";
+import { ReferralFlowProvider } from "@/components/wallet/referral-flow-provider";
 import { SiteHeader } from "@/components/site-header";
 import BottomNav from "@/components/bottom-nav";
-import { PushForegroundListener } from "@/components/push-foreground-listener";
 
 export const metadata: Metadata = {
   title: "براتشو كار | سوق السيارات وقطع الغيار في ليبيا",
@@ -47,12 +47,10 @@ export default function RootLayout({
           <AuthProvider>
             <ToastProvider>
               <ConfirmProvider>
+                <ReferralFlowProvider />
                 <SiteHeader />
                 <main className="pb-20 md:pb-12">{children}</main>
                 <BottomNav />
-                {/* مستمع لإشعارات foreground - يعرض toast عند وصول push
-                    أثناء فتح التطبيق. خفيف جداً (لا UI ظاهر، effect فقط). */}
-                <PushForegroundListener />
               </ConfirmProvider>
             </ToastProvider>
           </AuthProvider>

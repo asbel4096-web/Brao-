@@ -137,8 +137,12 @@ service cloud.firestore {
             // المستخدم لا يستطيع تعديل رصيده مباشرة، ولا
             // verifiedUntil (يأتي من شراء اشتراك)، ولا referralsCount.
             'balance', 'walletUpdatedAt',
-            'verifiedUntil', 'verificationPlan', 'verificationStatus',
-            'referralsCount', 'vipLevel'
+            'verifiedUntil', 'verificationPlan', 'verificationStatus', 'verifiedSince',
+            'referralsCount', 'vipLevel',
+            // Referrals - الكود يُولّد server-side، الـreferredBy يُكتب
+            // عند تطبيق الكود، الـrewardEarned يُحدّث عند claim.
+            'referralCode', 'referredBy', 'referredByUid',
+            'referralRewardEarned', 'referralActivatedAt'
           ])
           // المالك يستطيع تعديل أي حقل في ملف نفسه - بما في ذلك حقول
           // مستحدثة لم نعرفها بعد. الحقول الحرجة محميّة بـunchanged() أعلاه.
@@ -552,6 +556,22 @@ service cloud.firestore {
     match /walletTransactions/{txId} {
       allow read: if isAdmin()
         || (signedIn() && resource.data.userId == request.auth.uid);
+      allow create, update, delete: if false;
+    }
+
+    // referrals - سجلّ كل عمليات الدعوة.
+    //   {referrerUid, referredUid, code, status, rewardedAt, createdAt}
+    // القراءة:
+    //   - المُحيل يقرأ دعواته (referrerUid == auth.uid)
+    //   - المُحال يقرأ دعوته (referredUid == auth.uid)
+    //   - الأدمن يقرأ الكل
+    // الكتابة: ممنوعة من client - فقط Admin SDK يكتب.
+    match /referrals/{referralId} {
+      allow read: if isAdmin()
+        || (signedIn() && (
+          resource.data.referrerUid == request.auth.uid
+          || resource.data.referredUid == request.auth.uid
+        ));
       allow create, update, delete: if false;
     }
 
