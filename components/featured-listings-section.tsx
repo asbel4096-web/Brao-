@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Timestamp,
   collection,
+  documentId,
   getDocs,
   limit,
   query,
@@ -19,11 +20,16 @@ import { ListingCard } from "./listing-card";
 /**
  * قسم الإعلانات المميزة في الصفحة الرئيسية.
  *
- * - يجلب فقط الإعلانات المميزة (featured=true) - استعلام رخيص.
- * - يفلتر client-side بـisListingFeatured للتأكد من عدم انتهاء الـfeaturedUntil.
+ * وضعَان:
+ *  1. **manualIds (موصى)**: الأدمن يختار IDs من /admin/content/homepage.
+ *     نجلب فقط الإعلانات المحدّدة (limit به Firestore حتى 30 ID per `in`).
+ *     الترتيب يتبع ترتيب الـIDs (الأول من الأدمن = الأول هنا).
+ *
+ *  2. **auto (الفولباك)**: لو manualIds غير مُمرَّر أو فارغ، نستخدم
+ *     المنطق القديم: featured=true + featuredUntil لم ينتهِ.
+ *
  * - cache في sessionStorage لمدة دقيقتين.
- * - لو لا توجد مميزة → القسم مخفي كلياً (لا فراغ بصري).
- * - الإعلانات المميزة تظهر هنا + أيضاً ضمن "أحدث الإعلانات" (نمط OpenSooq/dubizzle).
+ * - لو لا توجد مميزة → القسم مخفي كلياً.
  */
 
 const CACHE_KEY = "bratsho:featured-listings:v1";
@@ -107,19 +113,44 @@ function writeCache(list: Listing[]) {
   }
 }
 
-export function FeaturedListingsSection() {
+export function FeaturedListingsSection({
+  manualIds,
+}: {
+  /** قائمة IDs مُختارة يدوياً من /admin/content/homepage.
+   *  إن مُرّرت وتحوي عناصر، نستخدمها بدل المنطق التلقائي. */
+  manualIds?: string[];
+} = {}) {
+  // Manual mode → key مختلف للـcache (لا نخلط بين الوضعين)
+  const useManual = Array.isArray(manualIds) && manualIds.length > 0;
+  const cacheKey = useManual ? `${CACHE_KEY}:manual:${manualIds.join(",")}` : CACHE_KEY;
+
+  const readManualCache = (): Listing[] | null => {
+    try {
+      const raw = sessionStorage.getItem(cacheKey);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as CacheShape;
+      if (!parsed || Date.now() - parsed.ts > CACHE_TTL_MS) return null;
+      return Array.isArray(parsed.list)
+        ? deserializeFromCache(parsed.list)
+        : null;
+    } catch {
+      return null;
+    }
+  };
+
   const [items, setItems] = useState<Listing[]>(() => {
     if (typeof window === "undefined") return [];
-    return readCache() || [];
+    return (useManual ? readManualCache() : readCache()) || [];
   });
   const [loading, setLoading] = useState(() => {
     if (typeof window === "undefined") return true;
-    return readCache() === null;
+    return (useManual ? readManualCache() : readCache()) === null;
   });
 
   useEffect(() => {
-    // لو cache صالح، تخطّى الجلب.
-    if (readCache() !== null) {
+    const cached = useManual ? readManualCache() : readCache();
+    if (cached !== null) {
+      setItems(cached);
       setLoading(false);
       return;
     }
@@ -127,47 +158,104 @@ export function FeaturedListingsSection() {
     let cancelled = false;
     void (async () => {
       try {
-        // استعلام بسيط بحقل واحد - لا يحتاج فهرس مركّب.
-        // الترتيب client-side حسب featuredAt لاحقاً.
-        const snap = await getDocs(
-          query(
-            collection(db, "listings"),
-            where("featured", "==", true),
-            limit(50)
-          )
-        );
-        if (cancelled) return;
+        let list: Listing[] = [];
 
-        const list: Listing[] = snap.docs.map((d) => ({
-          id: d.id,
-          ...(d.data() as any),
-        }));
+        if (useManual) {
+          // وضع الاختيار اليدوي: نجلب فقط الـIDs المحدّدة.
+          // Firestore يدعم where(documentId(), "in", [...]) بحد 30 ID.
+          // لو الأدمن وضع أكثر، نقصّ على 30 (نادر).
+          const ids = manualIds!.slice(0, 30);
+          const chunks: string[][] = [];
+          for (let i = 0; i < ids.length; i += 30) {
+            chunks.push(ids.slice(i, i + 30));
+          }
+          const results = await Promise.all(
+            chunks.map((chunk) =>
+              getDocs(
+                query(
+                  collection(db, "listings"),
+                  where(documentId(), "in", chunk)
+                )
+              )
+            )
+          );
+          if (cancelled) return;
+
+          const docMap = new Map<string, Listing>();
+          for (const snap of results) {
+            for (const d of snap.docs) {
+              docMap.set(d.id, { id: d.id, ...(d.data() as any) });
+            }
+          }
+          // الترتيب يتبع manualIds (الأدمن قرّره)
+          list = ids
+            .map((id) => docMap.get(id))
+            .filter((x): x is Listing => Boolean(x))
+            // نُسقط الإعلانات المؤرشفة/المرفوضة
+            .filter((l) => {
+              const status = (l as any).status;
+              return !status || status === "approved";
+            });
+        } else {
+          // الوضع التلقائي القديم
+          const snap = await getDocs(
+            query(
+              collection(db, "listings"),
+              where("featured", "==", true),
+              limit(50)
+            )
+          );
+          if (cancelled) return;
+          list = snap.docs.map((d) => ({
+            id: d.id,
+            ...(d.data() as any),
+          }));
+        }
 
         setItems(list);
         setLoading(false);
-        writeCache(list);
-      } catch {
+        try {
+          sessionStorage.setItem(
+            cacheKey,
+            JSON.stringify({ ts: Date.now(), list: serializeForCache(list) })
+          );
+        } catch {
+          /* ignore */
+        }
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn("[featured-listings] fetch failed:", (err as any)?.code);
         if (!cancelled) setLoading(false);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [useManual, useManual ? manualIds?.join(",") : null]);
 
   // فلترة المنتهي client-side + ترتيب حسب آخر تمييز + قص للحدّ الأقصى.
   // الساحبات مستبعدة - لها صفحتها المخصّصة /tow-trucks.
+  //
+  // في الوضع اليدوي: لا نفلتر بـisListingFeatured (الأدمن قرّر الاختيار،
+  // نحترم قراره حتى لو الإعلان لا يحمل featured=true). لكن نحافظ على
+  // استبعاد الساحبات لأنها قسم مستقل.
   const visible = useMemo(() => {
-    const active = items.filter(
-      (l) => isListingFeatured(l) && l.category !== "ساحبة سيارات"
-    );
-    active.sort((a, b) => {
-      const ta = tsToMs(a.featuredAt) || 0;
-      const tb = tsToMs(b.featuredAt) || 0;
-      return tb - ta; // الأحدث تمييزاً أولاً
-    });
+    let active: Listing[];
+    if (useManual) {
+      active = items.filter((l) => l.category !== "ساحبة سيارات");
+    } else {
+      active = items.filter(
+        (l) => isListingFeatured(l) && l.category !== "ساحبة سيارات"
+      );
+      active.sort((a, b) => {
+        const ta = tsToMs(a.featuredAt) || 0;
+        const tb = tsToMs(b.featuredAt) || 0;
+        return tb - ta; // الأحدث تمييزاً أولاً
+      });
+    }
     return active.slice(0, MAX_FEATURED);
-  }, [items]);
+  }, [items, useManual]);
 
   // إخفاء القسم كلياً عند عدم وجود مميزة فعلية.
   if (loading) {
