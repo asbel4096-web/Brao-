@@ -16,6 +16,7 @@ import {
   Flag,
   Settings,
   ShieldAlert,
+  Wallet as WalletIcon,
   BarChart3,
   Image as ImageIcon,
   Wrench,
@@ -159,6 +160,12 @@ const NAV_GROUPS: NavGroup[] = [
         label: "Feature Flags",
         Icon: Wrench,
         permission: "features.toggle",
+      },
+      {
+        href: "/admin/wallet",
+        label: "إدارة المحافظ",
+        Icon: WalletIcon,
+        permission: "users.edit",
       },
       {
         href: "/admin/subscriptions",

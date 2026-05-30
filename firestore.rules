@@ -132,7 +132,13 @@ service cloud.firestore {
             // Role + ban fields - تُدار من الأدمن server-side فقط.
             // المستخدم لا يستطيع رفع نفسه دوراً أو إزالة الحظر.
             'role', 'banned', 'bannedAt', 'bannedBy', 'banReason',
-            'lastActiveAt', 'deviceInfo'
+            'lastActiveAt', 'deviceInfo',
+            // Wallet fields - يديرها API routes (Admin SDK) فقط.
+            // المستخدم لا يستطيع تعديل رصيده مباشرة، ولا
+            // verifiedUntil (يأتي من شراء اشتراك)، ولا referralsCount.
+            'balance', 'walletUpdatedAt',
+            'verifiedUntil', 'verificationPlan', 'verificationStatus',
+            'referralsCount', 'vipLevel'
           ])
           // المالك يستطيع تعديل أي حقل في ملف نفسه - بما في ذلك حقول
           // مستحدثة لم نعرفها بعد. الحقول الحرجة محميّة بـunchanged() أعلاه.
@@ -531,6 +537,22 @@ service cloud.firestore {
     match /featureFlags/{flagKey} {
       allow read: if true;
       allow create, update, delete: if isAdmin();
+    }
+
+    // walletTransactions - سجلّ كل عمليات الرصيد.
+    //   {userId, amount, type, reason, balanceAfter, createdBy, metadata, createdAt}
+    // القراءة:
+    //   - المستخدم يقرأ معاملاته فقط (userId == auth.uid)
+    //   - الأدمن يقرأ كل المعاملات
+    // الكتابة: ممنوعة من client - فقط Admin SDK (API routes) يكتب.
+    //   هذا يضمن:
+    //   - لا تلاعب بـbalanceAfter
+    //   - لا إنشاء معاملات مزيفة
+    //   - كل العمليات atomic (transaction) في الـAPI
+    match /walletTransactions/{txId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.userId == request.auth.uid);
+      allow create, update, delete: if false;
     }
 
     // reports - بلاغات المستخدمين على إعلانات/تعليقات/مستخدمين.
