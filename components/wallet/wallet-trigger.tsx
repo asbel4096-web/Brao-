@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useWallet } from "@/hooks/wallet/use-wallet";
 import { useFeatureFlag } from "@/hooks/features/use-feature-flag";
 import { WalletSheet } from "./wallet-sheet";
+import { PlansSheet } from "./plans-sheet";
 import { formatBC } from "@/lib/wallet/types";
 
 /**
@@ -33,6 +34,7 @@ export function WalletTrigger({ variant = "card", className = "" }: Props) {
   const enabled = useFeatureFlag("wallet");
   const { balance } = useWallet();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [plansOpen, setPlansOpen] = useState(false);
 
   // لا يظهر إذا الـflag مغلق أو المستخدم غير مسجَّل
   if (!enabled || !user) return null;
@@ -55,7 +57,10 @@ export function WalletTrigger({ variant = "card", className = "" }: Props) {
           <span className="tabular-nums">{balance.toLocaleString("ar-LY")}</span>
           <span className="text-[10px] opacity-80">BC</span>
         </button>
-        <WalletSheet open={sheetOpen} onClose={() => setSheetOpen(false)} />
+        <>
+          <WalletSheet open={sheetOpen} onClose={() => setSheetOpen(false)} onOpenPlans={() => { setSheetOpen(false); setPlansOpen(true); }} />
+          <PlansSheet open={plansOpen} onClose={() => setPlansOpen(false)} />
+        </>
       </>
     );
   }
@@ -93,7 +98,10 @@ export function WalletTrigger({ variant = "card", className = "" }: Props) {
           فتح
         </div>
       </motion.button>
-      <WalletSheet open={sheetOpen} onClose={() => setSheetOpen(false)} />
+      <>
+          <WalletSheet open={sheetOpen} onClose={() => setSheetOpen(false)} onOpenPlans={() => { setSheetOpen(false); setPlansOpen(true); }} />
+          <PlansSheet open={plansOpen} onClose={() => setPlansOpen(false)} />
+        </>
     </>
   );
 }
