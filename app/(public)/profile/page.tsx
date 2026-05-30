@@ -4,6 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { signOut } from "firebase/auth";
+import { WalletTrigger, WalletComingSoonCard } from "@/components/wallet/wallet-trigger";
+import { useMyVerification } from "@/hooks/wallet/use-verification";
+import { formatRemainingDays } from "@/lib/wallet/verification";
 import {
   collection,
   doc,
@@ -60,6 +63,8 @@ interface Stats {
 export default function ProfilePage() {
   const router = useRouter();
   const { user, profile, loading, isAdmin } = useAuth();
+  // تنبيه "ينتهي قريباً" - يظهر فقط لو الاشتراك ينتهي خلال 7 أيام
+  const { expiringSoon, daysRemaining } = useMyVerification();
   const toast = useToast();
   const confirm = useConfirm();
 
@@ -696,6 +701,34 @@ export default function ProfilePage() {
             />
           </Link>
         )}
+
+        {/* ============================================================
+            تنبيه "توثيقك ينتهي قريباً" - يظهر فقط لو ≤ 7 أيام
+           ============================================================ */}
+        {expiringSoon && (
+          <div className="
+            flex items-start gap-3 rounded-2xl border border-amber-200
+            bg-amber-50 p-3
+            dark:border-amber-900/40 dark:bg-amber-900/20
+          ">
+            <span className="text-xl">⚠️</span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-black text-amber-900 dark:text-amber-200">
+                توثيق حسابك ينتهي خلال {formatRemainingDays(daysRemaining)}
+              </p>
+              <p className="mt-0.5 text-[11px] text-amber-700 dark:text-amber-300">
+                جدّد الاشتراك الآن لتفادي فقدان شارة التوثيق
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================
+            المحفظة - بطاقة كبيرة (يخفي نفسها لو wallet flag مغلق)
+            أو بطاقة "قريباً" إن أردتِ تلميحاً قبل التفعيل
+           ============================================================ */}
+        <WalletTrigger variant="card" />
+        <WalletComingSoonCard />
 
         {/* ============================================================
             القائمة - الأقسام الرئيسية

@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { getTraderDisplayName, normalizeLibyanPhone, formatNumber } from "@/lib/utils";
 import { onlineStatusText, isProfileOnline } from "@/lib/online";
 import type { UserProfile } from "@/lib/types";
+import { isVerifiedNow } from "@/lib/wallet/verification";
 import { useFollowTraderState } from "@/hooks/useListingEngagement";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
@@ -54,7 +55,11 @@ export function TraderProfileHeader({
   const ratingText = Number(averageRating || 0).toFixed(1);
 
   // مصادر البيانات حسب نوع البروفايل
-  const isVerified = profile.isVerifiedDealer === true;
+  // التوثيق: نستخدم النظام الجديد (verifiedUntil + verificationStatus) أولاً،
+  // ونعود لـisVerifiedDealer القديم كـfallback للحسابات التي وُثّقت يدوياً
+  // قبل نظام الاشتراكات. عند الانتهاء، الشارة تختفي تلقائياً.
+  const isVerified =
+    isVerifiedNow(profile as any) || profile.isVerifiedDealer === true;
   const cover = (isVerified ? profile.dealerCover : null) || profile.coverURL || null;
   const photo = (isVerified ? profile.dealerLogo : null) || profile.photoURL || null;
   const bioText = ((isVerified ? profile.dealerBio : null) || profile.bio || "").trim();

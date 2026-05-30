@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { WalletTrigger } from "@/components/wallet/wallet-trigger";
 import { useRouter } from "next/navigation";
 import { FormEvent, memo, useEffect, useState } from "react";
 import {
@@ -253,6 +254,9 @@ function SiteHeaderImpl() {
                 )}
               </Link>
             )}
+
+            {/* المحفظة - compact pill - يخفي نفسه لو flag مغلق أو المستخدم غير مسجَّل */}
+            <WalletTrigger variant="compact" />
 
             {/* Theme - يظهر على كل المقاسات */}
             <ThemeToggle className="!h-9 !w-9 sm:!h-10 sm:!w-10" />
