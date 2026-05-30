@@ -6,9 +6,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  orderBy,
-  query,
-  where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import {
@@ -20,9 +17,10 @@ import {
 /**
  * Hook عام (public-side) لقراءة إعدادات الصفحة الرئيسية + البنرات.
  *
- * - One-shot read (لا realtime) - الـconfig لا يتغيّر باستمرار
- * - cache في sessionStorage لمدة دقيقتين لتجنّب reads متكررة
- * - يُرجِع البنرات النشطة فقط (active=true)، مرتَّبة
+ * - One-shot read (لا realtime)
+ * - cache في sessionStorage لمدة دقيقتين
+ * - فلترة الـbanners (active=true) + ترتيب client-side لتجنّب الحاجة
+ *   لـcomposite index في Firestore (where + orderBy)
  * - يُرجِع الإعدادات الافتراضية لو الـdoc غير موجود
  *
  * تكلفة Firestore:
@@ -84,16 +82,12 @@ export function usePublicHomepageConfig() {
 
     (async () => {
       try {
-        // قراءة بالتوازي
+        // قراءة بالتوازي. ملاحظة: لا نستخدم where+orderBy معاً
+        // لتجنّب الحاجة لـcomposite index في Firestore. نجلب كل البنرات
+        // ونفلتر+نُرتّب client-side (العدد عادة < 10، التكلفة لا تُذكر).
         const [configSnap, bannersSnap] = await Promise.all([
           getDoc(doc(db, "homepageConfig", "main")),
-          getDocs(
-            query(
-              collection(db, "homepageConfig", "main", "banners"),
-              where("active", "==", true),
-              orderBy("order", "asc")
-            )
-          ),
+          getDocs(collection(db, "homepageConfig", "main", "banners")),
         ]);
 
         if (cancelled) return;
@@ -102,10 +96,15 @@ export function usePublicHomepageConfig() {
           ? { ...DEFAULT_HOMEPAGE_CONFIG, ...(configSnap.data() as any) }
           : DEFAULT_HOMEPAGE_CONFIG;
 
-        const nextBanners = bannersSnap.docs.map((d) => ({
+        const allBanners = bannersSnap.docs.map((d) => ({
           id: d.id,
           ...(d.data() as any),
         })) as HomepageBanner[];
+
+        // فلترة active=true + ترتيب حسب order (client-side)
+        const nextBanners = allBanners
+          .filter((b) => b.active === true)
+          .sort((a, b) => (a.order || 0) - (b.order || 0));
 
         setConfig(nextConfig);
         setBanners(nextBanners);

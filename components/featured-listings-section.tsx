@@ -5,7 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Timestamp,
   collection,
-  documentId,
+  doc,
+  getDoc,
   getDocs,
   limit,
   query,
@@ -161,37 +162,38 @@ export function FeaturedListingsSection({
         let list: Listing[] = [];
 
         if (useManual) {
-          // وضع الاختيار اليدوي: نجلب فقط الـIDs المحدّدة.
-          // Firestore يدعم where(documentId(), "in", [...]) بحد 30 ID.
-          // لو الأدمن وضع أكثر، نقصّ على 30 (نادر).
+          // وضع الاختيار اليدوي: نجلب كل إعلان منفرداً بـgetDoc.
+          //
+          // لماذا لا نستخدم where(documentId(), "in", [...]) رغم أنه أكفأ؟
+          // لأن قاعدة listings تفحص resource.data.status على كل وثيقة.
+          // مع where-in، إن كان أي ID:
+          //   - غير موجود
+          //   - مؤرشف (status != "approved")
+          //   - الزائر غير مسجَّل والوثيقة ليست approved
+          // فإن **كل** الاستعلام يفشل بـpermission-denied، لا تمر أي نتيجة.
+          //
+          // بـgetDoc منفصلة، كل وثيقة تُعالَج لوحدها: لو فشلت واحدة،
+          // البقية تنجح. هذا يجعل النظام مرن: الأدمن يضع IDs، نعرض ما
+          // يستطيع الزائر رؤيته فعلاً.
           const ids = manualIds!.slice(0, 30);
-          const chunks: string[][] = [];
-          for (let i = 0; i < ids.length; i += 30) {
-            chunks.push(ids.slice(i, i + 30));
-          }
           const results = await Promise.all(
-            chunks.map((chunk) =>
-              getDocs(
-                query(
-                  collection(db, "listings"),
-                  where(documentId(), "in", chunk)
-                )
-              )
-            )
+            ids.map(async (id) => {
+              try {
+                const snap = await getDoc(doc(db, "listings", id));
+                if (!snap.exists()) return null;
+                return { id: snap.id, ...(snap.data() as any) } as Listing;
+              } catch {
+                // permission-denied (مؤرشف، أو غير موجود) - نتجاوزه بصمت
+                return null;
+              }
+            })
           );
           if (cancelled) return;
 
-          const docMap = new Map<string, Listing>();
-          for (const snap of results) {
-            for (const d of snap.docs) {
-              docMap.set(d.id, { id: d.id, ...(d.data() as any) });
-            }
-          }
           // الترتيب يتبع manualIds (الأدمن قرّره)
-          list = ids
-            .map((id) => docMap.get(id))
+          list = results
             .filter((x): x is Listing => Boolean(x))
-            // نُسقط الإعلانات المؤرشفة/المرفوضة
+            // نُسقط الإعلانات المؤرشفة/المرفوضة (احترازياً)
             .filter((l) => {
               const status = (l as any).status;
               return !status || status === "approved";
