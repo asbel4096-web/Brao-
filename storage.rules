@@ -74,6 +74,14 @@ service firebase.storage {
       allow write: if signedIn() && imageUnder(2 * 1024 * 1024);
     }
 
+    // بنرات الصفحة الرئيسية - نفس النمط (الكل يقرأ، أي مسجَّل يرفع،
+    // لكن Firestore تمنع ربط الـbanner doc بدون admin role).
+    // الحد 3MB لأن البنرات صور كبيرة عادة (1200x400 أو 1600x600).
+    match /homepage/banners/{file} {
+      allow read: if true;
+      allow write: if signedIn() && imageUnder(3 * 1024 * 1024);
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }
