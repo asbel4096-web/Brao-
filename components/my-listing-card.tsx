@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import type { Listing } from "@/lib/types";
 import { formatPrice, isListingFeatured, timeAgo } from "@/lib/utils";
+import { BoostButton } from "@/components/wallet/boost-button";
 
 const FALLBACK = "/icons/car-card.svg";
 
@@ -174,6 +175,25 @@ export function MyListingCard({
             busy={!!requestingFeatured}
             onRequest={() => onRequestFeatured(listing.id)}
           />
+        )}
+
+        {/* زر التعزيز (Wallet/Boosts) - يظهر فقط للمعتمدة + flag مفعَّل */}
+        {listing.status === "approved" && (listing as any).ownerId && (
+          <div className="mt-3 flex justify-end">
+            <BoostButton
+              listingId={listing.id}
+              listingTitle={listing.title || ""}
+              listingOwnerId={(listing as any).ownerId}
+              listingStatus={listing.status}
+              listingBoostFields={{
+                boostedUntil: (listing as any).boostedUntil,
+                featured: (listing as any).featured,
+                featuredUntil: (listing as any).featuredUntil,
+                bumpedAt: (listing as any).bumpedAt,
+                bumpCount: (listing as any).bumpCount,
+              }}
+            />
+          </div>
         )}
 
         {/* أزرار الإجراءات */}

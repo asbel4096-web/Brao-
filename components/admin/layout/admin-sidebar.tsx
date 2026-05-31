@@ -18,6 +18,7 @@ import {
   ShieldAlert,
   Wallet as WalletIcon,
   Users as UsersGroup,
+  Rocket,
   BarChart3,
   Image as ImageIcon,
   Wrench,
@@ -178,6 +179,12 @@ const NAV_GROUPS: NavGroup[] = [
         href: "/admin/referrals",
         label: "نظام الإحالات",
         Icon: UsersGroup,
+        permission: "users.edit",
+      },
+      {
+        href: "/admin/boosts",
+        label: "تعزيز الإعلانات",
+        Icon: Rocket,
         permission: "users.edit",
       },
       {

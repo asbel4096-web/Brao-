@@ -330,9 +330,13 @@ service cloud.firestore {
           && resource.data.ownerId == request.auth.uid
           && request.resource.data.ownerId == resource.data.ownerId
           && request.resource.data.status == resource.data.status
-          // المالك ممنوع من تعديل حقول التمييز - هذه للأدمن فقط بعد موافقة
-          // على طلب تمييز في collection featuredRequests.
-          && unchanged(['featured', 'featuredAt', 'featuredUntil', 'featuredBy'])
+          // المالك ممنوع من تعديل حقول التمييز/التعزيز - هذه تُدار
+          // server-side عبر API routes (الأدمن أو شراء BC).
+          && unchanged([
+            'featured', 'featuredAt', 'featuredUntil', 'featuredBy',
+            'boostedUntil', 'boostedAt',
+            'bumpedAt', 'bumpCount'
+          ])
         )
         || (
           // Any signed-in user may ONLY adjust engagement counters.
