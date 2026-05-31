@@ -134,7 +134,7 @@ export function TraderProfileHeader({
   };
 
   const handleLocation = () => {
-    const loc = (profile as any).dealerLocation || profile.location;
+    const loc = (profile as any).dealerLocation || (profile as any).location;
     if (!loc) {
       toast.info("لا يوجد موقع محدد");
       return;
@@ -249,11 +249,11 @@ export function TraderProfileHeader({
             </div>
 
             {/* Location */}
-            {(profile as any).dealerLocation || profile.location ? (
+            {(profile as any).dealerLocation || (profile as any).location ? (
               <div className="mt-1 flex items-center gap-1 text-[12px] text-slate-300">
                 <MapPin size={12} className="shrink-0" />
                 <span className="truncate">
-                  {(profile as any).dealerLocation || profile.location}
+                  {(profile as any).dealerLocation || (profile as any).location}
                 </span>
               </div>
             ) : null}
