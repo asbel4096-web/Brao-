@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { Listing, TraderReview, UserProfile } from "@/lib/types";
 import { ListingCard } from "@/components/listing-card";
 import {
@@ -10,6 +10,8 @@ import {
   MapPin,
   MessageCircle,
   Phone,
+  Search,
+  SlidersHorizontal,
   Star,
 } from "lucide-react";
 import { timeAgo, formatNumber, normalizeLibyanPhone } from "@/lib/utils";
@@ -18,10 +20,10 @@ import { useToast } from "@/contexts/ToastContext";
 import { useTraderReview } from "@/hooks/useTraderReview";
 
 const tabs = [
-  { id: "listings", label: "الإعلانات" },
-  { id: "services", label: "الخدمات" },
+  { id: "listings", label: "السيارات" },
+  { id: "about", label: "عن المعرض" },
+  { id: "services", label: "خدماتنا" },
   { id: "reviews", label: "التقييمات" },
-  { id: "about", label: "حول التاجر" },
 ] as const;
 
 type TraderTabId = (typeof tabs)[number]["id"];
@@ -45,77 +47,234 @@ export function TraderTabs({
 }: TraderTabsProps) {
   const [active, setActive] = useState<TraderTabId>("listings");
 
-  const content = useMemo(() => {
-    switch (active) {
-      case "listings":
-        return <CardsGrid items={listings} emptyLabel="لا توجد إعلانات منشورة حالياً." />;
-      case "services":
-        return <CardsGrid items={services} emptyLabel="لا توجد خدمات منشورة حالياً." />;
-      case "reviews":
-        return (
-          <ReviewsTab
-            traderUid={profile.uid}
-            reviews={reviews}
-            averageRating={averageRating}
-            reviewsCount={reviewsCount}
-          />
-        );
-      case "about":
-        return (
-          <AboutTrader
-            profile={profile}
-            listingsCount={listings.length}
-            servicesCount={services.length}
-            reviewsCount={reviewsCount}
-          />
-        );
-      default:
-        return null;
-    }
-  }, [active, averageRating, listings, profile, reviews, reviewsCount, services]);
+  // فلاتر للـlistings: نوع السيارة (الكل / فاخرة / SUV / ...)
+  const [filterCat, setFilterCat] = useState<string>("all");
+  const [searchQ, setSearchQ] = useState("");
+
+  // tabs تعرض بحث+فلاتر فقط لـ listings و services
+  const showSearchBar = active === "listings" || active === "services";
 
   return (
-    <section className="card p-4 sm:p-6">
-      {/*
-        Tabs row: horizontally scrollable on mobile without clipping.
-        - Negative margin + matching padding lets the scroll area reach the
-          card edges, so the last tab ("حول التاجر") is never cut off.
-        - scroll-px keeps a small inset when scrolled to either end.
-      */}
-      <div className="-mx-4 sm:-mx-6">
-        <div className="flex gap-2 overflow-x-auto no-scrollbar scroll-px-4 px-4 sm:px-6">
+    <section
+      className="
+        overflow-hidden rounded-[28px]
+        bg-slate-950 text-white
+        ring-1 ring-white/5
+      "
+      dir="rtl"
+    >
+      {/* ============================================================
+          Tabs bar - underline style
+         ============================================================ */}
+      <div className="border-b border-white/5 px-4 pt-4 sm:px-5">
+        <div className="-mx-4 flex gap-0 overflow-x-auto no-scrollbar scroll-px-4 px-4 sm:-mx-5 sm:px-5">
           {tabs.map((tab) => {
-            // للمعارض الموثقة: تبويب "about" يحمل عنوان "حول المعرض" بدل "حول التاجر".
             const label =
               tab.id === "about" && profile.isVerifiedDealer
-                ? "حول المعرض"
+                ? "عن المعرض"
                 : tab.label;
+            const isActive = active === tab.id;
             return (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => setActive(tab.id)}
-                className={`shrink-0 whitespace-nowrap rounded-2xl px-4 py-3 text-sm font-black transition ${active === tab.id ? "bg-brand-700 text-white shadow-blue" : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"}`}
+                className={`
+                  relative shrink-0 whitespace-nowrap px-4 pb-3 pt-1
+                  text-sm font-black transition
+                  ${isActive
+                    ? "text-blue-400"
+                    : "text-slate-400 hover:text-slate-200"
+                  }
+                `}
               >
                 {label}
+                {isActive && (
+                  <span
+                    className="
+                      absolute inset-x-3 -bottom-px h-0.5
+                      rounded-full bg-blue-500
+                    "
+                  />
+                )}
               </button>
             );
           })}
         </div>
       </div>
 
-      <div className="mt-6">{content}</div>
+      {/* ============================================================
+          Search + Filter row (only for listings/services)
+         ============================================================ */}
+      {showSearchBar && (
+        <div className="px-4 pt-4 sm:px-5">
+          <div className="flex items-center gap-2">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search
+                size={14}
+                className="
+                  pointer-events-none absolute right-3 top-1/2
+                  -translate-y-1/2 text-slate-500
+                "
+              />
+              <input
+                type="search"
+                value={searchQ}
+                onChange={(e) => setSearchQ(e.target.value)}
+                placeholder="ابحث عن سيارة..."
+                className="
+                  h-11 w-full rounded-2xl border border-white/10
+                  bg-slate-900 pe-9 ps-3 text-sm text-white
+                  placeholder:text-slate-500
+                  outline-none focus:border-blue-500/40
+                "
+              />
+            </div>
+            {/* Filter button */}
+            <button
+              type="button"
+              className="
+                inline-flex h-11 shrink-0 items-center gap-1.5
+                rounded-2xl border border-white/10 bg-slate-900
+                px-4 text-[12px] font-black text-slate-200
+                transition hover:border-blue-500/40
+              "
+            >
+              <SlidersHorizontal size={13} />
+              تصفية
+            </button>
+          </div>
+
+          {/* Category chips */}
+          {active === "listings" && (
+            <div className="-mx-1 mt-3 flex gap-1.5 overflow-x-auto px-1 pb-1 no-scrollbar">
+              {CATEGORY_CHIPS.map((c) => {
+                const isActive = filterCat === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setFilterCat(c.id)}
+                    className={`
+                      shrink-0 whitespace-nowrap rounded-full px-4 py-1.5
+                      text-[12px] font-black transition
+                      ${isActive
+                        ? "bg-blue-600 text-white"
+                        : "bg-slate-800/60 text-slate-300 hover:bg-slate-800"
+                      }
+                    `}
+                  >
+                    {c.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ============================================================
+          Content
+         ============================================================ */}
+      <div className="p-4 sm:p-5">
+        {(() => {
+          switch (active) {
+            case "listings":
+              return (
+                <CardsGrid
+                  items={filterItems(listings, filterCat, searchQ)}
+                  emptyLabel="لا توجد إعلانات منشورة حالياً."
+                />
+              );
+            case "services":
+              return (
+                <CardsGrid
+                  items={filterItems(services, "all", searchQ)}
+                  emptyLabel="لا توجد خدمات منشورة حالياً."
+                />
+              );
+            case "reviews":
+              return (
+                <ReviewsTab
+                  traderUid={profile.uid}
+                  reviews={reviews}
+                  averageRating={averageRating}
+                  reviewsCount={reviewsCount}
+                />
+              );
+            case "about":
+              return (
+                <AboutTrader
+                  profile={profile}
+                  listingsCount={listings.length}
+                  servicesCount={services.length}
+                  reviewsCount={reviewsCount}
+                />
+              );
+            default:
+              return null;
+          }
+        })()}
+      </div>
     </section>
   );
 }
 
+// ============================================================
+// Category chips for filter
+// ============================================================
+const CATEGORY_CHIPS = [
+  { id: "all", label: "الكل" },
+  { id: "luxury", label: "فاخرة" },
+  { id: "pickup", label: "بيك أب" },
+  { id: "sport", label: "رياضية" },
+  { id: "suv", label: "SUV" },
+  { id: "sedan", label: "سيدان" },
+];
+
+/** فلتر client-side للإعلانات حسب الفئة + البحث. */
+function filterItems(items: Listing[], cat: string, q: string): Listing[] {
+  let out = items;
+  if (cat && cat !== "all") {
+    out = out.filter((item: any) => {
+      const c = (item.category || item.bodyType || "").toLowerCase();
+      // مطابقات تقريبية (يمكن توسيعها)
+      if (cat === "luxury") return /luxury|فاخر/.test(c);
+      if (cat === "pickup") return /pickup|بيك|truck/.test(c);
+      if (cat === "sport") return /sport|رياض/.test(c);
+      if (cat === "suv") return /suv|دفع/.test(c);
+      if (cat === "sedan") return /sedan|سيدان/.test(c);
+      return true;
+    });
+  }
+  if (q && q.trim()) {
+    const needle = q.trim().toLowerCase();
+    out = out.filter((item: any) => {
+      return (
+        (item.title || "").toLowerCase().includes(needle) ||
+        (item.make || "").toLowerCase().includes(needle) ||
+        (item.model || "").toLowerCase().includes(needle)
+      );
+    });
+  }
+  return out;
+}
+
 function CardsGrid({ items, emptyLabel }: { items: Listing[]; emptyLabel: string }) {
   if (!items.length) {
-    return <div className="rounded-3xl border border-dashed border-slate-300 p-8 text-center text-sm font-bold text-slate-500 dark:border-slate-700 dark:text-slate-300">{emptyLabel}</div>;
+    return (
+      <div className="
+        rounded-2xl border border-dashed border-white/10
+        bg-slate-900/40 p-8 text-center
+      ">
+        <p className="text-sm font-bold text-slate-400">{emptyLabel}</p>
+      </div>
+    );
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
       {items.map((item, index) => (
         <ListingCard key={item.id} listing={item} priority={index < 2} />
       ))}

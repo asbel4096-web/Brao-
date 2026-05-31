@@ -4,9 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { signOut } from "firebase/auth";
-import { WalletTrigger, WalletComingSoonCard } from "@/components/wallet/wallet-trigger";
-import { useMyVerification } from "@/hooks/wallet/use-verification";
-import { formatRemainingDays } from "@/lib/wallet/verification";
 import {
   collection,
   doc,
@@ -35,11 +32,14 @@ import {
   Shield,
   ShieldCheck,
   Star,
+  Store,
+  Eye,
 } from "lucide-react";
 import { auth, db, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/components/confirm-dialog";
+import { isVerifiedNow } from "@/lib/wallet/verification";
 
 /**
  * صفحة الملف الشخصي - تصميم احترافي مستلهَم من الصورتين 5+6:
@@ -63,8 +63,6 @@ interface Stats {
 export default function ProfilePage() {
   const router = useRouter();
   const { user, profile, loading, isAdmin } = useAuth();
-  // تنبيه "ينتهي قريباً" - يظهر فقط لو الاشتراك ينتهي خلال 7 أيام
-  const { expiringSoon, daysRemaining } = useMyVerification();
   const toast = useToast();
   const confirm = useConfirm();
 
@@ -661,10 +659,63 @@ export default function ProfilePage() {
         )}
 
         {/* ============================================================
+            بطاقة "صفحة معرضي" - للمعارض الموثَّقة فقط.
+            تربط صاحب المعرض بصفحته العامة بضغطة واحدة.
+           ============================================================ */}
+        {user && profile && (isVerifiedNow(profile as any) || profile?.isVerifiedDealer) && (
+          <Link
+            href={`/traders/${user.uid}`}
+            className="
+              group relative flex items-center gap-3 overflow-hidden
+              rounded-3xl border-2 border-blue-500/30 bg-gradient-to-l
+              from-blue-50 via-blue-50/40 to-white p-3.5
+              transition active:scale-[0.99] hover:border-blue-500
+              dark:border-blue-800/50 dark:from-blue-900/30
+              dark:via-blue-900/10 dark:to-slate-900
+              dark:hover:border-blue-700
+            "
+          >
+            <div
+              className="
+                flex h-11 w-11 shrink-0 items-center justify-center
+                rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700
+                text-white shadow-lg shadow-blue-500/30
+              "
+            >
+              <Store size={20} strokeWidth={2.2} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-black text-slate-950 dark:text-white">
+                  صفحة معرضي
+                </span>
+                <BadgeCheck
+                  size={14}
+                  className="text-blue-600 dark:text-blue-400"
+                />
+              </div>
+              <div className="mt-0.5 text-[11px] leading-5 text-slate-600 dark:text-slate-300">
+                شاهد كيف يظهر معرضك للزوار
+              </div>
+            </div>
+            <div className="
+              flex items-center gap-1 rounded-full
+              bg-white/80 px-2.5 py-1
+              dark:bg-slate-900/80
+            ">
+              <Eye size={11} className="text-blue-700 dark:text-blue-300" />
+              <span className="text-[10px] font-black text-blue-700 dark:text-blue-300">
+                معاينة
+              </span>
+            </div>
+          </Link>
+        )}
+
+        {/* ============================================================
             بطاقة توثيق المعرض - تظهر للمستخدم غير الموثَّق فقط.
             من وثّق معرضه لا يرى الدعوة (لا فائدة منها).
            ============================================================ */}
-        {!profile?.isVerifiedDealer && (
+        {!profile?.isVerifiedDealer && !isVerifiedNow(profile as any) && (
           <Link
             href="/dealer-verification"
             className="
@@ -701,34 +752,6 @@ export default function ProfilePage() {
             />
           </Link>
         )}
-
-        {/* ============================================================
-            تنبيه "توثيقك ينتهي قريباً" - يظهر فقط لو ≤ 7 أيام
-           ============================================================ */}
-        {expiringSoon && (
-          <div className="
-            flex items-start gap-3 rounded-2xl border border-amber-200
-            bg-amber-50 p-3
-            dark:border-amber-900/40 dark:bg-amber-900/20
-          ">
-            <span className="text-xl">⚠️</span>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-black text-amber-900 dark:text-amber-200">
-                توثيق حسابك ينتهي خلال {formatRemainingDays(daysRemaining)}
-              </p>
-              <p className="mt-0.5 text-[11px] text-amber-700 dark:text-amber-300">
-                جدّد الاشتراك الآن لتفادي فقدان شارة التوثيق
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* ============================================================
-            المحفظة - بطاقة كبيرة (يخفي نفسها لو wallet flag مغلق)
-            أو بطاقة "قريباً" إن أردتِ تلميحاً قبل التفعيل
-           ============================================================ */}
-        <WalletTrigger variant="card" />
-        <WalletComingSoonCard />
 
         {/* ============================================================
             القائمة - الأقسام الرئيسية

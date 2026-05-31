@@ -10,7 +10,6 @@ import { useTraderProfile } from "@/hooks/useTraderProfile";
 import { buildChatId, getTraderDisplayName } from "@/lib/utils";
 import { TraderProfileHeader } from "@/components/trader/trader-profile-header";
 import { TraderTabs } from "@/components/trader/trader-tabs";
-import { ReportButton } from "@/components/report/report-button";
 
 export default function TraderPage() {
   const params = useParams<{ uid: string }>();
@@ -103,8 +102,8 @@ export default function TraderPage() {
   }
 
   return (
-    <section className="container py-4 pb-28 sm:py-8 sm:pb-32">
-      <div className="space-y-4 sm:space-y-6">
+    <section className="container py-3 pb-28 sm:py-5 sm:pb-32">
+      <div className="space-y-3 sm:space-y-4">
         <TraderProfileHeader
           traderId={trader.uid}
           profile={trader}
@@ -122,20 +121,6 @@ export default function TraderPage() {
           averageRating={averageRating}
           reviewsCount={reviewsCount}
         />
-
-        {/* زر الإبلاغ على المستخدم - يخفي نفسه إذا كان المُشاهِد هو نفسه */}
-        <div className="flex justify-center pt-2">
-          <ReportButton
-            targetType="user"
-            targetId={trader.uid}
-            targetMeta={{
-              title:
-                trader.businessName || trader.name || "مستخدم",
-              ownerId: trader.uid,
-            }}
-            variant="text"
-          />
-        </div>
       </div>
     </section>
   );
