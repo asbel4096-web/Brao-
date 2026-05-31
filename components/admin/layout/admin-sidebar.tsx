@@ -169,6 +169,12 @@ const NAV_GROUPS: NavGroup[] = [
         permission: "users.edit",
       },
       {
+        href: "/admin/topup-requests",
+        label: "طلبات الشحن",
+        Icon: CreditCard,
+        permission: "users.edit",
+      },
+      {
         href: "/admin/referrals",
         label: "نظام الإحالات",
         Icon: UsersGroup,

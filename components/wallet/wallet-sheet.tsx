@@ -50,9 +50,17 @@ interface Props {
   onOpenPlans?: () => void;
   /** فتح صفحة الإحالات (الجولة D). */
   onOpenReferrals?: () => void;
+  /** فتح dialog شحن الرصيد. */
+  onOpenTopup?: () => void;
 }
 
-export function WalletSheet({ open, onClose, onOpenPlans, onOpenReferrals }: Props) {
+export function WalletSheet({
+  open,
+  onClose,
+  onOpenPlans,
+  onOpenReferrals,
+  onOpenTopup,
+}: Props) {
   const { balance, transactions, loadingTransactions } = useWallet();
   const referralsEnabled = useFeatureFlag("referrals");
   const [view, setView] = useState<"main" | "transactions">("main");
@@ -149,15 +157,14 @@ export function WalletSheet({ open, onClose, onOpenPlans, onOpenReferrals }: Pro
 
                       <button
                         type="button"
-                        onClick={() => {
-                          /* الشحن يدوي حالياً - يظهر toast */
-                          alert("الشحن يدوي حالياً - تواصل مع الإدارة لإضافة رصيد");
-                        }}
+                        onClick={onOpenTopup}
+                        disabled={!onOpenTopup}
                         className="
                           mt-4 inline-flex w-full items-center justify-center gap-1.5
                           rounded-2xl bg-white/15 py-2.5 text-sm font-black text-white
                           backdrop-blur-sm transition
                           hover:bg-white/25 active:scale-[0.98]
+                          disabled:opacity-60
                         "
                       >
                         <Plus size={14} />
@@ -170,9 +177,7 @@ export function WalletSheet({ open, onClose, onOpenPlans, onOpenReferrals }: Pro
                       <QuickAction
                         icon={Send}
                         label="شحن رصيد"
-                        onClick={() =>
-                          alert("الشحن يدوي حالياً - تواصل مع الإدارة")
-                        }
+                        onClick={onOpenTopup}
                       />
                       <QuickAction
                         icon={ArrowUpFromLine}

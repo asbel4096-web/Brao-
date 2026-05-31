@@ -1,40 +1,34 @@
-# ⚠️ هذا الـzip يحوي كل ملفات المرحلة 5 + التكامل دفعة واحدة
+# تعليمات رفع الملفات
 
-سبب الخطأ السابق: ملف `lib/cms/types.ts` لم يكن مرفوعاً.
-هذا الـzip يحوي كل شيء معاً لضمان عدم نسيان أي ملف.
+## ⚠️ مهم: حافظي على هيكل المجلدات بالضبط
 
-## كيف تنشرين
+هذا الـzip يحوي **12 ملف** يجب رفعها كما هي:
 
-1. فُكّي الـzip
-2. ارفعي **كل** المجلدات والملفات للمستودع (overwrite الموجود):
-   - `lib/cms/` (مجلد جديد)
-   - `components/cms/` (مجلد جديد)
-   - `components/homepage-banners-carousel.tsx` (ملف جديد)
-   - `components/featured-listings-section.tsx` (يستبدل القديم)
-   - `hooks/admin/use-cms-pages.ts` (ملف جديد)
-   - `hooks/admin/use-homepage-config.ts` (ملف جديد)
-   - `hooks/use-public-homepage-config.ts` (ملف جديد - **هذا اللي كان ناقص**)
-   - `app/admin/content/` (مجلد جديد كامل)
-   - `app/(public)/p/` (مجلد جديد)
-   - `app/page.tsx` (يستبدل القديم)
-   - `firestore.rules` (يستبدل)
-   - `storage.rules` (يستبدل)
-
-3. `git add . && git commit -m "phase 5 + integration" && git push`
-
-4. تأكدي من نشر:
-   - Firestore rules (Firebase Console)
-   - Storage rules (Firebase Console)
-
-## الملف الذي تسبّب في خطأ البناء
-
-`lib/cms/types.ts` — يجب أن يكون موجوداً في:
 ```
-repo-root/
-└── lib/
-    └── cms/
-        ├── types.ts        ← هذا الذي كان مفقوداً
-        └── markdown.ts
+lib/wallet/topup.ts                          ← الملف الناقص الذي سبّب الخطأ
+hooks/wallet/use-topup-requests.ts
+components/wallet/topup-sheet.tsx
+components/wallet/wallet-sheet.tsx           ← معدَّل
+components/wallet/wallet-trigger.tsx         ← معدَّل
+components/admin/layout/admin-sidebar.tsx    ← معدَّل
+app/admin/topup-requests/page.tsx
+app/api/wallet/topup/request/route.ts
+app/api/admin/topup/[requestId]/approve/route.ts
+app/api/admin/topup/[requestId]/reject/route.ts
+firestore.rules                              ← انشريها يدوياً في Firebase Console
 ```
 
-تأكدي من رفع المجلد `lib/cms/` كاملاً.
+## كيف ترفعين على GitHub؟
+
+### الطريقة الأسهل (موصاة):
+1. فُكّي الـzip في جهازكِ
+2. على GitHub، افتحي مستودعكِ
+3. اسحبي مجلد **`lib`** كاملاً → سيدمج تلقائياً (overwrite)
+4. كرّري لكل المجلدات: `hooks`, `components`, `app`
+5. ارفعي `firestore.rules` في root
+6. Commit message: `feat: topup requests system`
+7. اضغطي Commit changes
+
+### إذا واجهتِ مشكلة هيكل المجلدات:
+- ارفعي كل ملف منفرداً وتأكدي أن الـpath في GitHub يطابق المسار في الـzip
+- مثلاً: `topup.ts` يجب أن يكون في `lib/wallet/topup.ts` وليس في root

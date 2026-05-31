@@ -575,6 +575,22 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // topupRequests - طلبات شحن الرصيد من المستخدم.
+    //   {userId, amount, paymentMethod, contactNumber, note, status, ...}
+    // القراءة:
+    //   - المستخدم يقرأ طلباته فقط (userId == auth.uid)
+    //   - الأدمن يقرأ كل الطلبات
+    // الكتابة: ممنوعة من client - الـAPI تنشئ وتحدّث (Admin SDK).
+    //   يضمن أن:
+    //   - المستخدم لا يستطيع تغيير status لنفسه (يمنحه رصيداً مجاناً)
+    //   - الـvalidation كاملة server-side
+    //   - anti-spam (max 3 pending) محفوظ في الـAPI
+    match /topupRequests/{requestId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.userId == request.auth.uid);
+      allow create, update, delete: if false;
+    }
+
     // reports - بلاغات المستخدمين على إعلانات/تعليقات/مستخدمين.
     //   {reporterId, targetType, targetId, reason, description, status, ...}
     // القراءة: الأدمن + المُبلِّغ نفسه (يرى بلاغاته فقط).
