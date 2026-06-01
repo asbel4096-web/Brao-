@@ -1,49 +1,57 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
 import {
   BadgeCheck,
+  Bell,
+  ChevronRight,
+  Eye,
+  Heart,
   MapPin,
   MessageCircle,
-  Phone,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Share2,
   Star,
-  Heart,
+  Users,
   Car,
   Award,
-  Eye,
-  Users,
-  Navigation,
-  Pencil,
+  ChevronLeft,
 } from "lucide-react";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   getTraderDisplayName,
-  normalizeLibyanPhone,
   formatNumber,
+  normalizeLibyanPhone,
 } from "@/lib/utils";
 import type { UserProfile } from "@/lib/types";
 import { isVerifiedNow } from "@/lib/wallet/verification";
 import { useFollowTraderState } from "@/hooks/useListingEngagement";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
+import { useDealerStories } from "@/hooks/dealer/use-dealer-stories";
+import { STORY_CATEGORIES, type StoryCategory } from "@/lib/dealer/stories";
 
 /**
- * صفحة المعرض - Header احترافي مطابق للتصميم.
+ * Trader Profile Header v3 - تصميم احترافي مطابق للصورة.
  *
- * البنية:
- *  - Cover image مع overlay داكن
- *  - Logo BRATSHO في الوسط فوق الكوفر
- *  - Badge "معرض موثق" في الزاوية العلوية (إن كان موثقاً)
- *  - بطاقة هوية: صورة دائرية + اسم + تقييم + موقع + متابعون
- *  - زر "متابعة" أزرق primary مع قلب
- *  - شريط 4 إحصائيات (سيارات، سنوات، مشاهدات، متابعون)
- *  - 4 أزرار تواصل (مراسلة، اتصال، واتساب، الموقع)
+ * الأقسام:
+ *  1) Cover image + أزرار عائمة (back/share/more/bell) + badge "معرض موثق"
+ *  2) بطاقة الهوية: logo + اسم + موقع + تقييم + متابعين
+ *  3) زرّان: متابعة (أزرق) + مراسلة (أبيض)
+ *  4) شريط 4 إحصائيات داخل بطاقة بيضاء
+ *  5) Stories rings (4 تصنيفات + زر إضافة للمالك)
+ *  6) Tabs sticky عند التمرير
  *
- * Dark-first design: الخلفية slate-950، النصوص بيضاء، الأزرق براند.
+ * Mobile-first بـRTL كامل.
+ * يستخدم framer-motion للحركات الناعمة (Spring, parallax خفيف).
  */
 
-interface TraderProfileHeaderProps {
+interface Props {
   traderId: string;
   profile: UserProfile;
   listingsCount: number;
@@ -51,6 +59,9 @@ interface TraderProfileHeaderProps {
   averageRating: number;
   reviewsCount: number;
   onMessage: () => Promise<void> | void;
+  onStoryOpen?: (category: StoryCategory) => void;
+  onAddStory?: () => void;
+  unreadNotifications?: number;
 }
 
 export function TraderProfileHeader({
@@ -61,30 +72,35 @@ export function TraderProfileHeader({
   averageRating,
   reviewsCount,
   onMessage,
-}: TraderProfileHeaderProps) {
+  onStoryOpen,
+  onAddStory,
+  unreadNotifications = 0,
+}: Props) {
   const router = useRouter();
   const { user } = useAuth();
   const toast = useToast();
   const { isFollowing, toggleFollow, isOwnProfile } =
     useFollowTraderState(traderId);
+  const { categoryRings } = useDealerStories(profile.uid);
   const [busy, setBusy] = useState(false);
 
-  // التحقق من التوثيق: نظام جديد (verifiedUntil) + قديم (isVerifiedDealer)
+  // Parallax خفيف للـcover
+  const coverRef = useRef<HTMLDivElement>(null);
+  const { scrollY } = useScroll();
+  const coverY = useTransform(scrollY, [0, 300], [0, 60]);
+  const coverScale = useTransform(scrollY, [-100, 0], [1.15, 1]);
+
   const isVerified =
     isVerifiedNow(profile as any) || profile.isVerifiedDealer === true;
-
   const displayName = getTraderDisplayName(profile);
   const phone = profile.phone || "";
-  const wa = normalizeLibyanPhone(phone);
-  const ratingText = Number(averageRating || 0).toFixed(1);
 
-  // مصادر الصور: نُفضّل cover/logo الخاص بالمعرض الموثق
   const cover =
     (isVerified ? profile.dealerCover : null) || profile.coverURL || null;
   const photo =
     (isVerified ? profile.dealerLogo : null) || profile.photoURL || null;
-
   const followersN = profile.followersCount || 0;
+  const ratingText = Number(averageRating || 0).toFixed(1);
 
   // السنوات في براتشو
   const yearsInBratsho = (() => {
@@ -94,7 +110,6 @@ export function TraderProfileHeader({
     return Math.max(1, Math.floor(years));
   })();
 
-  // الإحصائيات
   const viewsCount = (profile as any).viewsCount || 0;
   const totalListings = listingsCount + servicesCount;
 
@@ -103,10 +118,7 @@ export function TraderProfileHeader({
       router.push(`/login?redirect=/traders/${traderId}`);
       return;
     }
-    if (isOwnProfile) {
-      toast.info("لا يمكنك متابعة نفسك");
-      return;
-    }
+    if (isOwnProfile) return;
     setBusy(true);
     try {
       await toggleFollow();
@@ -117,88 +129,94 @@ export function TraderProfileHeader({
     }
   };
 
-  const handleCall = () => {
-    if (!phone) {
-      toast.info("لا يوجد رقم هاتف متاح");
-      return;
+  const handleShare = async () => {
+    const url = `${window.location.origin}/traders/${traderId}`;
+    const text = `${displayName} على براتشو كار`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: text, url });
+        return;
+      } catch {
+        /* المستخدم ألغى */
+      }
     }
-    window.location.href = `tel:${phone}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("تم نسخ الرابط");
+    } catch {
+      toast.info("شارك الرابط: " + url);
+    }
   };
 
-  const handleWhatsApp = () => {
-    if (!wa) {
-      toast.info("لا يوجد رقم واتساب متاح");
-      return;
-    }
-    window.open(`https://wa.me/${wa.replace(/^\+/, "")}`, "_blank");
-  };
-
-  const handleLocation = () => {
-    const loc = (profile as any).dealerLocation || (profile as any).location;
-    if (!loc) {
-      toast.info("لا يوجد موقع محدد");
-      return;
-    }
-    // فتح خرائط جوجل ببحث بسيط
-    window.open(
-      `https://maps.google.com/?q=${encodeURIComponent(loc)}`,
-      "_blank"
-    );
+  const handleBack = () => {
+    if (window.history.length > 1) router.back();
+    else router.push("/");
   };
 
   return (
-    <article
-      className="
-        relative overflow-hidden rounded-[28px]
-        bg-slate-950 text-white
-        shadow-xl
-      "
-      dir="rtl"
-    >
+    <article className="relative" dir="rtl">
       {/* ============================================================
-          1) Cover + Logo + Verified Badge
+          Cover + Floating buttons
          ============================================================ */}
-      <div className="relative h-44 sm:h-56">
-        {/* Cover image */}
-        {cover ? (
-          <Image
-            src={cover}
-            alt=""
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, 768px"
-            priority
-          />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950" />
-        )}
+      <div
+        ref={coverRef}
+        className="relative h-[280px] overflow-hidden sm:h-[320px]"
+      >
+        {/* Cover image with parallax */}
+        <motion.div
+          style={{ y: coverY, scale: coverScale }}
+          className="absolute inset-0"
+        >
+          {cover ? (
+            <Image
+              src={cover}
+              alt=""
+              fill
+              className="object-cover"
+              sizes="100vw"
+              priority
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900" />
+          )}
+          {/* Gradient overlay (لقراءة الأزرار + الـbadge) */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/40" />
+        </motion.div>
 
-        {/* Overlay داكن لقراءة الـbadge */}
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/40 via-slate-950/20 to-slate-950" />
-
-        {/* Logo BRATSHO وسط الكوفر */}
-        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center pointer-events-none">
-          <div className="flex items-center gap-2 text-white/90">
-            <Car size={22} strokeWidth={2} />
-            <span className="text-xl font-black tracking-wider">BRATSHO</span>
+        {/* Floating top bar */}
+        <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between p-4">
+          {/* Right side (RTL = right) */}
+          <div className="flex items-center gap-2">
+            <FloatingButton icon={ChevronRight} onClick={handleBack} aria-label="رجوع" />
+            <FloatingButton icon={Share2} onClick={handleShare} aria-label="مشاركة" />
+            <FloatingButton icon={MoreHorizontal} aria-label="المزيد" />
           </div>
-          <span className="sr-only">شعار براتشو كار</span>
+
+          {/* Left side (RTL = left) */}
+          <Link
+            href="/notifications"
+            className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-slate-900 shadow-lg backdrop-blur transition active:scale-95"
+            aria-label="الإشعارات"
+          >
+            <Bell size={16} strokeWidth={2.2} />
+            {unreadNotifications > 0 && (
+              <span className="absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full bg-blue-600 px-1 text-[10px] font-black text-white ring-2 ring-white">
+                {unreadNotifications > 9 ? "9+" : unreadNotifications}
+              </span>
+            )}
+          </Link>
         </div>
 
-        {/* Verified badge - top-left (RTL = left of screen) */}
+        {/* Verified badge (bottom-right of cover) */}
         {isVerified && (
-          <div className="absolute top-3 left-3">
-            <div className="
-              flex items-center gap-1.5 rounded-full
-              bg-slate-900/80 px-3 py-1.5 backdrop-blur-md
-              ring-1 ring-white/10
-            ">
+          <div className="absolute bottom-4 right-4 z-10">
+            <div className="flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 shadow-lg backdrop-blur">
               <BadgeCheck
                 size={14}
-                className="text-blue-400"
+                className="text-blue-600"
                 strokeWidth={2.5}
               />
-              <span className="text-[11px] font-black text-white">
+              <span className="text-[12px] font-black text-slate-900">
                 معرض موثق
               </span>
             </div>
@@ -207,16 +225,13 @@ export function TraderProfileHeader({
       </div>
 
       {/* ============================================================
-          2) Identity card (تظهر مرفوعة فوق الكوفر)
+          Content (sits on white background)
          ============================================================ */}
-      <div className="relative -mt-12 px-4 pb-4 sm:px-5">
-        <div className="flex items-start gap-3 sm:gap-4">
-          {/* Photo */}
-          <div className="
-            relative h-24 w-24 shrink-0 overflow-hidden rounded-full
-            bg-slate-800 ring-4 ring-slate-950
-            sm:h-28 sm:w-28
-          ">
+      <div className="relative -mt-6 rounded-t-[28px] bg-white px-4 pb-2 pt-4 dark:bg-slate-950 sm:px-5">
+        {/* Identity row */}
+        <div className="flex items-start gap-3">
+          {/* Logo */}
+          <div className="relative -mt-12 h-24 w-24 shrink-0 overflow-hidden rounded-3xl bg-slate-100 ring-4 ring-white shadow-xl dark:bg-slate-800 dark:ring-slate-950 sm:h-28 sm:w-28">
             {photo ? (
               <Image
                 src={photo}
@@ -226,22 +241,22 @@ export function TraderProfileHeader({
                 sizes="112px"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center text-3xl font-black text-white">
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-600 to-blue-800 text-3xl font-black text-white">
                 {displayName.charAt(0).toUpperCase()}
               </div>
             )}
           </div>
 
-          {/* Name + meta */}
-          <div className="min-w-0 flex-1 pt-12 sm:pt-14">
+          {/* Name + info column */}
+          <div className="min-w-0 flex-1 pt-2">
             <div className="flex items-center gap-1.5">
-              <h1 className="truncate text-lg font-black text-white sm:text-xl">
+              <h1 className="truncate text-lg font-black text-slate-950 dark:text-white sm:text-xl">
                 {displayName}
               </h1>
               {isVerified && (
                 <BadgeCheck
                   size={18}
-                  className="shrink-0 text-blue-400"
+                  className="shrink-0 text-blue-600 dark:text-blue-400"
                   strokeWidth={2.5}
                   aria-label="موثق"
                 />
@@ -249,144 +264,153 @@ export function TraderProfileHeader({
             </div>
 
             {/* Location */}
-            {(profile as any).dealerLocation || (profile as any).location ? (
-              <div className="mt-1 flex items-center gap-1 text-[12px] text-slate-300">
-                <MapPin size={12} className="shrink-0" />
+            {((profile as any).dealerLocation || (profile as any).location) && (
+              <div className="mt-1 flex items-center gap-1 text-[12px] text-slate-500 dark:text-slate-400">
+                <MapPin size={11} className="shrink-0" />
                 <span className="truncate">
-                  {(profile as any).dealerLocation || (profile as any).location}
+                  {(profile as any).dealerLocation ||
+                    (profile as any).location}
                 </span>
               </div>
-            ) : null}
+            )}
 
-            {/* Rating + Followers row */}
+            {/* Rating + followers preview */}
             <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
               {reviewsCount > 0 && (
                 <div className="flex items-center gap-1 text-[12px]">
-                  <Star
-                    size={12}
-                    className="fill-amber-400 text-amber-400"
-                  />
-                  <span className="font-black text-white">{ratingText}</span>
-                  <span className="text-slate-400">
+                  <Star size={12} className="fill-amber-400 text-amber-400" />
+                  <span className="font-black text-slate-900 dark:text-white">
+                    {ratingText}
+                  </span>
+                  <span className="text-slate-500 dark:text-slate-400">
                     ({formatNumber(reviewsCount)} تقييم)
                   </span>
                 </div>
               )}
               {followersN > 0 && (
-                <div className="flex items-center gap-1 text-[12px] text-slate-400">
-                  <span className="font-black text-white">
+                <div className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
+                  <FollowersStack count={Math.min(4, followersN)} />
+                  <span className="font-black text-slate-700 dark:text-slate-200">
                     +{formatNumber(followersN)}
                   </span>
-                  <span>متابع</span>
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Follow button (للزوار) / إدارة صفحتي (للمالك) */}
+        {/* Action buttons row */}
         {!isOwnProfile ? (
-          <button
-            type="button"
-            onClick={handleFollow}
-            disabled={busy}
-            className={`
-              mt-4 inline-flex w-full items-center justify-center gap-1.5
-              rounded-2xl py-2.5 text-sm font-black shadow-sm transition
-              active:scale-[0.98] disabled:opacity-60
-              ${isFollowing
-                ? "bg-slate-800 text-white hover:bg-slate-700"
-                : "bg-blue-600 text-white hover:bg-blue-700"
-              }
-            `}
-          >
-            <Heart
-              size={14}
-              className={isFollowing ? "fill-current" : ""}
-            />
-            {busy ? "..." : isFollowing ? "تتم المتابعة" : "متابعة"}
-          </button>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <motion.button
+              type="button"
+              onClick={handleFollow}
+              disabled={busy}
+              whileTap={{ scale: 0.97 }}
+              className={`
+                inline-flex items-center justify-center gap-1.5
+                rounded-2xl py-3 text-sm font-black shadow-lg transition
+                disabled:opacity-60
+                ${isFollowing
+                  ? "bg-slate-100 text-slate-900 ring-1 ring-slate-200 hover:bg-slate-200 dark:bg-slate-800 dark:text-white dark:ring-slate-700"
+                  : "bg-blue-600 text-white shadow-blue-500/30 hover:bg-blue-700"
+                }
+              `}
+            >
+              <motion.span
+                animate={isFollowing ? { scale: [1, 1.4, 1] } : { scale: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Heart
+                  size={14}
+                  className={isFollowing ? "fill-current" : ""}
+                />
+              </motion.span>
+              {busy ? "..." : isFollowing ? "تتم المتابعة" : "متابعة"}
+            </motion.button>
+
+            <motion.button
+              type="button"
+              onClick={onMessage}
+              whileTap={{ scale: 0.97 }}
+              className="
+                inline-flex items-center justify-center gap-1.5
+                rounded-2xl border border-slate-200 bg-white py-3
+                text-sm font-black text-slate-900 shadow-sm transition
+                hover:bg-slate-50
+                dark:border-slate-700 dark:bg-slate-900 dark:text-white
+                dark:hover:bg-slate-800
+              "
+            >
+              <MessageCircle size={14} />
+              مراسلة
+            </motion.button>
+          </div>
         ) : (
           <div className="mt-4 grid grid-cols-2 gap-2">
-            <a
+            <Link
               href="/profile/edit"
               className="
                 inline-flex items-center justify-center gap-1.5
-                rounded-2xl bg-blue-600 py-2.5 text-sm font-black
-                text-white shadow-sm transition
-                hover:bg-blue-700 active:scale-[0.98]
+                rounded-2xl bg-blue-600 py-3 text-sm font-black
+                text-white shadow-lg shadow-blue-500/30 transition
+                hover:bg-blue-700 active:scale-[0.97]
               "
             >
               <Pencil size={13} />
               تعديل المعرض
-            </a>
-            <a
+            </Link>
+            <Link
               href="/my-listings"
               className="
                 inline-flex items-center justify-center gap-1.5
-                rounded-2xl bg-slate-800 py-2.5 text-sm font-black
-                text-white transition hover:bg-slate-700
-                active:scale-[0.98]
+                rounded-2xl border border-slate-200 bg-white py-3
+                text-sm font-black text-slate-900 transition
+                hover:bg-slate-50 active:scale-[0.97]
+                dark:border-slate-700 dark:bg-slate-900 dark:text-white
+                dark:hover:bg-slate-800
               "
             >
               <Car size={13} />
               إعلاناتي
-            </a>
+            </Link>
           </div>
         )}
-      </div>
 
-      {/* ============================================================
-          3) Stats row (4 boxes)
-         ============================================================ */}
-      <div className="mx-4 grid grid-cols-4 gap-2 rounded-2xl bg-slate-900/60 p-3 sm:mx-5">
-        <StatItem
-          icon={Car}
-          value={totalListings >= 10 ? `${totalListings}+` : String(totalListings)}
-          label="إجمالي السيارات"
-        />
-        <StatItem
-          icon={Award}
-          value={String(yearsInBratsho)}
-          label="سنوات في براتشو"
-        />
-        <StatItem
-          icon={Eye}
-          value={formatViewsK(viewsCount)}
-          label="المشاهدات"
-        />
-        <StatItem
-          icon={Users}
-          value={formatViewsK(followersN)}
-          label="المتابعون"
-        />
-      </div>
+        {/* Stats card */}
+        <div className="mt-4 grid grid-cols-4 gap-1 rounded-3xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <StatItem
+            icon={Users}
+            value={formatViewsK(followersN)}
+            label="المتابعون"
+          />
+          <StatItem
+            icon={Eye}
+            value={formatViewsK(viewsCount)}
+            label="المشاهدات"
+          />
+          <StatItem
+            icon={Car}
+            value={
+              totalListings >= 10
+                ? `${totalListings}+`
+                : String(totalListings)
+            }
+            label="إجمالي السيارات"
+          />
+          <StatItem
+            icon={Award}
+            value={String(yearsInBratsho)}
+            label="سنوات في براتشو"
+          />
+        </div>
 
-      {/* ============================================================
-          4) Contact actions (4 buttons)
-         ============================================================ */}
-      <div className="mx-4 mt-3 mb-4 grid grid-cols-4 gap-2 sm:mx-5">
-        <ContactAction
-          icon={MessageCircle}
-          label="مراسلة"
-          onClick={onMessage}
-        />
-        <ContactAction
-          icon={Phone}
-          label="اتصال"
-          onClick={handleCall}
-          disabled={!phone}
-        />
-        <ContactAction
-          icon={WhatsAppIcon as any}
-          label="واتساب"
-          onClick={handleWhatsApp}
-          disabled={!wa}
-        />
-        <ContactAction
-          icon={Navigation}
-          label="الموقع"
-          onClick={handleLocation}
+        {/* Stories rings */}
+        <StoriesRings
+          rings={categoryRings}
+          isOwner={isOwnProfile}
+          onOpen={onStoryOpen}
+          onAdd={onAddStory}
         />
       </div>
     </article>
@@ -394,8 +418,35 @@ export function TraderProfileHeader({
 }
 
 // ============================================================
-// Helpers
+// Sub-components
 // ============================================================
+
+function FloatingButton({
+  icon: Icon,
+  onClick,
+  ...rest
+}: {
+  icon: any;
+  onClick?: () => void;
+  [key: string]: any;
+}) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      whileTap={{ scale: 0.92 }}
+      className="
+        inline-flex h-10 w-10 items-center justify-center
+        rounded-full bg-white/95 text-slate-900
+        shadow-lg backdrop-blur transition
+        hover:bg-white
+      "
+      {...rest}
+    >
+      <Icon size={16} strokeWidth={2.2} />
+    </motion.button>
+  );
+}
 
 function StatItem({
   icon: Icon,
@@ -407,64 +458,197 @@ function StatItem({
   label: string;
 }) {
   return (
-    <div className="flex flex-col items-center gap-1 text-center">
-      <Icon size={16} className="text-blue-400" strokeWidth={2} />
-      <span className="text-[15px] font-black tabular-nums text-white sm:text-base">
+    <div className="flex flex-col items-center gap-1.5 px-1 text-center">
+      <Icon size={18} className="text-blue-600 dark:text-blue-400" strokeWidth={2} />
+      <span className="text-base font-black tabular-nums text-slate-950 dark:text-white">
         {value}
       </span>
-      <span className="text-[9px] leading-tight text-slate-400 sm:text-[10px]">
+      <span className="text-[10px] leading-tight text-slate-500 dark:text-slate-400">
         {label}
       </span>
     </div>
   );
 }
 
-function ContactAction({
-  icon: Icon,
-  label,
-  onClick,
-  disabled,
-}: {
-  icon: any;
-  label: string;
-  onClick?: () => void | Promise<void>;
-  disabled?: boolean;
-}) {
+function FollowersStack({ count }: { count: number }) {
   return (
-    <button
+    <div className="flex -space-x-1.5 rtl:space-x-reverse">
+      {[...Array(count)].map((_, i) => (
+        <div
+          key={i}
+          className={`
+            h-5 w-5 rounded-full ring-2 ring-white dark:ring-slate-900
+            bg-gradient-to-br
+            ${i === 0 ? "from-blue-500 to-indigo-600" : ""}
+            ${i === 1 ? "from-purple-500 to-pink-600" : ""}
+            ${i === 2 ? "from-emerald-500 to-teal-600" : ""}
+            ${i === 3 ? "from-amber-500 to-orange-600" : ""}
+          `}
+        />
+      ))}
+    </div>
+  );
+}
+
+function StoriesRings({
+  rings,
+  isOwner,
+  onOpen,
+  onAdd,
+}: {
+  rings: Array<{
+    key: StoryCategory;
+    label: string;
+    shortLabel: string;
+    fallbackIcon: string;
+    gradient: string;
+    count: number;
+    latestThumb: string | null;
+  }>;
+  isOwner: boolean;
+  onOpen?: (cat: StoryCategory) => void;
+  onAdd?: () => void;
+}) {
+  // إن لم تكن هناك stories وليس المالك: لا نُظهر القسم
+  const hasAnyStories = rings.some((r) => r.count > 0);
+  if (!hasAnyStories && !isOwner) return null;
+
+  return (
+    <div className="mt-4">
+      {/* Header */}
+      <div className="mb-2 flex items-center justify-between px-1">
+        <button
+          type="button"
+          className="
+            inline-flex items-center gap-0.5 text-[12px] font-black
+            text-blue-600 dark:text-blue-400
+          "
+        >
+          <ChevronLeft size={12} />
+          عرض الكل
+        </button>
+        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+          القصص
+        </span>
+      </div>
+
+      {/* Rings scroll */}
+      <div className="-mx-4 sm:-mx-5">
+        <div
+          className="
+            flex gap-3 overflow-x-auto px-4 pb-2 sm:px-5
+            [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
+            snap-x snap-mandatory
+          "
+        >
+          {rings.map((ring) => {
+            const hasContent = ring.count > 0;
+            // إخفاء التصنيف الفارغ للزوار (نُبقيها للمالك لإمكانية الإضافة)
+            if (!hasContent && !isOwner) return null;
+            return (
+              <StoryRing
+                key={ring.key}
+                ring={ring}
+                onClick={() => hasContent && onOpen?.(ring.key)}
+              />
+            );
+          })}
+
+          {/* زر "إضافة قصة" للمالك */}
+          {isOwner && (
+            <button
+              type="button"
+              onClick={onAdd}
+              className="flex shrink-0 snap-start flex-col items-center gap-1.5"
+            >
+              <div className="
+                flex h-16 w-16 items-center justify-center
+                rounded-full border-2 border-dashed border-slate-300
+                bg-slate-50 text-blue-600 transition
+                active:scale-95 hover:border-blue-500
+                dark:border-slate-700 dark:bg-slate-900
+              ">
+                <Plus size={22} strokeWidth={2.5} />
+              </div>
+              <span className="text-[10px] font-black text-slate-700 dark:text-slate-300">
+                إضافة قصة
+              </span>
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StoryRing({
+  ring,
+  onClick,
+}: {
+  ring: {
+    key: StoryCategory;
+    label: string;
+    shortLabel: string;
+    fallbackIcon: string;
+    gradient: string;
+    count: number;
+    latestThumb: string | null;
+  };
+  onClick: () => void;
+}) {
+  const hasContent = ring.count > 0;
+  return (
+    <motion.button
       type="button"
       onClick={onClick}
-      disabled={disabled}
+      whileTap={{ scale: 0.95 }}
+      disabled={!hasContent}
       className="
-        flex flex-col items-center gap-1.5 rounded-2xl
-        bg-slate-900/70 px-2 py-3 transition
-        hover:bg-slate-800 active:scale-95
-        disabled:cursor-not-allowed disabled:opacity-40
+        flex shrink-0 snap-start flex-col items-center gap-1.5
+        disabled:opacity-50
       "
     >
-      <Icon size={18} className="text-white" strokeWidth={1.8} />
-      <span className="text-[11px] font-bold text-slate-200">{label}</span>
-    </button>
+      {/* Ring with gradient when has content */}
+      <div
+        className={`
+          relative h-16 w-16 rounded-full p-[2.5px]
+          ${hasContent
+            ? "bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700"
+            : "bg-slate-200 dark:bg-slate-800"
+          }
+        `}
+      >
+        <div className="relative h-full w-full overflow-hidden rounded-full bg-white ring-2 ring-white dark:bg-slate-900 dark:ring-slate-900">
+          {ring.latestThumb ? (
+            <Image
+              src={ring.latestThumb}
+              alt={ring.label}
+              fill
+              className="object-cover"
+              sizes="64px"
+            />
+          ) : (
+            <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br ${ring.gradient} text-2xl`}>
+              {ring.fallbackIcon}
+            </div>
+          )}
+        </div>
+        {ring.count > 1 && (
+          <div className="absolute -bottom-0.5 -right-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-blue-600 px-1 text-[10px] font-black text-white ring-2 ring-white dark:ring-slate-950">
+            {ring.count}
+          </div>
+        )}
+      </div>
+      <span className="
+        max-w-[68px] truncate text-[10px] font-black
+        text-slate-700 dark:text-slate-300
+      ">
+        {ring.shortLabel}
+      </span>
+    </motion.button>
   );
 }
 
-/** أيقونة WhatsApp SVG مخصصة (لا تتوفر في lucide). */
-function WhatsAppIcon({ size = 18, className = "" }: { size?: number; className?: string }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-    </svg>
-  );
-}
-
-/** صياغة الأرقام بصيغة مختصرة (1.2K, 58K, ...). */
 function formatViewsK(n: number): string {
   if (!n || n < 0) return "0";
   if (n < 1000) return String(n);

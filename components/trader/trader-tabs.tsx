@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import type { Listing, TraderReview, UserProfile } from "@/lib/types";
 import { ListingCard } from "@/components/listing-card";
 import {
@@ -55,18 +56,16 @@ export function TraderTabs({
   const showSearchBar = active === "listings" || active === "services";
 
   return (
-    <section
-      className="
-        overflow-hidden rounded-[28px]
-        bg-slate-950 text-white
-        ring-1 ring-white/5
-      "
-      dir="rtl"
-    >
+    <section className="bg-white dark:bg-slate-950" dir="rtl">
       {/* ============================================================
-          Tabs bar - underline style
+          Tabs bar - sticky underline style
          ============================================================ */}
-      <div className="border-b border-white/5 px-4 pt-4 sm:px-5">
+      <div className="
+        sticky top-0 z-30 -mx-4 border-b border-slate-200
+        bg-white/95 px-4 backdrop-blur
+        dark:border-slate-800 dark:bg-slate-950/95
+        sm:-mx-5 sm:px-5
+      ">
         <div className="-mx-4 flex gap-0 overflow-x-auto no-scrollbar scroll-px-4 px-4 sm:-mx-5 sm:px-5">
           {tabs.map((tab) => {
             const label =
@@ -80,20 +79,21 @@ export function TraderTabs({
                 type="button"
                 onClick={() => setActive(tab.id)}
                 className={`
-                  relative shrink-0 whitespace-nowrap px-4 pb-3 pt-1
+                  relative shrink-0 whitespace-nowrap px-5 pb-3 pt-3
                   text-sm font-black transition
                   ${isActive
-                    ? "text-blue-400"
-                    : "text-slate-400 hover:text-slate-200"
+                    ? "text-blue-600 dark:text-blue-400"
+                    : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                   }
                 `}
               >
                 {label}
                 {isActive && (
-                  <span
+                  <motion.span
+                    layoutId="tab-underline"
                     className="
                       absolute inset-x-3 -bottom-px h-0.5
-                      rounded-full bg-blue-500
+                      rounded-full bg-blue-600 dark:bg-blue-400
                     "
                   />
                 )}
@@ -115,7 +115,7 @@ export function TraderTabs({
                 size={14}
                 className="
                   pointer-events-none absolute right-3 top-1/2
-                  -translate-y-1/2 text-slate-500
+                  -translate-y-1/2 text-slate-400
                 "
               />
               <input
@@ -124,10 +124,11 @@ export function TraderTabs({
                 onChange={(e) => setSearchQ(e.target.value)}
                 placeholder="ابحث عن سيارة..."
                 className="
-                  h-11 w-full rounded-2xl border border-white/10
-                  bg-slate-900 pe-9 ps-3 text-sm text-white
-                  placeholder:text-slate-500
+                  h-11 w-full rounded-2xl border border-slate-200
+                  bg-slate-50 pe-9 ps-3 text-sm text-slate-900
+                  placeholder:text-slate-400
                   outline-none focus:border-blue-500/40
+                  dark:border-slate-800 dark:bg-slate-900 dark:text-white
                 "
               />
             </div>
@@ -136,9 +137,10 @@ export function TraderTabs({
               type="button"
               className="
                 inline-flex h-11 shrink-0 items-center gap-1.5
-                rounded-2xl border border-white/10 bg-slate-900
-                px-4 text-[12px] font-black text-slate-200
+                rounded-2xl border border-slate-200 bg-white
+                px-4 text-[12px] font-black text-slate-700
                 transition hover:border-blue-500/40
+                dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200
               "
             >
               <SlidersHorizontal size={13} />
@@ -152,21 +154,22 @@ export function TraderTabs({
               {CATEGORY_CHIPS.map((c) => {
                 const isActive = filterCat === c.id;
                 return (
-                  <button
+                  <motion.button
                     key={c.id}
                     type="button"
                     onClick={() => setFilterCat(c.id)}
+                    whileTap={{ scale: 0.95 }}
                     className={`
-                      shrink-0 whitespace-nowrap rounded-full px-4 py-1.5
+                      shrink-0 whitespace-nowrap rounded-full px-4 py-2
                       text-[12px] font-black transition
                       ${isActive
-                        ? "bg-blue-600 text-white"
-                        : "bg-slate-800/60 text-slate-300 hover:bg-slate-800"
+                        ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                        : "border border-slate-200 bg-white text-slate-700 hover:border-blue-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                       }
                     `}
                   >
                     {c.label}
-                  </button>
+                  </motion.button>
                 );
               })}
             </div>
@@ -265,20 +268,35 @@ function CardsGrid({ items, emptyLabel }: { items: Listing[]; emptyLabel: string
   if (!items.length) {
     return (
       <div className="
-        rounded-2xl border border-dashed border-white/10
-        bg-slate-900/40 p-8 text-center
+        rounded-3xl border border-dashed border-slate-200
+        bg-slate-50 p-10 text-center
+        dark:border-slate-800 dark:bg-slate-900/40
       ">
-        <p className="text-sm font-bold text-slate-400">{emptyLabel}</p>
+        <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
+          {emptyLabel}
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
+      className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3"
+    >
       {items.map((item, index) => (
-        <ListingCard key={item.id} listing={item} priority={index < 2} />
+        <motion.div
+          key={item.id}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, delay: Math.min(index * 0.03, 0.3) }}
+        >
+          <ListingCard listing={item} priority={index < 2} />
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   );
 }
 

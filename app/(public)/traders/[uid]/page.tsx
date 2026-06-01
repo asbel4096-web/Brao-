@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
@@ -10,12 +11,17 @@ import { useTraderProfile } from "@/hooks/useTraderProfile";
 import { buildChatId, getTraderDisplayName } from "@/lib/utils";
 import { TraderProfileHeader } from "@/components/trader/trader-profile-header";
 import { TraderTabs } from "@/components/trader/trader-tabs";
+import { StoryViewer } from "@/components/trader/story-viewer";
+import { useStoriesByCategory } from "@/hooks/dealer/use-dealer-stories";
+import type { StoryCategory } from "@/lib/dealer/stories";
 
 export default function TraderPage() {
   const params = useParams<{ uid: string }>();
   const router = useRouter();
   const { user, profile } = useAuth();
   const toast = useToast();
+  const [openStoryCat, setOpenStoryCat] = useState<StoryCategory | null>(null);
+
   const {
     profile: trader,
     listings,
@@ -26,6 +32,12 @@ export default function TraderPage() {
     loading,
     missing,
   } = useTraderProfile(params.uid);
+
+  // Stories للتصنيف المفتوح حالياً
+  const storiesByCategory = useStoriesByCategory(
+    params.uid,
+    openStoryCat || undefined
+  );
 
   const handleMessage = async () => {
     if (!trader) return;
@@ -102,26 +114,43 @@ export default function TraderPage() {
   }
 
   return (
-    <section className="container py-3 pb-28 sm:py-5 sm:pb-32">
-      <div className="space-y-3 sm:space-y-4">
-        <TraderProfileHeader
-          traderId={trader.uid}
-          profile={trader}
-          listingsCount={listings.length}
-          servicesCount={services.length}
-          averageRating={averageRating}
-          reviewsCount={reviewsCount}
-          onMessage={handleMessage}
+    <>
+      {/* Full-bleed (no container) لأن الـheader يحوي cover كامل العرض */}
+      <section className="-mx-4 sm:-mx-0">
+        <div className="mx-auto max-w-3xl pb-28 sm:pb-32">
+          <TraderProfileHeader
+            traderId={trader.uid}
+            profile={trader}
+            listingsCount={listings.length}
+            servicesCount={services.length}
+            averageRating={averageRating}
+            reviewsCount={reviewsCount}
+            onMessage={handleMessage}
+            onStoryOpen={(cat) => setOpenStoryCat(cat)}
+            onAddStory={() => router.push("/profile/edit?tab=stories")}
+          />
+          <TraderTabs
+            profile={trader}
+            listings={listings}
+            services={services}
+            reviews={reviews}
+            averageRating={averageRating}
+            reviewsCount={reviewsCount}
+          />
+        </div>
+      </section>
+
+      {/* Story viewer */}
+      {openStoryCat && storiesByCategory.stories.length > 0 && (
+        <StoryViewer
+          open={!!openStoryCat}
+          onClose={() => setOpenStoryCat(null)}
+          stories={storiesByCategory.stories}
+          category={openStoryCat}
+          dealerName={getTraderDisplayName(trader)}
+          dealerLogo={trader.dealerLogo || trader.photoURL}
         />
-        <TraderTabs
-          profile={trader}
-          listings={listings}
-          services={services}
-          reviews={reviews}
-          averageRating={averageRating}
-          reviewsCount={reviewsCount}
-        />
-      </div>
-    </section>
+      )}
+    </>
   );
 }
