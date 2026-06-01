@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -30,6 +30,9 @@ import { StoriesEditTab } from "@/components/dealer-edit/stories-edit-tab";
  *  - stories: إنشاء وإدارة Stories
  *
  * يدعم ?tab=stories في الـURL للقفز المباشر.
+ *
+ * ⚠️ ملاحظة: useSearchParams() في Next.js 14 يتطلب لفّ المكوّن
+ * في <Suspense> عند الـbuild، وإلا يفشل prerender.
  */
 
 type TabKey = "info" | "logo" | "cover" | "gallery" | "stories";
@@ -47,7 +50,8 @@ const TABS: Array<{
   { key: "stories", label: "القصص", icon: Sparkles, desc: "وصل حديثاً، عروض، تجربة قيادة" },
 ];
 
-export default function ProfileEditPage() {
+// المكوّن الرئيسي - يُلفّ في Suspense
+function ProfileEditContent() {
   const router = useRouter();
   const params = useSearchParams();
   const { user, profile, loading } = useAuth();
@@ -190,5 +194,28 @@ function VerifiedOnlyMessage({ feature }: { feature: string }) {
         وثّق معرضك من المحفظة → خطط التوثيق
       </p>
     </div>
+  );
+}
+
+// ============================================================
+// Loading fallback for Suspense
+// ============================================================
+function LoadingFallback() {
+  return (
+    <div className="flex h-[60vh] items-center justify-center" dir="rtl">
+      <Loader2 size={28} className="animate-spin text-blue-500" />
+    </div>
+  );
+}
+
+// ============================================================
+// Page export - wrapped in Suspense
+// useSearchParams() requires this wrapping in Next.js 14
+// ============================================================
+export default function ProfileEditPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <ProfileEditContent />
+    </Suspense>
   );
 }
