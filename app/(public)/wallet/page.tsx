@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { Bell, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
-import { useFeatureFlag } from "@/hooks/features/use-feature-flag";
+import { useWalletEnabled } from "@/hooks/use-wallet-enabled";
 import { TopupSheet } from "@/components/wallet/topup-sheet";
 import { ReferralsSheet } from "@/components/wallet/referrals-sheet";
 import { PlansSheet } from "@/components/wallet/plans-sheet";
@@ -37,7 +37,7 @@ import {
 export default function WalletPage() {
   const router = useRouter();
   const { user, profile, loading } = useAuth();
-  const walletEnabled = useFeatureFlag("wallet");
+  const { enabled: walletEnabled } = useWalletEnabled();
 
   const [topupOpen, setTopupOpen] = useState(false);
   const [referralsOpen, setReferralsOpen] = useState(false);
@@ -52,6 +52,15 @@ export default function WalletPage() {
     if (loading) return;
     if (!user) router.replace("/login?redirect=/wallet");
   }, [loading, user, router]);
+
+  // لو الأدمن أخفى المحفظة → أعِد للرئيسية
+  useEffect(() => {
+    if (loading) return;
+    if (user && !walletEnabled) {
+      const t = setTimeout(() => router.replace("/"), 1500);
+      return () => clearTimeout(t);
+    }
+  }, [loading, user, walletEnabled, router]);
 
   // Loading state
   if (loading || !user || !profile) {
