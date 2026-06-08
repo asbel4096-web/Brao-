@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
+import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
 import type { Listing, TraderReview, UserProfile } from "@/lib/types";
 import { ListingCard } from "@/components/listing-card";
 import {
@@ -14,6 +15,7 @@ import {
   Search,
   SlidersHorizontal,
   Star,
+  X,
 } from "lucide-react";
 import { timeAgo, formatNumber, normalizeLibyanPhone } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,6 +24,7 @@ import { useTraderReview } from "@/hooks/useTraderReview";
 
 const tabs = [
   { id: "listings", label: "السيارات" },
+  { id: "gallery", label: "معرض الصور" },
   { id: "about", label: "عن المعرض" },
   { id: "services", label: "خدماتنا" },
   { id: "reviews", label: "التقييمات" },
@@ -68,6 +71,11 @@ export function TraderTabs({
       ">
         <div className="-mx-4 flex gap-0 overflow-x-auto no-scrollbar scroll-px-4 px-4 sm:-mx-5 sm:px-5">
           {tabs.map((tab) => {
+            // إخفاء tab "معرض الصور" لو لا توجد صور
+            if (tab.id === "gallery") {
+              const gallery = (profile as any).dealerGallery || [];
+              if (!Array.isArray(gallery) || gallery.length === 0) return null;
+            }
             const label =
               tab.id === "about" && profile.isVerifiedDealer
                 ? "عن المعرض"
@@ -206,6 +214,8 @@ export function TraderTabs({
                   reviewsCount={reviewsCount}
                 />
               );
+            case "gallery":
+              return <GalleryTab profile={profile} />;
             case "about":
               return (
                 <AboutTrader
@@ -262,6 +272,97 @@ function filterItems(items: Listing[], cat: string, q: string): Listing[] {
     });
   }
   return out;
+}
+
+// ============================================================
+// Gallery Tab - معرض صور المعرض (dealerGallery) مع lightbox
+// ============================================================
+function GalleryTab({ profile }: { profile: UserProfile }) {
+  const images: string[] = (profile as any).dealerGallery || [];
+  const [lightbox, setLightbox] = useState<number | null>(null);
+
+  if (!images.length) {
+    return (
+      <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-10 text-center dark:border-slate-800 dark:bg-slate-900/40">
+        <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
+          لا توجد صور للمعرض بعد.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.2 }}
+        className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3"
+      >
+        {images.map((url, idx) => (
+          <motion.button
+            key={url}
+            type="button"
+            onClick={() => setLightbox(idx)}
+            whileTap={{ scale: 0.97 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, delay: Math.min(idx * 0.03, 0.3) }}
+            className="relative aspect-square overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800"
+          >
+            <Image
+              src={url}
+              alt={`صورة ${idx + 1}`}
+              fill
+              className="object-cover transition hover:scale-105"
+              sizes="(max-width: 640px) 50vw, 33vw"
+            />
+          </motion.button>
+        ))}
+      </motion.div>
+
+      {/* Lightbox */}
+      <AnimatePresence>
+        {lightbox !== null && images[lightbox] && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4"
+            onClick={() => setLightbox(null)}
+          >
+            <button
+              type="button"
+              onClick={() => setLightbox(null)}
+              className="absolute top-4 left-4 grid h-10 w-10 place-items-center rounded-full bg-white/15 text-white backdrop-blur"
+              aria-label="إغلاق"
+            >
+              <X size={18} />
+            </button>
+            <motion.div
+              initial={{ scale: 0.92 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.92 }}
+              className="relative h-[80vh] w-full max-w-3xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Image
+                src={images[lightbox]}
+                alt=""
+                fill
+                className="object-contain"
+                sizes="100vw"
+              />
+            </motion.div>
+            {/* Counter */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white/15 px-3 py-1 text-[12px] font-black text-white backdrop-blur">
+              {lightbox + 1} / {images.length}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
 }
 
 function CardsGrid({ items, emptyLabel }: { items: Listing[]; emptyLabel: string }) {

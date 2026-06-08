@@ -711,6 +711,36 @@ export default function ProfilePage() {
           </Link>
         )}
 
+        {/* زر تعديل المعرض - للموثقين (يفتح صفحة التحرير بالتابات) */}
+        {user && profile && (isVerifiedNow(profile as any) || profile?.isVerifiedDealer) && (
+          <Link
+            href="/profile/edit"
+            className="
+              flex items-center gap-3 rounded-3xl border border-slate-200
+              bg-white p-3.5 transition active:scale-[0.99]
+              hover:border-blue-300 hover:bg-blue-50/30
+              dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-700
+            "
+          >
+            <div className="
+              flex h-11 w-11 shrink-0 items-center justify-center
+              rounded-2xl bg-blue-50 text-blue-600
+              dark:bg-blue-900/30 dark:text-blue-400
+            ">
+              <Pencil size={18} strokeWidth={2.2} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="text-sm font-black text-slate-950 dark:text-white">
+                تعديل المعرض
+              </span>
+              <div className="mt-0.5 text-[11px] leading-5 text-slate-600 dark:text-slate-300">
+                اللوجو، الغلاف، معرض الصور، القصص
+              </div>
+            </div>
+            <ChevronLeft size={16} className="shrink-0 text-slate-400" />
+          </Link>
+        )}
+
         {/* ============================================================
             بطاقة توثيق المعرض - تظهر للمستخدم غير الموثَّق فقط.
             من وثّق معرضه لا يرى الدعوة (لا فائدة منها).

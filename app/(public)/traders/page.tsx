@@ -54,18 +54,50 @@ export default function VerifiedDealersIndexPage() {
     let cancelled = false;
     void (async () => {
       try {
-        const snap = await getDocs(
-          query(
-            collection(db, "users"),
-            where("isVerifiedDealer", "==", true),
-            limit(MAX_DEALERS)
-          )
-        );
+        // المعارض الموثقة قد تكون بأحد نظامين:
+        //  1) النظام القديم: isVerifiedDealer == true
+        //  2) النظام الجديد: verifiedUntil موجود (اشتراك مدفوع نشط)
+        // نقرأ الاثنين ونُدمجهما (مع إزالة التكرار + فلترة المنتهية).
+        const [legacySnap, newSnap] = await Promise.all([
+          getDocs(
+            query(
+              collection(db, "users"),
+              where("isVerifiedDealer", "==", true),
+              limit(MAX_DEALERS)
+            )
+          ),
+          // verifiedUntil != null → كل من له اشتراك (نفلتر الصلاحية client-side)
+          getDocs(
+            query(
+              collection(db, "users"),
+              where("verifiedUntil", ">", new Date()),
+              limit(MAX_DEALERS)
+            )
+          ).catch(() => null), // لو الـindex غير جاهز، لا نُفشل الصفحة
+        ]);
+
         if (cancelled) return;
-        const list: UserProfile[] = snap.docs.map((d) => ({
-          uid: d.id,
-          ...(d.data() as any),
-        }));
+
+        // دمج بإزالة التكرار (Map حسب uid)
+        const byUid = new Map<string, UserProfile>();
+
+        legacySnap.docs.forEach((d) => {
+          byUid.set(d.id, { uid: d.id, ...(d.data() as any) });
+        });
+
+        if (newSnap) {
+          newSnap.docs.forEach((d) => {
+            const data = d.data() as any;
+            // تأكيد أن verifiedUntil في المستقبل فعلاً
+            const ms = data?.verifiedUntil?.toMillis?.() || 0;
+            if (ms > Date.now()) {
+              byUid.set(d.id, { uid: d.id, ...data });
+            }
+          });
+        }
+
+        const list: UserProfile[] = Array.from(byUid.values());
+
         list.sort((a, b) => {
           const ra = a.averageRating || 0;
           const rb = b.averageRating || 0;
