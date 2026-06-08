@@ -10,6 +10,7 @@ import { useFeatureFlag } from "@/hooks/features/use-feature-flag";
 import { TopupSheet } from "@/components/wallet/topup-sheet";
 import { ReferralsSheet } from "@/components/wallet/referrals-sheet";
 import { PlansSheet } from "@/components/wallet/plans-sheet";
+import { TransferSheet } from "@/components/wallet/transfer-sheet";
 import { BalanceHero } from "@/components/wallet-page/balance-hero";
 import { QuickServicesGrid } from "@/components/wallet-page/quick-services-grid";
 import { TransactionsSection } from "@/components/wallet-page/transactions-section";
@@ -41,6 +42,10 @@ export default function WalletPage() {
   const [topupOpen, setTopupOpen] = useState(false);
   const [referralsOpen, setReferralsOpen] = useState(false);
   const [plansOpen, setPlansOpen] = useState(false);
+  const [transferOpen, setTransferOpen] = useState(false);
+
+  // رصيد المستخدم الحالي (لتمريره للتحويل)
+  const currentBalance = Number((profile as any)?.walletBalance || 0);
 
   // Redirect: غير المسجلين → login
   useEffect(() => {
@@ -95,6 +100,7 @@ export default function WalletPage() {
           <QuickServicesGrid
             onTopup={() => setTopupOpen(true)}
             onReferrals={() => setReferralsOpen(true)}
+            onTransfer={() => setTransferOpen(true)}
             onRewards={() => setReferralsOpen(true)}
             onVerification={() => setPlansOpen(true)}
           />
@@ -129,6 +135,11 @@ export default function WalletPage() {
         onClose={() => setReferralsOpen(false)}
       />
       <PlansSheet open={plansOpen} onClose={() => setPlansOpen(false)} />
+      <TransferSheet
+        open={transferOpen}
+        onClose={() => setTransferOpen(false)}
+        currentBalance={currentBalance}
+      />
     </>
   );
 }

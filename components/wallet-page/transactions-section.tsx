@@ -81,6 +81,18 @@ const TYPE_META: Record<
     color: "text-blue-600",
     label: "استرداد",
   },
+  transfer_out: {
+    icon: ArrowUpRight,
+    bg: "bg-rose-50",
+    color: "text-rose-600",
+    label: "تحويل صادر",
+  },
+  transfer_in: {
+    icon: ArrowDownLeft,
+    bg: "bg-emerald-50",
+    color: "text-emerald-600",
+    label: "تحويل وارد",
+  },
   admin_adjustment: {
     icon: Award,
     bg: "bg-amber-50",

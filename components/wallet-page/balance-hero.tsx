@@ -1,9 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Coins, Plus, ChevronLeft } from "lucide-react";
+import { Plus, ChevronLeft } from "lucide-react";
 import { useWallet } from "@/hooks/wallet/use-wallet";
-import { formatBC } from "@/lib/wallet/types";
 
 /**
  * بطاقة الرصيد الرئيسية - Hero card في أعلى الصفحة.

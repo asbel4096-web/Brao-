@@ -81,8 +81,6 @@ export function QuickServicesGrid({
       bgClass: "bg-emerald-50",
       iconClass: "text-emerald-600",
       action: () => onTransfer?.(),
-      badge: "قريباً",
-      disabled: true,
     },
     {
       key: "rewards",
