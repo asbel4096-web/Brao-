@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import {
   collection,
   getDocs,
@@ -22,11 +23,31 @@ import { calculateDistanceKm, normalizeLibyanPhone } from "@/lib/utils";
 import { libyaCities } from "@/lib/categories";
 import { TowTruckCard } from "@/components/tow-trucks/tow-truck-card";
 import { useMyLocation } from "@/components/tow-trucks/use-my-location";
-import { TowTrucksMiniMap } from "@/components/tow-trucks/mini-map";
 import { NearestTowCard } from "@/components/tow-trucks/nearest-tow-card";
 import { FavoritesStrip } from "@/components/tow-trucks/favorites-strip";
 import { useTowFavorites } from "@/hooks/use-tow-favorites";
 import { useToast } from "@/contexts/ToastContext";
+
+/**
+ * الخريطة (leaflet ~140KB) تُحمّل ديناميكياً بدون SSR.
+ * leaflet يعتمد على window، لذا ssr:false ضروري.
+ * هذا يوفّر ~140KB من الحزمة الأولية لكل من لا يفتح هذه الصفحة،
+ * بل وحتى لمن يفتحها لا تُحمّل إلا عند ظهور الخريطة.
+ */
+const TowTrucksMiniMap = dynamic(
+  () =>
+    import("@/components/tow-trucks/mini-map").then(
+      (m) => m.TowTrucksMiniMap
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-64 items-center justify-center rounded-3xl bg-slate-100 dark:bg-slate-800">
+        <Loader2 size={24} className="animate-spin text-blue-500" />
+      </div>
+    ),
+  }
+);
 
 /**
  * صفحة الساحبات (tow trucks).

@@ -8,6 +8,15 @@ const nextConfig = {
   // إزالة header غير ضروري
   poweredByHeader: false,
 
+  // إزالة console.* من الإنتاج تلقائياً (يبقى console.error للأخطاء الحرجة).
+  // يحفظ حجماً + يمنع تسرّب معلومات debug في المتصفح.
+  compiler: {
+    removeConsole:
+      process.env.NODE_ENV === "production"
+        ? { exclude: ["error"] }
+        : false,
+  },
+
   // تحسين الصور تلقائياً عبر Next/Image
   images: {
     // صيغ حديثة + أصغر حجماً (~30-50% توفير على JPEG)
@@ -25,8 +34,29 @@ const nextConfig = {
   },
 
   experimental: {
-    // tree-shake لـ lucide-react (يحفظ ~100KB+ على bundles)
-    optimizePackageImports: ["lucide-react"],
+    // tree-shake للمكتبات الكبيرة (يحفظ ~100KB+ على bundles)
+    optimizePackageImports: ["lucide-react", "framer-motion"],
+  },
+
+  // Security headers (أفضل ممارسة)
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(self), microphone=(self), geolocation=(self)",
+          },
+        ],
+      },
+    ];
   },
 };
 
