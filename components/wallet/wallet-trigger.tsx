@@ -15,10 +15,19 @@ import { useWalletEnabled } from "@/hooks/use-wallet-enabled";
  * - يربط بصفحة /wallet (وليس bottom sheet)
  * - يختفي تماماً لو الأدمن أخفى المحفظة (walletEnabled = false)
  *
+ * Props:
+ *   variant?: "compact" | "full"  (اختياري - للتوافق مع الاستخدام القديم)
+ *   className?: string
+ *
  * يُستخدم في الـheader. استبدلي القديم به.
  */
 
-export function WalletTrigger() {
+interface WalletTriggerProps {
+  variant?: "compact" | "full";
+  className?: string;
+}
+
+export function WalletTrigger({ variant = "full", className = "" }: WalletTriggerProps) {
   const { user, profile } = useAuth();
   const { enabled } = useWalletEnabled();
   const [balance, setBalance] = useState<number>(
@@ -40,22 +49,26 @@ export function WalletTrigger() {
   // إخفاء كامل لو المحفظة معطّلة أو المستخدم غير مسجّل
   if (!enabled || !user) return null;
 
+  const isCompact = variant === "compact";
+
   return (
     <Link
       href="/wallet"
-      className="
+      className={`
         inline-flex items-center gap-1.5 rounded-full
         bg-gradient-to-l from-blue-600 to-blue-700
-        px-3 py-1.5 text-white shadow-sm
+        text-white shadow-sm
         transition active:scale-95 hover:shadow-md
-      "
+        ${isCompact ? "px-2.5 py-1" : "px-3 py-1.5"}
+        ${className}
+      `}
       aria-label="المحفظة"
     >
-      <span className="text-[13px] font-black tabular-nums">
+      <span className={`font-black tabular-nums ${isCompact ? "text-[12px]" : "text-[13px]"}`}>
         {balance.toLocaleString("en-US")}
       </span>
       <span className="text-[11px] font-bold text-blue-100">BC</span>
-      <Wallet size={15} strokeWidth={2.2} />
+      <Wallet size={isCompact ? 14 : 15} strokeWidth={2.2} />
     </Link>
   );
 }
