@@ -64,21 +64,26 @@ function saveCache(data: Omit<CachedData, "ts">) {
 }
 
 export function usePublicHomepageConfig() {
-  const cached = typeof window !== "undefined" ? loadCache() : null;
-
+  // مهم: نبدأ دائماً بالافتراضي على السيرفر *و* أول رندر للعميل،
+  // كي يتطابق رندر الخادم مع رندر الـhydration (تفادي React #310).
+  // الـcache يُقرأ لاحقاً داخل useEffect (بعد الـhydration).
   const [config, setConfig] = useState<HomepageConfig>(
-    cached?.config || DEFAULT_HOMEPAGE_CONFIG
+    DEFAULT_HOMEPAGE_CONFIG
   );
-  const [banners, setBanners] = useState<HomepageBanner[]>(
-    cached?.banners || []
-  );
-  const [loading, setLoading] = useState(!cached);
+  const [banners, setBanners] = useState<HomepageBanner[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // إذا cache valid، لا نقرأ
-    if (cached) return;
-
     let cancelled = false;
+
+    // 1) محاولة استخدام الـcache (بعد الـhydration فقط - آمن الآن).
+    const cached = loadCache();
+    if (cached) {
+      setConfig(cached.config);
+      setBanners(cached.banners);
+      setLoading(false);
+      return; // cache صالح، لا نقرأ من Firestore
+    }
 
     (async () => {
       try {
