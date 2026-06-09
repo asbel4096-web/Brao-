@@ -26,6 +26,8 @@ import type { Listing } from "@/lib/types";
  */
 
 export const revalidate = 3600;
+// السماح بأي مدينة (لو أُضيفت لاحقاً) + عدم كسر البناء لو فشل الجلب
+export const dynamicParams = true;
 
 interface Params {
   params: { city: string };
@@ -63,6 +65,36 @@ export async function generateMetadata({
   };
 }
 
+/**
+ * يحوّل مستند Firestore إلى كائن بسيط (plain object) آمن للتمرير
+ * من Server Component إلى Client Component.
+ *
+ * Firestore Timestamp ليس plain object → يجب تحويله. نحوّل كل
+ * الطوابع الزمنية إلى millis (number). الحقول التي يعرضها الكارت
+ * (timeAgo, شارات الترقية) تتعامل مع غياب .toMillis بأمان.
+ */
+function toPlainListing(id: string, data: any): any {
+  const out: any = { id };
+  for (const [k, v] of Object.entries(data || {})) {
+    if (v && typeof v === "object" && typeof (v as any).toMillis === "function") {
+      // Firestore Timestamp → millis
+      out[k] = (v as any).toMillis();
+    } else if (v && typeof v === "object" && typeof (v as any).toDate === "function") {
+      out[k] = (v as any).toDate().getTime();
+    } else if (
+      v === null ||
+      typeof v === "string" ||
+      typeof v === "number" ||
+      typeof v === "boolean" ||
+      Array.isArray(v)
+    ) {
+      out[k] = v;
+    }
+    // نتجاهل أي كائنات معقّدة أخرى (GeoPoint, DocumentReference...)
+  }
+  return out;
+}
+
 async function fetchCityListings(cityAr: string): Promise<Listing[]> {
   try {
     const app = getAdminApp();
@@ -75,15 +107,11 @@ async function fetchCityListings(cityAr: string): Promise<Listing[]> {
       .get();
 
     const list = snap.docs
-      .map((d) => ({ id: d.id, ...(d.data() as any) }))
+      .map((d) => toPlainListing(d.id, d.data()))
       .filter((it: any) => it.status === "active" || it.status === undefined);
 
-    // الأحدث أولاً (ترتيب client-side لتجنّب composite index)
-    list.sort((a: any, b: any) => {
-      const am = a.createdAt?.toMillis?.() || 0;
-      const bm = b.createdAt?.toMillis?.() || 0;
-      return bm - am;
-    });
+    // الأحدث أولاً (createdAt الآن millis number بعد التحويل)
+    list.sort((a: any, b: any) => (b.createdAt || 0) - (a.createdAt || 0));
 
     return list as Listing[];
   } catch {

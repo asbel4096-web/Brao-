@@ -28,10 +28,22 @@ export function normalizeLibyanPhone(input: string): string {
   return "218" + digits;
 }
 
-export function timeAgo(ts?: Timestamp | null): string {
+export function timeAgo(ts?: Timestamp | number | Date | null): string {
   if (!ts) return "الآن";
   try {
-    const date = ts.toDate();
+    // يقبل: Firestore Timestamp (.toDate)، أو millis (number)، أو Date.
+    let date: Date;
+    if (typeof ts === "number") {
+      date = new Date(ts);
+    } else if (ts instanceof Date) {
+      date = ts;
+    } else if (typeof (ts as any).toDate === "function") {
+      date = (ts as any).toDate();
+    } else if (typeof (ts as any).seconds === "number") {
+      date = new Date((ts as any).seconds * 1000);
+    } else {
+      return "—";
+    }
     const diffSec = Math.floor((Date.now() - date.getTime()) / 1000);
     if (diffSec < 60) return "الآن";
     const diffMin = Math.floor(diffSec / 60);
