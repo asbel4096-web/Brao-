@@ -330,12 +330,17 @@ service cloud.firestore {
           && resource.data.ownerId == request.auth.uid
           && request.resource.data.ownerId == resource.data.ownerId
           && request.resource.data.status == resource.data.status
-          // المالك ممنوع من تعديل حقول التمييز/التعزيز - هذه تُدار
-          // server-side عبر API routes (الأدمن أو شراء BC).
+          // المالك ممنوع من تعديل حقول التمييز/التعزيز/الترقية - هذه
+          // تُدار server-side فقط عبر API routes (الأدمن أو شراء BC).
+          // كذلك ممنوع من تعديل عدّادات الإحصائيات (تُكتب server-side
+          // عبر /api/listings/track فقط) - منعاً لتزوير الأرقام.
           && unchanged([
             'featured', 'featuredAt', 'featuredUntil', 'featuredBy',
             'boostedUntil', 'boostedAt',
-            'bumpedAt', 'bumpCount'
+            'bumpedAt', 'bumpCount',
+            'vipUntil', 'vipAt',
+            'views', 'favoritesCount',
+            'chatClicks', 'phoneClicks', 'whatsappClicks', 'shareClicks'
           ])
         )
         || (
@@ -349,6 +354,12 @@ service cloud.firestore {
         || isAdmin();
 
       allow delete: if (signedIn() && resource.data.ownerId == request.auth.uid) || isAdmin();
+
+      // مسار dedup مشاهدات الإعلان - يُكتب server-side فقط (Admin SDK).
+      // العميل ممنوع من القراءة والكتابة (الـAdmin SDK يتجاوز القواعد).
+      match /viewers/{viewerKey} {
+        allow read, write: if false;
+      }
 
       match /comments/{commentId} {
         allow read: if listingDocVisible(listingId);
