@@ -73,9 +73,16 @@ export async function POST(
         updatedAt: FieldValue.serverTimestamp(),
       };
 
-      if (serviceKey === "bump") {
-        updates.bumpedAt = FieldValue.serverTimestamp();
-        updates.bumpCount = (Number(listingData.bumpCount) || 0) + 1;
+      if (serviceKey === "vip") {
+        // VIP: أعلى أولوية + ظهور في الصفحة الرئيسية
+        const existingMs = listingData.vipUntil?.toMillis?.() || 0;
+        const baseMs = existingMs > now ? existingMs : now;
+        expiresAt = new Date(baseMs + durationDays * 24 * 60 * 60 * 1000);
+        updates.vipUntil = expiresAt;
+        updates.vipAt = FieldValue.serverTimestamp();
+        updates.featured = true;
+        updates.featuredUntil = expiresAt;
+        updates.featuredBy = "admin_grant_vip";
       } else if (serviceKey === "boost") {
         const existingMs = listingData.boostedUntil?.toMillis?.() || 0;
         const baseMs = existingMs > now ? existingMs : now;

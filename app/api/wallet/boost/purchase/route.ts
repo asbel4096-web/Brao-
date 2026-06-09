@@ -15,11 +15,11 @@ export const maxDuration = 15;
 /**
  * POST /api/wallet/boost/purchase
  * Auth: المستخدم نفسه (مالك الإعلان)
- * body: { listingId: string, service: "bump" | "boost" | "featured" }
+ * body: { listingId: string, service: "featured" | "boost" | "vip" }
  *
- * يشتري المستخدم خدمة boost لإعلانه:
+ * يشتري المستخدم باقة ترقية لإعلانه (مميز/ممول/VIP):
  *  1. فحوص:
- *     - feature flag boosts (للـbump/boost) أو wallet (للـfeatured)
+ *     - feature flag wallet (للمميز/VIP) أو boosts (للممول)
  *     - الإعلان موجود + ownerId == المستخدم
  *     - الإعلان status == "approved"
  *     - الإعلان ليس محذوفاً/مؤرشفاً
@@ -27,12 +27,12 @@ export const maxDuration = 15;
  *  2. transactional:
  *     - يخصم BC
  *     - يكتب walletTransactions
- *     - يُحدّث الإعلان حسب نوع الخدمة:
- *        bump: updatedAt = now, bumpedAt = now, bumpCount++
- *        boost: boostedUntil = max(now, current) + 7 days
- *        featured: featured=true, featuredUntil = max(now, current) + 7 days
+ *     - يُحدّث الإعلان حسب الباقة:
+ *        featured (مميز): featured=true, featuredUntil = +3 أيام
+ *        boost (ممول): boostedUntil = +7 أيام
+ *        vip (VIP): vipUntil = +14 يوم + featured للصفحة الرئيسية
  *
- * تراكم: لو الإعلان مُعزَّز حالياً، تُضاف 7 أيام للوقت الحالي
+ * تراكم: لو الإعلان مُرقّى حالياً، تُضاف المدة للوقت المتبقي
  *        (المستخدم لا يخسر الأيام المتبقية).
  */
 
@@ -171,12 +171,7 @@ export async function POST(request: Request) {
         updatedAt: FieldValue.serverTimestamp(),
       };
 
-      if (serviceKey === "bump") {
-        // رفع فوري - الـupdatedAt السابق يكفي للترتيب
-        listingUpdates.bumpedAt = FieldValue.serverTimestamp();
-        listingUpdates.bumpCount =
-          (Number(listingData.bumpCount) || 0) + 1;
-      } else if (serviceKey === "boost") {
+      if (serviceKey === "boost") {
         const existingMs = listingData.boostedUntil?.toMillis?.() || 0;
         const baseMs = existingMs > now ? existingMs : now;
         const newUntilMs = baseMs + service.durationDays! * 24 * 60 * 60 * 1000;
