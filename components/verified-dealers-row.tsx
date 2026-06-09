@@ -49,19 +49,16 @@ function writeCache(list: UserProfile[]) {
 }
 
 export function VerifiedDealersRow() {
-  // البدء بالـcache إن وُجد - يتفادى flicker للحالة الفارغة.
-  const [dealers, setDealers] = useState<UserProfile[]>(() => {
-    if (typeof window === "undefined") return [];
-    return readCache() || [];
-  });
-  const [loading, setLoading] = useState(() => {
-    if (typeof window === "undefined") return true;
-    return readCache() === null;
-  });
+  // مهم: نبدأ بقيمة ثابتة (متطابقة سيرفر + عميل) لتفادي React #310.
+  // الـcache يُقرأ داخل useEffect بعد الـhydration.
+  const [dealers, setDealers] = useState<UserProfile[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // لو الـcache صالح، تخطّى الـquery.
-    if (readCache() !== null) {
+    // قراءة الـcache بعد الـhydration (آمن الآن).
+    const cached = readCache();
+    if (cached !== null) {
+      setDealers(cached);
       setLoading(false);
       return;
     }

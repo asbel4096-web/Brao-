@@ -139,14 +139,10 @@ export function FeaturedListingsSection({
     }
   };
 
-  const [items, setItems] = useState<Listing[]>(() => {
-    if (typeof window === "undefined") return [];
-    return (useManual ? readManualCache() : readCache()) || [];
-  });
-  const [loading, setLoading] = useState(() => {
-    if (typeof window === "undefined") return true;
-    return (useManual ? readManualCache() : readCache()) === null;
-  });
+  // مهم: نبدأ بقيمة ثابتة (متطابقة سيرفر + عميل) لتفادي React #310.
+  // الـcache يُقرأ داخل useEffect بعد الـhydration.
+  const [items, setItems] = useState<Listing[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const cached = useManual ? readManualCache() : readCache();
