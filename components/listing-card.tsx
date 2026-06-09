@@ -2,14 +2,22 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { memo } from "react";
+import { memo, useState } from "react";
+import { motion } from "framer-motion";
 import {
   Calendar,
-  Gauge,
+  Eye,
   Fuel,
+  Heart,
   MapPin,
   MessageCircle,
   Phone,
+  Settings2,
+  Camera,
+  BadgeCheck,
+  Clock3,
+  Star,
+  Rocket,
 } from "lucide-react";
 import type { Listing } from "@/lib/types";
 import {
@@ -17,9 +25,9 @@ import {
   getTraderDisplayName,
   isListingFeatured,
   normalizeLibyanPhone,
+  timeAgo,
 } from "@/lib/utils";
 import { FavoriteButton } from "./favorite-button";
-import { ListingActionsBar } from "./listing-actions-bar";
 
 const FALLBACK = "/icons/car-card.svg";
 
@@ -30,269 +38,318 @@ interface ListingCardProps {
 }
 
 /**
- * بطاقة إعلان احترافية:
+ * بطاقة إعلان احترافية (بمستوى Dubizzle / OpenSooq).
  *
  * البنية البصرية (top → bottom):
- *  1. صورة 4:3 + شارة "مميز" + زر مفضلة + سعر بارز.
- *  2. عنوان + اسم التاجر سطر واحد.
- *  3. تفاصيل (مدينة، سنة، عداد) في سطر واحد مدمج.
- *  4. شريط التفاعل (لايك / تعليق / مشاركة / مفضلة).
- *  5. زرّا اتصال + واتساب صفّاً واحداً.
+ *  1. صورة 4:3 + شارات علوية (مميز/ممول يسار، حفظ يمين) + سعر بارز أسفل الصورة
+ *     + عدّاد الصور.
+ *  2. عنوان السيارة بخط قوي.
+ *  3. سطر مواصفات مدمج: سنة • وقود • ناقل • مدينة.
+ *  4. بيانات البائع: صورة + اسم + توثيق + وقت النشر.
+ *  5. إحصائيات: مشاهدات + محفوظة.
+ *  6. ثلاثة أزرار: واتساب + اتصال + مراسلة.
  *
- * - السعر يظهر فوق الصورة في كبسولة واضحة (التركيز الأول).
- * - زر القلب فوق الصورة (إجراء فوري دون تشتيت).
- * - شريط التفاعل أسفل البطاقة بمظهر نظيف بدون خلفيات ملوّنة.
- * - زرّا الاتصال والواتساب فقط (إزالة زر "التفاصيل" المكرر — البطاقة كلها رابط).
+ * - كل البيانات اختيارية العرض (تظهر فقط إن وُجدت) → توافق كامل مع الإعلانات القديمة.
+ * - memo + بيانات مشتقّة خفيفة لتجنّب إعادة الرسم.
  */
 
 function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
+  const [imgLoaded, setImgLoaded] = useState(false);
+
   const wa = normalizeLibyanPhone(listing.whatsapp || listing.phone || "");
   const img = listing.images?.[0] || FALLBACK;
   const isFallback = !listing.images?.length;
+  const imageCount = listing.images?.length || 0;
   const sellerName = getTraderDisplayName({ name: listing.sellerName });
   const detailsHref = `/listings/${listing.id}`;
 
+  const featured = isListingFeatured(listing);
+  // "ممول" = نظام boost مستقبلي (boostedUntil). يظهر فقط إن وُجد ونشط.
+  const boostedUntil = (listing as any).boostedUntil?.toMillis?.() || 0;
+  const isBoosted = boostedUntil > Date.now();
+
+  const condition = (listing as any).vehicleCondition as string | undefined;
+  const isNew = condition === "جديدة";
+
+  const sellerAvatar =
+    (listing as any).ownerAvatar || (listing as any).sellerAvatar || "";
+  const sellerVerified =
+    (listing as any).sellerVerified ||
+    (listing as any).isVerifiedDealer ||
+    false;
+
+  const views = listing.views || 0;
+  const saves = listing.favoritesCount || listing.likesCount || 0;
+  const posted = timeAgo((listing as any).createdAt);
+
+  // شارة علوية واحدة بالأولوية: ممول > مميز > جديد
+  const topBadge = isBoosted
+    ? { label: "ممول", Icon: Rocket, cls: "bg-action-500 text-white" }
+    : featured
+    ? { label: "مميز", Icon: Star, cls: "bg-amber-400 text-amber-950" }
+    : isNew
+    ? { label: "جديد", Icon: null, cls: "bg-white text-slate-900 dark:bg-slate-800 dark:text-white" }
+    : null;
+
   return (
-    <article
+    <motion.article
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
       className="
         group flex h-full flex-col overflow-hidden
         rounded-3xl border border-slate-200/70 bg-white
-        shadow-card transition-all duration-300
-        hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-blue
-        dark:border-slate-700/70 dark:bg-slate-900 dark:hover:border-brand-700
+        shadow-sm transition-all duration-300
+        hover:-translate-y-1 hover:shadow-xl hover:border-brand-200
+        dark:border-slate-800 dark:bg-slate-900 dark:hover:border-brand-700
       "
+      dir="rtl"
     >
-      {/* ============== الصورة ============== */}
-      <Link
-        href={detailsHref}
-        prefetch={false}
-        className="relative block aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-800"
-        aria-label={listing.title}
-      >
+      {/* ============ الصورة ============ */}
+      <Link href={detailsHref} className="relative block aspect-[4/3] overflow-hidden">
+        {/* Skeleton أثناء التحميل */}
+        {!imgLoaded && !isFallback && (
+          <div className="absolute inset-0 animate-pulse bg-slate-200 dark:bg-slate-800" />
+        )}
+
         <Image
           src={img}
-          alt={listing.title}
+          alt={listing.title || "إعلان"}
           fill
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          loading={priority ? "eager" : "lazy"}
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           priority={priority}
-          className={
-            isFallback
-              ? "object-contain p-12 opacity-50"
-              : "object-cover transition duration-500 group-hover:scale-[1.04]"
-          }
+          loading={priority ? undefined : "lazy"}
+          onLoad={() => setImgLoaded(true)}
+          className={`
+            object-cover transition-all duration-500 group-hover:scale-105
+            ${isFallback ? "object-contain p-6 opacity-60" : ""}
+            ${imgLoaded || isFallback ? "opacity-100" : "opacity-0"}
+          `}
         />
 
-        {/* تدرّجات لقراءة أفضل للسعر/الشارات */}
-        {!isFallback && (
-          <>
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/35 to-transparent"
-            />
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/45 to-transparent"
-            />
-          </>
-        )}
+        {/* تدرّج سفلي ليبرز السعر */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/55 to-transparent" />
 
-        {/* شارة "مميز" - تظهر فقط أثناء فترة التمييز الفعلية. */}
-        {isListingFeatured(listing) && (
-          <span
-            className="
-              absolute right-3 top-3 inline-flex items-center
-              rounded-full bg-action-500 px-2.5 py-1
-              text-[10px] font-black text-white shadow-action
-            "
-          >
-            ★ مميز
-          </span>
-        )}
-
-        {/* زر المفضلة */}
-        <div className="absolute left-3 top-3">
-          <FavoriteButton listing={listing} />
-        </div>
-
-        {/* علامة براتشو احترافية - شفافة، صغيرة، لا تشوّه الصورة */}
-        {!isFallback && (
-          <div
-            aria-hidden="true"
-            className="
-              pointer-events-none absolute bottom-3 left-3 select-none
-              rounded-full bg-black/35 px-2 py-0.5
-              text-[10px] font-black tracking-wide text-white/90
-              backdrop-blur-sm
-            "
-          >
-            براتشو
-          </div>
-        )}
-
-        {/* السعر - ركن سفلي يميناً (RTL) - بارز */}
-        <div className="absolute bottom-3 right-3">
-          <div
-            className="
-              rounded-2xl border border-white/20
-              bg-brand-700/95 px-3.5 py-2
-              shadow-blue backdrop-blur-md
-            "
-          >
-            <span className="text-base font-black leading-none text-white sm:text-lg">
-              {formatPrice(listing.price)}
+        {/* شارة علوية (يسار) */}
+        {topBadge && (
+          <div className="absolute right-3 top-3">
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-black shadow-sm ${topBadge.cls}`}
+            >
+              {topBadge.Icon && <topBadge.Icon size={11} strokeWidth={2.5} />}
+              {topBadge.label}
             </span>
           </div>
+        )}
+
+        {/* زر الحفظ (يمين علوي) - Glassmorphism */}
+        <div className="absolute left-3 top-3">
+          <div
+            className="
+              grid h-9 w-9 place-items-center rounded-full
+              bg-white/25 text-white backdrop-blur-md
+              ring-1 ring-white/30
+            "
+            onClick={(e) => e.preventDefault()}
+          >
+            <FavoriteButton
+              listing={listing}
+              size={17}
+              className="!text-white"
+            />
+          </div>
         </div>
+
+        {/* السعر (أسفل يمين الصورة) */}
+        <div className="absolute bottom-3 right-3">
+          <span className="inline-flex items-baseline gap-1 rounded-2xl bg-brand-700 px-3 py-1.5 text-white shadow-lg">
+            <span className="text-lg font-black leading-none">
+              {formatPrice(listing.price)}
+            </span>
+            <span className="text-[11px] font-bold text-blue-100">د.ل</span>
+          </span>
+        </div>
+
+        {/* عدّاد الصور (أسفل يسار) */}
+        {imageCount > 1 && (
+          <div className="absolute bottom-3 left-3">
+            <span className="inline-flex items-center gap-1 rounded-full bg-black/55 px-2 py-1 text-[10px] font-bold text-white backdrop-blur-sm">
+              <Camera size={11} />
+              {imageCount}
+            </span>
+          </div>
+        )}
       </Link>
 
-      {/* ============== المحتوى ============== */}
-      <div className="flex flex-1 flex-col p-3.5 sm:p-4">
-        {/* صف 1: تصنيف + اسم التاجر */}
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <span className="badge !py-0.5 !text-[10px] sm:!text-xs">
-            {listing.category || "إعلان"}
-          </span>
-          {sellerName && (
-            <Link
-              href={`/traders/${listing.ownerId}`}
-              className="
-                truncate max-w-[60%] text-[11px] font-bold text-brand-700
-                hover:underline dark:text-brand-300
-              "
-              onClick={(e) => e.stopPropagation()}
-            >
-              {sellerName}
-            </Link>
-          )}
-        </div>
-
-        {/* صف 2: العنوان */}
-        <Link
-          href={detailsHref}
-          prefetch={false}
-          className="group/title"
-        >
-          <h3
-            className="
-              line-clamp-2 min-h-[2.5rem] text-sm font-black leading-snug
-              text-slate-950 transition-colors
-              group-hover/title:text-brand-700
-              dark:text-white dark:group-hover/title:text-brand-300
-              sm:text-base
-            "
-          >
+      {/* ============ المحتوى ============ */}
+      <div className="flex flex-1 flex-col p-3.5">
+        {/* العنوان */}
+        <Link href={detailsHref}>
+          <h3 className="line-clamp-1 text-[15px] font-black text-slate-900 transition-colors group-hover:text-brand-700 dark:text-white">
             {listing.title}
           </h3>
         </Link>
 
-        {/* صف 3: المعلومات (مدينة / سنة / عداد) */}
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 dark:text-slate-400 sm:text-xs">
-          <span className="inline-flex items-center gap-1">
-            <MapPin size={12} className="text-brand-700/70 dark:text-brand-300/70" />
-            {listing.city}
-          </span>
-          {listing.year ? (
+        {/* سطر المواصفات */}
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 dark:text-slate-400">
+          {listing.year && (
             <span className="inline-flex items-center gap-1">
-              <Calendar size={12} className="text-brand-700/70 dark:text-brand-300/70" />
+              <Calendar size={12} className="text-slate-400" />
               {listing.year}
             </span>
-          ) : null}
-          {listing.mileage ? (
+          )}
+          {listing.fuel && (
             <span className="inline-flex items-center gap-1">
-              <Gauge size={12} className="text-brand-700/70 dark:text-brand-300/70" />
-              {Number(listing.mileage).toLocaleString("ar-LY")} كم
-            </span>
-          ) : null}
-          {listing.fuel ? (
-            <span className="inline-flex items-center gap-1">
-              <Fuel size={12} className="text-brand-700/70 dark:text-brand-300/70" />
+              <Fuel size={12} className="text-slate-400" />
               {listing.fuel}
             </span>
-          ) : null}
-          {(listing as any).driveType ? (
+          )}
+          {listing.transmission && (
             <span className="inline-flex items-center gap-1">
-              <Gauge size={12} className="text-brand-700/70 dark:text-brand-300/70" />
-              {(listing as any).driveType}
+              <Settings2 size={12} className="text-slate-400" />
+              {listing.transmission}
             </span>
-          ) : null}
+          )}
+          {listing.city && (
+            <span className="inline-flex items-center gap-1">
+              <MapPin size={12} className="text-slate-400" />
+              {listing.city}
+            </span>
+          )}
         </div>
 
-        {/* شارة حالة السيارة (جديدة/مستعملة) - إن وُجدت */}
-        {(listing as any).vehicleCondition ? (
-          <div className="mt-1.5">
-            <span
-              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-black ${
-                (listing as any).vehicleCondition === "جديدة"
-                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
-                  : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
-              }`}
-            >
-              {(listing as any).vehicleCondition}
+        {/* فاصل */}
+        <div className="my-3 h-px bg-slate-100 dark:bg-slate-800" />
+
+        {/* بيانات البائع */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            {/* صورة البائع */}
+            <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-brand-600 to-brand-800 ring-1 ring-slate-200 dark:ring-slate-700">
+              {sellerAvatar ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={sellerAvatar}
+                  alt=""
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                />
+              ) : (
+                <span className="flex h-full w-full items-center justify-center text-[10px] font-black text-white">
+                  {(sellerName || "؟").charAt(0)}
+                </span>
+              )}
+            </div>
+            {/* الاسم + توثيق */}
+            <div className="flex min-w-0 items-center gap-1">
+              <span className="truncate text-[12px] font-bold text-slate-700 dark:text-slate-200">
+                {sellerName}
+              </span>
+              {sellerVerified && (
+                <BadgeCheck size={13} className="shrink-0 text-brand-600" strokeWidth={2.5} />
+              )}
+            </div>
+          </div>
+
+          {/* وقت النشر */}
+          {posted && (
+            <span className="inline-flex shrink-0 items-center gap-1 text-[10px] text-slate-400">
+              <Clock3 size={11} />
+              {posted}
+            </span>
+          )}
+        </div>
+
+        {/* الإحصائيات */}
+        {(views > 0 || saves > 0) && (
+          <div className="mt-2 flex items-center gap-3 text-[10px] text-slate-400">
+            <span className="inline-flex items-center gap-1">
+              <Eye size={12} />
+              {views.toLocaleString("en-US")}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Heart size={12} />
+              {saves.toLocaleString("en-US")}
             </span>
           </div>
-        ) : null}
+        )}
 
-        {/* صف 4: شريط التفاعل (لايك/تعليق/مشاركة/مفضلة) */}
-        <div className="mt-3">
-          <ListingActionsBar listing={listing} />
-        </div>
-
-        {/* صف 5: أزرار التواصل */}
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <a
-            href={listing.phone ? `tel:${listing.phone}` : "#"}
-            className="
-              inline-flex items-center justify-center gap-1.5
-              rounded-2xl border border-slate-200 bg-white
-              px-3 py-2.5 text-xs font-bold text-slate-700
-              transition hover:border-brand-300 hover:bg-brand-50/50
-              hover:text-brand-700 active:scale-[0.98]
-              dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100
-            "
-            aria-label="اتصال"
-            onClick={(e) => {
-              if (!listing.phone) e.preventDefault();
-            }}
-          >
-            <Phone size={14} />
-            اتصال
-          </a>
+        {/* أزرار الإجراءات */}
+        <div className="mt-3 grid grid-cols-3 gap-1.5">
+          {/* واتساب */}
           <a
             href={wa ? `https://wa.me/${wa}` : "#"}
-            target={wa ? "_blank" : undefined}
-            rel={wa ? "noreferrer" : undefined}
-            className="
-              inline-flex items-center justify-center gap-1.5
-              rounded-2xl bg-emerald-500 px-3 py-2.5
-              text-xs font-bold text-white
-              transition hover:bg-emerald-600 active:scale-[0.98]
-              shadow-sm shadow-emerald-500/30
-            "
-            aria-label="واتساب"
+            target="_blank"
+            rel="noopener noreferrer"
             onClick={(e) => {
               if (!wa) e.preventDefault();
             }}
+            className="
+              inline-flex items-center justify-center gap-1 rounded-xl
+              bg-emerald-50 py-2 text-[11px] font-black text-emerald-700
+              transition active:scale-95 hover:bg-emerald-100
+              dark:bg-emerald-900/30 dark:text-emerald-300
+            "
+            aria-label="واتساب"
           >
-            <MessageCircle size={14} />
+            <MessageCircle size={13} />
             واتساب
           </a>
+
+          {/* اتصال */}
+          <a
+            href={listing.phone ? `tel:${listing.phone}` : "#"}
+            onClick={(e) => {
+              if (!listing.phone) e.preventDefault();
+            }}
+            className="
+              inline-flex items-center justify-center gap-1 rounded-xl
+              bg-brand-700 py-2 text-[11px] font-black text-white
+              transition active:scale-95 hover:bg-brand-800
+            "
+            aria-label="اتصال"
+          >
+            <Phone size={13} />
+            اتصال
+          </a>
+
+          {/* مراسلة */}
+          <Link
+            href={`/messages?listing=${listing.id}`}
+            className="
+              inline-flex items-center justify-center gap-1 rounded-xl
+              bg-blue-50 py-2 text-[11px] font-black text-brand-700
+              transition active:scale-95 hover:bg-blue-100
+              dark:bg-blue-900/20 dark:text-blue-300
+            "
+            aria-label="مراسلة"
+          >
+            <MessageCircle size={13} />
+            مراسلة
+          </Link>
         </div>
       </div>
-    </article>
+    </motion.article>
   );
 }
 
+/**
+ * memo: البطاقة لا تُعاد رسمها إلا عند تغيّر بيانات مؤثّرة.
+ */
 export const ListingCard = memo(ListingCardImpl, (prev, next) => {
   const a = prev.listing;
   const b = next.listing;
   return (
     a.id === b.id &&
-    a.status === b.status &&
     a.price === b.price &&
+    a.title === b.title &&
     a.featured === b.featured &&
+    a.views === b.views &&
+    a.favoritesCount === b.favoritesCount &&
     a.likesCount === b.likesCount &&
-    a.commentsCount === b.commentsCount &&
+    a.images?.[0] === b.images?.[0] &&
     prev.priority === next.priority
   );
 });
+
+export default ListingCard;
