@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { BrowseByBrand } from "@/components/browse-by-brand";
 import { CategoryGrid } from "@/components/category-grid";
 import { CTASection } from "@/components/cta-section";
@@ -35,6 +36,12 @@ import type { HomepageSection } from "@/lib/cms/types";
  */
 export default function HomePage() {
   const { config, banners } = usePublicHomepageConfig();
+
+  // mounted gate: نتفادى أي اختلاف بين رندر السيرفر والعميل (hydration)
+  // بعدم رسم الأقسام الديناميكية حتى يكتمل mount على العميل. هذا يقضي
+  // على أخطاء #418/#423/#310 الناتجة عن محتوى يعتمد على المتصفح/الوقت.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   // mapping: key → React node
   const renderSection = (key: HomepageSection): React.ReactNode => {
@@ -73,18 +80,19 @@ export default function HomePage() {
   return (
     <>
       {/* الثوابت في الأعلى */}
-      <StoriesRow />
+      {mounted && <StoriesRow />}
       <Hero />
 
       {/* قسم خاص: VerifiedDealersRow (موثوق دائماً، خارج التحكم) */}
-      <VerifiedDealersRow />
+      {mounted && <VerifiedDealersRow />}
 
-      {/* الأقسام الديناميكية */}
-      {config.sectionsOrder
-        .filter((key) => config.enabledSections.includes(key))
-        .map((key) => (
-          <div key={key}>{renderSection(key)}</div>
-        ))}
+      {/* الأقسام الديناميكية - تُرسم بعد mount فقط (تفادي hydration mismatch) */}
+      {mounted &&
+        config.sectionsOrder
+          .filter((key) => config.enabledSections.includes(key))
+          .map((key) => (
+            <div key={key}>{renderSection(key)}</div>
+          ))}
 
       {/* الثوابت في الأسفل */}
       <CTASection />
