@@ -14,6 +14,16 @@ export interface Listing {
   mileage?: number | null;
   fuel?: string;
   transmission?: string;
+  /**
+   * حالة السيارة: "جديدة" | "مستعملة".
+   * اختيارية للتوافق مع الإعلانات القديمة التي لا تحويها.
+   */
+  vehicleCondition?: string;
+  /**
+   * نوع الدفع: "أمامي" (FWD) | "خلفي" (RWD) | "رباعي" (AWD/4WD).
+   * اختيارية للتوافق مع الإعلانات القديمة.
+   */
+  driveType?: string;
   brand?: string;
   model?: string;
   color?: string;
@@ -349,6 +359,8 @@ export interface SearchAlert {
   transmission?: string;
   fuelType?: string;
   condition?: string;
+  /** نوع الدفع: أمامي/خلفي/رباعي. يطابق Listing.driveType. */
+  driveType?: string;
   isActive: boolean;
   /** Listing IDs التي أُرسل إشعار عنها سابقاً، لمنع التكرار. */
   notifiedListingIds?: string[];

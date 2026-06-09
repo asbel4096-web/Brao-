@@ -6,6 +6,7 @@ import { memo } from "react";
 import {
   Calendar,
   Gauge,
+  Fuel,
   MapPin,
   MessageCircle,
   Phone,
@@ -203,7 +204,34 @@ function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
               {Number(listing.mileage).toLocaleString("ar-LY")} كم
             </span>
           ) : null}
+          {listing.fuel ? (
+            <span className="inline-flex items-center gap-1">
+              <Fuel size={12} className="text-brand-700/70 dark:text-brand-300/70" />
+              {listing.fuel}
+            </span>
+          ) : null}
+          {(listing as any).driveType ? (
+            <span className="inline-flex items-center gap-1">
+              <Gauge size={12} className="text-brand-700/70 dark:text-brand-300/70" />
+              {(listing as any).driveType}
+            </span>
+          ) : null}
         </div>
+
+        {/* شارة حالة السيارة (جديدة/مستعملة) - إن وُجدت */}
+        {(listing as any).vehicleCondition ? (
+          <div className="mt-1.5">
+            <span
+              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-black ${
+                (listing as any).vehicleCondition === "جديدة"
+                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                  : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+              }`}
+            >
+              {(listing as any).vehicleCondition}
+            </span>
+          </div>
+        ) : null}
 
         {/* صف 4: شريط التفاعل (لايك/تعليق/مشاركة/مفضلة) */}
         <div className="mt-3">

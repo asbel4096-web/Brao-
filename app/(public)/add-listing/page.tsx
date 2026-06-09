@@ -31,6 +31,8 @@ import {
   libyaCities,
   listingCategories,
   transmissionTypes,
+  vehicleConditions,
+  driveTypes,
   getAddListingConfig,
 } from "@/lib/categories";
 import { formatPrice, normalizeLibyanPhone } from "@/lib/utils";
@@ -48,6 +50,8 @@ interface FormState {
   engine: string;
   transmission: string;
   fuel: string;
+  vehicleCondition: string;
+  driveType: string;
   mileage: string;
   price: string;
   city: string;
@@ -78,6 +82,8 @@ const initialState: FormState = {
   engine: "",
   transmission: "أوتوماتيك",
   fuel: "بنزين",
+  vehicleCondition: "مستعملة",
+  driveType: "أمامي",
   mileage: "",
   price: "",
   city: "طرابلس",
@@ -356,6 +362,15 @@ export default function AddListingPage() {
         mileage: form.mileage ? Number(form.mileage) : null,
         fuel: form.fuel,
         transmission: form.transmission,
+        // حالة السيارة + نوع الدفع: تُحفظ فقط للأقسام التي تملك حقولاً
+        // تقنية (سيارات/شاحنات/حافلات). للورش والقطع نتركها undefined
+        // فلا تُكتب في Firestore (توافق مع القديم).
+        ...(categoryConfig.showVehicleSpecs
+          ? {
+              vehicleCondition: form.vehicleCondition,
+              driveType: form.driveType,
+            }
+          : {}),
         features,
         defects,
         images: imageUrls,
@@ -740,6 +755,36 @@ export default function AddListingPage() {
                       >
                         {transmissionTypes.map((t) => (
                           <option key={t}>{t}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* حالة السيارة + نوع الدفع */}
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <Label>حالة السيارة</Label>
+                      <select
+                        className="input"
+                        value={form.vehicleCondition}
+                        onChange={(e) =>
+                          set("vehicleCondition", e.target.value)
+                        }
+                      >
+                        {vehicleConditions.map((c) => (
+                          <option key={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <Label>نوع الدفع</Label>
+                      <select
+                        className="input"
+                        value={form.driveType}
+                        onChange={(e) => set("driveType", e.target.value)}
+                      >
+                        {driveTypes.map((d) => (
+                          <option key={d}>{d}</option>
                         ))}
                       </select>
                     </div>

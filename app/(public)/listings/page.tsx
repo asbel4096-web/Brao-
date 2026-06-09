@@ -23,6 +23,11 @@ import {
   MapPin,
   SlidersHorizontal,
   Tag,
+  Calendar,
+  Fuel,
+  Settings2,
+  ShieldCheck,
+  Gauge,
   X,
 } from "lucide-react";
 import { db } from "@/lib/firebase";
@@ -31,6 +36,10 @@ import {
   listingCategories,
   resolveCategoryName,
   resolveCategorySlug,
+  fuelTypes,
+  transmissionTypes,
+  vehicleConditions,
+  driveTypes,
 } from "@/lib/categories";
 import { ListingCard } from "@/components/listing-card";
 import { getBrandById, inferBrandId } from "@/lib/car-brands";
@@ -73,6 +82,17 @@ function ListingsContent() {
   const [minPrice, setMinPrice] = useState(min0);
   const [maxPrice, setMaxPrice] = useState(max0);
   const [brand, setBrand] = useState(brand0);
+  // فلاتر جديدة (تعمل client-side على الحقول الموجودة فعلاً)
+  const [yearFrom, setYearFrom] = useState(params.get("yearFrom") || "");
+  const [yearTo, setYearTo] = useState(params.get("yearTo") || "");
+  const [fuel, setFuel] = useState(params.get("fuel") || "");
+  const [transmission, setTransmission] = useState(
+    params.get("transmission") || ""
+  );
+  const [vehicleCondition, setVehicleCondition] = useState(
+    params.get("condition") || ""
+  );
+  const [driveType, setDriveType] = useState(params.get("drive") || "");
 
   const deferredSearch = useDeferredValue(search);
 
@@ -185,6 +205,34 @@ function ListingsContent() {
       arr = arr.filter((it) => inferBrandId(it.brand) === brand);
     }
 
+    // سنة الصنع (نطاق)
+    if (yearFrom) {
+      const yf = Number(yearFrom);
+      arr = arr.filter((it) => it.year != null && Number(it.year) >= yf);
+    }
+    if (yearTo) {
+      const yt = Number(yearTo);
+      arr = arr.filter((it) => it.year != null && Number(it.year) <= yt);
+    }
+    // نوع الوقود
+    if (fuel) {
+      arr = arr.filter((it) => it.fuel === fuel);
+    }
+    // ناقل الحركة
+    if (transmission) {
+      arr = arr.filter((it) => it.transmission === transmission);
+    }
+    // حالة السيارة (إعلانات قديمة بلا الحقل تُستبعد فقط عند تفعيل الفلتر)
+    if (vehicleCondition) {
+      arr = arr.filter(
+        (it) => (it as any).vehicleCondition === vehicleCondition
+      );
+    }
+    // نوع الدفع
+    if (driveType) {
+      arr = arr.filter((it) => (it as any).driveType === driveType);
+    }
+
     if (sort === "price_asc" || sort === "price_desc") {
       arr = [...arr];
       const factor = sort === "price_asc" ? 1 : -1;
@@ -200,7 +248,7 @@ function ListingsContent() {
       else regularArr.push(it);
     }
     return [...featuredArr, ...regularArr];
-  }, [listings, deferredSearch, category, city, sort, minPrice, maxPrice, brand]);
+  }, [listings, deferredSearch, category, city, sort, minPrice, maxPrice, brand, yearFrom, yearTo, fuel, transmission, vehicleCondition, driveType]);
 
   /**
    * تطبيق الفلاتر مباشرة + تحديث الـ URL.
@@ -251,6 +299,12 @@ function ListingsContent() {
     setMinPrice("");
     setMaxPrice("");
     setBrand("");
+    setYearFrom("");
+    setYearTo("");
+    setFuel("");
+    setTransmission("");
+    setVehicleCondition("");
+    setDriveType("");
     router.push("/listings", { scroll: false });
     setShowFilters(false);
   }, [router]);
@@ -310,6 +364,39 @@ function ListingsContent() {
         setSearch("");
         updateUrl({ search: "" });
       },
+    });
+  if (yearFrom || yearTo)
+    activeFilters.push({
+      key: "year",
+      label: `${yearFrom || "—"} - ${yearTo || "الآن"}`,
+      clear: () => {
+        setYearFrom("");
+        setYearTo("");
+      },
+    });
+  if (fuel)
+    activeFilters.push({
+      key: "fuel",
+      label: fuel,
+      clear: () => setFuel(""),
+    });
+  if (transmission)
+    activeFilters.push({
+      key: "transmission",
+      label: transmission,
+      clear: () => setTransmission(""),
+    });
+  if (vehicleCondition)
+    activeFilters.push({
+      key: "condition",
+      label: vehicleCondition,
+      clear: () => setVehicleCondition(""),
+    });
+  if (driveType)
+    activeFilters.push({
+      key: "drive",
+      label: driveType,
+      clear: () => setDriveType(""),
     });
 
   return (
@@ -522,6 +609,18 @@ function ListingsContent() {
           setMinPrice={setMinPrice}
           maxPrice={maxPrice}
           setMaxPrice={setMaxPrice}
+          yearFrom={yearFrom}
+          setYearFrom={setYearFrom}
+          yearTo={yearTo}
+          setYearTo={setYearTo}
+          fuel={fuel}
+          setFuel={setFuel}
+          transmission={transmission}
+          setTransmission={setTransmission}
+          vehicleCondition={vehicleCondition}
+          setVehicleCondition={setVehicleCondition}
+          driveType={driveType}
+          setDriveType={setDriveType}
           activeCount={activeFilters.length}
           onApply={handleApply}
           onClose={() => setShowFilters(false)}
@@ -741,6 +840,55 @@ function FilterField({
 }
 
 /* ============================================================
+ * ChipRow - صف من chips للاختيار الأحادي (مع خيار "الكل")
+ * ============================================================ */
+function ChipRow({
+  options,
+  value,
+  onChange,
+  allLabel = "الكل",
+}: {
+  options: string[];
+  value: string;
+  onChange: (v: string) => void;
+  allLabel?: string;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {/* خيار "الكل" = قيمة فارغة */}
+      <button
+        type="button"
+        onClick={() => onChange("")}
+        className={`rounded-full px-3 py-1.5 text-[12px] font-bold transition ${
+          value === ""
+            ? "bg-brand-700 text-white"
+            : "border border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+        }`}
+      >
+        {allLabel}
+      </button>
+      {options.map((opt) => {
+        const active = value === opt;
+        return (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => onChange(active ? "" : opt)}
+            className={`rounded-full px-3 py-1.5 text-[12px] font-bold transition ${
+              active
+                ? "bg-brand-700 text-white"
+                : "border border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+            }`}
+          >
+            {opt}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ============================================================
  * Filter sheet (mobile bottom-sheet)
  * ============================================================ */
 function FilterSheet({
@@ -754,6 +902,18 @@ function FilterSheet({
   setMinPrice,
   maxPrice,
   setMaxPrice,
+  yearFrom,
+  setYearFrom,
+  yearTo,
+  setYearTo,
+  fuel,
+  setFuel,
+  transmission,
+  setTransmission,
+  vehicleCondition,
+  setVehicleCondition,
+  driveType,
+  setDriveType,
   activeCount,
   onApply,
   onClose,
@@ -769,6 +929,18 @@ function FilterSheet({
   setMinPrice: (v: string) => void;
   maxPrice: string;
   setMaxPrice: (v: string) => void;
+  yearFrom: string;
+  setYearFrom: (v: string) => void;
+  yearTo: string;
+  setYearTo: (v: string) => void;
+  fuel: string;
+  setFuel: (v: string) => void;
+  transmission: string;
+  setTransmission: (v: string) => void;
+  vehicleCondition: string;
+  setVehicleCondition: (v: string) => void;
+  driveType: string;
+  setDriveType: (v: string) => void;
   activeCount: number;
   onApply: () => void;
   onClose: () => void;
@@ -871,9 +1043,69 @@ function FilterSheet({
               />
             </div>
           </FilterField>
-        </div>
 
-        {/* Footer ثابت */}
+          {/* سنة الصنع (نطاق) */}
+          <FilterField label="سنة الصنع" icon={Calendar}>
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                className="input"
+                type="number"
+                inputMode="numeric"
+                placeholder="من سنة"
+                value={yearFrom}
+                onChange={(e) => setYearFrom(e.target.value)}
+              />
+              <input
+                className="input"
+                type="number"
+                inputMode="numeric"
+                placeholder="إلى سنة"
+                value={yearTo}
+                onChange={(e) => setYearTo(e.target.value)}
+              />
+            </div>
+          </FilterField>
+
+          {/* نوع الوقود */}
+          <FilterField label="نوع الوقود" icon={Fuel}>
+            <ChipRow
+              options={fuelTypes}
+              value={fuel}
+              onChange={setFuel}
+              allLabel="كل الأنواع"
+            />
+          </FilterField>
+
+          {/* ناقل الحركة */}
+          <FilterField label="ناقل الحركة" icon={Settings2}>
+            <ChipRow
+              options={transmissionTypes}
+              value={transmission}
+              onChange={setTransmission}
+              allLabel="كل الأنواع"
+            />
+          </FilterField>
+
+          {/* حالة السيارة */}
+          <FilterField label="حالة السيارة" icon={ShieldCheck}>
+            <ChipRow
+              options={vehicleConditions}
+              value={vehicleCondition}
+              onChange={setVehicleCondition}
+              allLabel="الكل"
+            />
+          </FilterField>
+
+          {/* نوع الدفع */}
+          <FilterField label="نوع الدفع" icon={Gauge}>
+            <ChipRow
+              options={driveTypes}
+              value={driveType}
+              onChange={setDriveType}
+              allLabel="الكل"
+            />
+          </FilterField>
+        </div>
         <div
           className="
             sticky bottom-0 grid grid-cols-2 gap-2 border-t
