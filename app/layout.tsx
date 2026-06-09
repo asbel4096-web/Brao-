@@ -7,14 +7,55 @@ import { ConfirmProvider } from "@/components/confirm-dialog";
 import { ReferralFlowProvider } from "@/components/wallet/referral-flow-provider";
 import { SiteHeader } from "@/components/site-header";
 import BottomNav from "@/components/bottom-nav";
+import { SITE_URL, SITE_NAME, DEFAULT_DESCRIPTION, DEFAULT_OG_IMAGE } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "براتشو كار | سوق السيارات وقطع الغيار في ليبيا",
-  description:
-    "براتشو كار - سوق السيارات الاحترافي في ليبيا: سيارات، حافلات، شاحنات، قطع غيار، كماليات وخدمات الورش.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "براتشو كار | سوق السيارات وقطع الغيار في ليبيا",
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: DEFAULT_DESCRIPTION,
   manifest: "/manifest.json",
-  applicationName: "براتشو كار",
+  applicationName: SITE_NAME,
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: SITE_NAME,
+  },
   formatDetection: { telephone: true },
+  keywords: [
+    "سيارات ليبيا",
+    "سيارات للبيع",
+    "سوق السيارات",
+    "سيارات مستعملة",
+    "قطع غيار",
+    "شاحنات",
+    "حافلات",
+    "براتشو كار",
+    "طرابلس",
+    "بنغازي",
+  ],
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: "براتشو كار | سوق السيارات وقطع الغيار في ليبيا",
+    description: DEFAULT_DESCRIPTION,
+    url: SITE_URL,
+    images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630 }],
+    locale: "ar_LY",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "براتشو كار | سوق السيارات في ليبيا",
+    description: DEFAULT_DESCRIPTION,
+    images: [DEFAULT_OG_IMAGE],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+  },
 };
 
 export const viewport: Viewport = {
