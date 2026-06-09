@@ -30,6 +30,8 @@ import { ShareButton } from "@/components/share-button";
 import { ReportButton } from "@/components/report/report-button";
 import { ListingQualityCard } from "@/components/listing-quality-card";
 import { OwnerStatsBar } from "@/components/owner-stats-bar";
+import { ListingStickyCta } from "@/components/listing-sticky-cta";
+import { SimilarListings } from "@/components/similar-listings";
 
 // Lazy load: تحت الطيّ، لا حاجة لها في initial paint
 const SafetyTipsCard = dynamic(
@@ -176,7 +178,7 @@ export default function ListingDetailsPage() {
   const wa = normalizeLibyanPhone(listing.whatsapp || listing.phone || "");
 
   return (
-    <section className="container py-6 sm:py-8">
+    <section className="container py-6 pb-32 sm:py-8 md:pb-8">
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="space-y-6">
           <div className="relative">
@@ -344,6 +346,14 @@ export default function ListingDetailsPage() {
               variant="text"
             />
           </div>
+
+          {/* رقم الإعلان */}
+          <p className="text-center text-[11px] text-slate-400">
+            رقم الإعلان: <span className="font-mono font-bold">#{listing.id.slice(0, 8).toUpperCase()}</span>
+          </p>
+
+          {/* إعلانات مشابهة */}
+          <SimilarListings listing={listing} />
         </div>
 
         <aside className="space-y-6">
@@ -441,6 +451,13 @@ export default function ListingDetailsPage() {
           </div>
         </aside>
       </div>
+
+      {/* شريط التواصل الثابت (موبايل) - يسجّل الإحصائيات عند الضغط */}
+      <ListingStickyCta
+        listing={listing}
+        onChat={startChat}
+        chatLoading={chatLoading}
+      />
     </section>
   );
 }

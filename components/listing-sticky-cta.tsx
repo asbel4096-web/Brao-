@@ -5,9 +5,10 @@ import type { Listing } from "@/lib/types";
 import { normalizeLibyanPhone } from "@/lib/utils";
 import { useScrollDirection } from "@/hooks/useScrollDirection";
 import { cn } from "@/lib/utils";
+import { trackEvent } from "@/lib/track-event";
 
 interface Props {
-  listing: Pick<Listing, "phone" | "whatsapp">;
+  listing: Pick<Listing, "id" | "phone" | "whatsapp">;
   onChat: () => void;
   chatLoading?: boolean;
 }
@@ -51,7 +52,10 @@ export function ListingStickyCta({ listing, onChat, chatLoading }: Props) {
         {/* مراسلة (دردشة داخل التطبيق) */}
         <button
           type="button"
-          onClick={onChat}
+          onClick={() => {
+            trackEvent(listing.id, "chat");
+            onChat();
+          }}
           disabled={chatLoading}
           aria-label="مراسلة"
           className="
@@ -70,6 +74,7 @@ export function ListingStickyCta({ listing, onChat, chatLoading }: Props) {
         {listing.phone && (
           <a
             href={`tel:${listing.phone}`}
+            onClick={() => trackEvent(listing.id, "phone")}
             aria-label="اتصال"
             className="
               inline-flex h-11 w-11 shrink-0 items-center justify-center
@@ -89,6 +94,7 @@ export function ListingStickyCta({ listing, onChat, chatLoading }: Props) {
             href={`https://wa.me/${wa}`}
             target="_blank"
             rel="noreferrer"
+            onClick={() => trackEvent(listing.id, "whatsapp")}
             className="
               inline-flex h-11 flex-1 items-center justify-center gap-1.5
               rounded-xl bg-emerald-500 px-4
