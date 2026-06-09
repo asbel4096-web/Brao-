@@ -112,6 +112,10 @@ export const PRICING = {
   BOOST_STRONG: 80,
   VIP_ACCOUNT: 300,
   REFERRAL_REWARD: 10,
+  // باقات الترقية الهرمية (مميز < ممول < VIP)
+  PROMO_FEATURED: 50, // مميز - 3 أيام
+  PROMO_BOOST: 120, // ممول - 7 أيام
+  PROMO_VIP: 200, // VIP - 14 يوم
 } as const;
 
 // ============================================================

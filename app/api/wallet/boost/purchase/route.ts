@@ -76,7 +76,9 @@ export async function POST(request: Request) {
   }
 
   // Feature flag check
-  const requiredFlag = serviceKey === "featured" ? "wallet" : "boosts";
+  // featured (مميز) + vip → flag "wallet"؛ boost (ممول) → flag "boosts"
+  const requiredFlag =
+    serviceKey === "featured" || serviceKey === "vip" ? "wallet" : "boosts";
   const flagSnap = await fs.collection("featureFlags").doc(requiredFlag).get();
   if (!flagSnap.exists || flagSnap.data()?.enabled !== true) {
     return jsonError(
@@ -190,6 +192,18 @@ export async function POST(request: Request) {
         listingUpdates.featuredUntil = expiresAt;
         listingUpdates.featuredAt = FieldValue.serverTimestamp();
         listingUpdates.featuredBy = "purchase";
+      } else if (serviceKey === "vip") {
+        // VIP: أعلى أولوية + ظهور في الصفحة الرئيسية (featured)
+        const existingMs = listingData.vipUntil?.toMillis?.() || 0;
+        const baseMs = existingMs > now ? existingMs : now;
+        const newUntilMs = baseMs + service.durationDays! * 24 * 60 * 60 * 1000;
+        expiresAt = new Date(newUntilMs);
+        listingUpdates.vipUntil = expiresAt;
+        listingUpdates.vipAt = FieldValue.serverTimestamp();
+        // VIP يظهر أيضاً في قسم المميَّزة بالصفحة الرئيسية
+        listingUpdates.featured = true;
+        listingUpdates.featuredUntil = expiresAt;
+        listingUpdates.featuredBy = "vip";
       }
 
       tx.update(listingRef, listingUpdates);

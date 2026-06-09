@@ -15,6 +15,7 @@ import {
   Clock3,
   Star,
   Rocket,
+  Crown,
 } from "lucide-react";
 import type { Listing } from "@/lib/types";
 import {
@@ -62,9 +63,12 @@ function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
   const sellerName = getTraderDisplayName({ name: listing.sellerName });
   const detailsHref = `/listings/${listing.id}`;
 
-  const featured = isListingFeatured(listing);
+  // مستوى الترقية: VIP > ممول > مميز > عادي
+  const vipUntil = (listing as any).vipUntil?.toMillis?.() || 0;
+  const isVip = vipUntil > Date.now();
   const boostedUntil = (listing as any).boostedUntil?.toMillis?.() || 0;
   const isBoosted = boostedUntil > Date.now();
+  const featured = isListingFeatured(listing);
 
   const condition = (listing as any).vehicleCondition as string | undefined;
   const isNew = condition === "جديدة";
@@ -74,11 +78,14 @@ function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
 
   const posted = timeAgo((listing as any).createdAt);
 
-  // شارة علوية واحدة بالأولوية: ممول > مميز > جديد
-  const topBadge = isBoosted
-    ? { label: "ممول", Icon: Rocket, cls: "bg-action-500 text-white" }
+  // شارة علوية واحدة بالأولوية: VIP > ممول > مميز > جديد
+  // الألوان: VIP ذهبي · ممول أخضر · مميز أزرق
+  const topBadge = isVip
+    ? { label: "VIP", Icon: Crown, cls: "bg-amber-400 text-amber-950" }
+    : isBoosted
+    ? { label: "ممول", Icon: Rocket, cls: "bg-emerald-600 text-white" }
     : featured
-    ? { label: "مميز", Icon: Star, cls: "bg-amber-400 text-amber-950" }
+    ? { label: "مميز", Icon: Star, cls: "bg-blue-600 text-white" }
     : isNew
     ? { label: "جديد", Icon: null, cls: "bg-white/95 text-slate-900 dark:bg-slate-800 dark:text-white" }
     : null;
@@ -88,15 +95,19 @@ function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="
+      className={`
         group flex h-full flex-col overflow-hidden
-        rounded-3xl border border-slate-200/60 bg-white
+        rounded-3xl bg-white
         shadow-[0_2px_16px_-4px_rgba(15,18,38,0.08)]
         transition-all duration-300
         hover:-translate-y-1 hover:shadow-[0_12px_32px_-8px_rgba(28,56,156,0.25)]
-        hover:border-brand-200
-        dark:border-slate-800 dark:bg-slate-900 dark:hover:border-brand-700
-      "
+        dark:bg-slate-900
+        ${
+          isVip
+            ? "border-2 border-amber-400 ring-2 ring-amber-400/20 dark:border-amber-500"
+            : "border border-slate-200/60 hover:border-brand-200 dark:border-slate-800 dark:hover:border-brand-700"
+        }
+      `}
       dir="rtl"
     >
       {/* ============ الصورة (تشغل الجزء الأكبر) ============ */}

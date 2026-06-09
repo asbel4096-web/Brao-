@@ -6,9 +6,9 @@ import {
   X,
   Sparkles,
   CheckCircle2,
-  Zap,
+  Star,
   Rocket,
-  Flame,
+  Crown,
 } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { useWallet } from "@/hooks/wallet/use-wallet";
@@ -22,8 +22,10 @@ import {
   type ListingBoostFields,
   isBoostedNow,
   isFeaturedNow,
+  isVipNow,
   boostDaysRemaining,
   featuredDaysRemaining,
+  promotionDaysRemaining,
   formatRemainingDays,
 } from "@/lib/wallet/boost";
 import { formatBC } from "@/lib/wallet/types";
@@ -50,9 +52,9 @@ interface Props {
 }
 
 const SERVICE_ICONS: Record<BoostServiceKey, any> = {
-  bump: Zap,
+  featured: Star,
   boost: Rocket,
-  featured: Flame,
+  vip: Crown,
 };
 
 export function BoostSheet({
@@ -75,11 +77,17 @@ export function BoostSheet({
   const isFeatured = listingBoostFields
     ? isFeaturedNow(listingBoostFields)
     : false;
+  const isVip = listingBoostFields
+    ? isVipNow(listingBoostFields)
+    : false;
   const boostDays = listingBoostFields
     ? boostDaysRemaining(listingBoostFields)
     : null;
   const featuredDays = listingBoostFields
     ? featuredDaysRemaining(listingBoostFields)
+    : null;
+  const vipDays = listingBoostFields
+    ? promotionDaysRemaining(listingBoostFields)
     : null;
 
   const handlePurchase = async (serviceKey: BoostServiceKey) => {
@@ -93,7 +101,8 @@ export function BoostSheet({
 
     const isExtension =
       (serviceKey === "boost" && isBoosted) ||
-      (serviceKey === "featured" && isFeatured);
+      (serviceKey === "featured" && isFeatured) ||
+      (serviceKey === "vip" && isVip);
 
     const ok = await confirm({
       title: isExtension
@@ -126,11 +135,7 @@ export function BoostSheet({
         toast.error(data.error || "فشل الشراء");
         return;
       }
-      toast.success(
-        serviceKey === "bump"
-          ? "تم رفع الإعلان للأعلى!"
-          : `تم تفعيل ${service.label} ✨`
-      );
+      toast.success(`تم تفعيل ${service.label} ✨`);
     } catch (err: any) {
       toast.error(err?.message || "خطأ");
     } finally {
@@ -138,9 +143,9 @@ export function BoostSheet({
     }
   };
 
-  // featured يحتاج flag wallet، الباقي boosts
+  // featured (مميز) + vip يحتاجان flag wallet، ممول يحتاج boosts
   const isServiceAvailable = (key: BoostServiceKey) =>
-    key === "featured" ? walletEnabled : boostsEnabled;
+    key === "featured" || key === "vip" ? walletEnabled : boostsEnabled;
 
   return (
     <AnimatePresence>
@@ -198,18 +203,24 @@ export function BoostSheet({
                 </p>
 
                 {/* Current status */}
-                {(isBoosted || isFeatured) && (
+                {(isVip || isBoosted || isFeatured) && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
-                    {isFeatured && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-black text-amber-300">
-                        <Flame size={10} />
-                        مميَّز · {formatRemainingDays(featuredDays)}
+                    {isVip && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] font-black text-amber-300">
+                        <Crown size={10} />
+                        VIP · {formatRemainingDays(vipDays)}
+                      </span>
+                    )}
+                    {isFeatured && !isVip && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] font-black text-blue-300">
+                        <Star size={10} />
+                        مميز · {formatRemainingDays(featuredDays)}
                       </span>
                     )}
                     {isBoosted && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/20 px-2 py-0.5 text-[10px] font-black text-purple-300">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-black text-emerald-300">
                         <Rocket size={10} />
-                        Boost · {formatRemainingDays(boostDays)}
+                        ممول · {formatRemainingDays(boostDays)}
                       </span>
                     )}
                   </div>

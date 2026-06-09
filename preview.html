@@ -1,45 +1,60 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl"><head><meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>معاينة صفحة التفاصيل</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<style>body{font-family:Tahoma,sans-serif;background:#f1f5f9}.brand{background:#1c389c}.tbrand{color:#1c389c}</style>
-</head><body class="pb-32">
-<div class="max-w-md mx-auto bg-white min-h-screen">
-  <div class="aspect-[4/3] bg-slate-300 relative">
-    <span class="absolute top-3 right-3 bg-amber-400 text-amber-950 rounded-full px-3 py-1 text-xs font-black">★ مميز</span>
-    <span class="absolute bottom-3 left-3 bg-black/55 text-white rounded-full px-2 py-1 text-xs">📷 1/12</span>
-  </div>
-  <div class="p-4">
-    <h1 class="text-xl font-black">هونداي سوناتا 2009</h1>
-    <p class="text-2xl font-black tbrand mt-1">25,000 د.ل</p>
-  </div>
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>باقات الترقية</title><script src="https://cdn.tailwindcss.com"></script>
+<style>body{font-family:Tahoma,sans-serif;background:#0f172a;padding:16px}
+.gold{background:linear-gradient(135deg,#fef3c7,#fff)}.green{background:linear-gradient(135deg,#d1fae5,#fff)}.blue{background:linear-gradient(135deg,#dbeafe,#fff)}</style>
+</head><body>
+<h1 class="text-center text-white text-xl font-black mb-1">باقات ترقية الإعلان</h1>
+<p class="text-center text-slate-400 text-xs mb-5">الأولوية: VIP ← ممول ← مميز ← عادي</p>
+<div class="max-w-sm mx-auto space-y-3">
 
-  <!-- إعلانات مشابهة -->
-  <div class="p-4 border-t">
-    <div class="flex justify-between mb-3"><h3 class="font-black">إعلانات مشابهة</h3><span class="tbrand text-xs font-black">عرض الكل ‹</span></div>
-    <div class="flex gap-3 overflow-x-auto">
-      <div class="w-40 shrink-0 rounded-2xl border overflow-hidden">
-        <div class="aspect-[4/3] bg-slate-200"></div>
-        <div class="p-2.5"><p class="text-xs font-black">كيا أوبتيما 2011</p><p class="tbrand font-black text-sm">23,500 د.ل</p><p class="text-[10px] text-slate-400">طرابلس</p></div>
-      </div>
-      <div class="w-40 shrink-0 rounded-2xl border overflow-hidden">
-        <div class="aspect-[4/3] bg-slate-200"></div>
-        <div class="p-2.5"><p class="text-xs font-black">تويوتا كامري 2010</p><p class="tbrand font-black text-sm">24,000 د.ل</p><p class="text-[10px] text-slate-400">طرابلس</p></div>
-      </div>
+  <!-- VIP -->
+  <div class="gold rounded-2xl p-4 border-2 border-amber-400">
+    <div class="flex justify-between items-start">
+      <div><div class="flex items-center gap-2"><span class="text-2xl">🥇</span><h3 class="font-black text-lg">إعلان VIP</h3></div>
+      <p class="text-xs text-slate-500 mt-0.5">14 يوم · أعلى أولوية + الصفحة الرئيسية</p></div>
+      <div class="text-left"><span class="text-2xl font-black text-amber-600">200</span><span class="text-xs">د.ل</span></div>
+    </div>
+    <div class="mt-2 flex flex-wrap gap-1 text-[10px] font-bold text-amber-800">
+      <span class="bg-amber-200 rounded-full px-2 py-0.5">شارة ذهبية</span>
+      <span class="bg-amber-200 rounded-full px-2 py-0.5">إطار ذهبي</span>
+      <span class="bg-amber-200 rounded-full px-2 py-0.5">الصفحة الرئيسية</span>
     </div>
   </div>
 
-  <!-- رقم الإعلان -->
-  <p class="text-center text-[11px] text-slate-400 py-3">رقم الإعلان: <span class="font-mono font-bold">#A1B2C3D4</span></p>
-
-  <!-- الشريط الثابت -->
-  <div class="fixed inset-x-0 bottom-0 max-w-md mx-auto" style="padding-bottom:env(safe-area-inset-bottom)">
-    <div class="mx-3 mb-2 flex gap-2 rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-2xl backdrop-blur-md">
-      <button class="h-11 w-11 grid place-items-center rounded-xl border bg-white">💬</button>
-      <a class="h-11 w-11 grid place-items-center rounded-xl border bg-white">📞</a>
-      <a class="h-11 flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500 text-white font-black">🟢 تواصل عبر واتساب</a>
+  <!-- ممول -->
+  <div class="green rounded-2xl p-4 border border-emerald-300">
+    <div class="flex justify-between items-start">
+      <div><div class="flex items-center gap-2"><span class="text-2xl">🥈</span><h3 class="font-black text-lg">إعلان ممول</h3></div>
+      <p class="text-xs text-slate-500 mt-0.5">7 أيام · ظهور أقوى في البحث</p></div>
+      <div class="text-left"><span class="text-2xl font-black text-emerald-600">120</span><span class="text-xs">د.ل</span></div>
+    </div>
+    <div class="mt-2 flex flex-wrap gap-1 text-[10px] font-bold text-emerald-800">
+      <span class="bg-emerald-200 rounded-full px-2 py-0.5">شارة خضراء</span>
+      <span class="bg-emerald-200 rounded-full px-2 py-0.5">أولوية أعلى من المميز</span>
     </div>
   </div>
-</div>
-</body></html>
+
+  <!-- مميز -->
+  <div class="blue rounded-2xl p-4 border border-blue-300">
+    <div class="flex justify-between items-start">
+      <div><div class="flex items-center gap-2"><span class="text-2xl">🥉</span><h3 class="font-black text-lg">إعلان مميز</h3></div>
+      <p class="text-xs text-slate-500 mt-0.5">3 أيام · ظهور أفضل في البحث</p></div>
+      <div class="text-left"><span class="text-2xl font-black text-blue-600">50</span><span class="text-xs">د.ل</span></div>
+    </div>
+    <div class="mt-2 flex flex-wrap gap-1 text-[10px] font-bold text-blue-800">
+      <span class="bg-blue-200 rounded-full px-2 py-0.5">شارة زرقاء</span>
+      <span class="bg-blue-200 rounded-full px-2 py-0.5">أولوية أعلى من العادي</span>
+    </div>
+  </div>
+
+  <!-- شارات البطاقات -->
+  <div class="bg-slate-800 rounded-2xl p-4 mt-4">
+    <p class="text-white text-sm font-black mb-2">شارات البطاقات:</p>
+    <div class="flex gap-2">
+      <span class="inline-flex items-center gap-1 rounded-full bg-amber-400 text-amber-950 px-3 py-1 text-xs font-black">👑 VIP</span>
+      <span class="inline-flex items-center gap-1 rounded-full bg-emerald-600 text-white px-3 py-1 text-xs font-black">🚀 ممول</span>
+      <span class="inline-flex items-center gap-1 rounded-full bg-blue-600 text-white px-3 py-1 text-xs font-black">⭐ مميز</span>
+    </div>
+  </div>
+</div></body></html>
