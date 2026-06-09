@@ -14,16 +14,6 @@ export interface Listing {
   mileage?: number | null;
   fuel?: string;
   transmission?: string;
-  /**
-   * حالة السيارة: "جديدة" | "مستعملة".
-   * اختيارية للتوافق مع الإعلانات القديمة التي لا تحويها.
-   */
-  vehicleCondition?: string;
-  /**
-   * نوع الدفع: "أمامي" (FWD) | "خلفي" (RWD) | "رباعي" (AWD/4WD).
-   * اختيارية للتوافق مع الإعلانات القديمة.
-   */
-  driveType?: string;
   brand?: string;
   model?: string;
   color?: string;
@@ -93,6 +83,12 @@ export interface UserProfile {
    * صفحته. لا يستطيع المستخدم تفعيله بنفسه (قاعدة Firestore تمنع).
    */
   isVerifiedDealer?: boolean;
+  /**
+   * نوع التوثيق: "account" (حساب موثق) | "dealer" (تاجر موثق) |
+   * "showroom" (معرض موثق). اختياري للتوافق مع الحسابات القديمة —
+   * لو غير موجود، يُستنتَج من البيانات (businessName/dealerName).
+   */
+  verificationType?: "account" | "dealer" | "showroom";
   /** اسم المعرض الرسمي للمعارض الموثقة (يُعرض بدل الاسم الشخصي). */
   dealerName?: string;
   /** شعار المعرض - يُعرض بدل صورة الحساب في قائمة المعارض الموثقة. */
@@ -359,8 +355,6 @@ export interface SearchAlert {
   transmission?: string;
   fuelType?: string;
   condition?: string;
-  /** نوع الدفع: أمامي/خلفي/رباعي. يطابق Listing.driveType. */
-  driveType?: string;
   isActive: boolean;
   /** Listing IDs التي أُرسل إشعار عنها سابقاً، لمنع التكرار. */
   notifiedListingIds?: string[];

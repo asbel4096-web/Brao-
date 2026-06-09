@@ -12,7 +12,6 @@ import {
   Phone,
   Settings2,
   Camera,
-  BadgeCheck,
   Clock3,
   Star,
   Rocket,
@@ -27,6 +26,7 @@ import {
 } from "@/lib/utils";
 import { FavoriteButton } from "./favorite-button";
 import { trackEvent } from "@/lib/track-event";
+import { VerificationBadge } from "@/components/verification/verification-badge";
 
 const FALLBACK = "/icons/car-card.svg";
 
@@ -71,14 +71,6 @@ function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
 
   const sellerAvatar =
     (listing as any).ownerAvatar || (listing as any).sellerAvatar || "";
-  const sellerVerified =
-    (listing as any).sellerVerified ||
-    (listing as any).isVerifiedDealer ||
-    false;
-  // نوع التوثيق: تاجر أم حساب عادي
-  const verifiedLabel = (listing as any).isVerifiedDealer
-    ? "تاجر موثق"
-    : "حساب موثق";
 
   const posted = timeAgo((listing as any).createdAt);
 
@@ -241,15 +233,20 @@ function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
           )}
         </div>
 
-        {/* شارة التوثيق */}
-        {sellerVerified && (
-          <div className="mt-2">
-            <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-black text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
-              <BadgeCheck size={12} strokeWidth={2.5} />
-              {verifiedLabel}
-            </span>
-          </div>
-        )}
+        {/* شارة التوثيق - النوع يُستنتَج من بيانات الإعلان */}
+        <div className="mt-2">
+          <VerificationBadge
+            user={{
+              verificationType: (listing as any).verificationType,
+              isVerifiedDealer: (listing as any).isVerifiedDealer,
+              verifiedUntil: (listing as any).verifiedUntil,
+              businessName: (listing as any).businessName,
+              dealerName: (listing as any).dealerName,
+            }}
+            size="sm"
+            short
+          />
+        </div>
 
         {/* أزرار الإجراءات - مع تتبّع آمن */}
         <div className="mt-3 grid grid-cols-3 gap-1.5">

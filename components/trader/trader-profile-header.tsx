@@ -28,6 +28,7 @@ import {
   formatNumber,
   normalizeLibyanPhone,
 } from "@/lib/utils";
+import { VerificationBadge } from "@/components/verification/verification-badge";
 import type { UserProfile } from "@/lib/types";
 import { isVerifiedNow } from "@/lib/wallet/verification";
 import { useFollowTraderState } from "@/hooks/useListingEngagement";
@@ -207,18 +208,11 @@ export function TraderProfileHeader({
           </Link>
         </div>
 
-        {/* Verified badge (bottom-right of cover) */}
+        {/* Verified badge (bottom-right of cover) - النوع يُستنتَج تلقائياً */}
         {isVerified && (
           <div className="absolute bottom-4 right-4 z-10">
-            <div className="flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 shadow-lg backdrop-blur">
-              <BadgeCheck
-                size={14}
-                className="text-blue-600"
-                strokeWidth={2.5}
-              />
-              <span className="text-[12px] font-black text-slate-900">
-                معرض موثق
-              </span>
+            <div className="rounded-full bg-white/95 px-1 py-0.5 shadow-lg backdrop-blur">
+              <VerificationBadge user={profile} size="md" />
             </div>
           </div>
         )}
