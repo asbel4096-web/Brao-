@@ -6,9 +6,7 @@ import { memo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Calendar,
-  Eye,
   Fuel,
-  Heart,
   MapPin,
   MessageCircle,
   Phone,
@@ -28,6 +26,7 @@ import {
   timeAgo,
 } from "@/lib/utils";
 import { FavoriteButton } from "./favorite-button";
+import { trackEvent } from "@/lib/track-event";
 
 const FALLBACK = "/icons/car-card.svg";
 
@@ -40,17 +39,17 @@ interface ListingCardProps {
 /**
  * بطاقة إعلان احترافية (بمستوى Dubizzle / OpenSooq).
  *
- * البنية البصرية (top → bottom):
- *  1. صورة 4:3 + شارات علوية (مميز/ممول يسار، حفظ يمين) + سعر بارز أسفل الصورة
- *     + عدّاد الصور.
- *  2. عنوان السيارة بخط قوي.
- *  3. سطر مواصفات مدمج: سنة • وقود • ناقل • مدينة.
- *  4. بيانات البائع: صورة + اسم + توثيق + وقت النشر.
- *  5. إحصائيات: مشاهدات + محفوظة.
- *  6. ثلاثة أزرار: واتساب + اتصال + مراسلة.
+ * تحسينات هذه النسخة:
+ *  - الصورة تشغل ~62% من ارتفاع البطاقة (aspect-[4/3] + معلومات مضغوطة).
+ *  - شارة مميز/ممول/جديد أعلى الصورة بهوية Bratsho.
+ *  - سطر مواصفات أكبر وأوضح (أيقونات 14 + نص 12).
+ *  - شارة "تاجر موثق" / "حساب موثق" واضحة.
+ *  - وقت النشر مع أيقونة ساعة ونص ("منذ ساعتين").
+ *  - لا تُعرض المشاهدات للعامة إطلاقاً (خصوصية المالك).
+ *  - تتبّع آمن للنقرات (واتساب/اتصال/مراسلة/مشاركة) عبر API.
+ *  - مساحات بيضاء أكبر + ظلال أنعم.
  *
- * - كل البيانات اختيارية العرض (تظهر فقط إن وُجدت) → توافق كامل مع الإعلانات القديمة.
- * - memo + بيانات مشتقّة خفيفة لتجنّب إعادة الرسم.
+ * كل البيانات تُعرض فقط إن وُجدت → توافق كامل مع الإعلانات القديمة.
  */
 
 function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
@@ -64,7 +63,6 @@ function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
   const detailsHref = `/listings/${listing.id}`;
 
   const featured = isListingFeatured(listing);
-  // "ممول" = نظام boost مستقبلي (boostedUntil). يظهر فقط إن وُجد ونشط.
   const boostedUntil = (listing as any).boostedUntil?.toMillis?.() || 0;
   const isBoosted = boostedUntil > Date.now();
 
@@ -77,9 +75,11 @@ function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
     (listing as any).sellerVerified ||
     (listing as any).isVerifiedDealer ||
     false;
+  // نوع التوثيق: تاجر أم حساب عادي
+  const verifiedLabel = (listing as any).isVerifiedDealer
+    ? "تاجر موثق"
+    : "حساب موثق";
 
-  const views = listing.views || 0;
-  const saves = listing.favoritesCount || listing.likesCount || 0;
   const posted = timeAgo((listing as any).createdAt);
 
   // شارة علوية واحدة بالأولوية: ممول > مميز > جديد
@@ -88,7 +88,7 @@ function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
     : featured
     ? { label: "مميز", Icon: Star, cls: "bg-amber-400 text-amber-950" }
     : isNew
-    ? { label: "جديد", Icon: null, cls: "bg-white text-slate-900 dark:bg-slate-800 dark:text-white" }
+    ? { label: "جديد", Icon: null, cls: "bg-white/95 text-slate-900 dark:bg-slate-800 dark:text-white" }
     : null;
 
   return (
@@ -98,16 +98,17 @@ function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
       transition={{ duration: 0.25 }}
       className="
         group flex h-full flex-col overflow-hidden
-        rounded-3xl border border-slate-200/70 bg-white
-        shadow-sm transition-all duration-300
-        hover:-translate-y-1 hover:shadow-xl hover:border-brand-200
+        rounded-3xl border border-slate-200/60 bg-white
+        shadow-[0_2px_16px_-4px_rgba(15,18,38,0.08)]
+        transition-all duration-300
+        hover:-translate-y-1 hover:shadow-[0_12px_32px_-8px_rgba(28,56,156,0.25)]
+        hover:border-brand-200
         dark:border-slate-800 dark:bg-slate-900 dark:hover:border-brand-700
       "
       dir="rtl"
     >
-      {/* ============ الصورة ============ */}
+      {/* ============ الصورة (تشغل الجزء الأكبر) ============ */}
       <Link href={detailsHref} className="relative block aspect-[4/3] overflow-hidden">
-        {/* Skeleton أثناء التحميل */}
         {!imgLoaded && !isFallback && (
           <div className="absolute inset-0 animate-pulse bg-slate-200 dark:bg-slate-800" />
         )}
@@ -122,48 +123,42 @@ function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
           onLoad={() => setImgLoaded(true)}
           className={`
             object-cover transition-all duration-500 group-hover:scale-105
-            ${isFallback ? "object-contain p-6 opacity-60" : ""}
+            ${isFallback ? "object-contain p-8 opacity-60" : ""}
             ${imgLoaded || isFallback ? "opacity-100" : "opacity-0"}
           `}
         />
 
-        {/* تدرّج سفلي ليبرز السعر */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/55 to-transparent" />
 
-        {/* شارة علوية (يسار) */}
+        {/* شارة علوية (يمين) */}
         {topBadge && (
           <div className="absolute right-3 top-3">
             <span
-              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-black shadow-sm ${topBadge.cls}`}
+              className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[12px] font-black shadow-sm backdrop-blur-sm ${topBadge.cls}`}
             >
-              {topBadge.Icon && <topBadge.Icon size={11} strokeWidth={2.5} />}
+              {topBadge.Icon && <topBadge.Icon size={12} strokeWidth={2.5} />}
               {topBadge.label}
             </span>
           </div>
         )}
 
-        {/* زر الحفظ (يمين علوي) - Glassmorphism */}
+        {/* زر الحفظ (يسار علوي) - Glassmorphism */}
         <div className="absolute left-3 top-3">
           <div
-            className="
-              grid h-9 w-9 place-items-center rounded-full
-              bg-white/25 text-white backdrop-blur-md
-              ring-1 ring-white/30
-            "
-            onClick={(e) => e.preventDefault()}
+            className="grid h-9 w-9 place-items-center rounded-full bg-white/25 text-white backdrop-blur-md ring-1 ring-white/30"
+            onClick={(e) => {
+              e.preventDefault();
+              trackEvent(listing.id, "favorite");
+            }}
           >
-            <FavoriteButton
-              listing={listing}
-              size={17}
-              className="!text-white"
-            />
+            <FavoriteButton listing={listing} size={17} className="!text-white" />
           </div>
         </div>
 
-        {/* السعر (أسفل يمين الصورة) */}
+        {/* السعر (أسفل يمين) */}
         <div className="absolute bottom-3 right-3">
-          <span className="inline-flex items-baseline gap-1 rounded-2xl bg-brand-700 px-3 py-1.5 text-white shadow-lg">
-            <span className="text-lg font-black leading-none">
+          <span className="inline-flex items-baseline gap-1 rounded-2xl bg-brand-700 px-3.5 py-1.5 text-white shadow-lg">
+            <span className="text-xl font-black leading-none">
               {formatPrice(listing.price)}
             </span>
             <span className="text-[11px] font-bold text-blue-100">د.ل</span>
@@ -173,158 +168,132 @@ function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
         {/* عدّاد الصور (أسفل يسار) */}
         {imageCount > 1 && (
           <div className="absolute bottom-3 left-3">
-            <span className="inline-flex items-center gap-1 rounded-full bg-black/55 px-2 py-1 text-[10px] font-bold text-white backdrop-blur-sm">
-              <Camera size={11} />
+            <span className="inline-flex items-center gap-1 rounded-full bg-black/55 px-2 py-1 text-[11px] font-bold text-white backdrop-blur-sm">
+              <Camera size={12} />
               {imageCount}
             </span>
           </div>
         )}
       </Link>
 
-      {/* ============ المحتوى ============ */}
+      {/* ============ المحتوى (مضغوط) ============ */}
       <div className="flex flex-1 flex-col p-3.5">
         {/* العنوان */}
         <Link href={detailsHref}>
-          <h3 className="line-clamp-1 text-[15px] font-black text-slate-900 transition-colors group-hover:text-brand-700 dark:text-white">
+          <h3 className="line-clamp-1 text-base font-black text-slate-900 transition-colors group-hover:text-brand-700 dark:text-white">
             {listing.title}
           </h3>
         </Link>
 
-        {/* سطر المواصفات */}
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 dark:text-slate-400">
+        {/* سطر المواصفات - أكبر وأوضح */}
+        <div className="mt-2.5 flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-[12px] font-medium text-slate-600 dark:text-slate-300">
           {listing.year && (
             <span className="inline-flex items-center gap-1">
-              <Calendar size={12} className="text-slate-400" />
+              <Calendar size={14} className="text-brand-600/70" />
               {listing.year}
             </span>
           )}
           {listing.fuel && (
             <span className="inline-flex items-center gap-1">
-              <Fuel size={12} className="text-slate-400" />
+              <Fuel size={14} className="text-brand-600/70" />
               {listing.fuel}
             </span>
           )}
           {listing.transmission && (
             <span className="inline-flex items-center gap-1">
-              <Settings2 size={12} className="text-slate-400" />
+              <Settings2 size={14} className="text-brand-600/70" />
               {listing.transmission}
             </span>
           )}
           {listing.city && (
             <span className="inline-flex items-center gap-1">
-              <MapPin size={12} className="text-slate-400" />
+              <MapPin size={14} className="text-brand-600/70" />
               {listing.city}
             </span>
           )}
         </div>
 
-        {/* فاصل */}
         <div className="my-3 h-px bg-slate-100 dark:bg-slate-800" />
 
-        {/* بيانات البائع */}
+        {/* بيانات البائع + وقت النشر */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
-            {/* صورة البائع */}
             <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-brand-600 to-brand-800 ring-1 ring-slate-200 dark:ring-slate-700">
               {sellerAvatar ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={sellerAvatar}
-                  alt=""
-                  className="h-full w-full object-cover"
-                  loading="lazy"
-                />
+                <img src={sellerAvatar} alt="" className="h-full w-full object-cover" loading="lazy" />
               ) : (
                 <span className="flex h-full w-full items-center justify-center text-[10px] font-black text-white">
                   {(sellerName || "؟").charAt(0)}
                 </span>
               )}
             </div>
-            {/* الاسم + توثيق */}
-            <div className="flex min-w-0 items-center gap-1">
-              <span className="truncate text-[12px] font-bold text-slate-700 dark:text-slate-200">
-                {sellerName}
-              </span>
-              {sellerVerified && (
-                <BadgeCheck size={13} className="shrink-0 text-brand-600" strokeWidth={2.5} />
-              )}
-            </div>
+            <span className="truncate text-[12px] font-bold text-slate-700 dark:text-slate-200">
+              {sellerName}
+            </span>
           </div>
 
-          {/* وقت النشر */}
           {posted && (
-            <span className="inline-flex shrink-0 items-center gap-1 text-[10px] text-slate-400">
-              <Clock3 size={11} />
+            <span className="inline-flex shrink-0 items-center gap-1 text-[11px] text-slate-400">
+              <Clock3 size={12} />
               {posted}
             </span>
           )}
         </div>
 
-        {/* الإحصائيات */}
-        {(views > 0 || saves > 0) && (
-          <div className="mt-2 flex items-center gap-3 text-[10px] text-slate-400">
-            <span className="inline-flex items-center gap-1">
-              <Eye size={12} />
-              {views.toLocaleString("en-US")}
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <Heart size={12} />
-              {saves.toLocaleString("en-US")}
+        {/* شارة التوثيق */}
+        {sellerVerified && (
+          <div className="mt-2">
+            <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-black text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
+              <BadgeCheck size={12} strokeWidth={2.5} />
+              {verifiedLabel}
             </span>
           </div>
         )}
 
-        {/* أزرار الإجراءات */}
+        {/* أزرار الإجراءات - مع تتبّع آمن */}
         <div className="mt-3 grid grid-cols-3 gap-1.5">
-          {/* واتساب */}
           <a
             href={wa ? `https://wa.me/${wa}` : "#"}
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => {
-              if (!wa) e.preventDefault();
+              if (!wa) {
+                e.preventDefault();
+                return;
+              }
+              trackEvent(listing.id, "whatsapp");
             }}
-            className="
-              inline-flex items-center justify-center gap-1 rounded-xl
-              bg-emerald-50 py-2 text-[11px] font-black text-emerald-700
-              transition active:scale-95 hover:bg-emerald-100
-              dark:bg-emerald-900/30 dark:text-emerald-300
-            "
+            className="inline-flex items-center justify-center gap-1 rounded-xl bg-emerald-50 py-2.5 text-[11px] font-black text-emerald-700 transition active:scale-95 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300"
             aria-label="واتساب"
           >
-            <MessageCircle size={13} />
+            <MessageCircle size={14} />
             واتساب
           </a>
 
-          {/* اتصال */}
           <a
             href={listing.phone ? `tel:${listing.phone}` : "#"}
             onClick={(e) => {
-              if (!listing.phone) e.preventDefault();
+              if (!listing.phone) {
+                e.preventDefault();
+                return;
+              }
+              trackEvent(listing.id, "phone");
             }}
-            className="
-              inline-flex items-center justify-center gap-1 rounded-xl
-              bg-brand-700 py-2 text-[11px] font-black text-white
-              transition active:scale-95 hover:bg-brand-800
-            "
+            className="inline-flex items-center justify-center gap-1 rounded-xl bg-brand-700 py-2.5 text-[11px] font-black text-white transition active:scale-95 hover:bg-brand-800"
             aria-label="اتصال"
           >
-            <Phone size={13} />
+            <Phone size={14} />
             اتصال
           </a>
 
-          {/* مراسلة */}
           <Link
             href={`/messages?listing=${listing.id}`}
-            className="
-              inline-flex items-center justify-center gap-1 rounded-xl
-              bg-blue-50 py-2 text-[11px] font-black text-brand-700
-              transition active:scale-95 hover:bg-blue-100
-              dark:bg-blue-900/20 dark:text-blue-300
-            "
+            onClick={() => trackEvent(listing.id, "chat")}
+            className="inline-flex items-center justify-center gap-1 rounded-xl bg-blue-50 py-2.5 text-[11px] font-black text-brand-700 transition active:scale-95 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300"
             aria-label="مراسلة"
           >
-            <MessageCircle size={13} />
+            <MessageCircle size={14} />
             مراسلة
           </Link>
         </div>
@@ -333,9 +302,6 @@ function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
   );
 }
 
-/**
- * memo: البطاقة لا تُعاد رسمها إلا عند تغيّر بيانات مؤثّرة.
- */
 export const ListingCard = memo(ListingCardImpl, (prev, next) => {
   const a = prev.listing;
   const b = next.listing;
@@ -344,9 +310,6 @@ export const ListingCard = memo(ListingCardImpl, (prev, next) => {
     a.price === b.price &&
     a.title === b.title &&
     a.featured === b.featured &&
-    a.views === b.views &&
-    a.favoritesCount === b.favoritesCount &&
-    a.likesCount === b.likesCount &&
     a.images?.[0] === b.images?.[0] &&
     prev.priority === next.priority
   );

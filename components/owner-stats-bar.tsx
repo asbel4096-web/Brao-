@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, Heart, MessageCircle, Phone, Smartphone, ShieldCheck } from "lucide-react";
+import { Eye, Heart, MessageCircle, Phone, Smartphone, Share2, ShieldCheck } from "lucide-react";
 import { OwnerOnly } from "./owner-only";
 import { useOwnerStats } from "@/hooks/useOwnerStats";
 
@@ -60,6 +60,7 @@ function OwnerStatsBarInner({
     { icon: MessageCircle, label: "نقرات الدردشة", value: stats.chatClicks, color: "emerald" },
     { icon: Phone, label: "نقرات الاتصال", value: stats.phoneClicks, color: "blue" },
     { icon: Smartphone, label: "نقرات واتساب", value: stats.whatsappClicks, color: "emerald" },
+    { icon: Share2, label: "مشاركات", value: stats.shareClicks, color: "amber" },
   ];
 
   const visible = items.filter((i) => typeof i.value === "number");

@@ -29,6 +29,8 @@ export interface OwnerStats {
   phoneClicks?: number;
   /** عدد النقرات على زر واتساب */
   whatsappClicks?: number;
+  /** عدد مرّات مشاركة الإعلان */
+  shareClicks?: number;
 }
 
 interface UseOwnerStatsOptions {
@@ -93,6 +95,8 @@ export function useOwnerStats({
             phoneClicks: typeof data.phoneClicks === "number" ? data.phoneClicks : s.phoneClicks,
             whatsappClicks:
               typeof data.whatsappClicks === "number" ? data.whatsappClicks : s.whatsappClicks,
+            shareClicks:
+              typeof data.shareClicks === "number" ? data.shareClicks : s.shareClicks,
           }));
         }
       },

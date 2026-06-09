@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { notFound, useParams, useRouter } from "next/navigation";
-import { doc, getDoc, increment, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import {
   MapPin,
   MessageCircle,
@@ -18,6 +18,7 @@ import {
   ScrollText,
 } from "lucide-react";
 import { db } from "@/lib/firebase";
+import { trackEvent } from "@/lib/track-event";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { formatPrice, normalizeLibyanPhone, buildChatId, getTraderDisplayName } from "@/lib/utils";
@@ -70,9 +71,9 @@ export default function ListingDetailsPage() {
         setListing(data);
         setLoading(false);
 
-        try {
-          await updateDoc(ref, { views: increment(1) });
-        } catch {}
+        // تسجيل المشاهدة عبر الـAPI الآمن (يستبعد المالك + يمنع التكرار).
+        // لا نكتب views من العميل مباشرة (منعاً للتلاعب).
+        trackEvent(data.id, "view");
 
         try {
           const sellerSnap = await getDoc(doc(db, "users", data.ownerId));
@@ -226,27 +227,8 @@ export default function ListingDetailsPage() {
               <Spec icon={Settings} label="الناقل" value={listing.transmission ?? "-"} />
             </div>
 
-            {(listing.brand ||
-              listing.model ||
-              listing.color ||
-              listing.engine ||
-              (listing as any).vehicleCondition ||
-              (listing as any).driveType) && (
+            {(listing.brand || listing.model || listing.color || listing.engine) && (
               <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {(listing as any).vehicleCondition && (
-                  <Spec
-                    icon={ShieldCheck}
-                    label="الحالة"
-                    value={(listing as any).vehicleCondition}
-                  />
-                )}
-                {(listing as any).driveType && (
-                  <Spec
-                    icon={Gauge}
-                    label="نوع الدفع"
-                    value={(listing as any).driveType}
-                  />
-                )}
                 {listing.brand && <Spec label="الماركة" value={listing.brand} />}
                 {listing.model && <Spec label="الموديل" value={listing.model} />}
                 {listing.color && <Spec label="اللون" value={listing.color} />}
