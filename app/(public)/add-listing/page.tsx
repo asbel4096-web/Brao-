@@ -9,19 +9,20 @@ import {
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import {
   AlertCircle,
-  Camera,
   CheckCircle,
-  ChevronRight,
+  Check,
   ChevronLeft,
+  FileText,
   ImagePlus,
   Loader2,
-  MapPin,
-  ShieldCheck,
+  Star,
   Tag,
+  Car,
   X,
 } from "lucide-react";
 import { auth, db, storage } from "@/lib/firebase";
@@ -31,8 +32,6 @@ import {
   libyaCities,
   listingCategories,
   transmissionTypes,
-  vehicleConditions,
-  driveTypes,
   getAddListingConfig,
 } from "@/lib/categories";
 import { formatPrice, normalizeLibyanPhone } from "@/lib/utils";
@@ -50,8 +49,6 @@ interface FormState {
   engine: string;
   transmission: string;
   fuel: string;
-  vehicleCondition: string;
-  driveType: string;
   mileage: string;
   price: string;
   city: string;
@@ -63,7 +60,6 @@ interface FormState {
   whatsapp: string;
   features: string;
   defects: string;
-  // حقول خاصة بالساحبات - تُملأ فقط عند اختيار "ساحبة سيارات".
   area: string;
   coverageAreas: string;
   availableNow: boolean;
@@ -82,8 +78,6 @@ const initialState: FormState = {
   engine: "",
   transmission: "أوتوماتيك",
   fuel: "بنزين",
-  vehicleCondition: "مستعملة",
-  driveType: "أمامي",
   mileage: "",
   price: "",
   city: "طرابلس",
@@ -105,19 +99,36 @@ const initialState: FormState = {
 
 const MAX_IMAGES = 20;
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 
-const STEP_LABELS = [
-  { n: 1, title: "الصور والسعر", short: "الأساسيات" },
-  { n: 2, title: "مواصفات المركبة", short: "المواصفات" },
-  { n: 3, title: "الوصف والموقع", short: "الوصف" },
-  { n: 4, title: "التواصل والنشر", short: "التواصل" },
+// مواصفات شائعة تُعرض كـchips. القيمة المخزّنة تبقى نص features
+// مفصول بفواصل (نفس ما يتوقعه منطق الحفظ - لا تغيير في البنية).
+const FEATURE_CHIPS = [
+  "مكيف",
+  "كاميرا خلفية",
+  "حساسات",
+  "بلوتوث",
+  "فتحة سقف",
+  "مثبت سرعة",
+  "تشغيل بصمة",
+  "شاشة",
+  "نظام ملاحة",
+  "جنوط",
+  "مقاعد جلد",
+  "تحكم مقود",
+];
+
+const STEPS = [
+  { n: 1, label: "الصور", icon: ImagePlus },
+  { n: 2, label: "المعلومات", icon: Car },
+  { n: 3, label: "التفاصيل", icon: FileText },
+  { n: 4, label: "السعر", icon: Tag },
+  { n: 5, label: "نشر الإعلان", icon: CheckCircle },
 ];
 
 export default function AddListingPage() {
   const router = useRouter();
   const { user, profile, loading: authLoading } = useAuth();
-  // فحص الكلمات المحظورة. يطبَّق على العنوان + الوصف قبل الإرسال.
   const { check: checkBannedWords } = useBannedWordsCheck();
 
   const [form, setForm] = useState<FormState>(initialState);
@@ -127,8 +138,10 @@ export default function AddListingPage() {
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const [step, setStep] = useState(1);
+  const [dragOver, setDragOver] = useState(false);
 
   const topRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Pre-fill من الملف الشخصي
   useEffect(() => {
@@ -138,8 +151,7 @@ export default function AddListingPage() {
         sellerName:
           p.sellerName || profile?.businessName || profile?.name || user.displayName || "",
         phone: p.phone || profile?.phone || user.phoneNumber || "",
-        whatsapp:
-          p.whatsapp || profile?.phone || user.phoneNumber || "",
+        whatsapp: p.whatsapp || profile?.phone || user.phoneNumber || "",
       }));
     }
   }, [user, profile]);
@@ -159,26 +171,38 @@ export default function AddListingPage() {
   const set = (k: keyof FormState, v: string) =>
     setForm((p) => ({ ...p, [k]: v }));
 
-  // helper منفصل للحقول boolean (مثل availableNow في خدمات الساحبات).
   const setBool = (k: keyof FormState, v: boolean) =>
     setForm((p) => ({ ...p, [k]: v }));
 
-  // إعدادات النموذج حسب القسم المختار: نص إرشادي + إظهار حقول المركبة +
-  // نوع الكيان المخزَّن. لا يغيّر التصميم — فقط يظهر/يخفي مجموعات موجودة.
   const categoryConfig = getAddListingConfig(form.category);
+
+  // المواصفات المختارة (مشتقّة من نص features)
+  const selectedFeatures = useMemo(
+    () =>
+      form.features
+        .split(/[,\n،]/)
+        .map((s) => s.trim())
+        .filter(Boolean),
+    [form.features]
+  );
+
+  const toggleFeature = (feat: string) => {
+    const current = new Set(selectedFeatures);
+    if (current.has(feat)) current.delete(feat);
+    else current.add(feat);
+    set("features", Array.from(current).join("، "));
+  };
 
   /* ----------------------------------------------------------
    * Image handling
    * ---------------------------------------------------------- */
-  const handleImages = (e: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
+  const addFiles = (files: File[]) => {
     setError("");
     if (!files.length) return;
     if (images.length + files.length > MAX_IMAGES) {
       setError(
         `يمكنك رفع حتى ${MAX_IMAGES} صورة فقط (المتبقي: ${MAX_IMAGES - images.length}).`
       );
-      e.target.value = "";
       return;
     }
     const invalid = files.find(
@@ -186,11 +210,20 @@ export default function AddListingPage() {
     );
     if (invalid) {
       setError("كل الملفات يجب أن تكون صوراً أقل من 10 ميجابايت.");
-      e.target.value = "";
       return;
     }
     setImages((prev) => [...prev, ...files]);
+  };
+
+  const handleImages = (e: ChangeEvent<HTMLInputElement>) => {
+    addFiles(Array.from(e.target.files || []));
     e.target.value = "";
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    addFiles(Array.from(e.dataTransfer.files || []));
   };
 
   const removeImage = (i: number) => {
@@ -213,21 +246,26 @@ export default function AddListingPage() {
   );
 
   /* ----------------------------------------------------------
-   * التحقق من كل خطوة
+   * التحقق من كل خطوة (5 خطوات الآن)
+   *   1 الصور · 2 المعلومات · 3 التفاصيل · 4 السعر · 5 النشر
    * ---------------------------------------------------------- */
   const validateStep = (s: number): string | null => {
     if (s === 1) {
+      if (images.length < 3) return "أضف 3 صور على الأقل.";
+    }
+    if (s === 2) {
       if (!form.title.trim()) return "اكتب عنوان الإعلان.";
       if (!form.category) return "اختر القسم.";
-      if (!form.price.trim()) return "اكتب السعر.";
-      if (Number(form.price) <= 0) return "السعر يجب أن يكون أكبر من صفر.";
-      if (images.length === 0) return "أضف صورة واحدة على الأقل.";
     }
     if (s === 3) {
       if (!form.description.trim()) return "اكتب وصف الإعلان.";
       if (!form.city) return "اختر المدينة.";
     }
     if (s === 4) {
+      if (!form.price.trim()) return "اكتب السعر.";
+      if (Number(form.price) <= 0) return "السعر يجب أن يكون أكبر من صفر.";
+    }
+    if (s === 5) {
       if (!form.phone.trim()) return "اكتب رقم الهاتف.";
     }
     return null;
@@ -249,7 +287,7 @@ export default function AddListingPage() {
   };
 
   /* ----------------------------------------------------------
-   * النشر
+   * النشر — منطق الحفظ محفوظ كما هو (Firebase Storage + Firestore)
    * ---------------------------------------------------------- */
   const reset = () => {
     setForm({
@@ -272,7 +310,6 @@ export default function AddListingPage() {
       return;
     }
 
-    // Triple auth guard لتفادي 403 من Firebase Storage
     const liveUser = auth.currentUser;
     if (!liveUser || liveUser.uid !== user.uid) {
       setError("انتهت جلستك. يُرجى تسجيل الدخول من جديد.");
@@ -288,18 +325,16 @@ export default function AddListingPage() {
       }
     }
 
-    // فحص الكلمات المحظورة في العنوان والوصف. severity="block" يمنع
-    // النشر تماماً. نفحص الحقلين معاً ونُرجع أول مطابقة.
     const titleHit = checkBannedWords(form.title);
     if (titleHit && titleHit.severity === "block") {
       setError(`عنوان الإعلان يحوي كلمة غير مسموحة: "${titleHit.matchedWord}".`);
-      setStep(1);
+      setStep(2);
       return;
     }
     const descHit = checkBannedWords(form.description);
     if (descHit && descHit.severity === "block") {
       setError(`وصف الإعلان يحوي كلمة غير مسموحة: "${descHit.matchedWord}".`);
-      setStep(1);
+      setStep(3);
       return;
     }
 
@@ -310,7 +345,6 @@ export default function AddListingPage() {
       const imageUrls: string[] = [];
       for (let i = 0; i < images.length; i++) {
         const original = images[i];
-        // دمج العلامة المائية. إن فشل لأي سبب يُعاد الملف الأصلي.
         const stamped = await applyBratshoWatermark(original);
         const safe = stamped.name.replace(/\s+/g, "-").toLowerCase();
         const r = ref(
@@ -362,15 +396,6 @@ export default function AddListingPage() {
         mileage: form.mileage ? Number(form.mileage) : null,
         fuel: form.fuel,
         transmission: form.transmission,
-        // حالة السيارة + نوع الدفع: تُحفظ فقط للأقسام التي تملك حقولاً
-        // تقنية (سيارات/شاحنات/حافلات). للورش والقطع نتركها undefined
-        // فلا تُكتب في Firestore (توافق مع القديم).
-        ...(categoryConfig.showVehicleSpecs
-          ? {
-              vehicleCondition: form.vehicleCondition,
-              driveType: form.driveType,
-            }
-          : {}),
         features,
         defects,
         images: imageUrls,
@@ -378,12 +403,7 @@ export default function AddListingPage() {
         ownerName,
         ownerAvatar,
         ownerEmail: user.email || "",
-        // نوع الكيان مشتق من مجموعة القسم المختار (خدمات => service،
-        // غير ذلك => listing) حتى تنقسم الإعلانات والخدمات بشكل صحيح.
         entityType: categoryConfig.entityType,
-        // حقول إضافية للساحبات - تُحفظ فقط لما القسم يدعمها (شرط
-        // showTowTruckFields). نُرسل القيم دائماً (بقيم افتراضية فارغة)
-        // عندما القسم ساحبة، حتى تكون متاحة للقراءة لاحقاً.
         ...(categoryConfig.showTowTruckFields
           ? {
               availableNow: form.availableNow === true,
@@ -427,572 +447,569 @@ export default function AddListingPage() {
    * ---------------------------------------------------------- */
   if (authLoading) {
     return (
-      <section className="container py-10">
-        <div className="card mx-auto max-w-md p-8 text-center text-slate-500">
+      <div className="mx-auto max-w-3xl px-4 py-10">
+        <div className="rounded-3xl bg-white p-8 text-center text-slate-400 shadow-sm">
           جارٍ التحميل...
         </div>
-      </section>
+      </div>
     );
   }
 
   if (!user) {
     return (
-      <section className="container py-10">
-        <div className="card mx-auto max-w-2xl p-8 text-center">
-          <h1 className="section-title">إضافة إعلان</h1>
-          <p className="mt-3 text-slate-600 dark:text-slate-300">
+      <div className="mx-auto max-w-2xl px-4 py-10">
+        <div className="rounded-3xl bg-white p-8 text-center shadow-sm">
+          <h1 className="text-xl font-black text-slate-900">إضافة إعلان</h1>
+          <p className="mt-3 text-slate-600">
             يجب تسجيل الدخول حتى تتمكن من إضافة إعلان جديد.
           </p>
           <button
             type="button"
             onClick={() => router.push("/login?redirect=/add-listing")}
-            className="btn-primary mt-6"
+            className="mt-6 rounded-2xl bg-brand-700 px-6 py-3 font-black text-white"
           >
             تسجيل الدخول
           </button>
         </div>
-      </section>
+      </div>
     );
   }
 
   /* ----------------------------------------------------------
-   * Render
+   * Render — تصميم جديد (وضع نهاري، مطابق للمرجع)
    * ---------------------------------------------------------- */
   return (
-    <section className="container py-4 sm:py-8" ref={topRef}>
-      <div className="mx-auto max-w-3xl space-y-4 sm:space-y-5">
+    <div
+      dir="rtl"
+      ref={topRef}
+      className="min-h-screen bg-[#F8FAFC] pb-28"
+      style={{ fontFamily: "inherit" }}
+    >
+      <div className="mx-auto max-w-2xl px-3 py-4 sm:px-4 sm:py-6">
         {/* العنوان */}
-        <div>
-          <h1 className="text-2xl font-black text-slate-950 dark:text-white sm:text-3xl">
-            إضافة إعلان
-          </h1>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
-            خطوة {step} من {TOTAL_STEPS} —{" "}
-            <span className="font-bold text-brand-700 dark:text-brand-300">
-              {STEP_LABELS[step - 1].title}
-            </span>
+        <header className="mb-4">
+          <h1 className="text-2xl font-black text-slate-900">أضف سيارة جديدة</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            أكمل الخطوات لنشر إعلانك باحترافية
           </p>
-        </div>
+        </header>
 
-        {/* Stepper - مدمج وموبايل first */}
+        {/* Stepper */}
         <Stepper currentStep={step} onStepClick={(n) => n < step && setStep(n)} />
 
         {/* رسائل الحالة */}
-        {error && (
-          <div
-            className="
-              flex items-start gap-2 rounded-2xl border border-rose-200
-              bg-rose-50 p-3 text-sm font-bold text-rose-700
-              dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-300
-            "
-          >
-            <AlertCircle size={16} className="mt-0.5 shrink-0" />
-            {error}
-          </div>
-        )}
-        {success && (
-          <div
-            className="
-              flex items-start gap-2 rounded-2xl border border-emerald-200
-              bg-emerald-50 p-3 text-sm font-bold text-emerald-700
-              dark:border-emerald-800 dark:bg-emerald-950/30
-              dark:text-emerald-300
-            "
-          >
-            <CheckCircle size={16} className="mt-0.5 shrink-0" />
-            {success}
-          </div>
-        )}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="mb-3 flex items-start gap-2 rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700"
+            >
+              <AlertCircle size={16} className="mt-0.5 shrink-0" />
+              {error}
+            </motion.div>
+          )}
+          {success && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-3 flex items-start gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-bold text-emerald-700"
+            >
+              <CheckCircle size={16} className="mt-0.5 shrink-0" />
+              {success}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* ============ Step 1: الصور + الأساسيات ============ */}
-          {step === 1 && (
-            <div className="card animate-fade-in space-y-5 p-4 sm:p-6">
-              {/* الصور أولاً (أهم بصرياً) */}
-              <div>
-                <Label
-                  required
-                  hint={`${images.length}/${MAX_IMAGES}`}
-                >
-                  صور الإعلان
-                </Label>
+        <form onSubmit={handleSubmit}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={step}
+              initial={{ opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -16 }}
+              transition={{ duration: 0.22 }}
+              className="space-y-4"
+            >
+              {/* ============ Step 1: الصور ============ */}
+              {step === 1 && (
+                <Card title="صور السيارة" subtitle="أضف صوراً واضحة وجذابة لسيارتك">
+                  <p className="mb-3 text-xs font-bold text-slate-400">
+                    الحد الأدنى 3 صور · الأقصى {MAX_IMAGES} · حتى 10MB لكل صورة
+                  </p>
 
-                {previews.length === 0 ? (
-                  <ImageUploadDropzone onChange={handleImages} />
-                ) : (
-                  <div>
-                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                      {previews.map((src, i) => (
-                        <div
-                          key={i}
-                          className="relative aspect-square overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800"
+                  {/* رفع رئيسي كبير + Drag&Drop */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImages}
+                    className="hidden"
+                  />
+
+                  {previews.length === 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setDragOver(true);
+                      }}
+                      onDragLeave={() => setDragOver(false)}
+                      onDrop={handleDrop}
+                      className={cn(
+                        "flex aspect-[4/3] w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed transition",
+                        dragOver
+                          ? "border-brand-500 bg-brand-50"
+                          : "border-slate-200 bg-slate-50 hover:border-brand-300"
+                      )}
+                    >
+                      <div className="grid h-16 w-16 place-items-center rounded-2xl bg-brand-600 text-white shadow-lg">
+                        <ImagePlus size={28} />
+                      </div>
+                      <span className="text-base font-black text-slate-700">
+                        اضغط لإضافة الصورة الرئيسية
+                      </span>
+                      <span className="text-xs text-slate-400">
+                        أو اسحب الصور هنا
+                      </span>
+                    </button>
+                  ) : (
+                    <div className="space-y-3">
+                      {/* الصورة الرئيسية كبيرة */}
+                      <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-slate-100">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={previews[0]}
+                          alt="الصورة الرئيسية"
+                          className="h-full w-full object-cover"
+                        />
+                        <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-brand-600 px-3 py-1 text-[11px] font-black text-white shadow">
+                          <Star size={11} /> الصورة الرئيسية
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeImage(0)}
+                          className="absolute left-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-black/55 text-white backdrop-blur"
+                          aria-label="حذف"
                         >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={src}
-                            alt={`preview-${i}`}
-                            className="h-full w-full object-cover"
-                          />
+                          <X size={16} />
+                        </button>
+                      </div>
+
+                      {/* مصغّرات */}
+                      <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
+                        {previews.slice(1).map((src, i) => {
+                          const idx = i + 1;
+                          return (
+                            <div
+                              key={idx}
+                              className="group relative aspect-square overflow-hidden rounded-xl bg-slate-100"
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={src}
+                                alt=""
+                                onClick={() => moveImageToFirst(idx)}
+                                className="h-full w-full cursor-pointer object-cover"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeImage(idx)}
+                                className="absolute left-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-black/55 text-white"
+                                aria-label="حذف"
+                              >
+                                <X size={12} />
+                              </button>
+                            </div>
+                          );
+                        })}
+
+                        {images.length < MAX_IMAGES && (
                           <button
                             type="button"
-                            onClick={() => removeImage(i)}
-                            className="absolute top-1 left-1 inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-white transition active:scale-90"
-                            aria-label="حذف"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="grid aspect-square place-items-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 text-slate-400 transition hover:border-brand-300 hover:text-brand-600"
                           >
-                            <X size={14} />
+                            <div className="flex flex-col items-center gap-1">
+                              <ImagePlus size={20} />
+                              <span className="text-[10px] font-bold">إضافة</span>
+                            </div>
                           </button>
-                          {i === 0 ? (
-                            <span className="absolute bottom-1 right-1 rounded-full bg-action-500 px-2 py-0.5 text-[9px] font-black text-white">
-                              الرئيسية
-                            </span>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => moveImageToFirst(i)}
-                              className="absolute bottom-1 right-1 rounded-full bg-black/60 px-2 py-0.5 text-[9px] font-black text-white transition active:scale-95"
-                            >
-                              ↑ رئيسية
-                            </button>
-                          )}
-                        </div>
-                      ))}
-
-                      {images.length < MAX_IMAGES && (
-                        <label
-                          className="
-                            flex aspect-square cursor-pointer items-center justify-center
-                            rounded-2xl border-2 border-dashed border-slate-300
-                            bg-slate-50 transition hover:border-brand-400
-                            hover:bg-brand-50/30
-                            dark:border-slate-700 dark:bg-slate-800
-                            dark:hover:border-brand-700
-                          "
-                        >
-                          <ImagePlus
-                            size={20}
-                            className="text-slate-400"
-                            aria-hidden="true"
-                          />
-                          <input
-                            type="file"
-                            multiple
-                            accept="image/*"
-                            onChange={handleImages}
-                            className="hidden"
-                          />
-                        </label>
-                      )}
+                        )}
+                      </div>
+                      <p className="text-center text-[11px] text-slate-400">
+                        {images.length} صور · اضغط على صورة لجعلها الرئيسية
+                      </p>
                     </div>
-                    <p className="mt-2 text-xs text-slate-500">
-                      أول صورة هي الصورة الرئيسية. اضغط ↑ لتغيير الصورة الرئيسية.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* عنوان + قسم */}
-              <div>
-                <Label required>عنوان الإعلان</Label>
-                <input
-                  className="input"
-                  value={form.title}
-                  onChange={(e) => set("title", e.target.value)}
-                  placeholder="مثال: هونداي سبورتاج 2020 ممتازة"
-                  maxLength={100}
-                />
-                <p className="mt-1 text-xs text-slate-500">
-                  {form.title.length}/100
-                </p>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <Label required>القسم</Label>
-                  <select
-                    className="input"
-                    value={form.category}
-                    onChange={(e) => set("category", e.target.value)}
-                  >
-                    {listingCategories.map((c) => (
-                      <option key={c}>{c}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <Label required>السعر (د.ل)</Label>
-                  <input
-                    className="input"
-                    type="number"
-                    inputMode="numeric"
-                    value={form.price}
-                    onChange={(e) => set("price", e.target.value)}
-                    placeholder="65000"
-                    min={0}
-                  />
-                  {form.price && Number(form.price) > 0 && (
-                    <p className="mt-1 text-xs font-bold text-brand-700 dark:text-brand-300">
-                      ≈ {formatPrice(Number(form.price))}
-                    </p>
                   )}
-                </div>
-              </div>
-
-              {/* نص إرشادي يتغيّر حسب القسم المختار */}
-              <div className="rounded-2xl border border-brand-200 bg-brand-50/60 p-3 text-xs leading-6 font-bold text-brand-800 dark:border-brand-800 dark:bg-brand-950/30 dark:text-brand-200">
-                {categoryConfig.helper}
-              </div>
-
-              <NavButtons onNext={goNext} step={step} />
-            </div>
-          )}
-
-          {/* ============ Step 2: مواصفات المركبة ============ */}
-          {step === 2 && (
-            <div className="card animate-fade-in space-y-5 p-4 sm:p-6">
-              {/* العنوان العام يظهر فقط للأقسام التي ليست ساحبة سيارات.
-                  الساحبة لها قسم خاص (TowTruckFieldsSection) بعنوانه الخاص،
-                  لذا نتجنّب الازدواج. */}
-              {!categoryConfig.showTowTruckFields && (
-                <SectionHeader
-                  title={
-                    categoryConfig.showVehicleSpecs
-                      ? "مواصفات المركبة"
-                      : "تفاصيل إضافية"
-                  }
-                  hint={
-                    categoryConfig.showVehicleSpecs
-                      ? "اترك ما لا ينطبق فارغاً (اختياري)"
-                      : "هذا القسم لا يحتاج مواصفات مركبة"
-                  }
-                />
+                </Card>
               )}
 
-              {categoryConfig.showVehicleSpecs ? (
+              {/* ============ Step 2: المعلومات الأساسية ============ */}
+              {step === 2 && (
                 <>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <Label>الماركة</Label>
+                  <Card title="معلومات أساسية" subtitle="ابدأ بعنوان واضح وبيانات السيارة">
+                    <Field label="عنوان الإعلان" required>
                       <input
-                        className="input"
-                        value={form.brand}
-                        onChange={(e) => set("brand", e.target.value)}
-                        placeholder="هونداي"
+                        value={form.title}
+                        onChange={(e) => set("title", e.target.value)}
+                        placeholder="مثال: تويوتا كامري 2018 بحالة ممتازة"
+                        className={inputCls}
                       />
-                    </div>
-                    <div>
-                      <Label>الموديل</Label>
-                      <input
-                        className="input"
-                        value={form.model}
-                        onChange={(e) => set("model", e.target.value)}
-                        placeholder="سبورتاج"
-                      />
-                    </div>
-                  </div>
+                    </Field>
 
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <div>
-                      <Label>سنة الصنع</Label>
-                      <input
-                        className="input"
-                        type="number"
-                        inputMode="numeric"
-                        value={form.year}
-                        onChange={(e) => set("year", e.target.value)}
-                        placeholder="2020"
+                    <Field label="القسم" required>
+                      <select
+                        value={form.category}
+                        onChange={(e) => set("category", e.target.value)}
+                        className={inputCls}
+                      >
+                        {listingCategories.map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+
+                    {categoryConfig.showVehicleSpecs && (
+                      <div className="grid grid-cols-2 gap-3">
+                        <Field label="الماركة">
+                          <input
+                            value={form.brand}
+                            onChange={(e) => set("brand", e.target.value)}
+                            placeholder="تويوتا"
+                            className={inputCls}
+                          />
+                        </Field>
+                        <Field label="الموديل">
+                          <input
+                            value={form.model}
+                            onChange={(e) => set("model", e.target.value)}
+                            placeholder="كامري"
+                            className={inputCls}
+                          />
+                        </Field>
+                        <Field label="سنة الصنع">
+                          <input
+                            type="number"
+                            value={form.year}
+                            onChange={(e) => set("year", e.target.value)}
+                            placeholder="2022"
+                            className={inputCls}
+                          />
+                        </Field>
+                        <Field label="المسافة (كم)">
+                          <input
+                            type="number"
+                            value={form.mileage}
+                            onChange={(e) => set("mileage", e.target.value)}
+                            placeholder="35000"
+                            className={inputCls}
+                          />
+                        </Field>
+                        <Field label="نوع الوقود">
+                          <select
+                            value={form.fuel}
+                            onChange={(e) => set("fuel", e.target.value)}
+                            className={inputCls}
+                          >
+                            {fuelTypes.map((f) => (
+                              <option key={f} value={f}>
+                                {f}
+                              </option>
+                            ))}
+                          </select>
+                        </Field>
+                        <Field label="ناقل الحركة">
+                          <select
+                            value={form.transmission}
+                            onChange={(e) => set("transmission", e.target.value)}
+                            className={inputCls}
+                          >
+                            {transmissionTypes.map((t) => (
+                              <option key={t} value={t}>
+                                {t}
+                              </option>
+                            ))}
+                          </select>
+                        </Field>
+                      </div>
+                    )}
+                  </Card>
+
+                  {categoryConfig.showVehicleSpecs && (
+                    <Card title="مواصفات إضافية" subtitle="اختر المميزات المتوفرة">
+                      <div className="flex flex-wrap gap-2">
+                        {FEATURE_CHIPS.map((feat) => {
+                          const active = selectedFeatures.includes(feat);
+                          return (
+                            <button
+                              key={feat}
+                              type="button"
+                              onClick={() => toggleFeature(feat)}
+                              className={cn(
+                                "inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-bold transition",
+                                active
+                                  ? "border-brand-500 bg-brand-50 text-brand-700"
+                                  : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                              )}
+                            >
+                              {active && <Check size={14} className="text-brand-600" />}
+                              {feat}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </Card>
+                  )}
+                </>
+              )}
+
+              {/* ============ Step 3: التفاصيل + الموقع ============ */}
+              {step === 3 && (
+                <>
+                  <Card title="وصف الإعلان" subtitle="اشرح حالة السيارة بالتفصيل">
+                    <Field label="الوصف" required>
+                      <textarea
+                        value={form.description}
+                        onChange={(e) => set("description", e.target.value)}
+                        rows={5}
+                        placeholder="حالة السيارة، الصيانة، أي ملاحظات..."
+                        className={cn(inputCls, "resize-none")}
                       />
-                    </div>
-                    <div>
-                      <Label>اللون</Label>
+                    </Field>
+                    <Field label="اللون">
                       <input
-                        className="input"
                         value={form.color}
                         onChange={(e) => set("color", e.target.value)}
                         placeholder="أبيض"
+                        className={inputCls}
                       />
-                    </div>
-                    <div>
-                      <Label>المحرك</Label>
-                      <input
-                        className="input"
-                        value={form.engine}
-                        onChange={(e) => set("engine", e.target.value)}
-                        placeholder="2.0L"
-                      />
-                    </div>
-                  </div>
+                    </Field>
+                  </Card>
 
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <div>
-                      <Label>المسافة المقطوعة (كم)</Label>
+                  <Card title="الموقع" subtitle="أين تقع السيارة؟">
+                    <Field label="المدينة" required>
+                      <select
+                        value={form.city}
+                        onChange={(e) => set("city", e.target.value)}
+                        className={inputCls}
+                      >
+                        {libyaCities.map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                    <Field label="العنوان (اختياري)">
                       <input
-                        className="input"
-                        type="number"
-                        inputMode="numeric"
-                        value={form.mileage}
-                        onChange={(e) => set("mileage", e.target.value)}
-                        placeholder="120000"
+                        value={form.address}
+                        onChange={(e) => set("address", e.target.value)}
+                        placeholder="حي، شارع..."
+                        className={inputCls}
                       />
-                    </div>
-                    <div>
-                      <Label>نوع الوقود</Label>
-                      <select
-                        className="input"
-                        value={form.fuel}
-                        onChange={(e) => set("fuel", e.target.value)}
-                      >
-                        {fuelTypes.map((f) => (
-                          <option key={f}>{f}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <Label>ناقل الحركة</Label>
-                      <select
-                        className="input"
-                        value={form.transmission}
-                        onChange={(e) => set("transmission", e.target.value)}
-                      >
-                        {transmissionTypes.map((t) => (
-                          <option key={t}>{t}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* حالة السيارة + نوع الدفع */}
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <Label>حالة السيارة</Label>
-                      <select
-                        className="input"
-                        value={form.vehicleCondition}
-                        onChange={(e) =>
-                          set("vehicleCondition", e.target.value)
-                        }
-                      >
-                        {vehicleConditions.map((c) => (
-                          <option key={c}>{c}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <Label>نوع الدفع</Label>
-                      <select
-                        className="input"
-                        value={form.driveType}
-                        onChange={(e) => set("driveType", e.target.value)}
-                      >
-                        {driveTypes.map((d) => (
-                          <option key={d}>{d}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
+                    </Field>
+                    <Field label="رابط الموقع على الخريطة (اختياري)">
+                      <input
+                        value={form.mapLink}
+                        onChange={(e) => set("mapLink", e.target.value)}
+                        placeholder="https://maps.google.com/..."
+                        className={inputCls}
+                        dir="ltr"
+                      />
+                    </Field>
+                  </Card>
                 </>
-              ) : !categoryConfig.showTowTruckFields ? (
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-7 font-bold text-slate-600 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-300">
-                  لا حاجة لمواصفات مركبة في هذا القسم. تابع لإضافة الوصف
-                  والصور وبيانات التواصل في الخطوات التالية.
-                </div>
-              ) : null}
-
-              {/* ============ قسم خاص بخدمة الساحبات ============
-                  يظهر فقط عند اختيار "ساحبة سيارات".
-                  يحوي: المنطقة، المناطق المغطاة، toggle "متاح الآن"،
-                  زر "استخدم موقعي الحالي كموقع الخدمة"، رابط الخريطة. */}
-              {categoryConfig.showTowTruckFields && (
-                <TowTruckFieldsSection
-                  form={form}
-                  set={set}
-                  setBool={setBool}
-                />
               )}
 
-              <NavButtons onNext={goNext} onPrev={goPrev} step={step} />
-            </div>
-          )}
+              {/* ============ Step 4: السعر ============ */}
+              {step === 4 && (
+                <Card title="السعر" subtitle="حدّد سعر البيع">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <input
+                        type="number"
+                        value={form.price}
+                        onChange={(e) => set("price", e.target.value)}
+                        placeholder="0"
+                        className="w-40 bg-transparent text-center text-4xl font-black text-slate-900 outline-none placeholder:text-slate-300"
+                      />
+                      <span className="text-lg font-black text-slate-400">د.ل</span>
+                    </div>
+                    {Number(form.price) > 0 && (
+                      <p className="mt-2 text-sm font-bold text-brand-700">
+                        {formatPrice(Number(form.price))} دينار ليبي
+                      </p>
+                    )}
+                  </div>
 
-          {/* ============ Step 3: الوصف + الموقع ============ */}
-          {step === 3 && (
-            <div className="card animate-fade-in space-y-5 p-4 sm:p-6">
-              <SectionHeader title="وصف الإعلان والموقع" />
-
-              <div>
-                <Label required>الوصف</Label>
-                <textarea
-                  className="input min-h-[140px] resize-y"
-                  value={form.description}
-                  onChange={(e) => set("description", e.target.value)}
-                  placeholder="اكتب الحالة، المواصفات، الميزات وأي معلومات مهمة للمشتري..."
-                  maxLength={2000}
-                />
-                <p className="mt-1 text-xs text-slate-500">
-                  {form.description.length}/2000
-                </p>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <Label hint="افصلها بفاصلة">المميزات</Label>
-                  <textarea
-                    className="input min-h-[80px] resize-y"
-                    value={form.features}
-                    onChange={(e) => set("features", e.target.value)}
-                    placeholder="فل أبشن، شاشة، كاميرا، فتحة سقف"
-                  />
-                </div>
-                <div>
-                  <Label hint="افصلها بفاصلة">عيوب وملاحظات</Label>
-                  <textarea
-                    className="input min-h-[80px] resize-y"
-                    value={form.defects}
-                    onChange={(e) => set("defects", e.target.value)}
-                    placeholder="خدش بسيط في المصد"
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <Label required>المدينة</Label>
-                  <select
-                    className="input"
-                    value={form.city}
-                    onChange={(e) => set("city", e.target.value)}
-                  >
-                    {libyaCities.map((c) => (
-                      <option key={c}>{c}</option>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {[10000, 25000, 50000, 100000].map((v) => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => set("price", String(v))}
+                        className="flex-1 rounded-xl border border-slate-200 bg-white py-2 text-sm font-bold text-slate-600 transition hover:border-brand-300 hover:text-brand-700"
+                      >
+                        {formatPrice(v)}
+                      </button>
                     ))}
-                  </select>
-                </div>
-                <div>
-                  <Label>العنوان المختصر</Label>
-                  <input
-                    className="input"
-                    value={form.address}
-                    onChange={(e) => set("address", e.target.value)}
-                    placeholder="عين زارة - بجانب جامع..."
-                  />
-                </div>
-              </div>
+                  </div>
+                </Card>
+              )}
 
-              <div>
-                <Label hint="اختياري">رابط Google Maps</Label>
-                <input
-                  className="input"
-                  dir="ltr"
-                  value={form.mapLink}
-                  onChange={(e) => set("mapLink", e.target.value)}
-                  placeholder="https://maps.app.goo.gl/..."
-                />
-              </div>
+              {/* ============ Step 5: التواصل + النشر ============ */}
+              {step === 5 && (
+                <Card title="معلومات التواصل" subtitle="كيف يتواصل المشترون معك؟">
+                  <Field label="الاسم المعروض">
+                    <input
+                      value={form.sellerName}
+                      onChange={(e) => set("sellerName", e.target.value)}
+                      placeholder="اسمك أو اسم المعرض"
+                      className={inputCls}
+                    />
+                  </Field>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="رقم الهاتف" required>
+                      <input
+                        value={form.phone}
+                        onChange={(e) => set("phone", e.target.value)}
+                        placeholder="091xxxxxxx"
+                        className={inputCls}
+                        dir="ltr"
+                      />
+                    </Field>
+                    <Field label="واتساب">
+                      <input
+                        value={form.whatsapp}
+                        onChange={(e) => set("whatsapp", e.target.value)}
+                        placeholder="091xxxxxxx"
+                        className={inputCls}
+                        dir="ltr"
+                      />
+                    </Field>
+                  </div>
 
-              <NavButtons onNext={goNext} onPrev={goPrev} step={step} />
-            </div>
-          )}
-
-          {/* ============ Step 4: التواصل + الملخص ============ */}
-          {step === 4 && (
-            <div className="card animate-fade-in space-y-5 p-4 sm:p-6">
-              <SectionHeader title="التواصل والنشر" />
-
-              <div>
-                <Label hint="نشاطك التجاري أو اسمك">اسم المعلن</Label>
-                <input
-                  className="input"
-                  value={form.sellerName}
-                  onChange={(e) => set("sellerName", e.target.value)}
-                  placeholder="اسمك أو نشاطك التجاري"
-                />
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <Label required>رقم الهاتف</Label>
-                  <input
-                    className="input"
-                    dir="ltr"
-                    type="tel"
-                    value={form.phone}
-                    onChange={(e) => set("phone", e.target.value)}
-                    placeholder="0912345678"
-                  />
-                </div>
-                <div>
-                  <Label hint="إذا كان مختلف">واتساب</Label>
-                  <input
-                    className="input"
-                    dir="ltr"
-                    type="tel"
-                    value={form.whatsapp}
-                    onChange={(e) => set("whatsapp", e.target.value)}
-                    placeholder="0912345678"
-                  />
-                </div>
-              </div>
-
-              {/* Summary preview */}
-              <div className="rounded-3xl border border-brand-200 bg-brand-50/50 p-4 dark:border-brand-800 dark:bg-brand-950/30">
-                <h4 className="mb-2 inline-flex items-center gap-1.5 text-sm font-black text-brand-800 dark:text-brand-200">
-                  <Tag size={14} />
-                  ملخص الإعلان
-                </h4>
-                <ul className="space-y-1 text-xs text-slate-700 dark:text-slate-200">
-                  <SummaryRow label="العنوان" value={form.title} />
-                  <SummaryRow label="القسم" value={form.category} />
-                  <SummaryRow
-                    label="السعر"
-                    value={form.price ? formatPrice(Number(form.price)) : "—"}
-                  />
-                  <SummaryRow label="المدينة" value={form.city} />
-                  <SummaryRow
-                    label="الصور"
-                    value={`${images.length} صورة`}
-                  />
-                </ul>
-              </div>
-
-              {/* أزرار */}
-              <div className="grid grid-cols-[auto_1fr] gap-2">
-                <button
-                  type="button"
-                  onClick={goPrev}
-                  className="btn-secondary !px-4"
-                  disabled={submitting}
-                >
-                  <ChevronRight size={16} />
-                  السابق
-                </button>
-                <button
-                  type="submit"
-                  className="btn-action"
-                  disabled={submitting}
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin" />
-                      جارٍ النشر...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle size={16} />
-                      نشر الإعلان
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          )}
+                  <div className="mt-2 rounded-2xl border border-brand-100 bg-brand-50/50 p-4">
+                    <p className="text-sm font-bold text-slate-700">
+                      جاهز للنشر؟
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      سيظهر إعلانك للعموم بعد مراجعة سريعة من المشرف.
+                    </p>
+                  </div>
+                </Card>
+              )}
+            </motion.div>
+          </AnimatePresence>
         </form>
       </div>
-    </section>
+
+      {/* ============ Sticky Bottom Bar ============ */}
+      <div
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200/70 bg-white/85 backdrop-blur-lg"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3">
+          {step > 1 ? (
+            <button
+              type="button"
+              onClick={goPrev}
+              className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-600 transition hover:bg-slate-50"
+            >
+              السابق
+            </button>
+          ) : (
+            <div className="w-[1px]" />
+          )}
+
+          {step < TOTAL_STEPS ? (
+            <button
+              type="button"
+              onClick={goNext}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-brand-700 px-6 py-3 text-sm font-black text-white shadow-sm transition hover:bg-brand-800"
+            >
+              التالي
+              <ChevronLeft size={18} />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-brand-700 px-6 py-3 text-sm font-black text-white shadow-sm transition hover:bg-brand-800 disabled:opacity-60"
+            >
+              {submitting ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  جارٍ النشر...
+                </>
+              ) : (
+                <>
+                  <CheckCircle size={18} />
+                  نشر الإعلان
+                </>
+              )}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
-/* ============================================================
- * Stepper - متجاوب وأنظف
- * ============================================================ */
+/* ================= مكوّنات مساعدة ================= */
+
+const inputCls =
+  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-bold text-slate-900 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20";
+
+function Card({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-3xl bg-white p-5 shadow-[0_2px_16px_-6px_rgba(15,23,42,0.08)]">
+      <div className="mb-4">
+        <h2 className="text-base font-black text-slate-900">{title}</h2>
+        {subtitle && (
+          <p className="mt-0.5 text-xs text-slate-400">{subtitle}</p>
+        )}
+      </div>
+      <div className="space-y-3">{children}</div>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  required,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-[13px] font-black text-slate-700">
+        {label}
+        {required && <span className="text-rose-500"> *</span>}
+      </span>
+      {children}
+    </label>
+  );
+}
+
 function Stepper({
   currentStep,
   onStepClick,
@@ -1000,394 +1017,57 @@ function Stepper({
   currentStep: number;
   onStepClick: (n: number) => void;
 }) {
-  const progress = ((currentStep - 1) / (TOTAL_STEPS - 1)) * 100;
-
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900 sm:p-4">
-      {/* شريط التقدم */}
-      <div className="relative mb-3 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-        <div
-          className="absolute inset-y-0 right-0 rounded-full bg-gradient-to-l from-brand-700 to-brand-500 transition-all duration-500"
-          style={{ width: `${progress}%` }}
-        />
-      </div>
-
-      {/* النقاط */}
-      <div className="flex items-center justify-between">
-        {STEP_LABELS.map((s) => {
+    <div className="mb-4 rounded-3xl bg-white p-4 shadow-[0_2px_16px_-6px_rgba(15,23,42,0.08)]">
+      <div className="flex items-center">
+        {STEPS.map((s, i) => {
           const done = currentStep > s.n;
           const active = currentStep === s.n;
-          const clickable = s.n < currentStep;
+          const Icon = s.icon;
           return (
-            <button
-              key={s.n}
-              type="button"
-              onClick={() => clickable && onStepClick(s.n)}
-              disabled={!clickable && !active}
-              className={cn(
-                "flex flex-col items-center gap-1 transition",
-                clickable && "cursor-pointer hover:opacity-80"
+            <div key={s.n} className="flex flex-1 items-center last:flex-none">
+              <button
+                type="button"
+                onClick={() => onStepClick(s.n)}
+                className="flex flex-col items-center gap-1"
+              >
+                <motion.span
+                  animate={{
+                    scale: active ? 1.1 : 1,
+                  }}
+                  className={cn(
+                    "grid h-9 w-9 place-items-center rounded-full text-sm font-black transition",
+                    done
+                      ? "bg-brand-600 text-white"
+                      : active
+                      ? "bg-brand-600 text-white shadow-lg shadow-brand-600/30"
+                      : "bg-slate-100 text-slate-400"
+                  )}
+                >
+                  {done ? <Check size={16} /> : <Icon size={16} />}
+                </motion.span>
+                <span
+                  className={cn(
+                    "text-[10px] font-bold",
+                    active || done ? "text-brand-700" : "text-slate-400"
+                  )}
+                >
+                  {s.label}
+                </span>
+              </button>
+              {i < STEPS.length - 1 && (
+                <div className="mx-1 mb-4 h-0.5 flex-1 rounded-full bg-slate-100">
+                  <motion.div
+                    initial={false}
+                    animate={{ width: done ? "100%" : "0%" }}
+                    transition={{ duration: 0.3 }}
+                    className="h-full rounded-full bg-brand-600"
+                  />
+                </div>
               )}
-            >
-              <span
-                className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-full text-xs font-black transition",
-                  done && "bg-brand-700 text-white",
-                  active && "bg-brand-700 text-white ring-4 ring-brand-100 dark:ring-brand-900/40",
-                  !done && !active && "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
-                )}
-              >
-                {done ? <CheckCircle size={15} /> : s.n}
-              </span>
-              <span
-                className={cn(
-                  "hidden text-[11px] font-bold sm:block",
-                  active
-                    ? "text-brand-700 dark:text-brand-300"
-                    : "text-slate-500 dark:text-slate-400"
-                )}
-              >
-                {s.short}
-              </span>
-            </button>
+            </div>
           );
         })}
-      </div>
-    </div>
-  );
-}
-
-/* ============================================================
- * Helpers
- * ============================================================ */
-function Label({
-  children,
-  required,
-  hint,
-}: {
-  children: React.ReactNode;
-  required?: boolean;
-  hint?: string;
-}) {
-  return (
-    <label className="mb-1.5 flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-200">
-      <span>
-        {children}
-        {required && <span className="mx-1 text-rose-600">*</span>}
-      </span>
-      {hint && (
-        <span className="text-[10px] font-normal text-slate-400">{hint}</span>
-      )}
-    </label>
-  );
-}
-
-function SectionHeader({
-  title,
-  hint,
-}: {
-  title: string;
-  hint?: string;
-}) {
-  return (
-    <div className="border-b border-slate-100 pb-3 dark:border-slate-800">
-      <h2 className="text-lg font-black text-slate-950 dark:text-white">
-        {title}
-      </h2>
-      {hint && (
-        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-          {hint}
-        </p>
-      )}
-    </div>
-  );
-}
-
-function NavButtons({
-  onNext,
-  onPrev,
-  step,
-}: {
-  onNext: () => void;
-  onPrev?: () => void;
-  step: number;
-}) {
-  return (
-    <div className="grid grid-cols-[auto_1fr] gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
-      {onPrev ? (
-        <button
-          type="button"
-          onClick={onPrev}
-          className="btn-secondary !px-4"
-        >
-          <ChevronRight size={16} />
-          السابق
-        </button>
-      ) : (
-        <div />
-      )}
-      <button
-        type="button"
-        onClick={onNext}
-        className="btn-primary"
-      >
-        التالي
-        <ChevronLeft size={16} />
-      </button>
-    </div>
-  );
-}
-
-function ImageUploadDropzone({
-  onChange,
-}: {
-  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
-}) {
-  return (
-    <label
-      className="
-        flex cursor-pointer flex-col items-center justify-center gap-2
-        rounded-3xl border-2 border-dashed border-slate-300 bg-slate-50
-        p-8 text-center transition hover:border-brand-400 hover:bg-brand-50/30
-        dark:border-slate-700 dark:bg-slate-800 dark:hover:border-brand-700
-      "
-    >
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
-        <Camera size={24} />
-      </div>
-      <span className="text-sm font-black text-slate-700 dark:text-slate-200">
-        اضغط لاختيار الصور
-      </span>
-      <span className="text-xs text-slate-500">
-        أول صورة هي الرئيسية. حد أقصى {MAX_IMAGES} صورة، 10 ميجابايت لكل صورة.
-      </span>
-      <input
-        type="file"
-        multiple
-        accept="image/*"
-        onChange={onChange}
-        className="hidden"
-      />
-    </label>
-  );
-}
-
-function SummaryRow({ label, value }: { label: string; value: string }) {
-  return (
-    <li className="flex items-baseline justify-between gap-2">
-      <span className="text-slate-500 dark:text-slate-400">{label}</span>
-      <span className="truncate font-black text-slate-900 dark:text-white">
-        {value || "—"}
-      </span>
-    </li>
-  );
-}
-
-/* ============================================================
- * TowTruckFieldsSection
- *
- * قسم يظهر فقط لخدمات الساحبات في الخطوة 2.
- * يحوي حقولاً خاصة بهذا النوع من الخدمات:
- *  - المنطقة داخل المدينة (area)
- *  - المناطق المغطاة (coverageAreas - نص حر)
- *  - toggle "متاح الآن"
- *  - زر "استخدم موقعي الحالي" للحصول على إحداثيات الخدمة
- *  - latitude/longitude للعرض/التعديل اليدوي
- *  - locationUrl - رابط Google Maps اختياري
- *
- * عن الإحداثيات: يستخدم Browser Geolocation API. الموقع الذي يلتقطه
- * صاحب الخدمة هنا هو موقع *الخدمة الثابت* (موقع مكتبه/سيارته الأساسي)،
- * ليس موقعه الحالي كمستخدم. يُحفظ في Firestore. كل عملية إنشاء/تعديل
- * طوعية ومُبدأة بنقرة المالك.
- * ============================================================ */
-function TowTruckFieldsSection({
-  form,
-  set,
-  setBool,
-}: {
-  form: FormState;
-  set: (k: keyof FormState, v: string) => void;
-  setBool: (k: keyof FormState, v: boolean) => void;
-}) {
-  const [busy, setBusy] = useState(false);
-  const [locError, setLocError] = useState("");
-
-  const handleUseMyLocation = () => {
-    if (typeof window === "undefined") return;
-    if (!("geolocation" in navigator)) {
-      setLocError("جهازك لا يدعم تحديد الموقع.");
-      return;
-    }
-    setBusy(true);
-    setLocError("");
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        set("latitude", pos.coords.latitude.toFixed(6));
-        set("longitude", pos.coords.longitude.toFixed(6));
-        setBusy(false);
-      },
-      (err) => {
-        setBusy(false);
-        if (err.code === 1) {
-          setLocError("لم يتم السماح بالوصول للموقع.");
-        } else if (err.code === 2) {
-          setLocError("تعذّر تحديد الموقع. تأكد من تفعيل GPS.");
-        } else {
-          setLocError("حدث خطأ أثناء تحديد الموقع.");
-        }
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-    );
-  };
-
-  return (
-    <div className="space-y-4 rounded-2xl border border-action-200 bg-action-50/40 p-4 dark:border-action-800/40 dark:bg-action-900/10">
-      <div className="flex items-start gap-2">
-        <div className="mt-0.5 text-action-600 dark:text-action-300">⚡</div>
-        <div>
-          <h3 className="text-sm font-black text-slate-900 dark:text-white">
-            تفاصيل خدمة الساحبة
-          </h3>
-          <p className="mt-0.5 text-[11px] text-slate-600 dark:text-slate-300">
-            ساعد المستخدمين على إيجاد ساحبتك بسرعة عند الحاجة.
-          </p>
-        </div>
-      </div>
-
-      {/* الحالة + المنطقة */}
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div>
-          <Label>المنطقة داخل المدينة</Label>
-          <input
-            className="input"
-            value={form.area}
-            onChange={(e) => set("area", e.target.value)}
-            placeholder="حي الأندلس، طريق المطار..."
-            maxLength={80}
-          />
-        </div>
-
-        <div>
-          <Label>متاح الآن للاستلام؟</Label>
-          <button
-            type="button"
-            onClick={() => setBool("availableNow", !form.availableNow)}
-            className={`flex h-11 w-full items-center justify-between rounded-2xl border px-3 text-sm font-black transition active:scale-[0.99] ${
-              form.availableNow
-                ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700/40 dark:bg-emerald-900/20 dark:text-emerald-300"
-                : "border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
-            }`}
-          >
-            <span>
-              {form.availableNow ? "نعم، متاح الآن" : "غير متاح حالياً"}
-            </span>
-            <span
-              aria-hidden="true"
-              className={`relative inline-block h-6 w-11 rounded-full transition ${
-                form.availableNow ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"
-              }`}
-            >
-              <span
-                className={`absolute top-0.5 inline-block h-5 w-5 rounded-full bg-white shadow transition ${
-                  form.availableNow ? "right-0.5" : "right-5"
-                }`}
-              />
-            </span>
-          </button>
-        </div>
-      </div>
-
-      {/* المناطق التي تغطيها */}
-      <div>
-        <Label hint="نص حر يصف نطاق التغطية">
-          المناطق التي تغطيها
-        </Label>
-        <textarea
-          className="input min-h-[70px] resize-y"
-          value={form.coverageAreas}
-          onChange={(e) => set("coverageAreas", e.target.value)}
-          placeholder="مثال: طرابلس، عين زارة، تاجوراء، السواني..."
-          maxLength={300}
-        />
-        <p className="mt-1 text-[10px] text-slate-500">
-          {form.coverageAreas.length}/300
-        </p>
-      </div>
-
-      {/* الإحداثيات + زر استخدم موقعي */}
-      <div className="space-y-2">
-        <Label hint="يظهر المسافة للمستخدمين القريبين">
-          موقع الخدمة (اختياري)
-        </Label>
-        <p className="inline-flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400">
-          <ShieldCheck size={10} />
-          الموقع الذي تلتقطه يُحفظ كموقع ثابت لخدمتك (مكتبك أو سيارتك).
-        </p>
-
-        <button
-          type="button"
-          onClick={handleUseMyLocation}
-          disabled={busy}
-          className="
-            inline-flex h-11 w-full items-center justify-center gap-1.5
-            rounded-2xl border border-action-300 bg-white text-sm font-black
-            text-action-700 transition active:scale-95 hover:bg-action-50
-            disabled:opacity-60
-            dark:border-action-800/40 dark:bg-slate-900 dark:text-action-300
-            dark:hover:bg-action-900/20
-          "
-        >
-          {busy ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : (
-            <MapPin size={16} />
-          )}
-          {busy ? "جارٍ تحديد الموقع..." : "استخدم موقعي الحالي كموقع الخدمة"}
-        </button>
-
-        {locError && (
-          <p className="text-[11px] text-rose-600 dark:text-rose-300">{locError}</p>
-        )}
-
-        {(form.latitude || form.longitude) && (
-          <div className="grid gap-2 sm:grid-cols-2">
-            <div>
-              <Label>خط العرض (latitude)</Label>
-              <input
-                className="input"
-                value={form.latitude}
-                onChange={(e) => set("latitude", e.target.value)}
-                placeholder="32.880000"
-                inputMode="decimal"
-                dir="ltr"
-              />
-            </div>
-            <div>
-              <Label>خط الطول (longitude)</Label>
-              <input
-                className="input"
-                value={form.longitude}
-                onChange={(e) => set("longitude", e.target.value)}
-                placeholder="13.180000"
-                inputMode="decimal"
-                dir="ltr"
-              />
-            </div>
-          </div>
-        )}
-
-        <div>
-          <Label hint="رابط من Google Maps">
-            رابط الموقع على الخريطة (اختياري)
-          </Label>
-          <input
-            className="input"
-            value={form.locationUrl}
-            onChange={(e) => set("locationUrl", e.target.value)}
-            placeholder="https://maps.google.com/..."
-            dir="ltr"
-          />
-        </div>
       </div>
     </div>
   );
