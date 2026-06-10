@@ -140,7 +140,7 @@ export async function POST(req: NextRequest) {
       }
 
       const senderData = senderSnap.data() || {};
-      const senderBalance = Number(senderData.walletBalance || 0);
+      const senderBalance = Number(senderData.balance || 0);
 
       // فحص الرصيد
       if (senderBalance < amount) {
@@ -160,13 +160,13 @@ export async function POST(req: NextRequest) {
 
       // خصم من المرسِل
       tx.update(senderRef, {
-        walletBalance: FieldValue.increment(-amount),
+        balance: FieldValue.increment(-amount),
         updatedAt: FieldValue.serverTimestamp(),
       });
 
       // إضافة للمستلم
       tx.update(recipientRef, {
-        walletBalance: FieldValue.increment(amount),
+        balance: FieldValue.increment(amount),
         updatedAt: FieldValue.serverTimestamp(),
       });
 

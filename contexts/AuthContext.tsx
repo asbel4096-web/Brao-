@@ -11,7 +11,7 @@ import {
   ReactNode,
 } from "react";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, getDoc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { getApp } from "firebase/app";
 import { useSearchAlertMatcher } from "@/hooks/useSearchAlertMatcher";
@@ -197,6 +197,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     return () => unsub();
   }, [loadProfile]);
+
+  // ----------------------------------------------------------------
+  // مستمع realtime لوثيقة المستخدم users/{uid}.
+  //
+  // السبب: loadProfile يقرأ مرة واحدة (getDoc) عند الدخول. أي تحديث
+  // لاحق على الوثيقة — مثل إضافة رصيد عند الموافقة على طلب شحن،
+  // أو خصم عند شراء باقة — لا ينعكس على الواجهة حتى إعادة تحميل.
+  //
+  // هذا المستمع يبقي الـprofile (ومنه الرصيد) محدّثاً لحظياً. يُفعّل
+  // فقط بعد أن يكون لدينا profile مُحمّل (أي مستخدم موجود وغير معطّل)،
+  // كي لا يتعارض مع منطق loadProfile للحالات الخاصة (جديد/معطّل).
+  // ----------------------------------------------------------------
+  useEffect(() => {
+    if (!user) return;
+    const userRef = doc(db, "users", user.uid);
+    const unsub = onSnapshot(
+      userRef,
+      (snap) => {
+        if (!snap.exists()) return;
+        const data = snap.data() as UserProfile;
+        // لو عُطّل الحساب أثناء الجلسة، لا نُحدّث (يُدار في loadProfile/مكان آخر)
+        if ((data as any).disabled === true) return;
+        setProfile((prev) =>
+          prev ? { ...prev, ...(data as any), uid: user.uid } : prev
+        );
+      },
+      (err) => {
+        // eslint-disable-next-line no-console
+        console.warn("[Auth] profile snapshot error:", err?.code || "");
+      }
+    );
+    return () => unsub();
+  }, [user]);
 
   /**
    * Presence heartbeat.

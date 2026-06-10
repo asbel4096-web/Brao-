@@ -45,7 +45,9 @@ export default function WalletPage() {
   const [transferOpen, setTransferOpen] = useState(false);
 
   // رصيد المستخدم الحالي (لتمريره للتحويل)
-  const currentBalance = Number((profile as any)?.walletBalance || 0);
+  // ملاحظة: الحقل المعتمد عبر المشروع هو balance (نفس ما يقرأه useWallet
+  // ويكتبه approve/boost/verification). كان walletBalance خطأً سابقاً.
+  const currentBalance = Number((profile as any)?.balance || 0);
 
   // Redirect: غير المسجلين → login
   useEffect(() => {
