@@ -1,57 +1,39 @@
 <!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>أضف سيارة</title><script src="https://cdn.tailwindcss.com"></script>
-<style>body{font-family:Tahoma,sans-serif;background:#F8FAFC}.b6{background:#2563EB}.tb{color:#2563EB}.bl{background:#EFF6FF}</style>
-</head><body class="pb-28">
-<div class="max-w-md mx-auto px-3 py-4">
-  <h1 class="text-2xl font-black text-slate-900">أضف سيارة جديدة</h1>
-  <p class="text-sm text-slate-500 mb-4">أكمل الخطوات لنشر إعلانك باحترافية</p>
-
-  <!-- Stepper -->
-  <div class="bg-white rounded-3xl p-4 shadow-sm mb-4">
-    <div class="flex items-center">
-      <div class="flex flex-col items-center gap-1"><span class="grid h-9 w-9 place-items-center rounded-full b6 text-white">✓</span><span class="text-[10px] font-bold tb">الصور</span></div>
-      <div class="mx-1 mb-4 h-0.5 flex-1 b6 rounded-full"></div>
-      <div class="flex flex-col items-center gap-1"><span class="grid h-9 w-9 place-items-center rounded-full b6 text-white shadow-lg">🚗</span><span class="text-[10px] font-bold tb">المعلومات</span></div>
-      <div class="mx-1 mb-4 h-0.5 flex-1 bg-slate-100 rounded-full"></div>
-      <div class="flex flex-col items-center gap-1"><span class="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-slate-400">📄</span><span class="text-[10px] font-bold text-slate-400">التفاصيل</span></div>
-      <div class="mx-1 mb-4 h-0.5 flex-1 bg-slate-100 rounded-full"></div>
-      <div class="flex flex-col items-center gap-1"><span class="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-slate-400">🏷️</span><span class="text-[10px] font-bold text-slate-400">السعر</span></div>
-      <div class="mx-1 mb-4 h-0.5 flex-1 bg-slate-100 rounded-full"></div>
-      <div class="flex flex-col items-center gap-1"><span class="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-slate-400">✓</span><span class="text-[10px] font-bold text-slate-400">نشر</span></div>
-    </div>
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Bottom Nav</title>
+<style>
+*{margin:0;box-sizing:border-box;font-family:Tahoma,sans-serif}
+body{min-height:100vh;background:linear-gradient(135deg,#1c2740,#3a4a6b 40%,#8a9bb5);display:flex;align-items:flex-end;justify-content:center}
+.phone{width:390px;height:520px;position:relative;overflow:hidden}
+/* محتوى خلفي ليُظهر الشفافية */
+.bg{position:absolute;inset:0;padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:start}
+.card{background:rgba(255,255,255,0.9);border-radius:16px;height:130px}
+.wrap{position:absolute;left:12px;right:12px;bottom:12px}
+.fab{position:absolute;left:50%;top:-18px;transform:translateX(-50%);width:58px;height:58px;border-radius:50%;background:#2563EB;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 30px -6px rgba(37,99,235,0.55);border:4px solid rgba(255,255,255,0.7);z-index:10}
+.fab svg{width:28px;height:28px;stroke:#fff;stroke-width:2.6;fill:none}
+.nav{height:64px;border-radius:28px;display:flex;align-items:stretch;background:rgba(255,255,255,0.75);backdrop-filter:blur(25px);-webkit-backdrop-filter:blur(25px);border:1px solid rgba(255,255,255,0.4);box-shadow:0 8px 40px rgba(0,0,0,0.08);overflow:hidden}
+.item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.item svg{width:23px;height:23px;fill:none;stroke-width:2}
+.item span{font-size:10px;line-height:1}
+.spacer{flex:1}
+.active svg{stroke:#2563EB;fill:#2563EB;stroke-width:2.5}
+.active span{color:#2563EB;font-weight:800}
+.inactive svg{stroke:#64748B}
+.inactive span{color:#64748B;font-weight:600}
+.badge{position:absolute;margin-top:-12px;margin-right:14px;background:#ef4444;color:#fff;font-size:9px;font-weight:800;border-radius:99px;padding:1px 4px;border:2px solid #fff}
+</style></head><body>
+<div class="phone">
+  <div class="bg">
+    <div class="card"></div><div class="card"></div><div class="card"></div><div class="card"></div>
   </div>
-
-  <!-- Card: المعلومات -->
-  <div class="bg-white rounded-3xl p-5 shadow-sm mb-4">
-    <h2 class="text-base font-black text-slate-900">معلومات أساسية</h2>
-    <p class="text-xs text-slate-400 mb-4">ابدأ بعنوان واضح وبيانات السيارة</p>
-    <label class="block mb-3"><span class="block text-[13px] font-black text-slate-700 mb-1.5">عنوان الإعلان <span class="text-rose-500">*</span></span>
-      <input value="تويوتا كامري 2018 بحالة ممتازة" class="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-bold text-slate-900"></label>
-    <div class="grid grid-cols-2 gap-3">
-      <label class="block"><span class="block text-[13px] font-black text-slate-700 mb-1.5">الماركة</span><input value="تويوتا" class="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-bold"></label>
-      <label class="block"><span class="block text-[13px] font-black text-slate-700 mb-1.5">الموديل</span><input value="كامري" class="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-bold"></label>
-    </div>
-  </div>
-
-  <!-- Card: chips -->
-  <div class="bg-white rounded-3xl p-5 shadow-sm">
-    <h2 class="text-base font-black text-slate-900 mb-4">مواصفات إضافية</h2>
-    <div class="flex flex-wrap gap-2">
-      <span class="inline-flex items-center gap-1.5 rounded-xl border border-blue-500 bl tb px-3 py-2 text-sm font-bold">✓ كاميرا خلفية</span>
-      <span class="inline-flex items-center gap-1.5 rounded-xl border border-blue-500 bl tb px-3 py-2 text-sm font-bold">✓ حساسات</span>
-      <span class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 text-slate-600 px-3 py-2 text-sm font-bold">مكيف</span>
-      <span class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 text-slate-600 px-3 py-2 text-sm font-bold">بلوتوث</span>
-      <span class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 text-slate-600 px-3 py-2 text-sm font-bold">فتحة سقف</span>
-    </div>
-  </div>
-</div>
-
-<!-- Sticky bar -->
-<div class="fixed inset-x-0 bottom-0 border-t border-slate-200 bg-white/85 backdrop-blur-lg">
-  <div class="max-w-md mx-auto flex items-center gap-3 px-4 py-3">
-    <button class="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-black text-slate-600">السابق</button>
-    <button class="flex-1 flex items-center justify-center gap-1.5 rounded-2xl b6 px-6 py-3 text-sm font-black text-white">التالي ‹</button>
+  <div class="wrap">
+    <div class="fab"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
+    <nav class="nav">
+      <a class="item inactive"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg><span>الرئيسية</span></a>
+      <a class="item inactive"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><span>الإعلانات</span></a>
+      <div class="spacer"></div>
+      <a class="item inactive" style="position:relative"><span class="badge">3</span><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg><span>المفضلة</span></a>
+      <a class="item active"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8z"/></svg><span>الدردشة</span></a>
+    </nav>
   </div>
 </div>
 </body></html>
