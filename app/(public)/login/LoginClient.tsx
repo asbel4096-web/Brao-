@@ -54,7 +54,12 @@ export default function LoginClient() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const redirectTo = params.get("redirect") || "/profile";
-  const fullPhone = `${COUNTRY_CODE}${phoneDigits}`;
+  // تطبيع الرقم: نزيل أي أصفار بادئة قبل دمجه مع رمز الدولة.
+  // أرقام ليبيا المحلية تبدأ بـ0 (مثل 0913441664)، لكن الصيغة الدولية
+  // لا تحوي هذا الصفر (+218913441664). بدون إزالته يصبح الرقم
+  // +2180913441664 وهو خاطئ → لا يصل SMS (سبب "أرقام تعمل وأخرى لا").
+  const nationalDigits = phoneDigits.replace(/\D/g, "").replace(/^0+/, "");
+  const fullPhone = `${COUNTRY_CODE}${nationalDigits}`;
 
   // إعادة التوجيه:
   // - مستخدم جديد بدون اسم → /profile/complete
@@ -145,10 +150,11 @@ export default function LoginClient() {
     setError("");
     setInfo("");
 
-    // تحقق محلي
-    const digits = phoneDigits.replace(/\D/g, "");
+    // تحقق محلي - نتحقق من الرقم بعد إزالة الأصفار البادئة.
+    // أرقام ليبيا المحلية 9 أرقام (بدون الصفر) أو 10 (مع الصفر).
+    const digits = nationalDigits;
     if (digits.length < 9 || digits.length > 10) {
-      setError("اكتب رقم هاتف ليبي صحيح (9-10 أرقام).");
+      setError("اكتب رقم هاتف ليبي صحيح (9 أرقام بعد رمز الدولة).");
       return;
     }
 
