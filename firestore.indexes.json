@@ -88,6 +88,15 @@
       "fields": [
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "_comment": "تحويلات المحفظة - فحص الحد اليومي: senderUid==X + createdAt>=بداية اليوم",
+      "collectionGroup": "walletTransfers",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "senderUid", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
