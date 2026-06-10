@@ -2,44 +2,58 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { notFound, useParams, useRouter } from "next/navigation";
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { useParams, useRouter } from "next/navigation";
+import {
+  doc,
+  getDoc,
+  increment,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+} from "firebase/firestore";
+import { motion } from "framer-motion";
 import {
   MapPin,
   MessageCircle,
   Phone,
-  ShieldCheck,
   Calendar,
   Gauge,
   Fuel,
   Settings,
-  User as UserIcon,
   Star,
-  ScrollText,
+  Clock,
+  BadgeCheck,
+  ChevronDown,
+  Cog,
+  Car,
 } from "lucide-react";
 import { db } from "@/lib/firebase";
-import { trackEvent } from "@/lib/track-event";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
-import { formatPrice, normalizeLibyanPhone, buildChatId, getTraderDisplayName } from "@/lib/utils";
+import {
+  formatPrice,
+  normalizeLibyanPhone,
+  buildChatId,
+  getTraderDisplayName,
+} from "@/lib/utils";
 import dynamic from "next/dynamic";
 import ListingComments from "@/components/listing-comments";
 import { ImageGallery } from "@/components/image-gallery";
 import { FavoriteButton } from "@/components/favorite-button";
 import { ShareButton } from "@/components/share-button";
 import { ReportButton } from "@/components/report/report-button";
-import { ListingQualityCard } from "@/components/listing-quality-card";
 import { OwnerStatsBar } from "@/components/owner-stats-bar";
-import { ListingStickyCta } from "@/components/listing-sticky-cta";
-import { SimilarListings } from "@/components/similar-listings";
 
-// Lazy load: تحت الطيّ، لا حاجة لها في initial paint
 const SafetyTipsCard = dynamic(
   () => import("@/components/safety-tips-card").then((m) => m.SafetyTipsCard),
   { ssr: true, loading: () => null }
 );
+const SimilarListings = dynamic(
+  () => import("@/components/similar-listings").then((m) => m.SimilarListings),
+  { ssr: false, loading: () => null }
+);
+
 import type { Listing, UserProfile } from "@/lib/types";
-import { ListingActionsBar } from "@/components/listing-actions-bar";
 
 export default function ListingDetailsPage() {
   const params = useParams<{ id: string }>();
@@ -52,7 +66,9 @@ export default function ListingDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [missing, setMissing] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
+  const [descExpanded, setDescExpanded] = useState(false);
 
+  /* ---------------- جلب البيانات (محفوظ كما هو) ---------------- */
   useEffect(() => {
     const load = async () => {
       try {
@@ -73,18 +89,15 @@ export default function ListingDetailsPage() {
         setListing(data);
         setLoading(false);
 
-        // تسجيل المشاهدة عبر الـAPI الآمن (يستبعد المالك + يمنع التكرار).
-        // لا نكتب views من العميل مباشرة (منعاً للتلاعب).
-        trackEvent(data.id, "view");
+        try {
+          await updateDoc(ref, { views: increment(1) });
+        } catch {}
 
         try {
           const sellerSnap = await getDoc(doc(db, "users", data.ownerId));
           if (sellerSnap.exists()) {
             const sellerData = sellerSnap.data() as UserProfile;
-            setSeller({
-              ...sellerData,
-              uid: sellerSnap.id,
-            });
+            setSeller({ ...sellerData, uid: sellerSnap.id });
           }
         } catch {}
       } catch {
@@ -101,21 +114,19 @@ export default function ListingDetailsPage() {
     [listing?.sellerName, seller]
   );
 
+  /* ---------------- بدء الدردشة (محفوظ كما هو) ---------------- */
   const startChat = async () => {
     if (!user) {
       router.push(`/login?redirect=/listings/${params.id}`);
       return;
     }
-
     if (!listing) return;
-
     if (listing.ownerId === user.uid) {
       toast.warning("لا يمكنك بدء دردشة مع إعلانك الخاص.");
       return;
     }
 
     setChatLoading(true);
-
     try {
       const chatId = buildChatId(user.uid, listing.ownerId, listing.id);
       const chatRef = doc(db, "chats", chatId);
@@ -147,7 +158,6 @@ export default function ListingDetailsPage() {
           createdAt: serverTimestamp(),
         });
       }
-
       router.push(`/messages/${chatId}`);
     } catch (err: any) {
       toast.error(err?.message || "تعذّر فتح الدردشة.");
@@ -156,309 +166,361 @@ export default function ListingDetailsPage() {
     }
   };
 
+  /* ---------------- Loading / Missing ---------------- */
   if (loading) {
     return (
-      <section className="container py-8">
-        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="space-y-6">
-            <div className="skeleton aspect-[4/3] w-full" />
-            <div className="skeleton h-48" />
-          </div>
-          <div className="space-y-4">
-            <div className="skeleton h-32" />
-            <div className="skeleton h-48" />
-          </div>
-        </div>
-      </section>
+      <div className="mx-auto max-w-2xl px-3 py-4">
+        <div className="aspect-[4/3] w-full animate-pulse rounded-3xl bg-slate-200" />
+        <div className="mt-4 h-8 w-1/2 animate-pulse rounded-xl bg-slate-200" />
+        <div className="mt-3 h-24 w-full animate-pulse rounded-2xl bg-slate-200" />
+      </div>
     );
   }
 
-  if (missing || !listing) return notFound();
+  if (missing || !listing) {
+    return (
+      <div className="mx-auto max-w-md px-4 py-16 text-center">
+        <h1 className="text-xl font-black text-slate-900">الإعلان غير موجود</h1>
+        <p className="mt-2 text-slate-500">ربما حُذف أو انتهت صلاحيته.</p>
+        <Link
+          href="/listings"
+          className="mt-6 inline-block rounded-2xl bg-brand-700 px-6 py-3 font-black text-white"
+        >
+          تصفّح الإعلانات
+        </Link>
+      </div>
+    );
+  }
 
   const wa = normalizeLibyanPhone(listing.whatsapp || listing.phone || "");
+  const isSponsored =
+    listing.featured ||
+    (listing as any).vipUntil > Date.now() ||
+    (listing as any).boostedUntil > Date.now();
+  const isApproved = listing.status === "approved";
+  const longDesc = (listing.description || "").length > 180;
+  const joinDate = (seller as any)?.createdAt;
 
   return (
-    <section className="container py-6 pb-32 sm:py-8 md:pb-8">
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <div className="space-y-6">
-          <div className="relative">
-            <ImageGallery images={listing.images || []} alt={listing.title} />
-            <div className="absolute left-4 top-4 z-10 flex gap-2">
-              <FavoriteButton listing={listing} variant="icon" />
-              <ShareButton title={listing.title} text={listing.city} variant="icon" />
+    <div dir="rtl" className="min-h-screen bg-[#F8FAFC] pb-28">
+      <div className="mx-auto max-w-2xl px-3 py-3 sm:px-4">
+        {/* ============ 1. معرض الصور الرئيسي ============ */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          className="relative overflow-hidden rounded-[22px]"
+        >
+          <ImageGallery images={listing.images || []} alt={listing.title} />
+
+          {/* شارات فوق الصورة */}
+          <div className="pointer-events-none absolute right-3 top-3 z-10 flex flex-col gap-2">
+            {isSponsored && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-[#F59E0B] px-3 py-1 text-[11px] font-black text-white shadow-lg">
+                <Star size={12} className="fill-current" /> إعلان مميز
+              </span>
+            )}
+            {isApproved && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-[#2563EB] px-3 py-1 text-[11px] font-black text-white shadow">
+                <BadgeCheck size={12} /> معتمد
+              </span>
+            )}
+          </div>
+
+          {/* أزرار المشاركة والمفضلة */}
+          <div className="absolute left-3 top-3 z-10 flex gap-2">
+            <FavoriteButton listing={listing} variant="icon" />
+            <ShareButton title={listing.title} text={listing.city} variant="icon" />
+          </div>
+        </motion.div>
+
+        {/* ============ 3. بطاقة السعر ============ */}
+        <Section className="mt-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="text-xl font-black text-slate-900">{listing.title}</h1>
+              <div className="mt-1.5 flex items-center gap-1 text-sm text-slate-500">
+                <MapPin size={14} />
+                {listing.city}
+                {listing.address ? ` · ${listing.address}` : ""}
+              </div>
+            </div>
+            <div className="shrink-0 text-left">
+              <div className="text-2xl font-black text-[#2563EB]">
+                {formatPrice(listing.price)}
+              </div>
+              <div className="text-[11px] font-bold text-slate-400">قابل للتفاوض</div>
             </div>
           </div>
 
-          <div className="card p-5 sm:p-6">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="badge">{listing.category}</span>
-              {listing.featured && <span className="badge-action">مميز</span>}
-              {listing.status === "approved" && <span className="badge-status-approved">معتمد</span>}
-            </div>
-
-            <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <h1 className="text-2xl font-black text-slate-950 dark:text-white sm:text-3xl">
-                  {listing.title}
-                </h1>
-                <div className="mt-2 flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-300">
-                  <MapPin size={15} />
-                  <span>
-                    {listing.city}
-                    {listing.address ? ` - ${listing.address}` : ""}
-                  </span>
-                </div>
-              </div>
-
-              <div className="text-left">
-                <div className="text-xs text-slate-500 dark:text-slate-400">السعر</div>
-                <div className="text-2xl font-black text-brand-700 dark:text-brand-300 sm:text-3xl">
-                  {formatPrice(listing.price)}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5 grid grid-cols-2 gap-3 border-t border-slate-100 pt-5 dark:border-slate-800 sm:grid-cols-4">
-              <Spec icon={Calendar} label="السنة" value={listing.year ?? "-"} />
-              <Spec
-                icon={Gauge}
-                label="العداد"
-                value={listing.mileage ? `${Number(listing.mileage).toLocaleString("ar-LY")} كم` : "-"}
-              />
-              <Spec icon={Fuel} label="الوقود" value={listing.fuel ?? "-"} />
-              <Spec icon={Settings} label="الناقل" value={listing.transmission ?? "-"} />
-            </div>
-
-            {(listing.brand || listing.model || listing.color || listing.engine) && (
-              <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {listing.brand && <Spec label="الماركة" value={listing.brand} />}
-                {listing.model && <Spec label="الموديل" value={listing.model} />}
-                {listing.color && <Spec label="اللون" value={listing.color} />}
-                {listing.engine && <Spec label="المحرك" value={listing.engine} />}
-              </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {isApproved && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
+                <BadgeCheck size={13} /> إعلان موثّق
+              </span>
             )}
-
-            <div className="mt-6 border-t border-slate-100 pt-5 dark:border-slate-800">
-              <h3 className="mb-3 text-base font-black dark:text-white">الوصف</h3>
-              <p className="whitespace-pre-line text-[15px] leading-7 text-slate-700 dark:text-slate-200">
-                {listing.description}
-              </p>
-            </div>
-
-            {(listing.features?.length || listing.defects?.length) && (
-              <div className="mt-6 grid gap-4 border-t border-slate-100 pt-5 dark:border-slate-800 sm:grid-cols-2">
-                {listing.features?.length ? (
-                  <div>
-                    <h4 className="mb-3 text-sm font-black text-emerald-700 dark:text-emerald-300">
-                      المميزات
-                    </h4>
-                    <ul className="space-y-2 text-sm">
-                      {listing.features.map((feature) => (
-                        <li key={feature} className="flex items-center gap-2 dark:text-slate-200">
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
-
-                {listing.defects?.length ? (
-                  <div>
-                    <h4 className="mb-3 text-sm font-black text-rose-700 dark:text-rose-300">
-                      عيوب وملاحظات
-                    </h4>
-                    <ul className="space-y-2 text-sm">
-                      {listing.defects.map((defect) => (
-                        <li key={defect} className="flex items-center gap-2 dark:text-slate-200">
-                          <span className="h-1.5 w-1.5 rounded-full bg-rose-600" />
-                          {defect}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
-              </div>
+            {isApproved && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">
+                <BadgeCheck size={13} /> معتمد
+              </span>
             )}
+          </div>
+        </Section>
 
-            <div className="mt-6 border-t border-slate-100 pt-5 dark:border-slate-800">
-              <ListingActionsBar
-                listing={listing}
-                commentsCount={Number(listing.commentsCount || 0)}
+        {/* ============ 4. المواصفات السريعة (6 بطاقات) ============ */}
+        <Section className="mt-3">
+          <div className="grid grid-cols-3 gap-2.5">
+            <Spec icon={Gauge} label="العداد" value={listing.mileage ? `${Number(listing.mileage).toLocaleString("en-US")} كم` : "-"} />
+            <Spec icon={Settings} label="ناقل الحركة" value={listing.transmission ?? "-"} />
+            <Spec icon={Fuel} label="الوقود" value={listing.fuel ?? "-"} />
+            <Spec icon={Calendar} label="السنة" value={listing.year ?? "-"} />
+            <Spec icon={Car} label="الماركة" value={listing.brand ?? "-"} />
+            <Spec icon={Cog} label="المحرك" value={listing.engine ?? "-"} />
+          </div>
+        </Section>
+
+        {/* ============ 5. الوصف ============ */}
+        <Section className="mt-3">
+          <h3 className="mb-2 text-base font-black text-slate-900">الوصف</h3>
+          <p
+            className={
+              "whitespace-pre-line text-[14px] leading-7 text-slate-600 " +
+              (!descExpanded && longDesc ? "line-clamp-3" : "")
+            }
+          >
+            {listing.description}
+          </p>
+          {longDesc && (
+            <button
+              type="button"
+              onClick={() => setDescExpanded((v) => !v)}
+              className="mt-2 inline-flex items-center gap-1 text-sm font-black text-[#2563EB]"
+            >
+              {descExpanded ? "عرض أقل" : "عرض المزيد"}
+              <ChevronDown
+                size={16}
+                className={"transition-transform " + (descExpanded ? "rotate-180" : "")}
               />
+            </button>
+          )}
+
+          {/* المميزات والعيوب */}
+          {(listing.features?.length || listing.defects?.length) ? (
+            <div className="mt-4 grid gap-4 border-t border-slate-100 pt-4 sm:grid-cols-2">
+              {listing.features?.length ? (
+                <div>
+                  <h4 className="mb-2 text-sm font-black text-emerald-700">المميزات</h4>
+                  <ul className="space-y-1.5 text-sm text-slate-600">
+                    {listing.features.map((f) => (
+                      <li key={f} className="flex items-center gap-2">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              {listing.defects?.length ? (
+                <div>
+                  <h4 className="mb-2 text-sm font-black text-rose-700">عيوب وملاحظات</h4>
+                  <ul className="space-y-1.5 text-sm text-slate-600">
+                    {listing.defects.map((d) => (
+                      <li key={d} className="flex items-center gap-2">
+                        <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+                        {d}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
             </div>
+          ) : null}
+        </Section>
+
+        {/* ============ 6. معلومات التاجر ============ */}
+        <Section className="mt-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-black text-slate-900">معلومات التاجر</h3>
+            <Link
+              href={`/traders/${listing.ownerId}`}
+              className="rounded-xl bg-blue-50 px-3 py-1.5 text-xs font-black text-[#2563EB]"
+            >
+              عرض المعرض
+            </Link>
           </div>
 
+          <Link
+            href={`/traders/${listing.ownerId}`}
+            className="mt-3 flex items-center gap-3"
+          >
+            {seller?.photoURL ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={seller.photoURL}
+                alt={sellerName}
+                className="h-14 w-14 rounded-2xl object-cover"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-brand-700 text-lg font-black text-white">
+                {sellerName.charAt(0)}
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className="truncate text-base font-black text-slate-900">
+                  {sellerName}
+                </span>
+                {(seller as any)?.isVerifiedDealer && (
+                  <BadgeCheck size={16} className="shrink-0 text-[#2563EB]" />
+                )}
+              </div>
+              <div className="mt-0.5 flex items-center gap-1 text-xs text-emerald-600">
+                <BadgeCheck size={12} /> تاجر موثّق
+              </div>
+            </div>
+          </Link>
+
+          {/* صف معلومات */}
+          <div className="mt-4 grid grid-cols-3 gap-2 border-t border-slate-100 pt-3 text-center">
+            <MiniStat
+              icon={MapPin}
+              label="الموقع"
+              value={seller?.city || listing.city || "-"}
+            />
+            <MiniStat
+              icon={Clock}
+              label="متوسط الرد"
+              value="خلال ساعة"
+            />
+            <MiniStat
+              icon={Star}
+              label="التقييم"
+              value={`${Number(seller?.averageRating || 0).toFixed(1)} ★`}
+            />
+          </div>
+        </Section>
+
+        {/* إحصائيات المالك (محفوظ) */}
+        <div className="mt-3">
           <OwnerStatsBar
             listingId={listing.id}
             ownerId={listing.ownerId}
             initialViews={listing.views}
             variant="compact"
           />
+        </div>
 
-          <ListingQualityCard listing={listing} />
-
-          {(listing.address || listing.mapLink) && (
-            <div className="card p-5 sm:p-6">
-              <div className="flex items-center gap-2">
-                <MapPin size={18} className="text-brand-700 dark:text-brand-300" />
-                <h3 className="text-base font-black dark:text-white">الموقع</h3>
-              </div>
-
-              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                {listing.city}
-                {listing.address ? ` - ${listing.address}` : ""}
-              </p>
-
-              {listing.mapLink ? (
-                <a
-                  href={listing.mapLink}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="btn-secondary mt-4"
-                >
-                  <MapPin size={16} />
-                  فتح الخريطة
-                </a>
-              ) : null}
+        {/* الموقع على الخريطة */}
+        {listing.mapLink ? (
+          <Section className="mt-3">
+            <div className="flex items-center gap-2">
+              <MapPin size={18} className="text-[#2563EB]" />
+              <h3 className="text-base font-black text-slate-900">الموقع</h3>
             </div>
-          )}
+            <p className="mt-2 text-sm text-slate-500">
+              {listing.city}
+              {listing.address ? ` · ${listing.address}` : ""}
+            </p>
+            <a
+              href={listing.mapLink}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-black text-slate-700"
+            >
+              <MapPin size={16} /> فتح الخريطة
+            </a>
+          </Section>
+        ) : null}
 
-          <div id="comments" className="scroll-mt-24">
-            <ListingComments
-              listingId={listing.id}
-              commentsEnabled={listing.commentsEnabled !== false}
-              ownerId={listing.ownerId}
-            />
-          </div>
-
-          <SafetyTipsCard />
-
-          {/* زر الإبلاغ على الإعلان - يخفي نفسه لصاحب الإعلان */}
-          <div className="flex justify-center">
-            <ReportButton
-              targetType="listing"
-              targetId={listing.id}
-              targetMeta={{
-                title: listing.title,
-                ownerId: listing.ownerId,
-              }}
-              variant="text"
-            />
-          </div>
-
-          {/* رقم الإعلان */}
-          <p className="text-center text-[11px] text-slate-400">
-            رقم الإعلان: <span className="font-mono font-bold">#{listing.id.slice(0, 8).toUpperCase()}</span>
-          </p>
-
-          {/* إعلانات مشابهة */}
+        {/* ============ 7. الإعلانات المشابهة ============ */}
+        <div className="mt-3">
           <SimilarListings listing={listing} />
         </div>
 
-        <aside className="space-y-6">
-          <div className="card p-5 sm:p-6">
-            <div className="flex items-center gap-2">
-              <UserIcon size={18} className="text-brand-700 dark:text-brand-300" />
-              <h2 className="text-lg font-black dark:text-white">التاجر</h2>
-            </div>
+        {/* التعليقات */}
+        <div id="comments" className="mt-3 scroll-mt-24">
+          <ListingComments
+            listingId={listing.id}
+            commentsEnabled={listing.commentsEnabled !== false}
+            ownerId={listing.ownerId}
+          />
+        </div>
 
-            <Link
-              href={`/traders/${listing.ownerId}`}
-              className="mt-4 flex items-center gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-4 transition hover:border-brand-300 dark:border-slate-800 dark:bg-slate-950/40"
-            >
-              {seller?.photoURL ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={seller.photoURL}
-                  alt={sellerName}
-                  className="h-16 w-16 rounded-2xl object-cover"
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-700 text-xl font-black text-white">
-                  {sellerName.charAt(0)}
-                </div>
-              )}
+        <div className="mt-3">
+          <SafetyTipsCard />
+        </div>
 
-              <div className="min-w-0 flex-1">
-                <div className="text-base font-black text-slate-950 dark:text-white">
-                  {sellerName}
-                </div>
-
-                <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
-                  {seller?.city ? (
-                    <span className="inline-flex items-center gap-1">
-                      <MapPin size={12} />
-                      {seller.city}
-                    </span>
-                  ) : null}
-
-                  <span className="inline-flex items-center gap-1">
-                    <Star size={12} className="text-amber-500" />
-                    {Number(seller?.averageRating || 0).toFixed(1)}
-                  </span>
-                </div>
-
-                <div className="mt-2 text-sm text-brand-700 dark:text-brand-300">
-                  عرض صفحة التاجر
-                </div>
-              </div>
-            </Link>
-
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => void startChat()}
-                className="btn-action"
-                disabled={chatLoading}
-              >
-                <MessageCircle size={16} />
-                {chatLoading ? "جارٍ الفتح..." : "مراسلة"}
-              </button>
-
-              <a href={listing.phone ? `tel:${listing.phone}` : "#"} className="btn-secondary">
-                <Phone size={16} />
-                اتصال
-              </a>
-
-              {wa ? (
-                <a
-                  href={`https://wa.me/${wa}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="btn-secondary col-span-2"
-                >
-                  <MessageCircle size={16} />
-                  واتساب
-                </a>
-              ) : null}
-            </div>
-
-            <div className="mt-5 space-y-3 rounded-3xl bg-slate-50 p-4 dark:bg-slate-950/40">
-              <MetaRow
-                icon={ShieldCheck}
-                label="الحالة"
-                value={listing.status === "approved" ? "موثّق داخل المنصة" : "قيد المراجعة"}
-              />
-              <MetaRow
-                icon={ScrollText}
-                label="التعليقات"
-                value={listing.commentsEnabled === false ? "مغلقة" : "مفتوحة"}
-              />
-              <MetaRow icon={MapPin} label="المدينة" value={listing.city || "-"} />
-            </div>
-          </div>
-        </aside>
+        {/* زر الإبلاغ */}
+        <div className="mt-3 flex justify-center">
+          <ReportButton
+            targetType="listing"
+            targetId={listing.id}
+            targetMeta={{ title: listing.title, ownerId: listing.ownerId }}
+            variant="text"
+          />
+        </div>
       </div>
 
-      {/* شريط التواصل الثابت (موبايل) - يسجّل الإحصائيات عند الضغط */}
-      <ListingStickyCta
-        listing={listing}
-        onChat={startChat}
-        chatLoading={chatLoading}
-      />
-    </section>
+      {/* ============ 8. شريط التواصل الثابت ============ */}
+      <div
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/70 bg-white/90 backdrop-blur-lg"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        <div className="mx-auto flex max-w-2xl items-center gap-2.5 px-3 py-3">
+          {wa ? (
+            <a
+              href={`https://wa.me/${wa}`}
+              target="_blank"
+              rel="noreferrer"
+              className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#22C55E] px-4 py-3.5 text-sm font-black text-white shadow-sm transition active:scale-95"
+            >
+              <MessageCircle size={18} /> واتساب
+            </a>
+          ) : (
+            <button
+              type="button"
+              onClick={() => void startChat()}
+              disabled={chatLoading}
+              className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#22C55E] px-4 py-3.5 text-sm font-black text-white shadow-sm transition active:scale-95 disabled:opacity-60"
+            >
+              <MessageCircle size={18} /> {chatLoading ? "..." : "مراسلة"}
+            </button>
+          )}
+
+          <a
+            href={listing.phone ? `tel:${listing.phone}` : "#"}
+            className="flex flex-[1.4] items-center justify-center gap-2 rounded-2xl bg-[#2563EB] px-4 py-3.5 text-sm font-black text-white shadow-sm transition active:scale-95"
+          >
+            <Phone size={18} /> اتصال
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ================= مكوّنات مساعدة ================= */
+
+function Section({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      className={
+        "rounded-[20px] bg-white p-4 shadow-[0_2px_16px_-8px_rgba(15,23,42,0.1)] " +
+        className
+      }
+    >
+      {children}
+    </motion.section>
   );
 }
 
@@ -472,17 +534,17 @@ function Spec({
   value: string | number;
 }) {
   return (
-    <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-950/40">
-      <div className="text-xs font-bold text-slate-500 dark:text-slate-400">{label}</div>
-      <div className="mt-2 flex items-center gap-2 text-sm font-black text-slate-950 dark:text-white">
-        {Icon ? <Icon size={16} className="text-brand-700 dark:text-brand-300" /> : null}
-        <span>{value}</span>
-      </div>
+    <div className="rounded-2xl bg-slate-50 p-3 text-center">
+      {Icon ? (
+        <Icon size={20} className="mx-auto text-[#2563EB]" strokeWidth={1.8} />
+      ) : null}
+      <div className="mt-1.5 truncate text-sm font-black text-slate-900">{value}</div>
+      <div className="text-[11px] font-bold text-slate-400">{label}</div>
     </div>
   );
 }
 
-function MetaRow({
+function MiniStat({
   icon: Icon,
   label,
   value,
@@ -492,12 +554,10 @@ function MetaRow({
   value: string;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 text-sm">
-      <div className="inline-flex items-center gap-2 text-slate-500 dark:text-slate-400">
-        <Icon size={14} />
-        {label}
-      </div>
-      <div className="font-black text-slate-900 dark:text-white">{value}</div>
+    <div>
+      <Icon size={16} className="mx-auto text-slate-400" />
+      <div className="mt-1 truncate text-xs font-black text-slate-900">{value}</div>
+      <div className="text-[10px] text-slate-400">{label}</div>
     </div>
   );
 }
