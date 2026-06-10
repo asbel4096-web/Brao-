@@ -482,8 +482,13 @@ export default function AddListingPage() {
     <div
       dir="rtl"
       ref={topRef}
-      className="min-h-screen bg-[#F8FAFC] pb-28"
-      style={{ fontFamily: "inherit" }}
+      className="min-h-screen bg-[#F8FAFC]"
+      style={{
+        fontFamily: "inherit",
+        // مساحة سفلية آمنة = شريط الأزرار (~64) + شريط التنقّل (~76) +
+        // المساحة الآمنة للجهاز، كي لا يُغطّى آخر المحتوى ولا زر التالي.
+        paddingBottom: "calc(150px + env(safe-area-inset-bottom))",
+      }}
     >
       <div className="mx-auto max-w-2xl px-3 py-4 sm:px-4 sm:py-6">
         {/* العنوان */}
@@ -911,9 +916,21 @@ export default function AddListingPage() {
       </div>
 
       {/* ============ Sticky Bottom Bar ============ */}
+      {/*
+        يجلس فوق شريط التنقّل السفلي (BottomNav) على الموبايل كي لا
+        يتغطّى زر "التالي". BottomNav ارتفاعه ~64px + هامش 12px + المساحة
+        الآمنة، فنرفع الشريط بمقدارها على الموبايل فقط (يختفي BottomNav
+        على md+ عبر md:hidden، فنُعيد الشريط لـbottom-0 على الشاشات الكبيرة).
+        z-40 ليبقى فوق المحتوى وتحت أي overlay، ومنفصل عن BottomNav (z-50).
+      */}
       <div
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200/70 bg-white/85 backdrop-blur-lg"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        className="fixed inset-x-0 z-40 border-t border-slate-200/70 bg-white/90 backdrop-blur-lg md:!bottom-0"
+        style={{
+          // فوق شريط التنقّل على الموبايل (ارتفاعه + هامشه + المساحة الآمنة)
+          bottom: "calc(76px + env(safe-area-inset-bottom))",
+          // مساحة آمنة أسفل الشريط (تُستخدم فعلياً على md حيث bottom=0)
+          paddingBottom: "max(0px, env(safe-area-inset-bottom))",
+        }}
       >
         <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3">
           {step > 1 ? (
