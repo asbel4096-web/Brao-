@@ -16,15 +16,10 @@ import {
   MapPin,
   MessageCircle,
   Phone,
-  Calendar,
-  Gauge,
-  Fuel,
-  Settings,
   Star,
   Clock,
   BadgeCheck,
   ChevronDown,
-  Cog,
   Car,
 } from "lucide-react";
 import { db } from "@/lib/firebase";
@@ -39,6 +34,7 @@ import {
 import dynamic from "next/dynamic";
 import ListingComments from "@/components/listing-comments";
 import { ImageGallery } from "@/components/image-gallery";
+import { DynamicSpecs } from "@/components/dynamic-specs";
 import { FavoriteButton } from "@/components/favorite-button";
 import { ShareButton } from "@/components/share-button";
 import { ReportButton } from "@/components/report/report-button";
@@ -267,16 +263,9 @@ export default function ListingDetailsPage() {
           </div>
         </Section>
 
-        {/* ============ 4. المواصفات السريعة (6 بطاقات) ============ */}
+        {/* ============ 4. المواصفات حسب القسم (ديناميكية، لا حقل فارغ) ============ */}
         <Section className="mt-3">
-          <div className="grid grid-cols-3 gap-2.5">
-            <Spec icon={Gauge} label="العداد" value={listing.mileage ? `${Number(listing.mileage).toLocaleString("en-US")} كم` : "-"} />
-            <Spec icon={Settings} label="ناقل الحركة" value={listing.transmission ?? "-"} />
-            <Spec icon={Fuel} label="الوقود" value={listing.fuel ?? "-"} />
-            <Spec icon={Calendar} label="السنة" value={listing.year ?? "-"} />
-            <Spec icon={Car} label="الماركة" value={listing.brand ?? "-"} />
-            <Spec icon={Cog} label="المحرك" value={listing.engine ?? "-"} />
-          </div>
+          <DynamicSpecs listing={listing} />
         </Section>
 
         {/* ============ 5. الوصف ============ */}
@@ -521,26 +510,6 @@ function Section({
     >
       {children}
     </motion.section>
-  );
-}
-
-function Spec({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon?: any;
-  label: string;
-  value: string | number;
-}) {
-  return (
-    <div className="rounded-2xl bg-slate-50 p-3 text-center">
-      {Icon ? (
-        <Icon size={20} className="mx-auto text-[#2563EB]" strokeWidth={1.8} />
-      ) : null}
-      <div className="mt-1.5 truncate text-sm font-black text-slate-900">{value}</div>
-      <div className="text-[11px] font-bold text-slate-400">{label}</div>
-    </div>
   );
 }
 
