@@ -37,6 +37,7 @@ import {
 import { formatPrice, normalizeLibyanPhone } from "@/lib/utils";
 import { applyBratshoWatermark } from "@/lib/image-watermark";
 import { cn } from "@/lib/utils";
+import { DynamicFields } from "@/components/categories/dynamic-fields";
 import { useBannedWordsCheck } from "@/hooks/admin/use-banned-words-check";
 
 interface FormState {
@@ -66,7 +67,6 @@ interface FormState {
   latitude: string;
   longitude: string;
   locationUrl: string;
-  // حقول نظام الأقسام الديناميكي (قطع غيار + ورش)
   condition: string;
   compatibleCar: string;
   rating: string;
@@ -411,6 +411,11 @@ export default function AddListingPage() {
         ownerAvatar,
         ownerEmail: user.email || "",
         entityType: categoryConfig.entityType,
+        ...(form.condition ? { condition: form.condition } : {}),
+        ...(form.compatibleCar.trim()
+          ? { compatibleCar: form.compatibleCar.trim() }
+          : {}),
+        ...(form.rating ? { rating: Number(form.rating) || null } : {}),
         ...(categoryConfig.showTowTruckFields
           ? {
               availableNow: form.availableNow === true,
@@ -421,13 +426,6 @@ export default function AddListingPage() {
               longitude: form.longitude ? Number(form.longitude) : null,
             }
           : {}),
-        // حقول نظام الأقسام الديناميكي - تُكتب فقط لو لها قيمة
-        // (قاعدة "لا حقل فارغ": لا نخزّن سلاسل فارغة).
-        ...(form.condition ? { condition: form.condition } : {}),
-        ...(form.compatibleCar.trim()
-          ? { compatibleCar: form.compatibleCar.trim() }
-          : {}),
-        ...(form.rating ? { rating: Number(form.rating) || null } : {}),
         status: "pending",
         featured: false,
         views: 0,
@@ -757,6 +755,23 @@ export default function AddListingPage() {
                           </select>
                         </Field>
                       </div>
+                    )}
+
+                    {/* أقسام غير السيارات (قطع غيار/ورش/خدمات): حقول ديناميكية
+                        خاصة بكل قسم عبر DynamicFields. لا تظهر للسيارات
+                        (لها حقولها اليدوية أعلاه). */}
+                    {!categoryConfig.showVehicleSpecs && (
+                      <DynamicFields
+                        category={form.category}
+                        values={form as unknown as Record<string, unknown>}
+                        onChange={(k, v) =>
+                          set(k as keyof FormState, v)
+                        }
+                        onToggle={(k, v) =>
+                          setBool(k as keyof FormState, v)
+                        }
+                        skipKeys={["title", "price", "city", "phone"]}
+                      />
                     )}
                   </Card>
 
