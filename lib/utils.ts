@@ -129,18 +129,24 @@ export function getTraderDisplayName(
  */
 export function isListingFeatured(listing: {
   featured?: boolean;
+  isFeatured?: boolean;
   featuredUntil?: Timestamp | null;
 }): boolean {
-  if (!listing.featured) return false;
+  // ندعم كلا الحقلين: featured و isFeatured.
+  const flagged = listing.featured === true || listing.isFeatured === true;
+  if (!flagged) return false;
   const until = listing.featuredUntil;
-  if (!until) return false;
+  // لا يوجد تاريخ انتهاء => مميّز دائم (لا نُخفيه).
+  if (!until) return true;
   try {
     const expiresMs = (until as any).toMillis
       ? (until as any).toMillis()
       : new Date(until as any).getTime();
-    return Number.isFinite(expiresMs) && expiresMs > Date.now();
+    // تاريخ غير صالح => نعتبره مميّزاً (لا نُسقطه بسبب بيانات ناقصة).
+    if (!Number.isFinite(expiresMs)) return true;
+    return expiresMs > Date.now();
   } catch {
-    return false;
+    return true;
   }
 }
 

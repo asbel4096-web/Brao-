@@ -51,18 +51,37 @@ export function FeaturedNearYou() {
     let cancelled = false;
     void (async () => {
       try {
-        const snap = await getDocs(
-          query(
-            collection(db, "listings"),
-            where("featured", "==", true),
-            limit(50)
-          )
-        );
+        // نقرأ الإعلانات المميّزة عبر حقلين محتملين (featured و isFeatured)
+        // لأن Firestore لا يدعم OR على حقلين مختلفين في استعلام واحد بسهولة.
+        // نُشغّل الاستعلامين بالتوازي ثم ندمج (مع إزالة التكرار).
+        const [snapA, snapB] = await Promise.all([
+          getDocs(
+            query(
+              collection(db, "listings"),
+              where("featured", "==", true),
+              limit(50)
+            )
+          ),
+          getDocs(
+            query(
+              collection(db, "listings"),
+              where("isFeatured", "==", true),
+              limit(50)
+            )
+          ).catch(() => null),
+        ]);
         if (cancelled) return;
-        const list: Listing[] = snap.docs.map((d) => ({
-          id: d.id,
-          ...(d.data() as any),
-        }));
+
+        const byId = new Map<string, Listing>();
+        snapA.docs.forEach((d) =>
+          byId.set(d.id, { id: d.id, ...(d.data() as any) })
+        );
+        if (snapB) {
+          snapB.docs.forEach((d) =>
+            byId.set(d.id, { id: d.id, ...(d.data() as any) })
+          );
+        }
+        const list: Listing[] = Array.from(byId.values());
         setItems(list);
         setLoading(false);
         try {
