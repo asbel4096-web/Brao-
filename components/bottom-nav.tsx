@@ -228,7 +228,7 @@ function BottomNavImpl() {
     >
       {/* الحاوية العائمة - هوامش 12px من كل جهة */}
       <div
-        className="pointer-events-none relative mx-3 mb-3"
+        className="pointer-events-none relative mx-3 mb-2"
         style={{ pointerEvents: hidden ? "none" : "auto" }}
       >
         {/* زر الإضافة العائم (FAB) - يخرج فوق الشريط */}
@@ -237,26 +237,26 @@ function BottomNavImpl() {
           prefetch={false}
           aria-label="إضافة إعلان"
           className="pointer-events-auto absolute left-1/2 z-10 -translate-x-1/2"
-          style={{ top: "-18px" }}
+          style={{ top: "-14px" }}
         >
           <motion.span
             whileTap={{ scale: 0.88 }}
             transition={{ type: "spring", stiffness: 500, damping: 18 }}
             className={cn(
-              "flex h-[58px] w-[58px] items-center justify-center rounded-full",
+              "flex h-[50px] w-[50px] items-center justify-center rounded-full",
               "bg-[#2563EB] text-white",
               "shadow-[0_10px_30px_-6px_rgba(37,99,235,0.55)]",
               "ring-4 ring-white/70 dark:ring-slate-900/60"
             )}
           >
-            <Plus size={28} strokeWidth={2.6} />
+            <Plus size={24} strokeWidth={2.6} />
           </motion.span>
         </Link>
 
         {/* الشريط الزجاجي العائم */}
         <nav
           aria-label="التنقل الرئيسي"
-          className="pointer-events-auto relative flex h-[64px] items-stretch overflow-hidden rounded-[28px]"
+          className="pointer-events-auto relative flex h-[56px] items-stretch overflow-hidden rounded-[24px]"
           style={{
             background: "rgba(255,255,255,0.75)",
             backdropFilter: "blur(25px)",
@@ -296,7 +296,7 @@ function BottomNavImpl() {
                 >
                   <span className="relative">
                     <Icon
-                      size={23}
+                      size={21}
                       strokeWidth={active ? 2.5 : 2}
                       style={{ color: active ? "#2563EB" : "#64748B" }}
                       className={cn(
