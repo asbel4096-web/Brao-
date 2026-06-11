@@ -123,7 +123,7 @@ function DynamicListingCardImpl({ listing, priority = false }: Props) {
 function BucketBadge({ bucket }: { bucket: HomeBucket }) {
   const map: Partial<Record<HomeBucket, { label: string; cls: string }>> = {
     parts: { label: "قطعة غيار", cls: "bg-emerald-600 text-white" },
-    tow: { label: "سطحة", cls: "bg-orange-500 text-white" },
+    tow: { label: "ساحبة", cls: "bg-orange-500 text-white" },
     services: { label: "خدمة", cls: "bg-violet-600 text-white" },
     dealers: { label: "معرض", cls: "bg-brand-700 text-white" },
   };
