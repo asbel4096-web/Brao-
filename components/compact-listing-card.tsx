@@ -109,10 +109,9 @@ function CompactListingCardImpl({ listing, showStats = false, priority = false }
           </h3>
         </Link>
 
-        {/* السعر */}
+        {/* السعر (formatPrice يضيف "د.ل" تلقائياً) */}
         <div className="mt-1 inline-flex items-baseline gap-1 font-black text-brand-700 dark:text-brand-300">
           <span className="text-lg leading-none">{formatPrice(listing.price)}</span>
-          <span className="text-[11px] font-bold">د.ل</span>
         </div>
 
         {/* المدينة + المسافة المقطوعة */}

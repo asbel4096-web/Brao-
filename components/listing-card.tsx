@@ -6,11 +6,9 @@ import { memo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Calendar,
-  Fuel,
   MapPin,
   MessageCircle,
   Phone,
-  Settings2,
   Camera,
   Clock3,
   Star,
@@ -164,7 +162,6 @@ function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
             <span className="text-xl font-black leading-none">
               {formatPrice(listing.price)}
             </span>
-            <span className="text-[11px] font-bold text-blue-100">د.ل</span>
           </span>
         </div>
 
@@ -188,24 +185,13 @@ function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
           </h3>
         </Link>
 
-        {/* سطر المواصفات - أكبر وأوضح */}
+        {/* سطر المواصفات - مبسّط (السنة + المدينة فقط لتقليل الازدحام).
+            باقي التفاصيل (الوقود/ناقل الحركة/المسافة) تظهر في صفحة الإعلان. */}
         <div className="mt-2.5 flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-[12px] font-medium text-slate-600 dark:text-slate-300">
           {listing.year && (
             <span className="inline-flex items-center gap-1">
               <Calendar size={14} className="text-brand-600/70" />
               {listing.year}
-            </span>
-          )}
-          {listing.fuel && (
-            <span className="inline-flex items-center gap-1">
-              <Fuel size={14} className="text-brand-600/70" />
-              {listing.fuel}
-            </span>
-          )}
-          {listing.transmission && (
-            <span className="inline-flex items-center gap-1">
-              <Settings2 size={14} className="text-brand-600/70" />
-              {listing.transmission}
             </span>
           )}
           {listing.city && (
