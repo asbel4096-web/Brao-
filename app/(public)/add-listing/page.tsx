@@ -66,6 +66,10 @@ interface FormState {
   latitude: string;
   longitude: string;
   locationUrl: string;
+  // حقول نظام الأقسام الديناميكي (قطع غيار + ورش)
+  condition: string;
+  compatibleCar: string;
+  rating: string;
 }
 
 const initialState: FormState = {
@@ -95,6 +99,9 @@ const initialState: FormState = {
   latitude: "",
   longitude: "",
   locationUrl: "",
+  condition: "",
+  compatibleCar: "",
+  rating: "",
 };
 
 const MAX_IMAGES = 20;
@@ -414,6 +421,13 @@ export default function AddListingPage() {
               longitude: form.longitude ? Number(form.longitude) : null,
             }
           : {}),
+        // حقول نظام الأقسام الديناميكي - تُكتب فقط لو لها قيمة
+        // (قاعدة "لا حقل فارغ": لا نخزّن سلاسل فارغة).
+        ...(form.condition ? { condition: form.condition } : {}),
+        ...(form.compatibleCar.trim()
+          ? { compatibleCar: form.compatibleCar.trim() }
+          : {}),
+        ...(form.rating ? { rating: Number(form.rating) || null } : {}),
         status: "pending",
         featured: false,
         views: 0,
