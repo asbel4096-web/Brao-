@@ -14,8 +14,75 @@ import {
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { useScrollDirection } from "@/hooks/useScrollDirection";
 import { cn } from "@/lib/utils";
+
+/* ============================================================
+ * useHideOnScroll — منطق إخفاء الشريط (مدمج هنا، بلا ملف خارجي)
+ *
+ * السلوك:
+ *  - تمرير لأسفل  → يُخفى الشريط.
+ *  - توقّف        → يبقى مخفياً (حالة لاصقة، لا يعود تلقائياً).
+ *  - تمرير لأعلى  → يظهر.
+ *  - قرب القمة    → يظهر دائماً.
+ * ============================================================ */
+function useHideOnScroll(topOffset = 64, threshold = 6): boolean {
+  const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    let lastY = window.scrollY;
+    let accumulated = 0;
+    let ticking = false;
+    let isHidden = false;
+
+    const update = () => {
+      const currentY = window.scrollY;
+      const delta = currentY - lastY;
+
+      if (currentY < topOffset) {
+        if (isHidden) {
+          isHidden = false;
+          setHidden(false);
+        }
+        accumulated = 0;
+        lastY = currentY;
+        ticking = false;
+        return;
+      }
+
+      if (Math.sign(delta) !== Math.sign(accumulated)) {
+        accumulated = delta;
+      } else {
+        accumulated += delta;
+      }
+
+      if (Math.abs(accumulated) >= threshold) {
+        const nextHidden = accumulated > 0; // نزول = إخفاء، صعود = إظهار
+        if (nextHidden !== isHidden) {
+          isHidden = nextHidden;
+          setHidden(nextHidden);
+        }
+        accumulated = 0;
+      }
+
+      lastY = currentY;
+      ticking = false;
+    };
+
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(update);
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [topOffset, threshold]);
+
+  return hidden;
+}
 
 /**
  * Bottom navigation بمواصفات احترافية مثل Facebook/Instagram:
@@ -52,7 +119,7 @@ const items: NavItem[] = [
 function BottomNavImpl() {
   const pathname = usePathname();
   const { user } = useAuth();
-  const direction = useScrollDirection({ topOffset: 64, threshold: 6, idleDelay: 160 });
+  const hidden = useHideOnScroll(64, 6);
   const [unreadChats, setUnreadChats] = useState(0);
   const [favCount, setFavCount] = useState(0);
 
@@ -139,8 +206,8 @@ function BottomNavImpl() {
     }
   }, [user]);
 
-  // إخفاء عند التمرير للأسفل، إظهار عند التمرير للأعلى أو التوقف
-  const hidden = direction === "down";
+  // إخفاء عند التمرير لأسفل، ويبقى مخفياً عند التوقّف، ويظهر عند التمرير لأعلى.
+  // (المنطق في useHideOnScroll — حالة لاصقة لا تعود تلقائياً عند التوقّف)
 
   return (
     <motion.div

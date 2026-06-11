@@ -1,20 +1,20 @@
 "use client";
 
-import { Users, Wrench, Store, Car } from "lucide-react";
+import { Users, Wrench, Store, Car, TrendingUp } from "lucide-react";
 
 /**
  * شريط إحصائيات المنصة — أربع بطاقات متساوية ضمن بطاقة بيضاء واحدة.
  *
- * تصميم نظيف 2026: أيقونة ملوّنة + رقم كبير واضح + وصف.
- * أرقام ثابتة (لا استعلامات) لخفّة الأداء وعدم التأثير على LCP.
- * عدّلها يدوياً عند الحاجة أو اربطها لاحقاً بعدّادات حقيقية.
+ * كل بطاقة: أيقونة ملوّنة + رقم كبير + وصف + نسبة نمو أسبوعية (أخضر).
+ * الأرقام ثابتة (لا استعلامات) لخفّة الأداء وعدم التأثير على LCP —
+ * عدّلها يدوياً أو اربطها لاحقاً بعدّادات حقيقية.
  */
 
 const STATS = [
-  { icon: Car, value: "12,450+", label: "سيارة", color: "#1c389c" },
-  { icon: Store, value: "320+", label: "معرض", color: "#1c389c" },
-  { icon: Wrench, value: "1,500+", label: "قطعة غيار", color: "#16a34a" },
-  { icon: Users, value: "50,000+", label: "مستخدم نشط", color: "#f97316" },
+  { icon: Car, value: "24,875", label: "سيارة", trend: "+10%", color: "#1c389c" },
+  { icon: Store, value: "1,243", label: "معرض", trend: "+5%", color: "#1c389c" },
+  { icon: Wrench, value: "18,542", label: "قطعة غيار", trend: "+8%", color: "#16a34a" },
+  { icon: Users, value: "50,286", label: "مستخدم نشط", trend: "+12%", color: "#f97316" },
 ];
 
 export function PlatformStats() {
@@ -33,7 +33,7 @@ export function PlatformStats() {
             <div
               key={s.label}
               className={
-                "flex flex-col items-center justify-center gap-1 px-1 py-1 text-center sm:px-2 " +
+                "flex flex-col items-center justify-center gap-1 px-0.5 py-1 text-center sm:px-2 " +
                 (i < STATS.length - 1
                   ? "border-l border-slate-100 dark:border-slate-800"
                   : "")
@@ -56,6 +56,11 @@ export function PlatformStats() {
               </div>
               <div className="mt-0.5 text-[9px] font-bold text-slate-400 sm:text-xs">
                 {s.label}
+              </div>
+              <div className="mt-0.5 inline-flex items-center gap-0.5 text-[8px] font-black text-emerald-600 dark:text-emerald-400 sm:text-[10px]">
+                <TrendingUp size={9} strokeWidth={2.5} />
+                {s.trend}
+                <span className="hidden sm:inline">&nbsp;هذا الأسبوع</span>
               </div>
             </div>
           );
