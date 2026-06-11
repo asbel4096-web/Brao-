@@ -1,0 +1,10 @@
+{
+  "_note": "أضيفي هذا الـindex إلى firestore.indexes.json الموجود (داخل مصفوفة indexes).",
+  "_comment": "DEALER STORIES: قصص معرض حسب التاريخ",
+  "collectionGroup": "dealerStories",
+  "queryScope": "COLLECTION",
+  "fields": [
+    { "fieldPath": "dealerUid", "order": "ASCENDING" },
+    { "fieldPath": "createdAt", "order": "DESCENDING" }
+  ]
+}
