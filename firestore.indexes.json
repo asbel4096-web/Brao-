@@ -162,7 +162,22 @@
       ]
     },
     {
-      "_comment": "الإعلانات المميزة في الرئيسية: status==approved + featured==true",
+      "_comment": "الأكثر مشاهدة: status==approved + views تنازلي",
+      "collectionGroup": "listings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "views",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "_comment": "المميزة: status+featured",
       "collectionGroup": "listings",
       "queryScope": "COLLECTION",
       "fields": [
@@ -177,7 +192,7 @@
       ]
     },
     {
-      "_comment": "الإعلانات المميزة (حقل isFeatured البديل): status==approved + isFeatured==true",
+      "_comment": "المميزة البديل: status+isFeatured",
       "collectionGroup": "listings",
       "queryScope": "COLLECTION",
       "fields": [
@@ -187,6 +202,21 @@
         },
         {
           "fieldPath": "isFeatured",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "_comment": "عدد الإعلانات لكل ماركة: status==approved + brand==X",
+      "collectionGroup": "listings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "brand",
           "order": "ASCENDING"
         }
       ]

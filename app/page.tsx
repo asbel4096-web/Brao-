@@ -8,6 +8,7 @@ import { FeaturedNearYou } from "@/components/featured-near-you";
 import { HomepageBannersCarousel } from "@/components/homepage-banners-carousel";
 import { ListingsGrid } from "@/components/listings-grid";
 import { MostSavedSection } from "@/components/most-saved-section";
+import { MostViewedSection } from "@/components/most-viewed-section";
 import { PlatformStats } from "@/components/platform-stats";
 import { SearchHero } from "@/components/search-hero";
 import { SiteFooter } from "@/components/site-footer";
@@ -47,14 +48,14 @@ export default function HomePage() {
       {/* 1. البحث + الفئات السريعة */}
       <SearchHero />
 
-      {/* 2. البنر الرئيسي (سلايدر) - أعلى الصفحة مباشرة */}
+      {/* 2. البنر الرئيسي (سلايدر) - أعلى الصفحة، يختفي لو لا بنرات */}
       {mounted && banners && banners.length > 0 && (
         <div className="container mt-3">
           <HomepageBannersCarousel banners={banners} />
         </div>
       )}
 
-      {/* 3. قصص المعارض (دون تعديل - كما هي) */}
+      {/* 3. القصص (دون تعديل) */}
       {mounted && <StoriesRow />}
 
       {/* 4. تعطّلت سيارتك؟ */}
@@ -63,19 +64,22 @@ export default function HomePage() {
       {/* 5. تصفّح حسب الماركة */}
       {mounted && <BrowseByBrand />}
 
-      {/* 6. الإعلانات المميزة (تختفي تلقائياً لو لا توجد) */}
+      {/* 6. الإعلانات المميزة (تختفي لو لا توجد) */}
       {mounted && <FeaturedNearYou />}
 
-      {/* 7. أحدث الإعلانات (السيارات) */}
+      {/* 7. أحدث الإعلانات */}
       <ListingsGrid />
 
-      {/* 8. الأكثر حفظاً */}
+      {/* 8. السيارات الأكثر مشاهدة (جديد - يختفي لو لا بيانات) */}
+      {mounted && <MostViewedSection />}
+
+      {/* 9. الأكثر حفظاً */}
       {mounted && <MostSavedSection />}
 
-      {/* 9. المعارض المميزة */}
+      {/* 10. المعارض المميزة */}
       {mounted && <VerifiedDealersRow />}
 
-      {/* 10. الإحصائيات الحقيقية - قبل الفوتر مباشرة */}
+      {/* 11. إحصائيات المنصة (حقيقية) - قبل الفوتر */}
       {mounted && <PlatformStats />}
 
       {/* ثوابت الأسفل */}
