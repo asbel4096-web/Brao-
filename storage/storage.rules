@@ -1,0 +1,61 @@
+// Firebase Storage Rules - Dealer Uploads
+// ⚠️ هذا snippet لإضافته إلى storage.rules الموجود (إن كان موجوداً)
+// أو لإنشاء storage.rules جديد لو لم يكن موجوداً.
+//
+// Storage rules مختلفة عن Firestore rules - تُنشَر في tab منفصل بـFirebase Console:
+// Storage → Rules
+
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ============================================================
+    // Dealer files - logo, cover, gallery, stories
+    // ============================================================
+    //
+    // البنية:
+    //   users/{uid}/dealer/logo.jpg
+    //   users/{uid}/dealer/cover.jpg
+    //   users/{uid}/dealer/gallery/{any}.jpg
+    //   users/{uid}/dealer/stories/{any}.jpg
+    //
+    // القراءة: مفتوحة (الصور عامة للزوار)
+    // الكتابة: المالك فقط، صورة فقط، حد أقصى للحجم
+    match /users/{uid}/dealer/{allPaths=**} {
+      allow read: if true;
+
+      allow write: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource != null
+        && request.resource.size < 10 * 1024 * 1024  // 10MB max
+        && request.resource.contentType.matches('image/.*');
+
+      allow delete: if request.auth != null
+        && request.auth.uid == uid;
+    }
+
+    // ============================================================
+    // Listings images (existing - keep as is)
+    // ============================================================
+    match /listings/{listingId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && request.resource != null
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    // ============================================================
+    // User avatars (existing - keep as is)
+    // ============================================================
+    match /users/{uid}/avatar/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Default deny
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
