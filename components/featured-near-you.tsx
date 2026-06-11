@@ -20,7 +20,7 @@ import { CompactListingCard } from "./compact-listing-card";
  * - يُخفي نفسه كلياً عند عدم وجود مميزة.
  */
 
-const CACHE_KEY = "bratsho:featured-nearyou:v1";
+const CACHE_KEY = "bratsho:featured-nearyou:v2";
 const CACHE_TTL_MS = 2 * 60 * 1000;
 const MAX = 10;
 
@@ -51,13 +51,17 @@ export function FeaturedNearYou() {
     let cancelled = false;
     void (async () => {
       try {
-        // نقرأ الإعلانات المميّزة عبر حقلين محتملين (featured و isFeatured)
-        // لأن Firestore لا يدعم OR على حقلين مختلفين في استعلام واحد بسهولة.
-        // نُشغّل الاستعلامين بالتوازي ثم ندمج (مع إزالة التكرار).
+        // مهم: قاعدة Firestore تشترط status=="approved" لقراءة الإعلانات
+        // (listingVisible). لذلك *يجب* أن يحوي الاستعلام هذا الشرط، وإلا
+        // يرفضه Firestore كلياً بـpermission-denied فلا تظهر أي مميّزة.
+        //
+        // ندعم حقلي التمييز (featured و isFeatured) عبر استعلامين متوازيين
+        // (Firestore لا يدعم OR على حقلين)، كلاهما مفلتر بالـstatus.
         const [snapA, snapB] = await Promise.all([
           getDocs(
             query(
               collection(db, "listings"),
+              where("status", "==", "approved"),
               where("featured", "==", true),
               limit(50)
             )
@@ -65,6 +69,7 @@ export function FeaturedNearYou() {
           getDocs(
             query(
               collection(db, "listings"),
+              where("status", "==", "approved"),
               where("isFeatured", "==", true),
               limit(50)
             )
