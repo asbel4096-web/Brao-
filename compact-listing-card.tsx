@@ -6,8 +6,7 @@ import { memo } from "react";
 import { Eye, MapPin, Star, Rocket, Crown, Gauge, Bookmark } from "lucide-react";
 import type { Listing } from "@/lib/types";
 import { formatPrice, formatNumber, isListingFeatured } from "@/lib/utils";
-import { FavoriteButton } from "./favorite-button";
-
+import { FavoriteButton } from "@/components/favorite-button";
 const FALLBACK = "/icons/car-card.svg";
 
 interface Props {
