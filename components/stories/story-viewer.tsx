@@ -98,6 +98,45 @@ export function StoryViewer({
       ? Math.max(3000, currentMedia.durationSec * 1000)
       : STORY_DEFAULT_IMAGE_DURATION_MS;
 
+  // ===== Preload استباقي للوسائط التالية (انتقال أسرع، تجربة Instagram) =====
+  // نحمّل وسائط الصفحتين التاليتين في الخلفية بمجرد فتح الحالية،
+  // فلا ينتظر المستخدم التحميل عند الانتقال.
+  useEffect(() => {
+    const toPreload = [pages[index + 1], pages[index + 2]].filter(Boolean);
+    const created: HTMLElement[] = [];
+    for (const page of toPreload) {
+      const media = page?.media;
+      if (!media?.url) continue;
+      if (media.kind === "video") {
+        // preload="metadata" يكفي لبدء سريع دون تحميل الفيديو كاملاً (توفير بيانات)
+        const v = document.createElement("video");
+        v.preload = "metadata";
+        v.muted = true;
+        v.src = media.url;
+        created.push(v);
+      } else {
+        const img = new window.Image();
+        img.src = media.url;
+        created.push(img);
+      }
+      // preload للصورة المصغّرة أيضاً (تظهر فوراً كخلفية)
+      if (media.thumbnailUrl) {
+        const t = new window.Image();
+        t.src = media.thumbnailUrl;
+        created.push(t);
+      }
+    }
+    return () => {
+      // تنظيف: إيقاف تحميل الفيديوهات غير المستخدمة (توفير بيانات)
+      created.forEach((el) => {
+        if (el instanceof HTMLVideoElement) {
+          el.removeAttribute("src");
+          el.load();
+        }
+      });
+    };
+  }, [index, pages]);
+
   // تسجيل المشاهدة
   useEffect(() => {
     if (!currentStory) return;
@@ -333,6 +372,7 @@ export function StoryViewer({
               muted={muted}
               autoPlay
               preload="auto"
+              poster={currentMedia.thumbnailUrl || undefined}
               onEnded={next}
               onLoadedMetadata={(e) => {
                 const v = e.currentTarget;
