@@ -112,14 +112,81 @@ export async function compressImage(
 }
 
 /**
- * رفع صورة LOGO المعرض.
- * يُحلّ محل القديمة لو موجودة.
+ * قصّ الصورة لنسبة عرض/ارتفاع محدّدة (قصّ من المركز - center crop).
+ * مثال: aspect=1 للـlogo (مربّع)، aspect=16/9 للـcover.
+ * يحافظ على أكبر مساحة ممكنة من المركز ويزيل الأطراف الزائدة،
+ * فلا تظهر الصورة مشوّهة أو بنسبة خاطئة.
+ */
+export async function cropToAspect(
+  file: File,
+  aspect: number
+): Promise<File> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const srcW = img.width;
+        const srcH = img.height;
+        const srcAspect = srcW / srcH;
+
+        // حساب منطقة القصّ (center crop)
+        let cropW = srcW;
+        let cropH = srcH;
+        if (srcAspect > aspect) {
+          // الصورة أعرض من المطلوب → نقصّ العرض
+          cropW = srcH * aspect;
+        } else {
+          // الصورة أطول من المطلوب → نقصّ الارتفاع
+          cropH = srcW / aspect;
+        }
+        const sx = (srcW - cropW) / 2;
+        const sy = (srcH - cropH) / 2;
+
+        const canvas = document.createElement("canvas");
+        canvas.width = cropW;
+        canvas.height = cropH;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(file);
+          return;
+        }
+        ctx.drawImage(img, sx, sy, cropW, cropH, 0, 0, cropW, cropH);
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              resolve(file);
+              return;
+            }
+            resolve(
+              new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), {
+                type: "image/jpeg",
+                lastModified: Date.now(),
+              })
+            );
+          },
+          "image/jpeg",
+          0.92
+        );
+      };
+      img.onerror = () => reject(new Error("فشل تحميل الصورة"));
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => reject(new Error("فشل قراءة الملف"));
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * رفع صورة LOGO المعرض (يُقصّ لمربّع 1:1 ثم يُضغط).
  */
 export async function uploadDealerLogo(
   uid: string,
   file: File
 ): Promise<UploadResult> {
-  const compressed = await compressImage(file, 800, 0.9);
+  const cropped = await cropToAspect(file, 1); // 1:1 مربّع
+  const compressed = await compressImage(cropped, 800, 0.9);
   const path = `users/${uid}/dealer/logo.jpg`;
   const ref = storageRef(storage, path);
   await uploadBytes(ref, compressed, {
@@ -137,7 +204,8 @@ export async function uploadDealerCover(
   uid: string,
   file: File
 ): Promise<UploadResult> {
-  const compressed = await compressImage(file, 1920, 0.85);
+  const cropped = await cropToAspect(file, 16 / 9); // 16:9 غلاف
+  const compressed = await compressImage(cropped, 1920, 0.85);
   const path = `users/${uid}/dealer/cover.jpg`;
   const ref = storageRef(storage, path);
   await uploadBytes(ref, compressed, {
