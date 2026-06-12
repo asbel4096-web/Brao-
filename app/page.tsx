@@ -13,6 +13,7 @@ import {
   LatestTowTrucks,
 } from "@/components/home-sections/latest-by-bucket";
 import { MostSavedSection } from "@/components/most-saved-section";
+import { MostViewedSection } from "@/components/most-viewed-section";
 import { PlatformStats } from "@/components/platform-stats";
 import { SearchHero } from "@/components/search-hero";
 import { SiteFooter } from "@/components/site-footer";
@@ -82,6 +83,9 @@ export default function HomePage() {
 
       {/* 6. سيارات مميزة قريبة منك */}
       {mounted && <FeaturedNearYou />}
+
+      {/* السيارات الأكثر مشاهدة (يختفي لو لا بيانات) */}
+      {mounted && <MostViewedSection />}
 
       {/* 7. المعارض المميزة */}
       {mounted && <VerifiedDealersRow />}
