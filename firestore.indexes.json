@@ -220,6 +220,21 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "_comment": "إحصائيات: status==approved + category (للسيارات وقطع الغيار)",
+      "collectionGroup": "listings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "category",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []

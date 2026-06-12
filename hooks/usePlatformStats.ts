@@ -86,10 +86,18 @@ export function usePlatformStats() {
           activeSnap,
         ] = await Promise.all([
           getCountFromServer(
-            query(listingsCol, where("category", "==", "سيارات"))
+            query(
+              listingsCol,
+              where("status", "==", "approved"),
+              where("category", "==", "سيارات")
+            )
           ),
           getCountFromServer(
-            query(listingsCol, where("category", "in", PARTS_CATEGORIES))
+            query(
+              listingsCol,
+              where("status", "==", "approved"),
+              where("category", "in", PARTS_CATEGORIES)
+            )
           ),
           getCountFromServer(
             query(usersCol, where("verificationType", "==", "dealer"))
