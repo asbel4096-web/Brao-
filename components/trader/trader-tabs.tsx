@@ -9,6 +9,8 @@ import {
   BadgeCheck,
   Clock3,
   ExternalLink,
+  Facebook,
+  Instagram,
   MapPin,
   MessageCircle,
   Phone,
@@ -793,6 +795,24 @@ function DealerAbout({
                 label="الموقع على الخريطة"
                 value="فتح الخرائط"
                 href={profile.locationUrl}
+                external
+              />
+            ) : null}
+            {(profile as any).facebookUrl ? (
+              <ContactRow
+                icon={<Facebook size={16} />}
+                label="فيسبوك"
+                value="فتح الصفحة"
+                href={(profile as any).facebookUrl}
+                external
+              />
+            ) : null}
+            {(profile as any).instagramUrl ? (
+              <ContactRow
+                icon={<Instagram size={16} />}
+                label="إنستغرام"
+                value="فتح الحساب"
+                href={(profile as any).instagramUrl}
                 external
               />
             ) : null}

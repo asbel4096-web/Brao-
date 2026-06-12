@@ -166,6 +166,8 @@ service cloud.firestore {
                  'dealerBio',
                  'workingHours',
                  'locationUrl',
+                 'facebookUrl',
+                 'instagramUrl',
                  'city',
                  'bio',
                  'whatsapp',

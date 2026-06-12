@@ -5,6 +5,8 @@ import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import {
   Building2,
   Clock,
+  Facebook,
+  Instagram,
   Loader2,
   MapPin,
   MessageCircle,
@@ -50,6 +52,12 @@ export function InfoEditTab() {
     (profile as any)?.whatsapp || (profile as any)?.whatsappNumber || ""
   );
   const [bio, setBio] = useState((profile as any)?.bio || "");
+  const [facebookUrl, setFacebookUrl] = useState(
+    (profile as any)?.facebookUrl || ""
+  );
+  const [instagramUrl, setInstagramUrl] = useState(
+    (profile as any)?.instagramUrl || ""
+  );
   // ساعات العمل - 7 أيام، كل يوم: {open, close} أو "closed"
   const [workingHours, setWorkingHours] = useState<
     Record<string, { open: string; close: string } | "closed">
@@ -101,6 +109,8 @@ export function InfoEditTab() {
         phone: phone.trim() || null,
         whatsapp: whatsappNumber.trim() || null,
         bio: bio.trim().slice(0, 500) || null,
+        facebookUrl: facebookUrl.trim() || null,
+        instagramUrl: instagramUrl.trim() || null,
         workingHours,
         updatedAt: serverTimestamp(),
       });
@@ -237,6 +247,26 @@ export function InfoEditTab() {
           })}
         </div>
       </div>
+
+      {/* ===== حسابات التواصل الاجتماعي ===== */}
+      <Field
+        icon={Facebook}
+        label="رابط فيسبوك"
+        value={facebookUrl}
+        onChange={setFacebookUrl}
+        placeholder="https://facebook.com/..."
+        type="url"
+        dir="ltr"
+      />
+      <Field
+        icon={Instagram}
+        label="رابط إنستغرام"
+        value={instagramUrl}
+        onChange={setInstagramUrl}
+        placeholder="https://instagram.com/..."
+        type="url"
+        dir="ltr"
+      />
 
       <motion.button
         type="button"
