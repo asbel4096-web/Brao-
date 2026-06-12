@@ -36,7 +36,7 @@ export function InfoEditTab() {
   );
   const [phone, setPhone] = useState((profile as any)?.phone || "");
   const [whatsappNumber, setWhatsappNumber] = useState(
-    (profile as any)?.whatsappNumber || ""
+    (profile as any)?.whatsapp || (profile as any)?.whatsappNumber || ""
   );
   const [bio, setBio] = useState((profile as any)?.bio || "");
   const [saving, setSaving] = useState(false);
@@ -54,7 +54,7 @@ export function InfoEditTab() {
         businessName: businessName.trim(),
         dealerLocation: dealerLocation.trim() || null,
         phone: phone.trim() || null,
-        whatsappNumber: whatsappNumber.trim() || null,
+        whatsapp: whatsappNumber.trim() || null,
         bio: bio.trim().slice(0, 500) || null,
         updatedAt: serverTimestamp(),
       });
