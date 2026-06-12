@@ -95,6 +95,8 @@ export function TraderProfileHeader({
     isVerifiedNow(profile as any) || profile.isVerifiedDealer === true;
   const displayName = getTraderDisplayName(profile);
   const phone = profile.phone || "";
+  // رقم الواتساب (يقع على phone لو لم يُحدَّد واتساب منفصل)
+  const waNumber = normalizeLibyanPhone(profile.whatsapp || profile.phone || "");
 
   const cover =
     (isVerified ? profile.dealerCover : null) || profile.coverURL || null;
@@ -295,7 +297,11 @@ export function TraderProfileHeader({
 
         {/* Action buttons row */}
         {!isOwnProfile ? (
-          <div className="mt-4 grid grid-cols-2 gap-2">
+          <div
+            className={`mt-4 grid gap-2 ${
+              waNumber ? "grid-cols-3" : "grid-cols-2"
+            }`}
+          >
             <motion.button
               type="button"
               onClick={handleFollow}
@@ -339,6 +345,26 @@ export function TraderProfileHeader({
               <MessageCircle size={14} />
               مراسلة
             </motion.button>
+
+            {/* زر واتساب (أخضر) - يظهر فقط لو الرقم متاح */}
+            {waNumber && (
+              <motion.a
+                href={`https://wa.me/${waNumber}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                whileTap={{ scale: 0.97 }}
+                className="
+                  inline-flex items-center justify-center gap-1.5
+                  rounded-2xl bg-emerald-500 py-3 text-sm font-black
+                  text-white shadow-lg shadow-emerald-500/30 transition
+                  hover:bg-emerald-600
+                "
+                aria-label="مراسلة واتساب"
+              >
+                <MessageCircle size={14} />
+                واتساب
+              </motion.a>
+            )}
           </div>
         ) : (
           <div className="mt-4 grid grid-cols-2 gap-2">
