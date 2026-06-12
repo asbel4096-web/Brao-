@@ -4,6 +4,7 @@ import { useState } from "react";
 import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import {
   Building2,
+  Clock,
   Loader2,
   MapPin,
   MessageCircle,
@@ -24,6 +25,16 @@ import { useToast } from "@/contexts/ToastContext";
  *  - bio
  */
 
+const WORK_DAYS = [
+  { key: "sat", label: "السبت" },
+  { key: "sun", label: "الأحد" },
+  { key: "mon", label: "الإثنين" },
+  { key: "tue", label: "الثلاثاء" },
+  { key: "wed", label: "الأربعاء" },
+  { key: "thu", label: "الخميس" },
+  { key: "fri", label: "الجمعة" },
+];
+
 export function InfoEditTab() {
   const { user, profile } = useAuth();
   const toast = useToast();
@@ -39,7 +50,41 @@ export function InfoEditTab() {
     (profile as any)?.whatsapp || (profile as any)?.whatsappNumber || ""
   );
   const [bio, setBio] = useState((profile as any)?.bio || "");
+  // ساعات العمل - 7 أيام، كل يوم: {open, close} أو "closed"
+  const [workingHours, setWorkingHours] = useState<
+    Record<string, { open: string; close: string } | "closed">
+  >(() => {
+    const wh = (profile as any)?.workingHours || {};
+    const init: Record<string, { open: string; close: string } | "closed"> = {};
+    for (const d of WORK_DAYS) {
+      init[d.key] = wh[d.key] || { open: "09:00", close: "18:00" };
+    }
+    return init;
+  });
   const [saving, setSaving] = useState(false);
+
+  const toggleDayClosed = (dayKey: string) => {
+    setWorkingHours((prev) => ({
+      ...prev,
+      [dayKey]:
+        prev[dayKey] === "closed"
+          ? { open: "09:00", close: "18:00" }
+          : "closed",
+    }));
+  };
+
+  const setDayTime = (
+    dayKey: string,
+    field: "open" | "close",
+    value: string
+  ) => {
+    setWorkingHours((prev) => {
+      const cur = prev[dayKey];
+      const base =
+        cur === "closed" || !cur ? { open: "09:00", close: "18:00" } : cur;
+      return { ...prev, [dayKey]: { ...base, [field]: value } };
+    });
+  };
 
   const handleSave = async () => {
     if (!user) return;
@@ -56,6 +101,7 @@ export function InfoEditTab() {
         phone: phone.trim() || null,
         whatsapp: whatsappNumber.trim() || null,
         bio: bio.trim().slice(0, 500) || null,
+        workingHours,
         updatedAt: serverTimestamp(),
       });
       toast.success("تم حفظ التغييرات");
@@ -128,6 +174,67 @@ export function InfoEditTab() {
         />
         <div className="mt-1 text-end text-[10px] text-slate-400">
           {bio.length} / 500
+        </div>
+      </div>
+
+      {/* ===== ساعات العمل ===== */}
+      <div>
+        <label className="flex items-center gap-1.5 text-xs font-black text-slate-700 dark:text-slate-300">
+          <Clock size={12} />
+          ساعات العمل
+        </label>
+        <div className="mt-2 space-y-1.5">
+          {WORK_DAYS.map((day) => {
+            const v = workingHours[day.key];
+            const isClosed = v === "closed";
+            return (
+              <div
+                key={day.key}
+                className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900"
+              >
+                <span className="w-16 shrink-0 text-xs font-black text-slate-700 dark:text-slate-200">
+                  {day.label}
+                </span>
+                {isClosed ? (
+                  <span className="flex-1 text-xs font-bold text-rose-500">
+                    مغلق
+                  </span>
+                ) : (
+                  <div className="flex flex-1 items-center gap-1.5" dir="ltr">
+                    <input
+                      type="time"
+                      value={(v as { open: string }).open}
+                      onChange={(e) =>
+                        setDayTime(day.key, "open", e.target.value)
+                      }
+                      className="flex-1 rounded-xl border border-slate-200 bg-white px-2 py-1.5 text-xs outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    />
+                    <span className="text-xs text-slate-400">–</span>
+                    <input
+                      type="time"
+                      value={(v as { close: string }).close}
+                      onChange={(e) =>
+                        setDayTime(day.key, "close", e.target.value)
+                      }
+                      className="flex-1 rounded-xl border border-slate-200 bg-white px-2 py-1.5 text-xs outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    />
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => toggleDayClosed(day.key)}
+                  className={
+                    "shrink-0 rounded-xl px-2.5 py-1.5 text-[11px] font-black transition " +
+                    (isClosed
+                      ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30"
+                      : "bg-rose-50 text-rose-600 dark:bg-rose-900/30")
+                  }
+                >
+                  {isClosed ? "فتح" : "إغلاق"}
+                </button>
+              </div>
+            );
+          })}
         </div>
       </div>
 
