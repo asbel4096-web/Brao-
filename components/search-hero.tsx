@@ -44,9 +44,16 @@ export function SearchHero() {
   };
 
   return (
-    <section className="container pt-3 sm:pt-4">
-      {/* شريط البحث — كامل العرض، حواف دائرية كبيرة، أيقونة داخل الحقل */}
-      <form onSubmit={handleSearch} role="search" className="relative">
+    <section className="pt-3 sm:pt-4">
+      {/* شريط البحث — ثابت Sticky أسفل الهيدر عند التمرير (نمط Dubizzle/حراج) */}
+      <div
+        className="
+          sticky top-14 z-30 -mx-4 bg-slate-50/80 px-4 py-2 backdrop-blur-md
+          sm:top-16 dark:bg-slate-950/80
+        "
+      >
+        <div className="container">
+          <form onSubmit={handleSearch} role="search" className="relative">
         <Search
           size={20}
           className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
@@ -78,13 +85,16 @@ export function SearchHero() {
         >
           بحث
         </button>
-      </form>
+          </form>
+        </div>
+      </div>
 
       {/* الفئات السريعة — Pills قابلة للسحب أفقياً */}
-      <div
-        className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 no-scrollbar sm:mx-0 sm:px-0"
-        style={{ scrollbarWidth: "none" }}
-      >
+      <div className="container">
+        <div
+          className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 no-scrollbar sm:mx-0 sm:px-0"
+          style={{ scrollbarWidth: "none" }}
+        >
         {QUICK_CATS.map((c) => {
           const Icon = c.Icon;
           return (
@@ -103,6 +113,7 @@ export function SearchHero() {
             </Link>
           );
         })}
+        </div>
       </div>
     </section>
   );
