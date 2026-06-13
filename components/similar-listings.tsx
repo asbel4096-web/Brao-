@@ -33,10 +33,12 @@ export function SimilarListings({ listing }: Props) {
     let cancelled = false;
     void (async () => {
       try {
-        // نجلب من نفس الفئة (استعلام بسيط، بلا composite index)
+        // نجلب من نفس الفئة - status==approved مطلوب من القواعد
+        // (يتجنّب 403). يستخدم فهرس status+category الموجود.
         const snap = await getDocs(
           query(
             collection(db, "listings"),
+            where("status", "==", "approved"),
             where("category", "==", listing.category),
             limit(12)
           )
@@ -45,11 +47,7 @@ export function SimilarListings({ listing }: Props) {
 
         let list: Listing[] = snap.docs
           .map((d) => ({ id: d.id, ...(d.data() as any) }))
-          .filter(
-            (it: any) =>
-              it.id !== listing.id &&
-              (it.status === "active" || it.status === undefined)
-          );
+          .filter((it: any) => it.id !== listing.id);
 
         // ترتيب: نفس المدينة أولاً
         list.sort((a: any, b: any) => {

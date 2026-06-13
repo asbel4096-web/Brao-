@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import {
   collection,
+  doc,
+  getDoc,
   getCountFromServer,
   query,
   where,
@@ -70,6 +72,41 @@ export function usePlatformStats() {
 
     const run = async () => {
       try {
+        // 1) المحاولة الأولى: قراءة وثيقة الإحصائيات المُجمّعة مسبقاً
+        //    (stats/platform). قراءة واحدة عامة - لا تُرفض بـ403، وأسرع
+        //    بكثير من 5 استعلامات aggregate.
+        try {
+          const statsSnap = await getDoc(doc(db, "stats", "platform"));
+          if (!cancelled && statsSnap.exists()) {
+            const d = statsSnap.data() as Partial<PlatformStatsData>;
+            if (
+              typeof d.cars === "number" &&
+              typeof d.parts === "number" &&
+              typeof d.dealers === "number" &&
+              typeof d.activeUsers === "number"
+            ) {
+              const data: PlatformStatsData = {
+                cars: d.cars,
+                parts: d.parts,
+                dealers: d.dealers,
+                activeUsers: d.activeUsers,
+              };
+              setState({ data, loading: false, error: false });
+              try {
+                sessionStorage.setItem(
+                  CACHE_KEY,
+                  JSON.stringify({ ts: Date.now(), data })
+                );
+              } catch {}
+              return;
+            }
+          }
+        } catch {
+          // الوثيقة غير موجودة بعد → نكمل للطريقة الاحتياطية (aggregate)
+        }
+
+        // 2) احتياطي: عدّ مباشر عبر getCountFromServer (يتطلب القواعد
+        //    والفهارس الصحيحة - status==approved على listings).
         const listingsCol = collection(db, "listings");
         const usersCol = collection(db, "users");
 
