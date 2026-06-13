@@ -23,6 +23,7 @@ import {
   uploadBytes,
   getDownloadURL,
 } from "firebase/storage";
+import { Timestamp } from "firebase/firestore";
 import { storage } from "@/lib/firebase";
 import { useAdminRole } from "@/hooks/admin/use-admin-role";
 import {
@@ -125,9 +126,19 @@ function BannersTab() {
     title: string;
     subtitle: string;
     link: string;
+    startDate: string;
+    endDate: string;
     file: File | null;
     preview: string;
-  }>({ title: "", subtitle: "", link: "", file: null, preview: "" });
+  }>({
+    title: "",
+    subtitle: "",
+    link: "",
+    startDate: "",
+    endDate: "",
+    file: null,
+    preview: "",
+  });
 
   const handleFile = (file: File | null) => {
     if (!file) return;
@@ -165,10 +176,24 @@ function BannersTab() {
         link: draft.link.trim() || undefined,
         order: banners.length + 1,
         active: true,
+        ...(draft.startDate
+          ? { startDate: Timestamp.fromDate(new Date(draft.startDate)) }
+          : {}),
+        ...(draft.endDate
+          ? { endDate: Timestamp.fromDate(new Date(draft.endDate)) }
+          : {}),
       });
 
       toast.success("تمت إضافة البنر");
-      setDraft({ title: "", subtitle: "", link: "", file: null, preview: "" });
+      setDraft({
+        title: "",
+        subtitle: "",
+        link: "",
+        startDate: "",
+        endDate: "",
+        file: null,
+        preview: "",
+      });
       setAdding(false);
     } catch (err: any) {
       toast.error(err?.message || "فشلت الإضافة");
@@ -235,7 +260,15 @@ function BannersTab() {
               type="button"
               onClick={() => {
                 setAdding(false);
-                setDraft({ title: "", subtitle: "", link: "", file: null, preview: "" });
+                setDraft({
+                  title: "",
+                  subtitle: "",
+                  link: "",
+                  startDate: "",
+                  endDate: "",
+                  file: null,
+                  preview: "",
+                });
               }}
               className="grid h-7 w-7 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
             >
@@ -294,6 +327,36 @@ function BannersTab() {
             dir="ltr"
             className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-action-400 dark:border-slate-700 dark:bg-slate-900"
           />
+
+          {/* تواريخ العرض - إخفاء البانر تلقائياً بعد الانتهاء */}
+          <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1 block text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                تاريخ البدء (اختياري)
+              </span>
+              <input
+                type="date"
+                value={draft.startDate}
+                onChange={(e) =>
+                  setDraft((d) => ({ ...d, startDate: e.target.value }))
+                }
+                className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-action-400 dark:border-slate-700 dark:bg-slate-900"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                تاريخ الانتهاء (اختياري)
+              </span>
+              <input
+                type="date"
+                value={draft.endDate}
+                onChange={(e) =>
+                  setDraft((d) => ({ ...d, endDate: e.target.value }))
+                }
+                className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-action-400 dark:border-slate-700 dark:bg-slate-900"
+              />
+            </label>
+          </div>
 
           <div className="mt-3 flex justify-end">
             <button
