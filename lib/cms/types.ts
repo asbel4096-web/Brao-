@@ -70,10 +70,10 @@ export interface HomepageBanner {
   imageUrl: string;
   /** صورة مخصّصة للجوال (اختياري - تُستخدم على الشاشات الصغيرة). */
   mobileImageUrl?: string;
-  /** رابط عند الضغط (داخلي مثل /listings أو خارجي). */
-  link?: string;
-  title?: string;
-  subtitle?: string;
+  /** رابط عند الضغط (داخلي مثل /listings أو خارجي). null = ممسوح. */
+  link?: string | null;
+  title?: string | null;
+  subtitle?: string | null;
   /** ترتيب العرض - الأصغر يظهر أولاً. */
   order: number;
   /** متاح للعرض؟ false = مخفي مؤقتاً دون حذف. */

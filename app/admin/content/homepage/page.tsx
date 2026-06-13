@@ -131,7 +131,17 @@ function BannersTab() {
     link: string;
     startDate: string;
     endDate: string;
-  }>({ title: "", subtitle: "", link: "", startDate: "", endDate: "" });
+    file: File | null;
+    preview: string;
+  }>({
+    title: "",
+    subtitle: "",
+    link: "",
+    startDate: "",
+    endDate: "",
+    file: null,
+    preview: "",
+  });
   const [savingEdit, setSavingEdit] = useState(false);
 
   // تحويل Timestamp → نص تاريخ (YYYY-MM-DD) لحقل input
@@ -152,23 +162,50 @@ function BannersTab() {
       link: b.link || "",
       startDate: tsToDateStr((b as any).startDate),
       endDate: tsToDateStr((b as any).endDate),
+      file: null,
+      preview: b.imageUrl || "",
     });
+  };
+
+  const handleEditFile = (file: File | null) => {
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) {
+      toast.warning("الصورة كبيرة جداً (الحد 3MB)");
+      return;
+    }
+    setEditDraft((d) => ({
+      ...d,
+      file,
+      preview: URL.createObjectURL(file),
+    }));
   };
 
   const handleSaveEdit = async () => {
     if (!editId) return;
     setSavingEdit(true);
     try {
+      // رفع صورة جديدة لو اختيرت (تحلّ محل الحالية)
+      let newImageUrl: string | undefined;
+      if (editDraft.file) {
+        const ext = editDraft.file.name.split(".").pop() || "jpg";
+        const path = `homepage/banners/${editId}_edit_${Date.now()}.${ext}`;
+        const fileRef = storageRef(storage, path);
+        await uploadBytes(fileRef, editDraft.file);
+        newImageUrl = await getDownloadURL(fileRef);
+      }
+
       await updateBanner(editId, {
-        title: editDraft.title.trim() || undefined,
-        subtitle: editDraft.subtitle.trim() || undefined,
-        link: editDraft.link.trim() || undefined,
+        // null (لا undefined) كي يمسح merge القيمة فعلياً عند التفريغ
+        title: editDraft.title.trim() || null,
+        subtitle: editDraft.subtitle.trim() || null,
+        link: editDraft.link.trim() || null,
         startDate: editDraft.startDate
           ? Timestamp.fromDate(new Date(editDraft.startDate))
           : null,
         endDate: editDraft.endDate
           ? Timestamp.fromDate(new Date(editDraft.endDate))
           : null,
+        ...(newImageUrl ? { imageUrl: newImageUrl } : {}),
       });
       toast.success("تم تحديث البنر");
       setEditId(null);
@@ -622,6 +659,30 @@ function BannersTab() {
             </div>
 
             <div className="space-y-2">
+              {/* تغيير صورة البانر (اختياري) */}
+              <label className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 bg-white p-3 text-xs font-bold text-slate-500 transition hover:border-action-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
+                {editDraft.preview ? (
+                  <Image
+                    src={editDraft.preview}
+                    alt="preview"
+                    width={300}
+                    height={120}
+                    className="rounded-xl object-contain"
+                    unoptimized
+                  />
+                ) : (
+                  <>
+                    <Upload size={14} />
+                    <span>تغيير الصورة (اختياري)</span>
+                  </>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleEditFile(e.target.files?.[0] || null)}
+                />
+              </label>
               <input
                 type="text"
                 value={editDraft.title}
