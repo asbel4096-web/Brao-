@@ -23,6 +23,7 @@ import {
   ref as storageRef,
   uploadBytes,
   getDownloadURL,
+  deleteObject,
 } from "firebase/storage";
 import { Timestamp } from "firebase/firestore";
 import { storage } from "@/lib/firebase";
@@ -184,6 +185,9 @@ function BannersTab() {
     if (!editId) return;
     setSavingEdit(true);
     try {
+      // الصورة الحالية (لحذفها بعد نجاح الاستبدال)
+      const oldImageUrl = banners.find((b) => b.id === editId)?.imageUrl;
+
       // رفع صورة جديدة لو اختيرت (تحلّ محل الحالية)
       let newImageUrl: string | undefined;
       if (editDraft.file) {
@@ -207,6 +211,26 @@ function BannersTab() {
           : null,
         ...(newImageUrl ? { imageUrl: newImageUrl } : {}),
       });
+
+      // حذف الصورة القديمة من Storage *بعد* نجاح التحديث فقط
+      // (وفقط لو رُفعت صورة جديدة فعلاً + تختلف عن القديمة) - يمنع الملفات اليتيمة
+      if (
+        newImageUrl &&
+        oldImageUrl &&
+        oldImageUrl !== newImageUrl &&
+        oldImageUrl.includes("firebasestorage")
+      ) {
+        try {
+          const match = oldImageUrl.match(/\/o\/([^?]+)/);
+          if (match) {
+            const oldPath = decodeURIComponent(match[1]);
+            await deleteObject(storageRef(storage, oldPath));
+          }
+        } catch {
+          /* تجاهل - قد تكون محذوفة أو مشتركة */
+        }
+      }
+
       toast.success("تم تحديث البنر");
       setEditId(null);
     } catch (err: any) {

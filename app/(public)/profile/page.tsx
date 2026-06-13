@@ -13,7 +13,7 @@ import {
   updateDoc,
   where,
 } from "firebase/firestore";
-import { getDownloadURL, ref as storageRef, uploadBytes } from "firebase/storage";
+import { getDownloadURL, ref as storageRef, uploadBytes, deleteObject } from "firebase/storage";
 import {
   BadgeCheck,
   Bell,
@@ -97,6 +97,7 @@ export default function ProfilePage() {
 
     try {
       setUploadingCover(true);
+      const oldCoverUrl = profile?.coverURL; // لحذفه بعد نجاح الاستبدال
       const path = `users/${user.uid}/cover-${Date.now()}`;
       const sref = storageRef(storage, path);
       await uploadBytes(sref, file, { contentType: file.type });
@@ -105,6 +106,21 @@ export default function ProfilePage() {
         coverURL: url,
         updatedAt: serverTimestamp(),
       });
+      // حذف الغلاف القديم من Storage *بعد* نجاح التحديث (يمنع الملفات اليتيمة)
+      if (
+        oldCoverUrl &&
+        oldCoverUrl !== url &&
+        oldCoverUrl.includes("firebasestorage")
+      ) {
+        try {
+          const match = oldCoverUrl.match(/\/o\/([^?]+)/);
+          if (match) {
+            await deleteObject(storageRef(storage, decodeURIComponent(match[1])));
+          }
+        } catch {
+          /* تجاهل - قد يكون محذوفاً */
+        }
+      }
       toast.success("تم تحديث صورة الغلاف.");
     } catch (err: any) {
       toast.error(err?.message || "تعذّر رفع الغلاف.");
