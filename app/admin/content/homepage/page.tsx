@@ -14,6 +14,7 @@ import {
   Upload,
   X,
   Save,
+  Pencil,
   ListChecks,
   Image as ImageIcon,
   Layers,
@@ -122,6 +123,61 @@ function BannersTab() {
   const confirm = useConfirm();
   const [adding, setAdding] = useState(false);
   const [uploading, setUploading] = useState(false);
+  // تعديل بانر موجود (العنوان/الفرعي/الرابط/التواريخ)
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<{
+    title: string;
+    subtitle: string;
+    link: string;
+    startDate: string;
+    endDate: string;
+  }>({ title: "", subtitle: "", link: "", startDate: "", endDate: "" });
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  // تحويل Timestamp → نص تاريخ (YYYY-MM-DD) لحقل input
+  const tsToDateStr = (t: any): string => {
+    if (!t) return "";
+    let ms: number | null = null;
+    if (typeof t.toMillis === "function") ms = t.toMillis();
+    else if (typeof t.seconds === "number") ms = t.seconds * 1000;
+    if (ms === null) return "";
+    return new Date(ms).toISOString().slice(0, 10);
+  };
+
+  const openEdit = (b: HomepageBanner) => {
+    setEditId(b.id);
+    setEditDraft({
+      title: b.title || "",
+      subtitle: b.subtitle || "",
+      link: b.link || "",
+      startDate: tsToDateStr((b as any).startDate),
+      endDate: tsToDateStr((b as any).endDate),
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editId) return;
+    setSavingEdit(true);
+    try {
+      await updateBanner(editId, {
+        title: editDraft.title.trim() || undefined,
+        subtitle: editDraft.subtitle.trim() || undefined,
+        link: editDraft.link.trim() || undefined,
+        startDate: editDraft.startDate
+          ? Timestamp.fromDate(new Date(editDraft.startDate))
+          : null,
+        endDate: editDraft.endDate
+          ? Timestamp.fromDate(new Date(editDraft.endDate))
+          : null,
+      });
+      toast.success("تم تحديث البنر");
+      setEditId(null);
+    } catch (err: any) {
+      toast.error(err?.message || "فشل التحديث");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
   const [draft, setDraft] = useState<{
     title: string;
     subtitle: string;
@@ -130,6 +186,8 @@ function BannersTab() {
     endDate: string;
     file: File | null;
     preview: string;
+    mobileFile: File | null;
+    mobilePreview: string;
   }>({
     title: "",
     subtitle: "",
@@ -138,6 +196,8 @@ function BannersTab() {
     endDate: "",
     file: null,
     preview: "",
+    mobileFile: null,
+    mobilePreview: "",
   });
 
   const handleFile = (file: File | null) => {
@@ -150,6 +210,19 @@ function BannersTab() {
       ...d,
       file,
       preview: URL.createObjectURL(file),
+    }));
+  };
+
+  const handleMobileFile = (file: File | null) => {
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) {
+      toast.warning("صورة الجوال كبيرة جداً (الحد 3MB)");
+      return;
+    }
+    setDraft((d) => ({
+      ...d,
+      mobileFile: file,
+      mobilePreview: URL.createObjectURL(file),
     }));
   };
 
@@ -168,6 +241,16 @@ function BannersTab() {
       await uploadBytes(fileRef, draft.file);
       const imageUrl = await getDownloadURL(fileRef);
 
+      // رفع صورة الجوال (اختياري)
+      let mobileImageUrl: string | undefined;
+      if (draft.mobileFile) {
+        const mExt = draft.mobileFile.name.split(".").pop() || "jpg";
+        const mPath = `homepage/banners/${bannerId}_mobile.${mExt}`;
+        const mRef = storageRef(storage, mPath);
+        await uploadBytes(mRef, draft.mobileFile);
+        mobileImageUrl = await getDownloadURL(mRef);
+      }
+
       // إضافة الـdoc
       await addBanner({
         imageUrl,
@@ -176,6 +259,7 @@ function BannersTab() {
         link: draft.link.trim() || undefined,
         order: banners.length + 1,
         active: true,
+        ...(mobileImageUrl ? { mobileImageUrl } : {}),
         ...(draft.startDate
           ? { startDate: Timestamp.fromDate(new Date(draft.startDate)) }
           : {}),
@@ -193,6 +277,8 @@ function BannersTab() {
         endDate: "",
         file: null,
         preview: "",
+        mobileFile: null,
+        mobilePreview: "",
       });
       setAdding(false);
     } catch (err: any) {
@@ -268,6 +354,8 @@ function BannersTab() {
                   endDate: "",
                   file: null,
                   preview: "",
+                  mobileFile: null,
+                  mobilePreview: "",
                 });
               }}
               className="grid h-7 w-7 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
@@ -298,6 +386,31 @@ function BannersTab() {
               accept="image/*"
               className="hidden"
               onChange={(e) => handleFile(e.target.files?.[0] || null)}
+            />
+          </label>
+
+          {/* صورة الجوال (اختياري) - تُعرض على الشاشات الصغيرة */}
+          <label className="mt-2 flex cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 bg-white p-4 text-xs font-bold text-slate-500 transition hover:border-action-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+            {draft.mobilePreview ? (
+              <Image
+                src={draft.mobilePreview}
+                alt="mobile preview"
+                width={200}
+                height={100}
+                className="rounded-xl object-contain"
+                unoptimized
+              />
+            ) : (
+              <>
+                <Upload size={14} />
+                <span>صورة مخصّصة للجوال (اختياري)</span>
+              </>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => handleMobileFile(e.target.files?.[0] || null)}
             />
           </label>
 
@@ -455,6 +568,14 @@ function BannersTab() {
               <div className="flex shrink-0 items-center gap-1">
                 <button
                   type="button"
+                  onClick={() => openEdit(b)}
+                  aria-label="تعديل"
+                  className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-900/20"
+                >
+                  <Pencil size={14} />
+                </button>
+                <button
+                  type="button"
                   onClick={() => toggleActive(b)}
                   aria-label={b.active ? "إخفاء" : "إظهار"}
                   className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
@@ -472,6 +593,118 @@ function BannersTab() {
               </div>
             </article>
           ))}
+        </div>
+      )}
+
+      {/* ===== نافذة تعديل بانر ===== */}
+      {editId && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          onClick={() => setEditId(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl dark:bg-slate-900"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-base font-black text-slate-900 dark:text-white">
+                تعديل البنر
+              </h3>
+              <button
+                type="button"
+                onClick={() => setEditId(null)}
+                className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <input
+                type="text"
+                value={editDraft.title}
+                onChange={(e) =>
+                  setEditDraft((d) => ({ ...d, title: e.target.value }))
+                }
+                placeholder="العنوان"
+                maxLength={60}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-action-400 dark:border-slate-700 dark:bg-slate-800"
+              />
+              <input
+                type="text"
+                value={editDraft.subtitle}
+                onChange={(e) =>
+                  setEditDraft((d) => ({ ...d, subtitle: e.target.value }))
+                }
+                placeholder="نص فرعي"
+                maxLength={100}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-action-400 dark:border-slate-700 dark:bg-slate-800"
+              />
+              <input
+                type="text"
+                value={editDraft.link}
+                onChange={(e) =>
+                  setEditDraft((d) => ({ ...d, link: e.target.value }))
+                }
+                placeholder="رابط عند الضغط"
+                dir="ltr"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-action-400 dark:border-slate-700 dark:bg-slate-800"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <label className="block">
+                  <span className="mb-1 block text-[11px] font-bold text-slate-500">
+                    تاريخ البدء
+                  </span>
+                  <input
+                    type="date"
+                    value={editDraft.startDate}
+                    onChange={(e) =>
+                      setEditDraft((d) => ({ ...d, startDate: e.target.value }))
+                    }
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-action-400 dark:border-slate-700 dark:bg-slate-800"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-[11px] font-bold text-slate-500">
+                    تاريخ الانتهاء
+                  </span>
+                  <input
+                    type="date"
+                    value={editDraft.endDate}
+                    onChange={(e) =>
+                      setEditDraft((d) => ({ ...d, endDate: e.target.value }))
+                    }
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-action-400 dark:border-slate-700 dark:bg-slate-800"
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setEditId(null)}
+                className="rounded-2xl border border-slate-200 px-4 py-2 text-xs font-black text-slate-600 dark:border-slate-700 dark:text-slate-300"
+              >
+                إلغاء
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveEdit}
+                disabled={savingEdit}
+                className="inline-flex items-center gap-1.5 rounded-2xl bg-action-500 px-4 py-2 text-xs font-black text-white transition hover:bg-action-600 disabled:opacity-50"
+              >
+                {savingEdit ? (
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                ) : (
+                  <Save size={12} />
+                )}
+                حفظ
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
