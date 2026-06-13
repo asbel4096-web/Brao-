@@ -6,6 +6,7 @@ import {
   Building2,
   Clock,
   Facebook,
+  Globe,
   Instagram,
   Loader2,
   MapPin,
@@ -57,6 +58,9 @@ export function InfoEditTab() {
   );
   const [instagramUrl, setInstagramUrl] = useState(
     (profile as any)?.instagramUrl || ""
+  );
+  const [websiteUrl, setWebsiteUrl] = useState(
+    (profile as any)?.websiteUrl || ""
   );
   // ساعات العمل - 7 أيام، كل يوم: {open, close} أو "closed"
   const [workingHours, setWorkingHours] = useState<
@@ -111,6 +115,7 @@ export function InfoEditTab() {
         bio: bio.trim().slice(0, 500) || null,
         facebookUrl: facebookUrl.trim() || null,
         instagramUrl: instagramUrl.trim() || null,
+        websiteUrl: websiteUrl.trim() || null,
         workingHours,
         updatedAt: serverTimestamp(),
       });
@@ -248,7 +253,7 @@ export function InfoEditTab() {
         </div>
       </div>
 
-      {/* ===== حسابات التواصل الاجتماعي ===== */}
+      {/* ===== حسابات التواصل + الموقع ===== */}
       <Field
         icon={Facebook}
         label="رابط فيسبوك"
@@ -264,6 +269,15 @@ export function InfoEditTab() {
         value={instagramUrl}
         onChange={setInstagramUrl}
         placeholder="https://instagram.com/..."
+        type="url"
+        dir="ltr"
+      />
+      <Field
+        icon={Globe}
+        label="الموقع الإلكتروني (اختياري)"
+        value={websiteUrl}
+        onChange={setWebsiteUrl}
+        placeholder="https://..."
         type="url"
         dir="ltr"
       />

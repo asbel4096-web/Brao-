@@ -437,6 +437,8 @@ export interface ContactSettings {
   facebookUrl?: string;
   /** رابط كامل لصفحة Instagram. */
   instagramUrl?: string;
+  /** رابط الموقع الإلكتروني للمعرض (اختياري). */
+  websiteUrl?: string;
   updatedAt?: Timestamp | null;
   updatedBy?: string;
 }

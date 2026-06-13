@@ -10,6 +10,7 @@ import {
   Clock3,
   ExternalLink,
   Facebook,
+  Globe,
   Instagram,
   MapPin,
   MessageCircle,
@@ -813,6 +814,15 @@ function DealerAbout({
                 label="إنستغرام"
                 value="فتح الحساب"
                 href={(profile as any).instagramUrl}
+                external
+              />
+            ) : null}
+            {(profile as any).websiteUrl ? (
+              <ContactRow
+                icon={<Globe size={16} />}
+                label="الموقع الإلكتروني"
+                value="زيارة الموقع"
+                href={(profile as any).websiteUrl}
                 external
               />
             ) : null}
