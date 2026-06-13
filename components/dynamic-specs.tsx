@@ -11,6 +11,10 @@ import {
   Wrench,
   Star,
   MapPin,
+  Users,
+  Truck,
+  Zap,
+  Clock,
 } from "lucide-react";
 import type { Listing } from "@/lib/types";
 import { getCategoryConfig, type HomeBucket } from "@/lib/category-config";
@@ -50,6 +54,18 @@ function buildSpecs(listing: Listing, bucket: HomeBucket): SpecItem[] {
     coverageAreas?: string;
     availableNow?: boolean;
     rating?: number;
+    seats?: number;
+    payload?: number;
+    voltage?: string;
+    usagePercent?: number;
+    capacity?: string;
+    oilType?: string;
+    tireSize?: string;
+    tireCount?: number;
+    towType?: string;
+    available24h?: boolean;
+    damageType?: string;
+    repairable?: boolean;
   };
   const specs: SpecItem[] = [];
   const push = (cond: unknown, icon: any, label: string, value: string) => {
@@ -68,6 +84,9 @@ function buildSpecs(listing: Listing, bucket: HomeBucket): SpecItem[] {
     push(l.year, Calendar, "السنة", String(l.year));
     push(l.brand, Car, "الماركة", String(l.brand));
     push(l.engine, Cog, "المحرك", String(l.engine));
+    // حقول الحافلات/الشاحنات المتخصّصة
+    push(l.seats, Users, "عدد المقاعد", String(l.seats));
+    push(l.payload, Truck, "الحمولة", `${l.payload} طن`);
     return specs;
   }
 
@@ -79,17 +98,33 @@ function buildSpecs(listing: Listing, bucket: HomeBucket): SpecItem[] {
       "السيارة المتوافقة",
       String(l.compatibleCar)
     );
+    push(l.brand, Car, "الماركة", String(l.brand));
     push(l.year, Calendar, "السنة", String(l.year));
+    // حقول قطع الغيار المتخصّصة
+    push(l.voltage, Zap, "الفولت", String(l.voltage));
+    push(
+      l.usagePercent,
+      Gauge,
+      "نسبة الاستخدام",
+      `${l.usagePercent}%`
+    );
+    push(l.capacity, Cog, "السعة", String(l.capacity));
+    push(l.oilType, Fuel, "النوع", String(l.oilType));
+    push(l.tireSize, Settings, "المقاس", String(l.tireSize));
+    push(l.tireCount, CheckCircle2, "العدد", String(l.tireCount));
     return specs;
   }
 
   if (bucket === "tow") {
+    push(l.towType, Truck, "نوع السطحة", String(l.towType));
     push(
       l.coverageAreas,
       MapPin,
       "مناطق التغطية",
       String(l.coverageAreas)
     );
+    if (l.available24h === true)
+      specs.push({ icon: Clock, label: "الخدمة", value: "24 ساعة" });
     if (l.availableNow === true)
       specs.push({ icon: CheckCircle2, label: "الحالة", value: "متاح الآن" });
     return specs;
@@ -106,7 +141,10 @@ function buildSpecs(listing: Listing, bucket: HomeBucket): SpecItem[] {
     return specs;
   }
 
-  // افتراضي: نعرض ما هو متاح من الحقول العامة
+  // قسم خاص (حوادث): نوع الضرر + قابلية الإصلاح
+  push(l.damageType, Wrench, "نوع الضرر", String(l.damageType));
+  if (l.repairable === true)
+    specs.push({ icon: CheckCircle2, label: "الإصلاح", value: "قابلة للإصلاح" });
   push(l.year, Calendar, "السنة", String(l.year));
   push(l.brand, Car, "الماركة", String(l.brand));
   return specs;

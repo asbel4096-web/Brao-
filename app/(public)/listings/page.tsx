@@ -33,6 +33,12 @@ import {
   resolveCategorySlug,
 } from "@/lib/categories";
 import { ListingCard } from "@/components/listing-card";
+import {
+  DynamicFilters,
+  applyDynamicFilters,
+  filtersForCategory,
+  type DynamicFilterValues,
+} from "@/components/dynamic-filters";
 import { getBrandById, inferBrandId } from "@/lib/car-brands";
 import type { Listing } from "@/lib/types";
 import { isListingFeatured } from "@/lib/utils";
@@ -56,6 +62,8 @@ function ListingsContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  // قيم الفلاتر الديناميكية الخاصة بالقسم (السنة/الوقود/المقاعد...)
+  const [dynFilters, setDynFilters] = useState<DynamicFilterValues>({});
 
   // قراءة الفلاتر الأولية من URL
   const q0 = params.get("q") || "";
@@ -186,6 +194,11 @@ function ListingsContent() {
       arr = arr.filter((it) => inferBrandId(it.brand) === brand);
     }
 
+    // الفلاتر الديناميكية الخاصة بالقسم (تُطبّق فقط عند اختيار قسم)
+    if (category && Object.keys(dynFilters).length > 0) {
+      arr = applyDynamicFilters(arr, dynFilters);
+    }
+
     if (sort === "price_asc" || sort === "price_desc") {
       arr = [...arr];
       const factor = sort === "price_asc" ? 1 : -1;
@@ -206,7 +219,7 @@ function ListingsContent() {
       else regularArr.push(it);
     }
     return [...vipArr, ...boostArr, ...featuredArr, ...regularArr];
-  }, [listings, deferredSearch, category, city, sort, minPrice, maxPrice, brand]);
+  }, [listings, deferredSearch, category, city, sort, minPrice, maxPrice, brand, dynFilters]);
 
   /**
    * تطبيق الفلاتر مباشرة + تحديث الـ URL.
@@ -257,6 +270,7 @@ function ListingsContent() {
     setMinPrice("");
     setMaxPrice("");
     setBrand("");
+    setDynFilters({});
     router.push("/listings", { scroll: false });
     setShowFilters(false);
   }, [router]);
@@ -487,6 +501,10 @@ function ListingsContent() {
           onPriceApply={() => updateUrl()}
           clear={clearAll}
           className="hidden lg:block"
+          dynFilters={dynFilters}
+          setDynFilter={(k, v) =>
+            setDynFilters((prev) => ({ ...prev, [k]: v }))
+          }
         />
 
         {/* قائمة النتائج */}
@@ -532,6 +550,10 @@ function ListingsContent() {
           onApply={handleApply}
           onClose={() => setShowFilters(false)}
           onClear={clearAll}
+          dynFilters={dynFilters}
+          setDynFilter={(k, v) =>
+            setDynFilters((prev) => ({ ...prev, [k]: v }))
+          }
         />
       )}
     </section>
@@ -631,6 +653,8 @@ function FilterSidebar({
   onPriceApply,
   clear,
   className = "",
+  dynFilters,
+  setDynFilter,
 }: {
   search: string;
   setSearch: (v: string) => void;
@@ -645,6 +669,8 @@ function FilterSidebar({
   onPriceApply: () => void;
   clear: () => void;
   className?: string;
+  dynFilters: DynamicFilterValues;
+  setDynFilter: (key: string, value: string) => void;
 }) {
   return (
     <aside
@@ -693,6 +719,15 @@ function FilterSidebar({
           ))}
         </select>
       </FilterField>
+
+      {/* فلاتر خاصة بالقسم المختار (السنة/الوقود/المقاعد...) */}
+      {category && filtersForCategory(category).length > 0 && (
+        <DynamicFilters
+          category={category}
+          values={dynFilters}
+          onChange={setDynFilter}
+        />
+      )}
 
       <FilterField label="نطاق السعر">
         <div className="grid grid-cols-2 gap-2">
@@ -764,6 +799,8 @@ function FilterSheet({
   onApply,
   onClose,
   onClear,
+  dynFilters,
+  setDynFilter,
 }: {
   search: string;
   setSearch: (v: string) => void;
@@ -779,6 +816,8 @@ function FilterSheet({
   onApply: () => void;
   onClose: () => void;
   onClear: () => void;
+  dynFilters: DynamicFilterValues;
+  setDynFilter: (key: string, value: string) => void;
 }) {
   return (
     <div
@@ -856,6 +895,14 @@ function FilterSheet({
               ))}
             </select>
           </FilterField>
+
+          {category && filtersForCategory(category).length > 0 && (
+            <DynamicFilters
+              category={category}
+              values={dynFilters}
+              onChange={setDynFilter}
+            />
+          )}
 
           <FilterField label="نطاق السعر (د.ل)">
             <div className="grid grid-cols-2 gap-2">
