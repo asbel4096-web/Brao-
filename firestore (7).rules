@@ -1,0 +1,737 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isMe(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    // ------------------------------------------------------------------
+    // Role-based access. الـrole field على وثيقة users/{uid} يحدّد دور
+    // الأدمن بدقة (super_admin, admin, moderator, support, analytics).
+    // الـbootstrap الأولي يجعل أول أدمن super_admin.
+    //
+    // isSuperAdmin: للإجراءات الحساسة جداً (تعيين الأدوار، إدارة النظام).
+    // hasRole(r): للفحوصات الـgranular في rules محدّدة.
+    // ------------------------------------------------------------------
+    function isSuperAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin';
+    }
+
+    function hasRole(roleName) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == roleName;
+    }
+
+    // ------------------------------------------------------------------
+    // فحص أن المستخدم الحالي ليس محظوراً ولا محذوفاً.
+    // يُستخدم في كل قاعدة write تخص محتوى عام (إعلانات، تعليقات، رسائل،
+    // متابعات، تفاعلات...) لمنع المستخدمين المحظورين من المساهمة.
+    //
+    // الأدمن مُعفى من هذا الفحص (يستطيع التصرف حتى لو وضع نفسه banned،
+    // وهو سيناريو نادر/غير منطقي على أي حال).
+    // ------------------------------------------------------------------
+    function isActiveUser() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('banned', false) != true
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('deleted', false) != true;
+    }
+
+    // ------------------------------------------------------------------
+    // Bootstrap Admin allowlist.
+    // Must mirror NEXT_PUBLIC_ADMIN_EMAILS used by the client for the
+    // first-login bootstrap in contexts/AuthContext.tsx.
+    // Keep this list in sync on every deploy. It is ONLY consulted at
+    // user-document creation time; ongoing admin management still goes
+    // through the isAdmin field and the /admin/users page.
+    // ------------------------------------------------------------------
+    function bootstrapAdminEmails() {
+      return [
+        // 'owner@example.com'
+      ];
+    }
+
+    function isBootstrapAdminCreate() {
+      return signedIn()
+        && request.resource.data.email is string
+        && request.resource.data.email.lower() in bootstrapAdminEmails();
+    }
+
+    function unchanged(keys) {
+      return request.resource.data.diff(resource.data).unchangedKeys().hasAll(keys);
+    }
+
+    // True when `field` either stays the same or moves by exactly +1 / -1.
+    // Null-safe: a missing value on either side is treated as 0, so the
+    // first follower / first review still passes.
+    function counterDeltaOk(field) {
+      return (
+        (field in resource.data ? resource.data[field] : 0)
+          == (field in request.resource.data ? request.resource.data[field] : 0)
+        || (field in request.resource.data ? request.resource.data[field] : 0)
+          == (field in resource.data ? resource.data[field] : 0) + 1
+        || (field in request.resource.data ? request.resource.data[field] : 0)
+          == (field in resource.data ? resource.data[field] : 0) - 1
+      );
+    }
+
+    function listingVisible() {
+      return resource.data.status == 'approved'
+        || (signedIn() && resource.data.ownerId == request.auth.uid)
+        || isAdmin();
+    }
+
+    function listingDocVisible(listingId) {
+      return get(/databases/$(database)/documents/listings/$(listingId)).data.status == 'approved'
+        || (signedIn() && get(/databases/$(database)/documents/listings/$(listingId)).data.ownerId == request.auth.uid)
+        || isAdmin();
+    }
+
+    // الستوريز محتوى عام للنشر — قراءتها مفتوحة للجميع.
+    // فلترة الانتهاء (expiresAt) تتم في العميل لتفادي فشل الاستعلامات
+    // التي يقيّمها Firestore على القاعدة بدون قراءة بيانات الوثيقة.
+    // الكتابة والحذف لا يزالان محميَّيْن بصرامة أدناه.
+    function storyVisible() {
+      return true;
+    }
+
+    match /users/{userId} {
+      allow read: if true;
+
+      allow create: if isMe(userId)
+        && request.resource.data.uid == request.auth.uid
+        && (
+          // الحالة العادية: المستخدم لا يرسل isAdmin أو يرسله false.
+          // الحالة الثانية: المستخدم في قائمة Bootstrap Admin يستطيع
+          // إرسال isAdmin=true مرة واحدة فقط عند الإنشاء.
+          !('isAdmin' in request.resource.data)
+          || request.resource.data.isAdmin == false
+          || (request.resource.data.isAdmin == true && isBootstrapAdminCreate())
+        );
+
+      allow update: if (
+          isMe(userId)
+          && unchanged([
+            'uid', 'isAdmin', 'createdAt',
+            'isVerifiedDealer', 'verifiedAt',
+            'disabled', 'disabledReason', 'disabledAt', 'disabledBy',
+            // Role + ban fields - تُدار من الأدمن server-side فقط.
+            // المستخدم لا يستطيع رفع نفسه دوراً أو إزالة الحظر.
+            'role', 'banned', 'bannedAt', 'bannedBy', 'banReason',
+            'lastActiveAt', 'deviceInfo',
+            // Wallet fields - يديرها API routes (Admin SDK) فقط.
+            // المستخدم لا يستطيع تعديل رصيده مباشرة، ولا
+            // verifiedUntil (يأتي من شراء اشتراك)، ولا referralsCount.
+            'balance', 'walletUpdatedAt',
+            'verifiedUntil', 'verificationPlan', 'verificationStatus', 'verifiedSince',
+            'referralsCount', 'vipLevel',
+            // Referrals - الكود يُولّد server-side، الـreferredBy يُكتب
+            // عند تطبيق الكود، الـrewardEarned يُحدّث عند claim.
+            'referralCode', 'referredBy', 'referredByUid',
+            'referralRewardEarned', 'referralActivatedAt'
+          ])
+          // المالك يستطيع تعديل أي حقل في ملف نفسه - بما في ذلك حقول
+          // مستحدثة لم نعرفها بعد. الحقول الحرجة محميّة بـunchanged() أعلاه.
+          // affectedKeys.hasOnly تفحص فقط الحقول التي *تغيّرت* (ليس كل
+          // حقول الوثيقة) - هذا يمنع كسر القاعدة بسبب حقول قديمة موجودة
+          // في الوثيقة لم يلمسها هذا التحديث.
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly([
+                 'name',
+                 'displayName',
+                 'email',
+                 'phone',
+                 'photoURL',
+                 'avatarUrl',
+                 'coverURL',
+                 'accountCode',
+                 'businessName',
+                 'dealerName',
+                 'dealerLogo',
+                 'dealerCover',
+                 'dealerBio',
+                 'workingHours',
+                 'locationUrl',
+                 'facebookUrl',
+                 'instagramUrl',
+                 'websiteUrl',
+                 'city',
+                 'bio',
+                 'whatsapp',
+                 'rating',
+                 'reviewsCount',
+                 'ratingsCount',
+                 'averageRating',
+                 'phoneVerified',
+                 'updatedAt',
+                 'lastLoginAt',
+                 'followersCount',
+                 'followingCount',
+                 'listingsCount',
+                 'servicesCount',
+                 'isOnline',
+                 'lastSeenAt',
+                 'role',
+                 'profileCompleted',
+                 'termsAccepted',
+                 'privacyAccepted',
+                 'termsAcceptedAt',
+                 'privacyAcceptedAt',
+                 'acceptedTermsVersion',
+                 'acceptedPrivacyVersion',
+                 'membership',
+                 'providerIds'
+               ])
+        )
+        || (
+          // الأدمن يستطيع تعديل أي حقل في ملف أي مستخدم — بما في ذلك
+          // حقول التوثيق (isVerifiedDealer, verifiedAt). هذا الفرع
+          // الوحيد الذي يسمح بتغيير حالة التوثيق.
+          // استثناء: تعيين 'role' (دور الأدمن) يحتاج super_admin حصراً،
+          // لمنع تصعيد الصلاحيات. أي admin عادي لا يستطيع تعيين
+          // super_admin/admin لشخص آخر - يتطلب صلاحية أعلى.
+          isAdmin()
+          && (
+            !('role' in request.resource.data.diff(resource.data).affectedKeys())
+            || isSuperAdmin()
+          )
+        )
+        || (
+          // A different signed-in user may ONLY nudge the follow counters
+          // on this profile, and only by exactly +1 / -1 (or no-op).
+          // Used by the follow / unfollow transaction.
+          signedIn()
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['followersCount', 'followingCount'])
+          && counterDeltaOk('followersCount')
+          && counterDeltaOk('followingCount')
+        )
+        || (
+          // A different signed-in user may ONLY adjust this profile's
+          // rating aggregates (averageRating + reviewsCount), nothing else.
+          // We cannot read the sibling review-doc write from inside the same
+          // transaction, so we constrain the *values* instead: averageRating
+          // must be a valid 0..5 number and reviewsCount a non-negative int
+          // that moves by at most 1. The trader page also derives these live
+          // from the reviews subcollection, so a tampered value is cosmetic
+          // and self-corrects on the next real review.
+          signedIn()
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['averageRating', 'reviewsCount'])
+          && counterDeltaOk('reviewsCount')
+          && request.resource.data.reviewsCount is int
+          && request.resource.data.reviewsCount >= 0
+          && request.resource.data.averageRating is number
+          && request.resource.data.averageRating >= 0
+          && request.resource.data.averageRating <= 5
+        )
+        || isAdmin();
+
+      allow delete: if isAdmin();
+
+      match /favorites/{listingId} {
+        allow read: if isMe(userId) || isAdmin();
+        allow create, update, delete: if isMe(userId);
+      }
+
+      match /following/{targetUserId} {
+        allow read: if isMe(userId) || isAdmin();
+        allow create, update, delete: if isMe(userId);
+      }
+
+      match /followers/{followerUserId} {
+        allow read: if isMe(userId) || isAdmin();
+        allow create, update, delete: if isMe(followerUserId) || isAdmin();
+      }
+
+      match /likedListings/{listingId} {
+        allow read: if isMe(userId) || isAdmin();
+        allow create, update, delete: if isMe(userId);
+      }
+
+      // ساحباتي المفضلة - قائمة منفصلة عن likedListings (التي للسيارات).
+      // كل وثيقة معرّفها = listingId للساحبة. بنية الوثيقة:
+      //   { listingId: string, addedAt: timestamp }
+      // المالك فقط يقرأ ويكتب مفضلته. لا يقرأ أحد آخر (خصوصية).
+      match /towFavorites/{listingId} {
+        allow read: if isMe(userId);
+        allow create, update, delete: if isMe(userId);
+      }
+
+      // FCM tokens - Web Push tokens للمستخدم. كل وثيقة:
+      //   { token: string, tokenId, platform, userAgent, createdAt, lastSeenAt }
+      // المالك فقط يكتب/يقرأ tokenاته. الـserver (Firebase Admin) يقرأ كل
+      // التوكنات لإرسال push (يتجاوز القواعد لأنه يستخدم service account).
+      // لذا لا حاجة لـrule خاصة بـserver-side reads.
+      match /fcmTokens/{tokenId} {
+        allow read: if isMe(userId);
+        allow create, update, delete: if isMe(userId);
+      }
+
+      // تنبيهات سياراتي - تنبيهات البحث الخاصة بكل مستخدم.
+      // المالك فقط يقرأ ويكتب تنبيهاته. لا يوجد فحص متبادل لتنبيهات
+      // الآخرين — كل مستخدم يفحص بياناته الخاصة client-side عند فتح
+      // التطبيق ويُنشئ الإشعار لنفسه.
+      match /searchAlerts/{alertId} {
+        allow read: if isMe(userId);
+        allow create: if isMe(userId)
+          && request.resource.data.userId == userId;
+        allow update: if isMe(userId)
+          && request.resource.data.userId == userId;
+        allow delete: if isMe(userId);
+      }
+
+      // Trader reviews. Document id MUST equal the reviewer's uid, so each
+      // user has at most one review per trader. A trader cannot review
+      // itself. Rating is constrained to 1..5.
+      match /reviews/{reviewId} {
+        allow read: if true;
+
+        allow create: if signedIn()
+          && reviewId == request.auth.uid
+          && request.auth.uid != userId
+          && request.resource.data.reviewerId == request.auth.uid
+          && request.resource.data.rating is number
+          && request.resource.data.rating >= 1
+          && request.resource.data.rating <= 5;
+
+        allow update: if signedIn()
+          && reviewId == request.auth.uid
+          && request.auth.uid != userId
+          && request.resource.data.reviewerId == request.auth.uid
+          && request.resource.data.rating is number
+          && request.resource.data.rating >= 1
+          && request.resource.data.rating <= 5;
+
+        allow delete: if (signedIn() && reviewId == request.auth.uid) || isAdmin();
+      }
+    }
+
+    match /listings/{listingId} {
+      allow read: if listingVisible();
+
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.status == 'pending';
+
+      allow update: if (
+          signedIn()
+          && resource.data.ownerId == request.auth.uid
+          && request.resource.data.ownerId == resource.data.ownerId
+          && request.resource.data.status == resource.data.status
+          // المالك ممنوع من تعديل حقول التمييز/التعزيز/الترقية - هذه
+          // تُدار server-side فقط عبر API routes (الأدمن أو شراء BC).
+          // كذلك ممنوع من تعديل عدّادات الإحصائيات (تُكتب server-side
+          // عبر /api/listings/track فقط) - منعاً لتزوير الأرقام.
+          && unchanged([
+            'featured', 'featuredAt', 'featuredUntil', 'featuredBy',
+            'boostedUntil', 'boostedAt',
+            'bumpedAt', 'bumpCount',
+            'vipUntil', 'vipAt',
+            'views', 'favoritesCount',
+            'chatClicks', 'phoneClicks', 'whatsappClicks', 'shareClicks'
+          ])
+        )
+        || (
+          // Any signed-in user may ONLY adjust engagement counters.
+          // Used by the like and comment transactions. Owner/status and
+          // every other field must stay byte-for-byte unchanged.
+          signedIn()
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['likesCount', 'commentsCount'])
+        )
+        || isAdmin();
+
+      allow delete: if (signedIn() && resource.data.ownerId == request.auth.uid) || isAdmin();
+
+      // مسار dedup مشاهدات الإعلان - يُكتب server-side فقط (Admin SDK).
+      // العميل ممنوع من القراءة والكتابة (الـAdmin SDK يتجاوز القواعد).
+      match /viewers/{viewerKey} {
+        allow read, write: if false;
+      }
+
+      match /comments/{commentId} {
+        allow read: if listingDocVisible(listingId);
+        allow create: if signedIn()
+          && request.resource.data.userId == request.auth.uid;
+        allow delete: if signedIn() && (
+          resource.data.userId == request.auth.uid ||
+          get(/databases/$(database)/documents/listings/$(listingId)).data.ownerId == request.auth.uid ||
+          isAdmin()
+        );
+        // التحديثات المسموحة على التعليق:
+        //  (1) بلاغ: أي مستخدم ليس صاحب التعليق يستطيع رفع reportedCount
+        //      بواحد + تعيين reported=true. الحقول المسموحة فقط:
+        //      reported / reportedCount / lastReportedAt.
+        //  (2) تفاعلات: أي مُسجَّل يستطيع تعديل خريطة `reactions` (مفتاحها
+        //      uid، قيمتها مفتاح التفاعل). نسمح لأي uid بتعديل reactions
+        //      ككلٍّ لأن تقييد كل مفتاح لكل uid صعب التحقق في rules. الضرر
+        //      المحتمل (حذف تفاعل شخص آخر) محدود وقابل للتعافي بإعادة
+        //      التفاعل. النص والـuserId/userName لا يمكن أن يتغيّروا.
+        //  (3) الأدمن: أي تعديل.
+        allow update: if (
+          // (1) report
+          signedIn()
+          && resource.data.userId != request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['reported', 'reportedCount', 'lastReportedAt'])
+          && request.resource.data.reported == true
+          && request.resource.data.reportedCount == resource.data.reportedCount + 1
+        ) || (
+          // (2) reactions
+          signedIn()
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['reactions'])
+          // النص والمعرّف لا يتغيّران (محميّان ضمنياً بـhasOnly أعلاه لكن
+          // نذكّر بأن أي حقل خارج reactions يفشل).
+        ) || isAdmin();
+      }
+
+      match /likes/{userId} {
+        allow read: if listingDocVisible(listingId);
+        allow create, delete: if isMe(userId);
+        allow update: if false;
+      }
+    }
+
+    match /stories/{storyId} {
+      allow read: if storyVisible();
+
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.type in ['car', 'service', 'offer']
+        && request.resource.data.media is list
+        && request.resource.data.media.size() > 0
+        && request.resource.data.media.size() <= 10
+        && request.resource.data.expiresAt is timestamp
+        && request.resource.data.expiresAt > request.time;
+
+      allow update: if (
+          signedIn()
+          && resource.data.ownerId == request.auth.uid
+          && request.resource.data.ownerId == resource.data.ownerId
+          && request.resource.data.createdAt == resource.data.createdAt
+        ) || isAdmin() || (
+          signedIn()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewsCount'])
+          && request.resource.data.viewsCount == resource.data.viewsCount + 1
+          && request.resource.data.ownerId == resource.data.ownerId
+          && request.resource.data.type == resource.data.type
+          && request.resource.data.coverUrl == resource.data.coverUrl
+        );
+
+      allow delete: if (signedIn() && resource.data.ownerId == request.auth.uid) || isAdmin();
+
+      match /viewers/{viewerId} {
+        allow read: if signedIn() && (
+          request.auth.uid == viewerId ||
+          get(/databases/$(database)/documents/stories/$(storyId)).data.ownerId == request.auth.uid ||
+          isAdmin()
+        );
+
+        allow create: if isMe(viewerId)
+          && request.resource.data.userId == request.auth.uid;
+
+        allow update, delete: if false;
+      }
+    }
+
+    match /chats/{chatId} {
+      allow read: if signedIn() && request.auth.uid in resource.data.participants;
+      allow create: if signedIn()
+        && request.auth.uid in request.resource.data.participants
+        && request.resource.data.participants.size() == 2;
+      allow update: if signedIn() && request.auth.uid in resource.data.participants;
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        allow read: if signedIn()
+          && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+        allow create: if signedIn()
+          && request.resource.data.senderId == request.auth.uid
+          && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+        // التحديث مسموح فقط لحقل reactions، وفقط للمشتركين في المحادثة.
+        // هذا يسمح بإضافة/إزالة قلب على رسالة، ولا يسمح بتعديل نصها أو
+        // أي حقل آخر. نتحقق من ذلك عبر affectedKeys() ≤ {reactions}.
+        allow update: if signedIn()
+          && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions']);
+        allow delete: if false;
+      }
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow create: if signedIn()
+        && (
+          !request.resource.data.keys().hasAny(['actorId'])
+          || request.resource.data.actorId == request.auth.uid
+        );
+      allow update: if signedIn() && resource.data.userId == request.auth.uid;
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // طلبات توثيق المعارض - يرسلها المستخدم من /dealer-verification.
+    // المستخدم ينشئ طلبه فقط (مع userId == auth.uid + status بدء pending)،
+    // ويقرأ طلباته فقط. الأدمن يقرأ كل الطلبات ويُحدّث/يحذف.
+    match /dealerVerificationRequests/{requestId} {
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'pending';
+      allow read: if signedIn() && (
+        resource.data.userId == request.auth.uid || isAdmin()
+      );
+      allow update, delete: if isAdmin();
+    }
+
+    // طلبات تمييز الإعلانات - ينشئها صاحب الإعلان، يوافق عليها الأدمن.
+    // المستخدم لا يستطيع إنشاء طلب لإعلان ليس له (الحقل ownerId يجب أن يطابق auth.uid).
+    // المستخدم يقرأ طلباته فقط، الأدمن يقرأ كل الطلبات ويُحدّث/يحذف.
+    match /featuredRequests/{requestId} {
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.status == 'pending';
+      allow read: if signedIn() && (
+        resource.data.ownerId == request.auth.uid || isAdmin()
+      );
+      allow update, delete: if isAdmin();
+    }
+
+    // شعارات الماركات - public read، فقط الأدمن يكتب/يحذف.
+    // وثيقة واحدة لكل brand id (مثل brandLogos/toyota).
+    // البنية: { brandId: string, logoUrl: string, updatedAt }
+    match /brandLogos/{brandId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // إعدادات عامة للموقع (settings/contact، settings/...).
+    // أي مستخدم يقرأ (عام)، الأدمن فقط يكتب.
+    // الوثيقة الرئيسية: settings/contact مع phone/whatsapp/email/...
+    match /settings/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ============================================================
+    // Broadcasts - سجلّ الإشعارات الجماعية التي يُرسلها الأدمن.
+    // الكتابة تتم حصراً من API route عبر Firebase Admin SDK (يتجاوز
+    // القواعد)، لذلك الـallow create/update/delete = false للـclient.
+    // القراءة: الأدمن فقط (لعرض السجلّ في صفحة الإدارة لاحقاً).
+    // ============================================================
+    match /broadcasts/{broadcastId} {
+      allow read: if isAdmin();
+      // الكتابة من client ممنوعة - حتى الأدمن يستخدم API route الذي
+      // يكتب server-side. هذا يضمن نفس الـvalidation تطبَّق دائماً.
+      allow create, update, delete: if false;
+    }
+
+    // ============================================================
+    // Admin module collections (المرحلة 1 من الـAdmin Panel الجديد)
+    // ============================================================
+
+    // adminLogs - سجلّ كل إجراءات الأدمن (audit trail).
+    //   {adminUid, action, targetType, targetId, before, after, reason, createdAt}
+    // القراءة: للأدمن. الكتابة: server-side فقط.
+    match /adminLogs/{logId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    // featureFlags - تشغيل/إيقاف ميزات بدون نشر.
+    //   {key, enabled, description, updatedBy, updatedAt}
+    // القراءة: public (لتعمل في كل الصفحات بسرعة).
+    // الكتابة: للأدمن المخوّل (features.toggle).
+    match /featureFlags/{flagKey} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // walletTransactions - سجلّ كل عمليات الرصيد.
+    //   {userId, amount, type, reason, balanceAfter, createdBy, metadata, createdAt}
+    // القراءة:
+    //   - المستخدم يقرأ معاملاته فقط (userId == auth.uid)
+    //   - الأدمن يقرأ كل المعاملات
+    // الكتابة: ممنوعة من client - فقط Admin SDK (API routes) يكتب.
+    //   هذا يضمن:
+    //   - لا تلاعب بـbalanceAfter
+    //   - لا إنشاء معاملات مزيفة
+    //   - كل العمليات atomic (transaction) في الـAPI
+    match /walletTransactions/{txId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.userId == request.auth.uid);
+      allow create, update, delete: if false;
+    }
+
+    // referrals - سجلّ كل عمليات الدعوة.
+    //   {referrerUid, referredUid, code, status, rewardedAt, createdAt}
+    // القراءة:
+    //   - المُحيل يقرأ دعواته (referrerUid == auth.uid)
+    //   - المُحال يقرأ دعوته (referredUid == auth.uid)
+    //   - الأدمن يقرأ الكل
+    // الكتابة: ممنوعة من client - فقط Admin SDK يكتب.
+    match /referrals/{referralId} {
+      allow read: if isAdmin()
+        || (signedIn() && (
+          resource.data.referrerUid == request.auth.uid
+          || resource.data.referredUid == request.auth.uid
+        ));
+      allow create, update, delete: if false;
+    }
+
+    // topupRequests - طلبات شحن الرصيد من المستخدم.
+    //   {userId, amount, paymentMethod, contactNumber, note, status, ...}
+    // القراءة:
+    //   - المستخدم يقرأ طلباته فقط (userId == auth.uid)
+    //   - الأدمن يقرأ كل الطلبات
+    // الكتابة: ممنوعة من client - الـAPI تنشئ وتحدّث (Admin SDK).
+    //   يضمن أن:
+    //   - المستخدم لا يستطيع تغيير status لنفسه (يمنحه رصيداً مجاناً)
+    //   - الـvalidation كاملة server-side
+    //   - anti-spam (max 3 pending) محفوظ في الـAPI
+    match /topupRequests/{requestId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.userId == request.auth.uid);
+      allow create, update, delete: if false;
+    }
+
+    // reports - بلاغات المستخدمين على إعلانات/تعليقات/مستخدمين.
+    //   {reporterId, targetType, targetId, reason, description, status, ...}
+    // القراءة: الأدمن + المُبلِّغ نفسه (يرى بلاغاته فقط).
+    // الكتابة:
+    //   - create: أي مستخدم مسجَّل، شرط reporterId == نفسه + status='pending'
+    //   - update/delete: الأدمن فقط (لتحديث status)
+    match /reports/{reportId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.reporterId == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.reporterId == request.auth.uid
+        && request.resource.data.status == 'pending';
+      allow update, delete: if isAdmin();
+    }
+
+    // bannedWords - فلترة الكلمات في التعليقات والإعلانات.
+    //   {word, severity, addedBy, addedAt}
+    // القراءة: public (يحتاج كل المستخدمين قراءتها للفلترة client-side
+    //   عند الكتابة. trade-off معروف: قائمة الكلمات تصبح مرئية، لكن
+    //   هذا مقبول لأن الكلمات تُحظر فعلياً سواء عرفها المستخدم أم لا).
+    // الكتابة: للأدمن فقط.
+    match /bannedWords/{wordId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // homepageConfig - بنرات + ترتيب الأقسام في الصفحة الرئيسية.
+    //   وثيقة رئيسية: homepageConfig/main (يحوي sectionsOrder + featuredListings)
+    //   subcollection: homepageConfig/main/banners/{bannerId} (كل بنر منفصل)
+    // القراءة: public (الصفحة الرئيسية تقرأها).
+    // الكتابة: للأدمن (homepage.edit).
+    match /homepageConfig/{configId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+
+      // البنرات في subcollection (نضع القاعدة هنا لتطبيقها على
+      // homepageConfig/main/banners/* تلقائياً)
+      match /banners/{bannerId} {
+        allow read: if true;
+        allow create, update, delete: if isAdmin();
+      }
+    }
+
+    // cmsPages - صفحات المحتوى الديناميكي (privacy, terms, faq, ...).
+    //   {slug, title, contentMarkdown, updatedBy, updatedAt}
+    // القراءة: public. الكتابة: للأدمن (content.edit).
+    match /cmsPages/{slug} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // analytics/daily/{YYYY-MM-DD} - لقطات يومية للتحليلات.
+    // تُكتب server-side (cron). القراءة: للأدمن.
+    match /analytics/{docId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    // ============================================================
+    // dealerStories - قصص المعارض (منفصلة عن stories العامة).
+    //   {dealerUid, dealerName, dealerLogo?, category, mediaURL,
+    //    mediaType, caption?, listingId?, viewCount, createdAt, expiresAt}
+    // القراءة: public (تظهر في صفحة المعرض العامة /traders/{uid}).
+    // الإنشاء: صاحب المعرض فقط لقصصه (dealerUid == auth.uid) + تصنيف صالح.
+    // التحديث: المالك أو الأدمن، أو أي مُسجَّل يرفع viewCount بواحد فقط.
+    // الحذف: المالك أو الأدمن.
+    // ============================================================
+    match /dealerStories/{storyId} {
+      allow read: if true;
+
+      allow create: if signedIn()
+        && request.resource.data.dealerUid == request.auth.uid
+        && request.resource.data.category in
+             ['new_arrivals', 'offers', 'showroom', 'test_drive']
+        && request.resource.data.mediaURL is string
+        && request.resource.data.expiresAt is timestamp;
+
+      allow update: if (
+          signedIn()
+          && resource.data.dealerUid == request.auth.uid
+          && request.resource.data.dealerUid == resource.data.dealerUid
+        ) || isAdmin() || (
+          // أي مُسجَّل يرفع عدّاد المشاهدات بواحد فقط، لا شيء غيره.
+          signedIn()
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['viewCount'])
+          && request.resource.data.viewCount == resource.data.viewCount + 1
+        );
+
+      allow delete: if (signedIn() && resource.data.dealerUid == request.auth.uid)
+        || isAdmin();
+    }
+
+    // ============================================================
+    // stats/platform - لقطة إحصائيات الموقع (سيارات/قطع/معارض/نشطون).
+    // تُكتب server-side فقط (cron عبر Admin SDK). القراءة: public
+    // (صفحة الرئيسية تعرض الأرقام). الكتابة من client ممنوعة.
+    // ============================================================
+    match /stats/{docId} {
+      allow read: if true;
+      allow create, update, delete: if false;
+    }
+
+    // ============================================================
+    // walletTransfers - سجلّ تحويلات الرصيد بين المستخدمين.
+    //   {senderUid, recipientUid, amount, ...}
+    // الكتابة: ممنوعة من client - API route (Admin SDK) فقط ينشئها
+    //   داخل transaction (يخصم من المُرسِل ويضيف للمستلم ذرّياً).
+    // القراءة:
+    //   - الأدمن يقرأ كل التحويلات (صفحة /admin/transfers).
+    //   - الطرفان يقرآن تحويلاتهما (مُرسِل أو مستلم).
+    // ============================================================
+    match /walletTransfers/{transferId} {
+      allow read: if isAdmin()
+        || (signedIn() && (
+          resource.data.senderUid == request.auth.uid
+          || resource.data.recipientUid == request.auth.uid
+        ));
+      allow create, update, delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
