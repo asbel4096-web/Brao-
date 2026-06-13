@@ -238,6 +238,23 @@ export function StoryViewer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paused, index, currentDurationMs, currentMedia?.kind]);
 
+  // إيقاف القصة عند مغادرة التطبيق/التبويب، واستئنافها عند العودة.
+  // (نمط Instagram/WhatsApp: لا تتقدّم القصة ولا يُستهلك الفيديو بيانات
+  // بينما المستخدم في تطبيق آخر أو الشاشة مقفلة → توفير بيانات + UX صحيح.)
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.hidden) {
+        setPaused(true);
+      } else {
+        setPaused(false);
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
@@ -416,6 +433,8 @@ export function StoryViewer({
             alt={currentStory.ownerName}
             className={`h-full w-full ${fitClass}`}
             referrerPolicy="no-referrer"
+            decoding="async"
+            fetchPriority="high"
             onLoad={(e) => {
               const img = e.currentTarget;
               if (img.naturalWidth && img.naturalHeight) {

@@ -234,6 +234,7 @@ export function StoryCreateModal({ open, onClose }: Props) {
 
         await uploadBytes(storageRef, draft.file, {
           contentType: draft.file.type,
+          cacheControl: "public, max-age=31536000",
         });
         uploadedPaths.push(storagePath);
 
