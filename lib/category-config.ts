@@ -174,16 +174,6 @@ const PARTS_FIELDS: FieldDef[] = [
   F.phone,
 ];
 
-/* ---------- حقول السطحة/السحب (tow) ---------- */
-const TOW_FIELDS: FieldDef[] = [
-  { key: "title", label: "اسم الخدمة", type: "text", required: true },
-  F.coverageAreas,
-  F.availableNow,
-  F.price,
-  F.city,
-  F.phone,
-];
-
 /* ---------- حقول الورش/الخدمات (services) ---------- */
 const WORKSHOP_FIELDS: FieldDef[] = [
   { key: "title", label: "اسم الورشة", type: "text", required: true },
@@ -207,21 +197,168 @@ const ACCIDENT_FIELDS: FieldDef[] = [
   F.brand,
   F.model,
   F.year,
+  {
+    key: "damageType",
+    label: "نوع الضرر",
+    type: "select",
+    options: ["أمامي", "خلفي", "جانبي", "شامل", "غمر مياه", "حريق"],
+  },
+  {
+    key: "repairable",
+    label: "قابلة للإصلاح",
+    type: "toggle",
+  },
   F.description,
   F.price,
   F.city,
   F.phone,
 ];
 
-/**
- * خريطة slug → إعداد الحقول.
- * الأقسام غير المذكورة صراحةً تأخذ إعداداً افتراضياً حسب group (انظر الأسفل).
- */
+/* ===== قوالب الحقول الخاصة بكل قسم (Dynamic Forms) ===== */
+
+/* حافلات: تضيف عدد المقاعد */
+const BUS_FIELDS: FieldDef[] = [
+  F.title,
+  F.brand,
+  F.model,
+  F.year,
+  { key: "seats", label: "عدد المقاعد", type: "number" },
+  { key: "engine", label: "المحرك", type: "text", placeholder: "مثال: 2.5" },
+  {
+    key: "fuel",
+    label: "نوع الوقود",
+    type: "select",
+    options: ["بنزين", "ديزل", "كهرباء", "هجين"],
+  },
+  { key: "mileage", label: "المسافة المقطوعة (كم)", type: "number" },
+  F.condition,
+  F.price,
+  F.city,
+  F.phone,
+];
+
+/* شاحنات: تضيف الحمولة */
+const TRUCK_FIELDS: FieldDef[] = [
+  F.title,
+  F.brand,
+  F.model,
+  F.year,
+  { key: "payload", label: "الحمولة (طن)", type: "number" },
+  { key: "engine", label: "المحرك", type: "text", placeholder: "مثال: 3.0" },
+  { key: "mileage", label: "المسافة المقطوعة (كم)", type: "number" },
+  F.condition,
+  F.price,
+  F.city,
+  F.phone,
+];
+
+/* قطع غيار شاحنات: نوع الشاحنة + الموديلات */
+const TRUCK_PARTS_FIELDS: FieldDef[] = [
+  { key: "title", label: "اسم القطعة", type: "text", required: true },
+  { key: "truckType", label: "نوع الشاحنة", type: "text" },
+  {
+    key: "compatibleCar",
+    label: "الموديلات المتوافقة",
+    type: "text",
+    placeholder: "مثال: مرسيدس أكتروس 2010-2018",
+  },
+  F.condition,
+  F.price,
+  F.city,
+  F.phone,
+];
+
+/* قطع كهربائية: الفولت + الماركة */
+const ELECTRIC_PARTS_FIELDS: FieldDef[] = [
+  { key: "title", label: "اسم القطعة", type: "text", required: true },
+  { key: "voltage", label: "الفولت", type: "text", placeholder: "مثال: 12V" },
+  F.brand,
+  F.condition,
+  F.price,
+  F.city,
+  F.phone,
+];
+
+/* قطع مستعملة: نسبة الاستخدام */
+const USED_PARTS_FIELDS: FieldDef[] = [
+  { key: "title", label: "اسم القطعة", type: "text", required: true },
+  F.brand,
+  F.condition,
+  {
+    key: "usagePercent",
+    label: "نسبة الاستخدام (%)",
+    type: "number",
+  },
+  F.price,
+  F.city,
+  F.phone,
+];
+
+/* كماليات: اسم المنتج + الماركة + وصف */
+const ACCESSORIES_FIELDS: FieldDef[] = [
+  { key: "title", label: "اسم المنتج", type: "text", required: true },
+  F.brand,
+  F.description,
+  F.price,
+  F.city,
+  F.phone,
+];
+
+/* زيوت ومواد مضافة: السعة + النوع */
+const OILS_FIELDS: FieldDef[] = [
+  { key: "title", label: "الاسم", type: "text", required: true },
+  { key: "oilBrand", label: "الشركة", type: "text" },
+  { key: "capacity", label: "السعة", type: "text", placeholder: "مثال: 4 لتر" },
+  {
+    key: "oilType",
+    label: "النوع",
+    type: "text",
+    placeholder: "مثال: 5W-30",
+  },
+  F.price,
+  F.city,
+  F.phone,
+];
+
+/* إطارات وجنوط: المقاس + العدد */
+const TIRES_FIELDS: FieldDef[] = [
+  { key: "title", label: "الاسم", type: "text", required: true },
+  {
+    key: "tireSize",
+    label: "المقاس",
+    type: "text",
+    placeholder: "مثال: 215/60 R16",
+  },
+  F.brand,
+  F.condition,
+  { key: "tireCount", label: "العدد", type: "number" },
+  F.price,
+  F.city,
+  F.phone,
+];
+
+/* ساحبة سيارات: نوع السطحة + خدمة 24 ساعة */
+const TOW_DETAILED_FIELDS: FieldDef[] = [
+  { key: "title", label: "اسم الخدمة", type: "text", required: true },
+  {
+    key: "towType",
+    label: "نوع السطحة",
+    type: "select",
+    options: ["سطحة عادية", "سطحة هيدروليك", "ونش", "سحب ثقيل"],
+  },
+  F.coverageAreas,
+  { key: "available24h", label: "خدمة 24 ساعة", type: "toggle" },
+  F.availableNow,
+  F.price,
+  F.city,
+  F.phone,
+];
+
 const BY_SLUG: Record<string, Omit<CategoryFieldConfig, "slug">> = {
   // مركبات
   cars: { fields: VEHICLE_FIELDS, entityType: "listing", homeBucket: "cars" },
-  buses: { fields: VEHICLE_FIELDS, entityType: "listing", homeBucket: "cars" },
-  trucks: { fields: VEHICLE_FIELDS, entityType: "listing", homeBucket: "cars" },
+  buses: { fields: BUS_FIELDS, entityType: "listing", homeBucket: "cars" },
+  trucks: { fields: TRUCK_FIELDS, entityType: "listing", homeBucket: "cars" },
   "accident-cars": {
     fields: ACCIDENT_FIELDS,
     entityType: "listing",
@@ -230,15 +367,15 @@ const BY_SLUG: Record<string, Omit<CategoryFieldConfig, "slug">> = {
 
   // قطع غيار + كماليات + زيوت + إطارات
   "car-parts": { fields: PARTS_FIELDS, entityType: "listing", homeBucket: "parts" },
-  "truck-parts": { fields: PARTS_FIELDS, entityType: "listing", homeBucket: "parts" },
-  "electric-parts": { fields: PARTS_FIELDS, entityType: "listing", homeBucket: "parts" },
-  "used-parts": { fields: PARTS_FIELDS, entityType: "listing", homeBucket: "parts" },
-  accessories: { fields: PARTS_FIELDS, entityType: "listing", homeBucket: "parts" },
-  oils: { fields: PARTS_FIELDS, entityType: "listing", homeBucket: "parts" },
-  tires: { fields: PARTS_FIELDS, entityType: "listing", homeBucket: "parts" },
+  "truck-parts": { fields: TRUCK_PARTS_FIELDS, entityType: "listing", homeBucket: "parts" },
+  "electric-parts": { fields: ELECTRIC_PARTS_FIELDS, entityType: "listing", homeBucket: "parts" },
+  "used-parts": { fields: USED_PARTS_FIELDS, entityType: "listing", homeBucket: "parts" },
+  accessories: { fields: ACCESSORIES_FIELDS, entityType: "listing", homeBucket: "parts" },
+  oils: { fields: OILS_FIELDS, entityType: "listing", homeBucket: "parts" },
+  tires: { fields: TIRES_FIELDS, entityType: "listing", homeBucket: "parts" },
 
   // خدمات
-  "tow-truck": { fields: TOW_FIELDS, entityType: "service", homeBucket: "tow" },
+  "tow-truck": { fields: TOW_DETAILED_FIELDS, entityType: "service", homeBucket: "tow" },
   "mobile-mechanic": {
     fields: WORKSHOP_FIELDS,
     entityType: "service",

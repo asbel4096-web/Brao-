@@ -70,6 +70,21 @@ interface FormState {
   condition: string;
   compatibleCar: string;
   rating: string;
+  // حقول الأقسام المتخصّصة (Dynamic Forms)
+  seats: string;
+  payload: string;
+  voltage: string;
+  usagePercent: string;
+  capacity: string;
+  oilBrand: string;
+  oilType: string;
+  tireSize: string;
+  tireCount: string;
+  truckType: string;
+  towType: string;
+  available24h: boolean;
+  damageType: string;
+  repairable: boolean;
 }
 
 const initialState: FormState = {
@@ -102,6 +117,20 @@ const initialState: FormState = {
   condition: "",
   compatibleCar: "",
   rating: "",
+  seats: "",
+  payload: "",
+  voltage: "",
+  usagePercent: "",
+  capacity: "",
+  oilBrand: "",
+  oilType: "",
+  tireSize: "",
+  tireCount: "",
+  truckType: "",
+  towType: "",
+  available24h: false,
+  damageType: "",
+  repairable: false,
 };
 
 const MAX_IMAGES = 20;
@@ -416,6 +445,27 @@ export default function AddListingPage() {
           ? { compatibleCar: form.compatibleCar.trim() }
           : {}),
         ...(form.rating ? { rating: Number(form.rating) || null } : {}),
+        // حقول الأقسام المتخصّصة - تُحفظ فقط لو لها قيمة (لا حقل فارغ)
+        ...(form.seats ? { seats: Number(form.seats) || null } : {}),
+        ...(form.payload ? { payload: Number(form.payload) || null } : {}),
+        ...(form.voltage.trim() ? { voltage: form.voltage.trim() } : {}),
+        ...(form.usagePercent
+          ? { usagePercent: Number(form.usagePercent) || null }
+          : {}),
+        ...(form.capacity.trim() ? { capacity: form.capacity.trim() } : {}),
+        ...(form.oilBrand.trim() ? { oilBrand: form.oilBrand.trim() } : {}),
+        ...(form.oilType.trim() ? { oilType: form.oilType.trim() } : {}),
+        ...(form.tireSize.trim() ? { tireSize: form.tireSize.trim() } : {}),
+        ...(form.tireCount
+          ? { tireCount: Number(form.tireCount) || null }
+          : {}),
+        ...(form.truckType.trim() ? { truckType: form.truckType.trim() } : {}),
+        ...(form.towType.trim() ? { towType: form.towType.trim() } : {}),
+        ...(form.available24h ? { available24h: true } : {}),
+        ...(form.damageType.trim()
+          ? { damageType: form.damageType.trim() }
+          : {}),
+        ...(form.repairable ? { repairable: true } : {}),
         ...(categoryConfig.showTowTruckFields
           ? {
               availableNow: form.availableNow === true,
