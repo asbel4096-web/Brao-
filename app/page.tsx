@@ -46,7 +46,7 @@ import type { HomepageSection } from "@/lib/cms/types";
 const EXTRA_KEYS: HomepageSection[] = ["banners"];
 
 export default function HomePage() {
-  const { config, banners } = usePublicHomepageConfig();
+  const { config, banners, loading: bannersLoading } = usePublicHomepageConfig();
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -54,7 +54,7 @@ export default function HomePage() {
   const renderExtra = (key: HomepageSection): React.ReactNode => {
     switch (key) {
       case "banners":
-        return <HomepageBannersCarousel banners={banners} />;
+        return <HomepageBannersCarousel banners={banners} loading={bannersLoading} />;
       default:
         return null;
     }

@@ -106,9 +106,24 @@ export function usePublicHomepageConfig() {
           ...(d.data() as any),
         })) as HomepageBanner[];
 
-        // فلترة active=true + ترتيب حسب order (client-side)
+        // فلترة active=true + إخفاء المنتهي/غير المبدوء + ترتيب حسب order
+        const nowMs = Date.now();
+        const toMs = (t: any): number | null => {
+          if (!t) return null;
+          if (typeof t.toMillis === "function") return t.toMillis();
+          if (typeof t.seconds === "number") return t.seconds * 1000;
+          const d = new Date(t).getTime();
+          return Number.isFinite(d) ? d : null;
+        };
         const nextBanners = allBanners
-          .filter((b) => b.active === true)
+          .filter((b) => {
+            if (b.active !== true) return false;
+            const start = toMs((b as any).startDate);
+            const end = toMs((b as any).endDate);
+            if (start !== null && nowMs < start) return false; // لم يبدأ بعد
+            if (end !== null && nowMs > end) return false; // انتهى
+            return true;
+          })
           .sort((a, b) => (a.order || 0) - (b.order || 0));
 
         setConfig(nextConfig);

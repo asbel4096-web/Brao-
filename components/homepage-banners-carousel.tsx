@@ -22,14 +22,32 @@ import type { HomepageBanner } from "@/lib/cms/types";
 
 interface Props {
   banners: HomepageBanner[];
+  loading?: boolean;
 }
 
 const AUTOPLAY_MS = 5000;
 
-export function HomepageBannersCarousel({ banners }: Props) {
+/** هيكل تحميل (Skeleton) للبنر أثناء جلب البيانات. */
+function BannerSkeleton() {
+  return (
+    <section className="container pt-3 sm:pt-4">
+      <div
+        className="
+          h-[140px] w-full animate-pulse rounded-3xl bg-slate-200
+          sm:h-[180px] md:h-[220px] dark:bg-slate-800
+        "
+      />
+    </section>
+  );
+}
+
+export function HomepageBannersCarousel({ banners, loading }: Props) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [activeIdx, setActiveIdx] = useState(0);
   const [pausedByUser, setPausedByUser] = useState(false);
+
+  // أثناء التحميل: نعرض Skeleton (تجربة احترافية بدل قفزة مفاجئة)
+  if (loading) return <BannerSkeleton />;
 
   // إخفاء كامل لو فاضي
   if (!banners || banners.length === 0) return null;
@@ -85,8 +103,8 @@ export function HomepageBannersCarousel({ banners }: Props) {
             [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
           "
         >
-          {banners.map((b) => (
-            <BannerSlide key={b.id} banner={b} />
+          {banners.map((b, i) => (
+            <BannerSlide key={b.id} banner={b} idx={i} />
           ))}
         </div>
 
@@ -151,7 +169,7 @@ export function HomepageBannersCarousel({ banners }: Props) {
   );
 }
 
-function BannerSlide({ banner }: { banner: HomepageBanner }) {
+function BannerSlide({ banner, idx }: { banner: HomepageBanner; idx: number }) {
   const content = (
     <div
       className="
@@ -161,12 +179,13 @@ function BannerSlide({ banner }: { banner: HomepageBanner }) {
       "
     >
       <Image
-        src={banner.imageUrl}
+        src={banner.mobileImageUrl || banner.imageUrl}
         alt={banner.title || "بنر"}
         fill
         sizes="(min-width: 768px) 1024px, 100vw"
         className="object-cover"
-        priority
+        priority={idx === 0}
+        loading={idx === 0 ? undefined : "lazy"}
       />
       {(banner.title || banner.subtitle) && (
         <div

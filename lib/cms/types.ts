@@ -68,6 +68,8 @@ export const KNOWN_PAGE_SLUGS = [
 export interface HomepageBanner {
   id: string;
   imageUrl: string;
+  /** صورة مخصّصة للجوال (اختياري - تُستخدم على الشاشات الصغيرة). */
+  mobileImageUrl?: string;
   /** رابط عند الضغط (داخلي مثل /listings أو خارجي). */
   link?: string;
   title?: string;
@@ -76,6 +78,10 @@ export interface HomepageBanner {
   order: number;
   /** متاح للعرض؟ false = مخفي مؤقتاً دون حذف. */
   active: boolean;
+  /** تاريخ بدء العرض (اختياري) - قبله لا يظهر البانر. */
+  startDate?: Timestamp | null;
+  /** تاريخ انتهاء العرض (اختياري) - بعده يُخفى البانر تلقائياً. */
+  endDate?: Timestamp | null;
   createdAt?: Timestamp | null;
 }
 
