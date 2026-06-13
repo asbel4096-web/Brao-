@@ -69,15 +69,26 @@ export function GalleryEditTab() {
     try {
       for (let i = 0; i < files.length; i++) {
         setProgress({ current: i + 1, total: files.length });
+        console.log("UPLOAD START", files[i].name);
         const result = await uploadGalleryImage(user.uid, files[i]);
+        console.log("UPLOAD DONE", files[i].name, result.url);
         newUrls.push(result.url);
       }
 
       // تحديث Firestore (إضافة الـURLs الجديدة)
-      await updateDoc(doc(db, "users", user.uid), {
-        dealerGallery: arrayUnion(...newUrls),
-        updatedAt: serverTimestamp(),
+      console.log("FIRESTORE UPDATE START", {
+        dealerGallery: `arrayUnion(${newUrls.length} urls)`,
       });
+      try {
+        await updateDoc(doc(db, "users", user.uid), {
+          dealerGallery: arrayUnion(...newUrls),
+          updatedAt: serverTimestamp(),
+        });
+        console.log("FIRESTORE UPDATE DONE");
+      } catch (fsErr) {
+        console.error("FIRESTORE ERROR", fsErr);
+        throw fsErr;
+      }
 
       if (typeof refreshProfile === "function") await refreshProfile();
       toast.success(`تم رفع ${newUrls.length} صورة`);
@@ -103,13 +114,22 @@ export function GalleryEditTab() {
     setDeletingIdx(idx);
     try {
       // Storage (best-effort)
+      console.log("STORAGE DELETE START", url);
       await deleteImageByURL(url);
+      console.log("STORAGE DELETE DONE");
 
       // Firestore
-      await updateDoc(doc(db, "users", user.uid), {
-        dealerGallery: arrayRemove(url),
-        updatedAt: serverTimestamp(),
-      });
+      console.log("FIRESTORE UPDATE START", { dealerGallery: `arrayRemove(1 url)` });
+      try {
+        await updateDoc(doc(db, "users", user.uid), {
+          dealerGallery: arrayRemove(url),
+          updatedAt: serverTimestamp(),
+        });
+        console.log("FIRESTORE UPDATE DONE");
+      } catch (fsErr) {
+        console.error("FIRESTORE ERROR", fsErr);
+        throw fsErr;
+      }
 
       if (typeof refreshProfile === "function") await refreshProfile();
       toast.success("تم الحذف");

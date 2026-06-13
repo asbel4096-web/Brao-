@@ -163,6 +163,7 @@ service cloud.firestore {
                  'dealerName',
                  'dealerLogo',
                  'dealerCover',
+                 'dealerGallery',
                  'dealerBio',
                  'workingHours',
                  'locationUrl',
