@@ -69,25 +69,24 @@ export function GalleryEditTab() {
     try {
       for (let i = 0; i < files.length; i++) {
         setProgress({ current: i + 1, total: files.length });
-        console.log("UPLOAD START", files[i].name);
         const result = await uploadGalleryImage(user.uid, files[i]);
-        console.log("UPLOAD DONE", files[i].name, result.url);
         newUrls.push(result.url);
       }
 
       // تحديث Firestore (إضافة الـURLs الجديدة)
-      console.log("FIRESTORE UPDATE START", {
-        dealerGallery: `arrayUnion(${newUrls.length} urls)`,
-      });
+      const galleryRef = doc(db, "users", user.uid);
+      const galleryData = {
+        dealerGallery: arrayUnion(...newUrls),
+        updatedAt: serverTimestamp(),
+      };
+      console.log("DOCUMENT PATH", galleryRef.path);
+      console.log("DATA", { dealerGallery: newUrls, op: "arrayUnion" });
       try {
-        await updateDoc(doc(db, "users", user.uid), {
-          dealerGallery: arrayUnion(...newUrls),
-          updatedAt: serverTimestamp(),
-        });
-        console.log("FIRESTORE UPDATE DONE");
-      } catch (fsErr) {
-        console.error("FIRESTORE ERROR", fsErr);
-        throw fsErr;
+        await updateDoc(galleryRef, galleryData);
+        console.log("FIRESTORE UPDATE DONE", galleryRef.path);
+      } catch (e) {
+        console.error("FIRESTORE ERROR FULL", e);
+        throw e;
       }
 
       if (typeof refreshProfile === "function") await refreshProfile();
@@ -114,21 +113,21 @@ export function GalleryEditTab() {
     setDeletingIdx(idx);
     try {
       // Storage (best-effort)
-      console.log("STORAGE DELETE START", url);
       await deleteImageByURL(url);
-      console.log("STORAGE DELETE DONE");
 
       // Firestore
-      console.log("FIRESTORE UPDATE START", { dealerGallery: `arrayRemove(1 url)` });
+      const delRef = doc(db, "users", user.uid);
+      console.log("DOCUMENT PATH", delRef.path);
+      console.log("DATA", { dealerGallery: url, op: "arrayRemove" });
       try {
-        await updateDoc(doc(db, "users", user.uid), {
+        await updateDoc(delRef, {
           dealerGallery: arrayRemove(url),
           updatedAt: serverTimestamp(),
         });
-        console.log("FIRESTORE UPDATE DONE");
-      } catch (fsErr) {
-        console.error("FIRESTORE ERROR", fsErr);
-        throw fsErr;
+        console.log("FIRESTORE UPDATE DONE", delRef.path);
+      } catch (e) {
+        console.error("FIRESTORE ERROR FULL", e);
+        throw e;
       }
 
       if (typeof refreshProfile === "function") await refreshProfile();

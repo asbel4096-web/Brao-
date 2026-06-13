@@ -73,10 +73,20 @@ export function ImageEditTab({ kind }: Props) {
         ? await uploadDealerLogo(user.uid, file)
         : await uploadDealerCover(user.uid, file);
 
-      await updateDoc(doc(db, "users", user.uid), {
+      const imgRef = doc(db, "users", user.uid);
+      const imgData = {
         [fieldName]: result.url,
         updatedAt: serverTimestamp(),
-      });
+      };
+      console.log("DOCUMENT PATH", imgRef.path);
+      console.log("DATA", { [fieldName]: result.url });
+      try {
+        await updateDoc(imgRef, imgData);
+        console.log("FIRESTORE UPDATE DONE", imgRef.path);
+      } catch (e) {
+        console.error("FIRESTORE ERROR FULL", e);
+        throw e;
+      }
 
       // تحديث الـAuthContext لو لديه refresh
       if (typeof refreshProfile === "function") {

@@ -107,7 +107,8 @@ export function InfoEditTab() {
 
     setSaving(true);
     try {
-      await updateDoc(doc(db, "users", user.uid), {
+      const infoRef = doc(db, "users", user.uid);
+      const infoData = {
         businessName: businessName.trim(),
         dealerLocation: dealerLocation.trim() || null,
         phone: phone.trim() || null,
@@ -118,7 +119,16 @@ export function InfoEditTab() {
         websiteUrl: websiteUrl.trim() || null,
         workingHours,
         updatedAt: serverTimestamp(),
-      });
+      };
+      console.log("DOCUMENT PATH", infoRef.path);
+      console.log("DATA", infoData);
+      try {
+        await updateDoc(infoRef, infoData);
+        console.log("FIRESTORE UPDATE DONE", infoRef.path);
+      } catch (e) {
+        console.error("FIRESTORE ERROR FULL", e);
+        throw e;
+      }
       toast.success("تم حفظ التغييرات");
     } catch (err: any) {
       toast.error(err?.message || "فشل الحفظ");
