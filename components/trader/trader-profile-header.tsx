@@ -561,40 +561,40 @@ function StoriesRings({
             snap-x snap-mandatory
           "
         >
-          {rings.map((ring) => {
-            const hasContent = ring.count > 0;
-            // إخفاء التصنيف الفارغ للزوار (نُبقيها للمالك لإمكانية الإضافة)
-            if (!hasContent && !isOwner) return null;
-            return (
-              <StoryRing
-                key={ring.key}
-                ring={ring}
-                onClick={() => hasContent && onOpen?.(ring.key)}
-              />
-            );
-          })}
-
-          {/* زر "إضافة قصة" للمالك */}
+          {/* زر "إضافة قصة" للمالك — أول بطاقة دائماً */}
           {isOwner && (
             <button
               type="button"
               onClick={onAdd}
+              aria-label="إضافة قصة"
               className="flex shrink-0 snap-start flex-col items-center gap-1.5"
             >
               <div className="
                 flex h-16 w-16 items-center justify-center
-                rounded-full border-2 border-dashed border-slate-300
-                bg-slate-50 text-blue-600 transition
+                rounded-full border-2 border-dashed border-blue-400
+                bg-blue-50 text-blue-600 transition
                 active:scale-95 hover:border-blue-500
-                dark:border-slate-700 dark:bg-slate-900
+                dark:border-blue-500/60 dark:bg-blue-950/40 dark:text-blue-300
               ">
-                <Plus size={22} strokeWidth={2.5} />
+                <Plus size={24} strokeWidth={2.5} />
               </div>
-              <span className="text-[10px] font-black text-slate-700 dark:text-slate-300">
+              <span className="text-[10px] font-black text-blue-600 dark:text-blue-300">
                 إضافة قصة
               </span>
             </button>
           )}
+
+          {/* التصنيفات التي بها قصص فقط (نُخفي الفارغة لتفادي الفراغ) */}
+          {rings.map((ring) => {
+            if (ring.count <= 0) return null;
+            return (
+              <StoryRing
+                key={ring.key}
+                ring={ring}
+                onClick={() => onOpen?.(ring.key)}
+              />
+            );
+          })}
         </div>
       </div>
     </div>

@@ -104,12 +104,6 @@ export function StoriesRow() {
                     onClick={() => setViewerGroupIndex(idx)}
                   />
                 ))}
-
-            {!loading && groups.length === 0 && (
-              <div className="flex min-h-[68px] items-center rounded-3xl border border-dashed border-slate-300 px-4 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
-                لا توجد قصص حالياً — كن أول من ينشر.
-              </div>
-            )}
           </div>
         </div>
       </section>

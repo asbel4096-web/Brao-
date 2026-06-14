@@ -21,12 +21,11 @@ import { StoriesRow } from "@/components/stories/stories-row";
 import { TowTrucksCTA } from "@/components/tow-trucks-cta";
 import { VerifiedDealersRow } from "@/components/verified-dealers-row";
 import { usePublicHomepageConfig } from "@/hooks/use-public-homepage-config";
-import type { HomepageSection } from "@/lib/cms/types";
 
 /**
  * الصفحة الرئيسية — إعادة تصميم 2026 (Dubizzle / FB Marketplace / OpenSooq).
  *
- * الترتيب الثابت (مطابق للنموذج المعتمد، بدون أي Hero Banner):
+ * الترتيب الجديد (Hero Banner مباشرة بعد القصص):
  *   1. SearchHero      — شريط بحث + فئات سريعة (المحتوى العملي مباشرة)
  *   2. StoriesRow      — قصص المعارض (ميزة قائمة)
  *   3. TowTrucksCTA    — "تعطّلت سيارتك؟" (خدمة سريعة بارزة)
@@ -43,26 +42,16 @@ import type { HomepageSection } from "@/lib/cms/types";
  * `mounted` لتطابق رندر السيرفر/العميل (تفادي #310/#418).
  */
 
-const EXTRA_KEYS: HomepageSection[] = ["banners"];
-
 export default function HomePage() {
   const { config, banners, loading: bannersLoading } = usePublicHomepageConfig();
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const renderExtra = (key: HomepageSection): React.ReactNode => {
-    switch (key) {
-      case "banners":
-        return <HomepageBannersCarousel banners={banners} loading={bannersLoading} />;
-      default:
-        return null;
-    }
-  };
-
-  const extras = config.sectionsOrder
-    .filter((key) => EXTRA_KEYS.includes(key))
-    .filter((key) => config.enabledSections.includes(key));
+  // هل البنرات مفعّلة من إعدادات الأدمن؟ (تُعرض كـ Hero بعد القصص مباشرة)
+  const bannersEnabled =
+    config.sectionsOrder.includes("banners") &&
+    config.enabledSections.includes("banners");
 
   return (
     <>
@@ -72,7 +61,12 @@ export default function HomePage() {
       {/* 2. قصص المعارض */}
       {mounted && <StoriesRow />}
 
-      {/* 3. تعطّلت سيارتك؟ */}
+      {/* 3. Hero Banner — مباشرة بعد القصص (يتحكم به الأدمن) */}
+      {mounted && bannersEnabled && (
+        <HomepageBannersCarousel banners={banners} loading={bannersLoading} />
+      )}
+
+      {/* 4. تعطّلت سيارتك؟ */}
       {mounted && <TowTrucksCTA />}
 
       {/* 4. تصفّح حسب الماركة */}
@@ -99,9 +93,6 @@ export default function HomePage() {
       {mounted && <LatestParts />}
       {mounted && <LatestServices />}
       {mounted && <LatestTowTrucks />}
-
-      {/* بنرات يتحكم بها الأدمن */}
-      {mounted && extras.map((key) => <div key={key}>{renderExtra(key)}</div>)}
 
       {/* ثوابت الأسفل */}
       <CTASection />
