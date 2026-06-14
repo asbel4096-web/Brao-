@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { WalletTrigger } from "@/components/wallet/wallet-trigger";
 import { usePathname, useRouter } from "next/navigation";
 import { FormEvent, memo, useEffect, useState } from "react";
@@ -106,123 +107,80 @@ function SiteHeaderImpl() {
 
   return (
     <header
+      dir="rtl"
       className="
-        sticky top-0 z-40 border-b border-slate-200/70
-        bg-white/90 backdrop-blur-xl
-        dark:border-slate-700/70 dark:bg-slate-950/90
+        sticky top-0 z-40 border-b border-white/10
+        bg-gradient-to-b from-[#0c1a3a] to-[#0a1330]
+        backdrop-blur-xl
       "
     >
       <div className="container">
-        {/* ============== الصف العلوي ============== */}
-        <div className="flex items-center gap-3 py-2.5 sm:py-3.5">
-          {/* Logo + اسم العلامة — يظهر على كل المقاسات بهوية براتشو كار */}
+        {/* ===== الصف العلوي: شعار مركزي + إجراءات على الجانبين ===== */}
+        <div className="relative flex items-center justify-between gap-2 py-2 sm:py-2.5">
+          {/* المجموعة اليمنى (بداية RTL): الثيم + روابط الديسكتوب + إضافة */}
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            <ThemeToggle className="!h-9 !w-9 !border-white/15 !bg-white/10 !text-white hover:!bg-white/20 sm:!h-10 sm:!w-10" />
+
+            <nav
+              className="hidden items-center gap-5 lg:flex"
+              aria-label="القائمة الرئيسية"
+            >
+              {NAV_LINKS.map((l) => (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  prefetch={false}
+                  className="text-sm font-bold text-white/80 transition-colors hover:text-white"
+                >
+                  {l.label}
+                </Link>
+              ))}
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  prefetch={false}
+                  className="inline-flex items-center gap-1 text-sm font-bold text-action-400 hover:text-action-300"
+                >
+                  <Shield size={14} />
+                  الإدارة
+                </Link>
+              )}
+            </nav>
+
+            <Link
+              href="/add-listing"
+              prefetch={false}
+              className="
+                hidden items-center gap-1.5 rounded-2xl bg-action-500 px-3 py-2
+                text-xs font-black text-white shadow-action transition
+                hover:bg-action-600 active:scale-[0.97]
+                sm:inline-flex sm:px-4 sm:py-2.5 sm:text-sm
+              "
+            >
+              <Plus size={16} />
+              <span>إعلان جديد</span>
+            </Link>
+          </div>
+
+          {/* الشعار المركزي — absolute لضمان التوسيط في جميع الصفحات */}
           <Link
             href="/"
             prefetch={false}
-            aria-label="الصفحة الرئيسية"
-            className="flex shrink-0 items-center gap-2"
+            aria-label="براتشو كار - الصفحة الرئيسية"
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
           >
-            <div
-              className="
-                relative flex h-10 w-10 items-center justify-center
-                rounded-2xl bg-gradient-to-br from-brand-700 to-ink
-                text-base font-black text-white shadow-blue
-                sm:h-11 sm:w-11
-              "
-            >
-              <span className="leading-none">BC</span>
-              {/* نقطة برتقالية صغيرة - لمسة هوية براتشو */}
-              <span
-                aria-hidden="true"
-                className="
-                  absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5
-                  rounded-full bg-action-500 ring-2 ring-white
-                  dark:ring-slate-950
-                "
-              />
-            </div>
-            <div className="leading-tight">
-              <div className="text-sm font-black text-slate-950 dark:text-white sm:text-lg">
-                براتشو كار
-              </div>
-              <div className="hidden text-[10px] text-slate-500 dark:text-slate-400 sm:block">
-                سوق السيارات في ليبيا
-              </div>
-              <div className="text-[9px] font-black tracking-wider text-action-600 dark:text-action-400 sm:hidden">
-                BRATSHO CAR
-              </div>
-            </div>
+            <Image
+              src="/brand/bratsho-logo.png"
+              alt="براتشو كار"
+              width={539}
+              height={200}
+              priority
+              className="h-7 w-auto sm:h-8"
+            />
           </Link>
 
-          {/* Search - يظهر على sm+ بجانب الـ logo */}
-          <form
-            onSubmit={handleSearch}
-            className="relative mx-auto hidden max-w-2xl flex-1 sm:block"
-            role="search"
-          >
-            <Search
-              size={16}
-              className="
-                pointer-events-none absolute right-3 top-1/2
-                -translate-y-1/2 text-slate-400
-              "
-              aria-hidden="true"
-            />
-            <input
-              type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="ابحث عن سيارة، قطعة، ورشة..."
-              aria-label="ابحث في الإعلانات"
-              className="
-                w-full rounded-2xl border border-slate-200 bg-slate-50
-                py-2.5 pr-9 pl-3 text-sm outline-none transition
-                placeholder:text-slate-400
-                focus:border-brand-400 focus:bg-white focus:ring-4
-                focus:ring-brand-100
-                dark:border-slate-700 dark:bg-slate-900 dark:text-white
-                dark:focus:bg-slate-950 dark:focus:ring-brand-900/40
-              "
-            />
-          </form>
-
-          {/* Nav links - lg+ فقط */}
-          <nav
-            className="hidden items-center gap-5 lg:flex"
-            aria-label="القائمة الرئيسية"
-          >
-            {NAV_LINKS.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                prefetch={false}
-                className="
-                  text-sm font-bold text-slate-700 transition-colors
-                  hover:text-brand-700
-                  dark:text-slate-200 dark:hover:text-brand-300
-                "
-              >
-                {l.label}
-              </Link>
-            ))}
-            {isAdmin && (
-              <Link
-                href="/admin"
-                prefetch={false}
-                className="
-                  inline-flex items-center gap-1 text-sm font-bold
-                  text-action-700 hover:text-action-600
-                "
-              >
-                <Shield size={14} />
-                الإدارة
-              </Link>
-            )}
-          </nav>
-
-          {/* الإجراءات على اليسار */}
+          {/* المجموعة اليسرى (نهاية RTL): إشعارات + محفظة + حساب */}
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-            {/* الإشعارات - تظهر على كل المقاسات */}
             {user && (
               <Link
                 href="/notifications"
@@ -234,12 +192,8 @@ function SiteHeaderImpl() {
                 }
                 className="
                   relative inline-flex h-9 w-9 items-center justify-center
-                  rounded-2xl border border-slate-200 text-slate-600
-                  transition hover:border-brand-300 hover:text-brand-700
-                  active:scale-95
-                  dark:border-slate-700 dark:text-slate-300
-                  dark:hover:border-brand-700 dark:hover:text-brand-300
-                  sm:h-10 sm:w-10
+                  rounded-2xl border border-white/15 bg-white/5 text-white/90
+                  transition hover:bg-white/15 active:scale-95 sm:h-10 sm:w-10
                 "
               >
                 <Bell size={17} />
@@ -248,9 +202,8 @@ function SiteHeaderImpl() {
                     className="
                       absolute -top-1 -right-1 flex h-4 min-w-[16px]
                       items-center justify-center rounded-full
-                      border-2 border-white bg-action-500 px-1
+                      border-2 border-[#0a1330] bg-action-500 px-1
                       text-[9px] font-black leading-none text-white
-                      dark:border-slate-950
                     "
                   >
                     {unreadNotifications > 99 ? "+99" : unreadNotifications}
@@ -259,29 +212,8 @@ function SiteHeaderImpl() {
               </Link>
             )}
 
-            {/* المحفظة - compact pill - يخفي نفسه لو flag مغلق أو المستخدم غير مسجَّل */}
             <WalletTrigger variant="compact" />
 
-            {/* Theme - يظهر على كل المقاسات */}
-            <ThemeToggle className="!h-9 !w-9 sm:!h-10 sm:!w-10" />
-
-            {/* زر إضافة إعلان - sm+ فقط (في الموبايل موجود في bottom-nav) */}
-            <Link
-              href="/add-listing"
-              prefetch={false}
-              className="
-                hidden items-center gap-1.5 rounded-2xl
-                bg-action-500 px-3 py-2 text-xs font-black text-white
-                shadow-action transition active:scale-[0.97]
-                hover:bg-action-600
-                sm:inline-flex sm:px-4 sm:py-2.5 sm:text-sm
-              "
-            >
-              <Plus size={16} />
-              <span>إعلان جديد</span>
-            </Link>
-
-            {/* Profile / Login */}
             {user ? (
               <Link
                 href="/profile"
@@ -289,11 +221,9 @@ function SiteHeaderImpl() {
                 aria-label="حسابي"
                 className="
                   inline-flex h-9 w-9 items-center justify-center
-                  overflow-hidden rounded-2xl
-                  border border-slate-200 bg-gradient-to-br
-                  from-brand-700 to-brand-500 text-sm font-black text-white
-                  transition active:scale-95
-                  dark:border-slate-700
+                  overflow-hidden rounded-2xl border border-white/15
+                  bg-gradient-to-br from-brand-600 to-brand-500
+                  text-sm font-black text-white transition active:scale-95
                   sm:h-10 sm:w-10
                 "
               >
@@ -316,12 +246,8 @@ function SiteHeaderImpl() {
                 aria-label="تسجيل الدخول"
                 className="
                   inline-flex h-9 w-9 items-center justify-center
-                  rounded-2xl border border-slate-200 text-slate-700
-                  transition hover:border-brand-300 hover:text-brand-700
-                  active:scale-95
-                  dark:border-slate-700 dark:text-slate-200
-                  dark:hover:border-brand-700 dark:hover:text-brand-300
-                  sm:h-10 sm:w-10
+                  rounded-2xl border border-white/15 bg-white/5 text-white
+                  transition hover:bg-white/15 active:scale-95 sm:h-10 sm:w-10
                 "
               >
                 <UserIcon size={18} />
@@ -330,38 +256,28 @@ function SiteHeaderImpl() {
           </div>
         </div>
 
-        {/* ============== شريط البحث للموبايل (يظهر فقط على sm- وخارج الرئيسية) ============== */}
+        {/* ===== شريط البحث (خارج الرئيسية فقط) — يظهر على كل الشاشات ===== */}
         {!isHome && (
-        <form
-          onSubmit={handleSearch}
-          className="relative pb-2.5 sm:hidden"
-          role="search"
-        >
-          <Search
-            size={16}
-            className="
-              pointer-events-none absolute right-3 top-1/2
-              -translate-y-1/2 text-slate-400
-            "
-            aria-hidden="true"
-          />
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="ابحث عن سيارة، قطعة، ورشة..."
-            aria-label="ابحث في الإعلانات"
-            className="
-              w-full rounded-2xl border border-slate-200 bg-slate-50
-              py-2.5 pr-9 pl-3 text-sm outline-none transition
-              placeholder:text-slate-400
-              focus:border-brand-400 focus:bg-white focus:ring-4
-              focus:ring-brand-100
-              dark:border-slate-700 dark:bg-slate-900 dark:text-white
-              dark:focus:bg-slate-950 dark:focus:ring-brand-900/40
-            "
-          />
-        </form>
+          <form onSubmit={handleSearch} className="relative pb-2.5" role="search">
+            <Search
+              size={16}
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/50"
+              aria-hidden="true"
+            />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="ابحث عن سيارة، قطعة، ورشة..."
+              aria-label="ابحث في الإعلانات"
+              className="
+                w-full rounded-2xl border border-white/15 bg-white/10 py-2.5
+                pr-9 pl-3 text-sm text-white outline-none transition
+                placeholder:text-white/50 focus:border-white/30
+                focus:bg-white/15 focus:ring-4 focus:ring-white/10
+              "
+            />
+          </form>
         )}
       </div>
     </header>
