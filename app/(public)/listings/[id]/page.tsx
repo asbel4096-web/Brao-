@@ -34,6 +34,7 @@ import {
 } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import ListingComments from "@/components/listing-comments";
+import { SponsoredSpotlight } from "@/components/sponsored-spotlight";
 import { ImageGallery } from "@/components/image-gallery";
 import { DynamicSpecs } from "@/components/dynamic-specs";
 import { FavoriteButton } from "@/components/favorite-button";
@@ -431,6 +432,13 @@ export default function ListingDetailsPage() {
         ) : null}
 
         {/* ============ 7. الإعلانات المشابهة ============ */}
+        {/* إعلانات ممولة مشابهة (نفس الفئة) — أعلى المشابهة العادية */}
+        <SponsoredSpotlight
+          category={listing.category}
+          excludeId={listing.id}
+          title="إعلانات ممولة مشابهة"
+          bare
+        />
         <div className="mt-3">
           <SimilarListings listing={listing} />
         </div>

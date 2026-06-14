@@ -19,7 +19,9 @@ export type TrackEvent =
   | "chat"
   | "phone"
   | "whatsapp"
-  | "share";
+  | "share"
+  | "sponsoredImpression"
+  | "sponsoredClick";
 
 const GUEST_KEY_STORAGE = "bratsho_guest_key";
 

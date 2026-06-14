@@ -38,6 +38,8 @@ const EVENT_FIELD: Record<string, string> = {
   phone: "phoneClicks",
   whatsapp: "whatsappClicks",
   share: "shareClicks",
+  sponsoredImpression: "sponsoredImpressions",
+  sponsoredClick: "sponsoredClicks",
 };
 
 async function getUid(req: NextRequest): Promise<string | null> {

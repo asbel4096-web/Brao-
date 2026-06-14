@@ -18,6 +18,7 @@ import { MostViewedSection } from "@/components/most-viewed-section";
 import { PlatformStats } from "@/components/platform-stats";
 import { SearchHero } from "@/components/search-hero";
 import { SiteFooter } from "@/components/site-footer";
+import { SponsoredSpotlight } from "@/components/sponsored-spotlight";
 import { StoriesRow } from "@/components/stories/stories-row";
 import { TowTrucksCTA } from "@/components/tow-trucks-cta";
 import { VerifiedDealersRow } from "@/components/verified-dealers-row";
@@ -58,6 +59,10 @@ export default function HomePage() {
     <>
       {/* 1. البحث + الفئات السريعة */}
       <SearchHero />
+
+      {/* إعلان ممول — Sponsored Spotlight أعلى النتائج مباشرة */}
+      {mounted && <SponsoredSpotlight />}
+
 
       {/* 2. قصص المعارض */}
       {mounted && <StoriesRow />}

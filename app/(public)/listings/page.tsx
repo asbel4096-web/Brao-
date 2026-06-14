@@ -33,6 +33,7 @@ import {
   resolveCategorySlug,
 } from "@/lib/categories";
 import { ListingCard } from "@/components/listing-card";
+import { SponsoredSpotlight } from "@/components/sponsored-spotlight";
 import {
   DynamicFilters,
   applyDynamicFilters,
@@ -477,6 +478,14 @@ function ListingsContent() {
           </>
         )}
       </div>
+
+      {/* إعلان ممول مطابق للفئة/البحث الحالي — قبل النتائج */}
+      <SponsoredSpotlight
+        items={listings}
+        category={category}
+        query={deferredSearch}
+        bare
+      />
 
       {/* ============== المحتوى الرئيسي ============== */}
       <div className="grid gap-5 lg:grid-cols-[280px_1fr] lg:gap-6">
