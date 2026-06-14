@@ -337,22 +337,32 @@ function CreateStoryModal({
 
   return (
     <>
+      {/* خلفية معتمة تغطّي كل شيء (تخفي شريط التنقّل خلفها) */}
       <div
-        className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm"
+        className="fixed inset-0 z-[60] bg-slate-900/70 backdrop-blur-sm"
         onClick={submitting ? undefined : onClose}
       />
+
+      {/*
+        Mobile-first: Bottom Sheet يرتفع حتى 92vh ويُمرَّر بالكامل.
+        Desktop (sm+): نافذة مركزية.
+        z-[60] أعلى من شريط التنقّل (z-50) فلا يغطّي أي عنصر.
+      */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
         className="
-          fixed inset-x-4 top-1/2 z-50 mx-auto max-w-md
-          -translate-y-1/2 rounded-3xl border border-slate-200
-          bg-white p-5 shadow-2xl
+          fixed inset-x-0 bottom-0 z-[60] mx-auto w-full max-w-md
+          max-h-[92vh] overflow-hidden rounded-t-[28px]
+          border border-slate-200 bg-white shadow-2xl
           dark:border-slate-800 dark:bg-slate-950
+          sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2
+          sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-3xl
         "
         dir="rtl"
       >
-        <div className="mb-4 flex items-center justify-between">
+        {/* رأس ثابت */}
+        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3.5 dark:border-slate-800">
           <h2 className="text-base font-black text-slate-900 dark:text-white">
             إضافة قصة جديدة
           </h2>
@@ -360,150 +370,164 @@ function CreateStoryModal({
             <button
               type="button"
               onClick={onClose}
-              className="grid h-7 w-7 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+              aria-label="إغلاق"
+              className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
             >
-              <X size={14} />
+              <X size={16} />
             </button>
           )}
         </div>
 
-        {/* Category selector */}
-        <div>
-          <label className="block text-xs font-black text-slate-700 dark:text-slate-300">
-            التصنيف
-          </label>
-          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
-            {STORY_CATEGORIES.map((cat) => {
-              const isActive = category === cat.key;
-              return (
-                <button
-                  key={cat.key}
-                  type="button"
-                  onClick={() => setCategory(cat.key)}
-                  className={`
-                    flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[12px] font-black transition
-                    ${isActive
-                      ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
-                    }
-                  `}
-                >
-                  <span className="text-base">{cat.fallbackIcon}</span>
-                  {cat.shortLabel}
-                </button>
-              );
-            })}
+        {/* جسم قابل للتمرير + مساحة سفلية تتجاوز شريط التنقّل والـsafe-area */}
+        <div
+          className="overflow-y-auto px-5 pt-4"
+          style={{
+            maxHeight: "calc(92vh - 56px)",
+            paddingBottom: "calc(120px + env(safe-area-inset-bottom))",
+          }}
+        >
+          {/* Category selector */}
+          <div>
+            <label className="block text-xs font-black text-slate-700 dark:text-slate-300">
+              التصنيف
+            </label>
+            <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+              {STORY_CATEGORIES.map((cat) => {
+                const isActive = category === cat.key;
+                return (
+                  <button
+                    key={cat.key}
+                    type="button"
+                    onClick={() => setCategory(cat.key)}
+                    className={`
+                      flex items-center gap-1.5 rounded-xl border px-3 py-2.5 text-[12px] font-black transition
+                      ${isActive
+                        ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+                      }
+                    `}
+                  >
+                    <span className="text-base">{cat.fallbackIcon}</span>
+                    {cat.shortLabel}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
 
-        {/* Image picker */}
-        <div className="mt-4">
-          <label className="block text-xs font-black text-slate-700 dark:text-slate-300">
-            الصورة
-          </label>
-          {preview ? (
-            <div className="relative mt-1.5 aspect-[3/4] max-w-[200px] overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800">
-              <Image
-                src={preview}
-                alt=""
-                fill
-                className="object-cover"
-                sizes="200px"
-              />
+          {/* Image picker — مساحة كبيرة وواضحة (≥ 200px) */}
+          <div className="mt-4">
+            <label className="block text-xs font-black text-slate-700 dark:text-slate-300">
+              الصورة
+            </label>
+            {preview ? (
+              <div className="relative mt-1.5 aspect-[3/4] w-full max-w-[240px] overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800">
+                <Image
+                  src={preview}
+                  alt=""
+                  fill
+                  className="object-cover"
+                  sizes="240px"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFile(null);
+                    setPreview(null);
+                  }}
+                  className="absolute top-1.5 left-1.5 grid h-8 w-8 place-items-center rounded-full bg-black/70 text-white"
+                  aria-label="إزالة الصورة"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
               <button
                 type="button"
-                onClick={() => {
-                  setFile(null);
-                  setPreview(null);
-                }}
-                className="absolute top-1 left-1 grid h-7 w-7 place-items-center rounded-full bg-black/70 text-white"
+                onClick={() => fileRef.current?.click()}
+                className="
+                  mt-1.5 flex min-h-[200px] w-full flex-col items-center
+                  justify-center gap-2.5 rounded-2xl border-2 border-dashed
+                  border-slate-300 bg-slate-50 text-slate-400 transition
+                  hover:border-blue-500 hover:bg-blue-50/50 hover:text-blue-500
+                  dark:border-slate-700 dark:bg-slate-900
+                "
               >
-                <X size={12} />
+                <ImagePlus size={40} strokeWidth={1.75} />
+                <span className="text-sm font-black">اختاري صورة</span>
+                <span className="text-[11px] font-bold text-slate-400">
+                  JPG · PNG · WEBP — حتى 5MB
+                </span>
               </button>
-            </div>
-          ) : (
+            )}
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+          </div>
+
+          {/* Caption */}
+          <div className="mt-4">
+            <label className="block text-xs font-black text-slate-700 dark:text-slate-300">
+              وصف (اختياري)
+            </label>
+            <textarea
+              rows={2}
+              maxLength={200}
+              value={caption}
+              onChange={(e) => setCaption(e.target.value)}
+              placeholder="وصف قصير للقصة..."
+              className="
+                mt-1.5 w-full resize-none rounded-2xl border border-slate-200
+                bg-white px-3 py-2 text-sm outline-none
+                focus:border-blue-500
+                dark:border-slate-700 dark:bg-slate-900 dark:text-white
+              "
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="mt-5 flex justify-end gap-2">
             <button
               type="button"
-              onClick={() => fileRef.current?.click()}
+              onClick={onClose}
+              disabled={submitting}
               className="
-                mt-1.5 flex aspect-[3/4] max-w-[200px] flex-col items-center
-                justify-center gap-2 rounded-2xl border-2 border-dashed
-                border-slate-300 bg-slate-50 text-slate-400 transition
-                hover:border-blue-500 hover:text-blue-500
-                dark:border-slate-700 dark:bg-slate-900
+                h-11 rounded-2xl border border-slate-200 px-4 text-xs
+                font-black text-slate-700 hover:bg-slate-50
+                dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800
+                disabled:opacity-60
               "
             >
-              <ImagePlus size={28} />
-              <span className="text-[11px] font-black">اختاري صورة</span>
+              إلغاء
             </button>
-          )}
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={handleFileSelect}
-            className="hidden"
-          />
-        </div>
-
-        {/* Caption */}
-        <div className="mt-4">
-          <label className="block text-xs font-black text-slate-700 dark:text-slate-300">
-            وصف (اختياري)
-          </label>
-          <textarea
-            rows={2}
-            maxLength={200}
-            value={caption}
-            onChange={(e) => setCaption(e.target.value)}
-            placeholder="وصف قصير للقصة..."
-            className="
-              mt-1.5 w-full resize-none rounded-2xl border border-slate-200
-              bg-white px-3 py-2 text-sm outline-none
-              focus:border-blue-500
-              dark:border-slate-700 dark:bg-slate-900 dark:text-white
-            "
-          />
-        </div>
-
-        {/* Actions */}
-        <div className="mt-5 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={submitting}
-            className="
-              h-10 rounded-2xl border border-slate-200 px-4 text-xs
-              font-black text-slate-700 hover:bg-slate-50
-              dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800
-              disabled:opacity-60
-            "
-          >
-            إلغاء
-          </button>
-          <motion.button
-            type="button"
-            onClick={handleSubmit}
-            disabled={submitting || !file}
-            whileTap={{ scale: 0.97 }}
-            className="
-              inline-flex h-10 items-center gap-1.5 rounded-2xl
-              bg-blue-600 px-5 text-xs font-black text-white shadow-md
-              transition hover:bg-blue-700 disabled:opacity-60
-            "
-          >
-            {submitting ? (
-              <>
-                <Loader2 size={12} className="animate-spin" />
-                جارٍ النشر...
-              </>
-            ) : (
-              <>
-                <Plus size={12} />
-                نشر القصة
-              </>
-            )}
-          </motion.button>
+            <motion.button
+              type="button"
+              onClick={handleSubmit}
+              disabled={submitting || !file}
+              whileTap={{ scale: 0.97 }}
+              className="
+                inline-flex h-11 items-center gap-1.5 rounded-2xl
+                bg-blue-600 px-6 text-xs font-black text-white shadow-md
+                transition hover:bg-blue-700 disabled:opacity-60
+              "
+            >
+              {submitting ? (
+                <>
+                  <Loader2 size={12} className="animate-spin" />
+                  جارٍ النشر...
+                </>
+              ) : (
+                <>
+                  <Plus size={12} />
+                  نشر القصة
+                </>
+              )}
+            </motion.button>
+          </div>
         </div>
       </motion.div>
     </>

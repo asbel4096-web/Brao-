@@ -76,7 +76,7 @@ export function WalletSheet({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={onClose}
-            className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm"
+            className="fixed inset-0 z-[60] bg-slate-900/70 backdrop-blur-sm"
           />
 
           {/* Sheet */}
@@ -92,7 +92,7 @@ export function WalletSheet({
               if (info.offset.y > 100) onClose();
             }}
             className="
-              fixed inset-x-0 bottom-0 z-50 max-h-[92vh]
+              fixed inset-x-0 bottom-0 z-[60] max-h-[92vh]
               overflow-hidden rounded-t-[28px]
               bg-slate-950 shadow-2xl
             "

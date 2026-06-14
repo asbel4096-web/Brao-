@@ -331,7 +331,12 @@ export function StoryCreateModal({ open, onClose }: Props) {
         {step === "type" ? <StoryTypePicker onSelect={handleSelectType} onClose={handleClose} /> : null}
 
         {step !== "type" && type ? (
-          <div className="flex max-h-[94vh] flex-col overflow-y-auto">
+          <div
+            className="flex max-h-[94vh] flex-col overflow-y-auto"
+            style={{
+              paddingBottom: "calc(24px + env(safe-area-inset-bottom))",
+            }}
+          >
             <div className="flex items-center justify-between border-b border-slate-100 p-4 dark:border-slate-800">
               <div className="flex items-center gap-3">
                 <button

@@ -111,14 +111,14 @@ export function ReportDialog({
   return (
     <>
       <div
-        className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm"
+        className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm"
         onClick={submitting ? undefined : onClose}
       />
       <div
         role="dialog"
         aria-modal="true"
         className="
-          fixed inset-x-4 top-1/2 z-50 mx-auto max-w-md -translate-y-1/2
+          fixed inset-x-4 top-1/2 z-[60] mx-auto max-w-md -translate-y-1/2
           max-h-[90vh] overflow-y-auto
           rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl
           dark:border-slate-800 dark:bg-slate-950

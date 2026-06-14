@@ -140,7 +140,7 @@ export function TransferSheet({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm"
             onClick={handleClose}
           />
 
@@ -151,7 +151,7 @@ export function TransferSheet({
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
             className="
-              fixed inset-x-0 bottom-0 z-50 mx-auto max-w-lg
+              fixed inset-x-0 bottom-0 z-[60] mx-auto max-w-lg
               rounded-t-[28px] bg-white p-5 pb-8 shadow-2xl
             "
             dir="rtl"
