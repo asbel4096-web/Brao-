@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { WalletTrigger } from "@/components/wallet/wallet-trigger";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { FormEvent, memo, useEffect, useState } from "react";
 import {
   Bell,
@@ -42,6 +42,10 @@ const NAV_LINKS = [
 
 function SiteHeaderImpl() {
   const router = useRouter();
+  const pathname = usePathname();
+  // في الصفحة الرئيسية يوجد شريط بحث كبير (SearchHero)، فنُخفي بحث
+  // الهيدر هناك لتفادي التكرار وطول الهيدر اللاصق الذي يقصّ أعلى المحتوى.
+  const isHome = pathname === "/";
   const { user, profile, isAdmin } = useAuth();
   const [search, setSearch] = useState("");
   const [unreadNotifications, setUnreadNotifications] = useState(0);
@@ -326,7 +330,8 @@ function SiteHeaderImpl() {
           </div>
         </div>
 
-        {/* ============== شريط البحث للموبايل (يظهر فقط على sm-) ============== */}
+        {/* ============== شريط البحث للموبايل (يظهر فقط على sm- وخارج الرئيسية) ============== */}
+        {!isHome && (
         <form
           onSubmit={handleSearch}
           className="relative pb-2.5 sm:hidden"
@@ -357,6 +362,7 @@ function SiteHeaderImpl() {
             "
           />
         </form>
+        )}
       </div>
     </header>
   );
