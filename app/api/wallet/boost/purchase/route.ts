@@ -15,7 +15,7 @@ export const maxDuration = 15;
 /**
  * POST /api/wallet/boost/purchase
  * Auth: المستخدم نفسه (مالك الإعلان)
- * body: { listingId: string, service: "featured" | "boost" | "vip" }
+ * body: { listingId: string, service: "featured" | "boost" | "vip" | "urgent" }
  *
  * يشتري المستخدم باقة ترقية لإعلانه (مميز/ممول/VIP):
  *  1. فحوص:
@@ -76,9 +76,9 @@ export async function POST(request: Request) {
   }
 
   // Feature flag check
-  // featured (مميز) + vip → flag "wallet"؛ boost (ممول) → flag "boosts"
+  // featured (مميز) + vip + urgent (عاجل) → flag "wallet"؛ boost (ممول) → flag "boosts"
   const requiredFlag =
-    serviceKey === "featured" || serviceKey === "vip" ? "wallet" : "boosts";
+    serviceKey === "boost" ? "boosts" : "wallet";
   const flagSnap = await fs.collection("featureFlags").doc(requiredFlag).get();
   if (!flagSnap.exists || flagSnap.data()?.enabled !== true) {
     return jsonError(
@@ -199,6 +199,14 @@ export async function POST(request: Request) {
         listingUpdates.featured = true;
         listingUpdates.featuredUntil = expiresAt;
         listingUpdates.featuredBy = "vip";
+      } else if (serviceKey === "urgent") {
+        // عاجل: إضافة مستقلة - شارة فقط، لا تلمس featured/boost/vip.
+        const existingMs = listingData.urgentUntil?.toMillis?.() || 0;
+        const baseMs = existingMs > now ? existingMs : now;
+        const newUntilMs = baseMs + service.durationDays! * 24 * 60 * 60 * 1000;
+        expiresAt = new Date(newUntilMs);
+        listingUpdates.urgentUntil = expiresAt;
+        listingUpdates.urgentAt = FieldValue.serverTimestamp();
       }
 
       tx.update(listingRef, listingUpdates);

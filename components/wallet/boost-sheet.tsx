@@ -9,6 +9,7 @@ import {
   Star,
   Rocket,
   Crown,
+  Zap,
 } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { useWallet } from "@/hooks/wallet/use-wallet";
@@ -23,8 +24,10 @@ import {
   isBoostedNow,
   isFeaturedNow,
   isVipNow,
+  isUrgentNow,
   boostDaysRemaining,
   featuredDaysRemaining,
+  urgentDaysRemaining,
   promotionDaysRemaining,
   formatRemainingDays,
 } from "@/lib/wallet/boost";
@@ -55,6 +58,7 @@ const SERVICE_ICONS: Record<BoostServiceKey, any> = {
   featured: Star,
   boost: Rocket,
   vip: Crown,
+  urgent: Zap,
 };
 
 export function BoostSheet({
@@ -80,11 +84,17 @@ export function BoostSheet({
   const isVip = listingBoostFields
     ? isVipNow(listingBoostFields)
     : false;
+  const isUrgent = listingBoostFields
+    ? isUrgentNow(listingBoostFields)
+    : false;
   const boostDays = listingBoostFields
     ? boostDaysRemaining(listingBoostFields)
     : null;
   const featuredDays = listingBoostFields
     ? featuredDaysRemaining(listingBoostFields)
+    : null;
+  const urgentDays = listingBoostFields
+    ? urgentDaysRemaining(listingBoostFields)
     : null;
   const vipDays = listingBoostFields
     ? promotionDaysRemaining(listingBoostFields)
@@ -102,7 +112,8 @@ export function BoostSheet({
     const isExtension =
       (serviceKey === "boost" && isBoosted) ||
       (serviceKey === "featured" && isFeatured) ||
-      (serviceKey === "vip" && isVip);
+      (serviceKey === "vip" && isVip) ||
+      (serviceKey === "urgent" && isUrgent);
 
     const ok = await confirm({
       title: isExtension
@@ -143,9 +154,9 @@ export function BoostSheet({
     }
   };
 
-  // featured (مميز) + vip يحتاجان flag wallet، ممول يحتاج boosts
+  // featured (مميز) + vip + urgent (عاجل) يحتاجون flag wallet، ممول يحتاج boosts
   const isServiceAvailable = (key: BoostServiceKey) =>
-    key === "featured" || key === "vip" ? walletEnabled : boostsEnabled;
+    key === "boost" ? boostsEnabled : walletEnabled;
 
   return (
     <AnimatePresence>
@@ -203,7 +214,7 @@ export function BoostSheet({
                 </p>
 
                 {/* Current status */}
-                {(isVip || isBoosted || isFeatured) && (
+                {(isVip || isBoosted || isFeatured || isUrgent) && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {isVip && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] font-black text-amber-300">
@@ -221,6 +232,12 @@ export function BoostSheet({
                       <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-black text-emerald-300">
                         <Rocket size={10} />
                         ممول · {formatRemainingDays(boostDays)}
+                      </span>
+                    )}
+                    {isUrgent && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/20 px-2 py-0.5 text-[10px] font-black text-rose-300">
+                        <Zap size={10} />
+                        عاجل · {formatRemainingDays(urgentDays)}
                       </span>
                     )}
                   </div>
@@ -247,7 +264,9 @@ export function BoostSheet({
 
                   const isExtension =
                     (service.key === "boost" && isBoosted) ||
-                    (service.key === "featured" && isFeatured);
+                    (service.key === "featured" && isFeatured) ||
+                    (service.key === "vip" && isVip) ||
+                    (service.key === "urgent" && isUrgent);
 
                   return (
                     <div

@@ -4,6 +4,7 @@ import {
   getAdminFirestore,
   jsonError,
   verifyAdminRequest,
+  FieldValue,
 } from "@/lib/admin/api-helpers";
 
 export const dynamic = "force-dynamic";
@@ -61,8 +62,24 @@ export async function POST(request: Request) {
     updated = toUpdate.length;
   }
 
+  // تنظيف وسم "عاجل" المنتهي (urgentUntil <= now) — single-field index تلقائي.
+  let urgentCleaned = 0;
+  const urgentSnap = await fs
+    .collection("listings")
+    .where("urgentUntil", "<=", new Date(now))
+    .limit(MAX_UPDATES_PER_RUN)
+    .get();
+  if (!urgentSnap.empty) {
+    const ubatch = fs.batch();
+    urgentSnap.docs.forEach((d) => {
+      ubatch.update(d.ref, { urgentUntil: FieldValue.delete() });
+    });
+    await ubatch.commit();
+    urgentCleaned = urgentSnap.size;
+  }
+
   // Log
-  if (updated > 0) {
+  if (updated > 0 || urgentCleaned > 0) {
     await fs.collection("adminLogs").add({
       adminUid: caller.uid,
       adminEmail: caller.email,
@@ -73,6 +90,7 @@ export async function POST(request: Request) {
         scanned: featuredSnap.size,
         expiredFound: expiredFeatured.length,
         updated,
+        urgentCleaned,
       },
       createdAt: new Date(),
     });
@@ -83,6 +101,7 @@ export async function POST(request: Request) {
     scanned: featuredSnap.size,
     expiredFound: expiredFeatured.length,
     updated,
+    urgentCleaned,
     hasMore: expiredFeatured.length > MAX_UPDATES_PER_RUN,
   });
 }

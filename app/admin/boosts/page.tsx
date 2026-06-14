@@ -9,6 +9,7 @@ import {
   Clock,
   TrendingUp,
   ExternalLink,
+  Zap,
 } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { useAdminRole } from "@/hooks/admin/use-admin-role";
@@ -17,6 +18,7 @@ import {
   formatRemainingDays,
   boostDaysRemaining,
   featuredDaysRemaining,
+  urgentDaysRemaining,
 } from "@/lib/wallet/boost";
 
 /**
@@ -29,11 +31,11 @@ import {
 
 const CLEANUP_THROTTLE_MS = 60_000;
 
-type Tab = "featured" | "boosted" | "all";
+type Tab = "featured" | "boosted" | "urgent" | "all";
 
 export default function AdminBoostsPage() {
   const { can } = useAdminRole();
-  const { featured, boosted, loading, stats } = useActiveBoosts();
+  const { featured, boosted, urgent, loading, stats } = useActiveBoosts();
   const [tab, setTab] = useState<Tab>("featured");
   const cleanupDoneRef = useRef(0);
 
@@ -66,7 +68,14 @@ export default function AdminBoostsPage() {
     );
   }
 
-  const list = tab === "featured" ? featured : tab === "boosted" ? boosted : [...featured, ...boosted];
+  const list =
+    tab === "featured"
+      ? featured
+      : tab === "boosted"
+      ? boosted
+      : tab === "urgent"
+      ? urgent
+      : [...featured, ...boosted, ...urgent];
 
   return (
     <div className="space-y-4">
@@ -79,13 +88,13 @@ export default function AdminBoostsPage() {
             تعزيز الإعلانات
           </h1>
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
-            {stats.totalActive} نشط · {stats.featuredCount} مميَّز · {stats.boostedCount} Boost
+            {stats.totalActive} نشط · {stats.featuredCount} مميَّز · {stats.boostedCount} Boost · {stats.urgentCount} عاجل
           </p>
         </div>
       </header>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatBox
           label="مميَّز نشط"
           value={String(stats.featuredCount)}
@@ -97,6 +106,12 @@ export default function AdminBoostsPage() {
           value={String(stats.boostedCount)}
           icon={Rocket}
           tone="purple"
+        />
+        <StatBox
+          label="عاجل نشط"
+          value={String(stats.urgentCount)}
+          icon={Zap}
+          tone="rose"
         />
         <StatBox
           label="الإجمالي"
@@ -111,6 +126,7 @@ export default function AdminBoostsPage() {
         {[
           { key: "featured" as Tab, label: "مميَّز", icon: Flame, count: stats.featuredCount },
           { key: "boosted" as Tab, label: "Boost", icon: Rocket, count: stats.boostedCount },
+          { key: "urgent" as Tab, label: "عاجل", icon: Zap, count: stats.urgentCount },
           { key: "all" as Tab, label: "الكل", icon: Sparkles, count: stats.totalActive },
         ].map((t) => {
           const Icon = t.icon;
@@ -165,8 +181,10 @@ export default function AdminBoostsPage() {
           {list.map((l) => {
             const fDays = featuredDaysRemaining(l);
             const bDays = boostDaysRemaining(l);
+            const uDays = urgentDaysRemaining(l);
             const isFeatured = l.featured === true && fDays !== null && fDays > 0;
             const isBoosted = bDays !== null && bDays > 0;
+            const isUrgent = uDays !== null && uDays > 0;
 
             return (
               <Link
@@ -203,6 +221,12 @@ export default function AdminBoostsPage() {
                         Boost · {formatRemainingDays(bDays)}
                       </span>
                     )}
+                    {isUrgent && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[9px] font-black text-rose-700 dark:bg-rose-900/30 dark:text-rose-300">
+                        <Zap size={9} />
+                        عاجل · {formatRemainingDays(uDays)}
+                      </span>
+                    )}
                     {l.featuredBy === "admin_grant" && (
                       <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-black text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
                         مجاني
@@ -230,12 +254,13 @@ function StatBox({
   label: string;
   value: string;
   icon: any;
-  tone: "amber" | "purple" | "emerald";
+  tone: "amber" | "purple" | "emerald" | "rose";
 }) {
   const tones: Record<string, string> = {
     amber: "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
     purple: "bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
     emerald: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
+    rose: "bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300",
   };
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">

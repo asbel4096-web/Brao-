@@ -21,6 +21,7 @@ import {
   BadgeCheck,
   ChevronDown,
   Car,
+  Zap,
 } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -193,6 +194,8 @@ export default function ListingDetailsPage() {
     listing.featured ||
     (listing as any).vipUntil > Date.now() ||
     (listing as any).boostedUntil > Date.now();
+  const isUrgentListing =
+    ((listing as any).urgentUntil?.toMillis?.() || 0) > Date.now();
   const isApproved = listing.status === "approved";
   const longDesc = (listing.description || "").length > 180;
   const joinDate = (seller as any)?.createdAt;
@@ -214,6 +217,11 @@ export default function ListingDetailsPage() {
             {isSponsored && (
               <span className="inline-flex items-center gap-1 rounded-full bg-[#F59E0B] px-3 py-1 text-[11px] font-black text-white shadow-lg">
                 <Star size={12} className="fill-current" /> إعلان مميز
+              </span>
+            )}
+            {isUrgentListing && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-rose-600 px-3 py-1 text-[11px] font-black text-white shadow-lg">
+                <Zap size={12} /> عاجل
               </span>
             )}
             {isApproved && (

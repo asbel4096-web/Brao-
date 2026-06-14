@@ -189,6 +189,8 @@ export function MyListingCard({
                 boostedUntil: (listing as any).boostedUntil,
                 featured: (listing as any).featured,
                 featuredUntil: (listing as any).featuredUntil,
+                vipUntil: (listing as any).vipUntil,
+                urgentUntil: (listing as any).urgentUntil,
                 bumpedAt: (listing as any).bumpedAt,
                 bumpCount: (listing as any).bumpCount,
               }}

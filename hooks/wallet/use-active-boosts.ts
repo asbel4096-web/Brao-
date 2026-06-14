@@ -7,10 +7,11 @@ import {
   onSnapshot,
   orderBy,
   query,
+  Timestamp,
   where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { isBoostedNow, isFeaturedNow } from "@/lib/wallet/boost";
+import { isBoostedNow, isFeaturedNow, isUrgentNow } from "@/lib/wallet/boost";
 
 /**
  * Hook للأدمن - قائمة الإعلانات featured + boosted النشطة.
@@ -34,6 +35,8 @@ export interface BoostedListing {
   featuredBy?: string;
   boostedUntil?: any;
   boostedAt?: any;
+  urgentUntil?: any;
+  urgentAt?: any;
   bumpedAt?: any;
   bumpCount?: number;
   images?: string[];
@@ -43,6 +46,7 @@ export interface BoostedListing {
 export function useActiveBoosts() {
   const [featured, setFeatured] = useState<BoostedListing[]>([]);
   const [boosted, setBoosted] = useState<BoostedListing[]>([]);
+  const [urgent, setUrgent] = useState<BoostedListing[]>([]);
   const [loading, setLoading] = useState(true);
 
   // الـfeatured: نقرأ كل featured=true
@@ -101,14 +105,43 @@ export function useActiveBoosts() {
     return () => unsub();
   }, []);
 
+  // الـurgent: استعلام single-field على urgentUntil > now (مفهرس تلقائياً).
+  useEffect(() => {
+    const q = query(
+      collection(db, "listings"),
+      where("urgentUntil", ">", Timestamp.now()),
+      limit(100)
+    );
+
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const list = snap.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as any),
+        })) as BoostedListing[];
+        const active = list.filter((l) => isUrgentNow(l));
+        setUrgent(active);
+      },
+      (err) => {
+        // eslint-disable-next-line no-console
+        console.warn("[urgent] error:", err?.code);
+      }
+    );
+
+    return () => unsub();
+  }, []);
+
   return {
     featured,
     boosted,
+    urgent,
     loading,
     stats: {
       featuredCount: featured.length,
       boostedCount: boosted.length,
-      totalActive: featured.length + boosted.length,
+      urgentCount: urgent.length,
+      totalActive: featured.length + boosted.length + urgent.length,
     },
   };
 }

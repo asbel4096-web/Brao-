@@ -14,6 +14,7 @@ import {
   Star,
   Rocket,
   Crown,
+  Zap,
 } from "lucide-react";
 import type { Listing } from "@/lib/types";
 import {
@@ -67,6 +68,10 @@ function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
   const boostedUntil = (listing as any).boostedUntil?.toMillis?.() || 0;
   const isBoosted = boostedUntil > Date.now();
   const featured = isListingFeatured(listing);
+
+  // وسم "عاجل" مستقل — يظهر مع أي باقة ترقية أو بمفرده.
+  const urgentUntil = (listing as any).urgentUntil?.toMillis?.() || 0;
+  const isUrgent = urgentUntil > Date.now();
 
   const condition = (listing as any).vehicleCondition as string | undefined;
   const isNew = condition === "جديدة";
@@ -131,15 +136,23 @@ function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/55 to-transparent" />
 
-        {/* شارة علوية (يمين) */}
-        {topBadge && (
-          <div className="absolute right-3 top-3">
-            <span
-              className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[12px] font-black shadow-sm backdrop-blur-sm ${topBadge.cls}`}
-            >
-              {topBadge.Icon && <topBadge.Icon size={12} strokeWidth={2.5} />}
-              {topBadge.label}
-            </span>
+        {/* شارة علوية (يمين) - باقة الترقية + وسم عاجل مكدّسان */}
+        {(topBadge || isUrgent) && (
+          <div className="absolute right-3 top-3 flex flex-col items-end gap-1.5">
+            {topBadge && (
+              <span
+                className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[12px] font-black shadow-sm backdrop-blur-sm ${topBadge.cls}`}
+              >
+                {topBadge.Icon && <topBadge.Icon size={12} strokeWidth={2.5} />}
+                {topBadge.label}
+              </span>
+            )}
+            {isUrgent && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-rose-600 px-2.5 py-1 text-[11px] font-black text-white shadow-sm backdrop-blur-sm">
+                <Zap size={11} strokeWidth={2.5} />
+                عاجل
+              </span>
+            )}
           </div>
         )}
 

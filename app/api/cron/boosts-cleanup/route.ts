@@ -64,11 +64,29 @@ export async function GET(request: Request) {
       updated = Math.min(expired.length, MAX_PER_RUN);
     }
 
+    // تنظيف وسم "عاجل" المنتهي (urgentUntil <= now).
+    // استعلام single-field (مفهرس تلقائياً) — لا يحتاج composite index.
+    let urgentCleaned = 0;
+    const urgentSnap = await fs
+      .collection("listings")
+      .where("urgentUntil", "<=", new Date(now))
+      .limit(MAX_PER_RUN)
+      .get();
+    if (!urgentSnap.empty) {
+      const ubatch = fs.batch();
+      urgentSnap.docs.forEach((d) => {
+        ubatch.update(d.ref, { urgentUntil: FieldValue.delete() });
+      });
+      await ubatch.commit();
+      urgentCleaned = urgentSnap.size;
+    }
+
     return NextResponse.json({
       ok: true,
       scanned: snap.size,
       expiredFound: expired.length,
       updated,
+      urgentCleaned,
       timestamp: new Date().toISOString(),
     });
   } catch (err: any) {

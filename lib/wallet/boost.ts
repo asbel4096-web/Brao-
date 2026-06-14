@@ -25,6 +25,10 @@ import { PRICING } from "./types";
  * ترتيب الأولوية في القوائم:
  *   VIP > ممول > مميز > عادي
  *
+ * ⚡ إضافة مستقلة: "عاجل" (urgent) - 30 BC, 3 أيام:
+ *    - شارة حمراء فقط (لا تغيّر ترتيب الأولوية)
+ *    - تُضاف فوق أي باقة (أو بمفردها) عبر الحقل urgentUntil
+ *
  * ✅ توافق كامل: نفس حقول Firestore الحالية
  *    (boostedUntil, featured, featuredUntil) + vipUntil جديد.
  *    الإعلانات القديمة بلا هذه الحقول تُعامَل كعادية.
@@ -35,13 +39,19 @@ import { PRICING } from "./types";
  * تراكم: شراء باقة يمدّد مدتها (يُضاف للوقت المتبقي إن كان نشطاً).
  */
 
-// المفاتيح الثلاثة (نحافظ على نفس الأسماء القديمة boost/featured للتوافق)
-export type BoostServiceKey = "featured" | "boost" | "vip";
+// المفاتيح (نحافظ على نفس الأسماء القديمة boost/featured للتوافق).
+// "urgent" إضافة مستقلة (add-on) - شارة فقط، ليست مستوى في سُلّم الأولوية.
+export type BoostServiceKey = "featured" | "boost" | "vip" | "urgent";
 
 export interface BoostService {
   key: BoostServiceKey;
-  /** المستوى الهرمي: 1=مميز، 2=ممول، 3=VIP (للترتيب) */
+  /** المستوى الهرمي: 1=مميز، 2=ممول، 3=VIP (للترتيب). 0 للإضافات (urgent). */
   tier: number;
+  /**
+   * إضافة مستقلة لا تدخل في ترتيب الأولوية (مثل "عاجل").
+   * تُعرض كشارة فوق البطاقة بجانب باقة الترقية إن وُجدت.
+   */
+  isAddon?: boolean;
   label: string;
   shortLabel: string;
   description: string;
@@ -119,13 +129,34 @@ export const BOOST_SERVICES: Record<BoostServiceKey, BoostService> = {
     gradient: "from-amber-50 to-white dark:from-amber-900/20 dark:to-slate-900",
     accent: "amber",
   },
+  urgent: {
+    key: "urgent",
+    tier: 0,
+    isAddon: true,
+    label: "إعلان عاجل",
+    shortLabel: "عاجل",
+    description: "شارة \"عاجل\" حمراء تلفت الانتباه للبيع السريع",
+    features: [
+      "شارة عاجل حمراء على البطاقة",
+      "تلفت انتباه المشترين للبيع السريع",
+      "تُضاف فوق أي باقة ترقية أخرى",
+    ],
+    price: PRICING.PROMO_URGENT, // 30
+    durationDays: 3,
+    icon: "Zap",
+    emoji: "⚡",
+    badgeCls: "bg-rose-600 text-white",
+    gradient: "from-rose-50 to-white dark:from-rose-900/20 dark:to-slate-900",
+    accent: "rose",
+  },
 };
 
-/** الباقات مرتّبة من الأعلى للأدنى (VIP أولاً) للعرض. */
+/** الباقات مرتّبة من الأعلى للأدنى (VIP أولاً) للعرض، وتنتهي بالإضافات. */
 export const ALL_BOOST_SERVICES: BoostService[] = [
   BOOST_SERVICES.vip,
   BOOST_SERVICES.boost,
   BOOST_SERVICES.featured,
+  BOOST_SERVICES.urgent,
 ];
 
 // ============================================================
@@ -137,6 +168,8 @@ export interface ListingBoostFields {
   featured?: boolean;
   featuredUntil?: Timestamp | null;
   vipUntil?: Timestamp | null;
+  /** انتهاء وسم "عاجل" (إضافة مستقلة، لا تدخل ترتيب الأولوية). */
+  urgentUntil?: Timestamp | null;
   bumpedAt?: Timestamp | null;
   bumpCount?: number;
 }
@@ -160,6 +193,14 @@ export function isBoostedNow(listing: ListingBoostFields): boolean {
 export function isFeaturedNow(listing: ListingBoostFields): boolean {
   if (listing.featured !== true) return false;
   return isActive(listing.featuredUntil);
+}
+
+/**
+ * هل وسم "عاجل" نشط الآن؟ إضافة مستقلة — يمكن أن تكون مفعّلة مع أي
+ * باقة ترقية أو بمفردها. لا تؤثّر على ترتيب الأولوية في القوائم.
+ */
+export function isUrgentNow(listing: ListingBoostFields): boolean {
+  return isActive(listing.urgentUntil);
 }
 
 /**
@@ -213,6 +254,17 @@ export function featuredDaysRemaining(
   listing: ListingBoostFields
 ): number | null {
   const ms = listing.featuredUntil?.toMillis?.();
+  if (!ms) return null;
+  const diff = ms - Date.now();
+  if (diff <= 0) return 0;
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
+/** الأيام المتبقية لوسم "عاجل". */
+export function urgentDaysRemaining(
+  listing: ListingBoostFields
+): number | null {
+  const ms = listing.urgentUntil?.toMillis?.();
   if (!ms) return null;
   const diff = ms - Date.now();
   if (diff <= 0) return 0;

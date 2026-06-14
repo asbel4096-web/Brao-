@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { memo } from "react";
-import { Eye, MapPin, Star, Rocket, Crown, Gauge, Bookmark } from "lucide-react";
+import { Eye, MapPin, Star, Rocket, Crown, Gauge, Bookmark, Zap } from "lucide-react";
 import type { Listing } from "@/lib/types";
 import { formatPrice, formatNumber, isListingFeatured } from "@/lib/utils";
 import { FavoriteButton } from "./favorite-button";
@@ -37,6 +37,8 @@ function CompactListingCardImpl({ listing, showStats = false, priority = false }
   const isBoosted = boostedUntil > Date.now();
   const featured = isListingFeatured(listing);
   const isNew = (listing as any).vehicleCondition === "جديدة";
+  const urgentUntil = (listing as any).urgentUntil?.toMillis?.() || 0;
+  const isUrgent = urgentUntil > Date.now();
 
   const badge = isVip
     ? { label: "VIP", Icon: Crown, cls: "bg-amber-400 text-amber-950" }
@@ -77,7 +79,7 @@ function CompactListingCardImpl({ listing, showStats = false, priority = false }
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/45 to-transparent" />
 
-        {/* أعلى اليمين: شارة التمييز أو إحصاء المشاهدات */}
+        {/* أعلى اليمين: شارة التمييز أو إحصاء المشاهدات + وسم عاجل */}
         {showStats ? (
           views != null && views > 0 ? (
             <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-sm">
@@ -85,13 +87,23 @@ function CompactListingCardImpl({ listing, showStats = false, priority = false }
               {formatNumber(views)}
             </span>
           ) : null
-        ) : badge ? (
-          <span
-            className={`absolute right-3 top-3 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-black shadow-sm backdrop-blur-sm ${badge.cls}`}
-          >
-            {badge.Icon && <badge.Icon size={11} strokeWidth={2.5} />}
-            {badge.label}
-          </span>
+        ) : badge || isUrgent ? (
+          <div className="absolute right-3 top-3 flex flex-col items-end gap-1">
+            {badge && (
+              <span
+                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-black shadow-sm backdrop-blur-sm ${badge.cls}`}
+              >
+                {badge.Icon && <badge.Icon size={11} strokeWidth={2.5} />}
+                {badge.label}
+              </span>
+            )}
+            {isUrgent && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-black text-white shadow-sm backdrop-blur-sm">
+                <Zap size={10} strokeWidth={2.5} />
+                عاجل
+              </span>
+            )}
+          </div>
         ) : null}
 
         {/* أعلى اليسار: زر الحفظ */}
