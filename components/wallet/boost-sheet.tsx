@@ -10,12 +10,14 @@ import {
   Rocket,
   Crown,
   Zap,
+  CreditCard,
 } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { useWallet } from "@/hooks/wallet/use-wallet";
 import { useFeatureFlag } from "@/hooks/features/use-feature-flag";
 import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/components/confirm-dialog";
+import { TopupSheet } from "./topup-sheet";
 import {
   ALL_BOOST_SERVICES,
   BOOST_SERVICES,
@@ -74,6 +76,7 @@ export function BoostSheet({
   const toast = useToast();
   const confirm = useConfirm();
   const [buying, setBuying] = useState<BoostServiceKey | null>(null);
+  const [topupOpen, setTopupOpen] = useState(false);
 
   const isBoosted = listingBoostFields
     ? isBoostedNow(listingBoostFields)
@@ -106,6 +109,7 @@ export function BoostSheet({
       toast.warning(
         `الرصيد غير كافٍ. تحتاج ${service.price - balance} BC إضافية`
       );
+      setTopupOpen(true);
       return;
     }
 
@@ -249,9 +253,19 @@ export function BoostSheet({
                 <span className="text-[12px] font-bold text-slate-400">
                   رصيدك الحالي
                 </span>
-                <span className="text-base font-black tabular-nums text-white">
-                  {formatBC(balance)}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-base font-black tabular-nums text-white">
+                    {formatBC(balance)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setTopupOpen(true)}
+                    className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-[11px] font-black text-white transition hover:bg-emerald-500 active:scale-95"
+                  >
+                    <CreditCard size={12} />
+                    شحن
+                  </button>
+                </div>
               </div>
 
               {/* Services */}
@@ -304,8 +318,12 @@ export function BoostSheet({
 
                       <button
                         type="button"
-                        onClick={() => handlePurchase(service.key)}
-                        disabled={busy || !canAfford || !available}
+                        onClick={() =>
+                          canAfford
+                            ? handlePurchase(service.key)
+                            : setTopupOpen(true)
+                        }
+                        disabled={busy || !available}
                         className={`
                           mt-3 inline-flex w-full items-center justify-center gap-1.5
                           rounded-2xl bg-gradient-to-br ${service.gradient} py-2.5
@@ -322,7 +340,10 @@ export function BoostSheet({
                         ) : !available ? (
                           "غير متاح حالياً"
                         ) : !canAfford ? (
-                          "الرصيد غير كافٍ"
+                          <>
+                            <CreditCard size={12} />
+                            اشحن الرصيد
+                          </>
                         ) : isExtension ? (
                           <>
                             <CheckCircle2 size={12} />
@@ -347,6 +368,9 @@ export function BoostSheet({
               </p>
             </div>
           </motion.div>
+
+          {/* نافذة شحن الرصيد - تُفتح عند نقص الرصيد أو بالضغط على "شحن" */}
+          <TopupSheet open={topupOpen} onClose={() => setTopupOpen(false)} />
         </>
       )}
     </AnimatePresence>
