@@ -7,12 +7,7 @@ import { CTASection } from "@/components/cta-section";
 import { ExploreCategories } from "@/components/explore-categories";
 import { FeaturedNearYou } from "@/components/featured-near-you";
 import { HomepageBannersCarousel } from "@/components/homepage-banners-carousel";
-import {
-  LatestCars,
-  LatestParts,
-  LatestServices,
-  LatestTowTrucks,
-} from "@/components/home-sections/latest-by-bucket";
+import { DynamicCategorySections } from "@/components/home-sections/dynamic-category-sections";
 import { MostSavedSection } from "@/components/most-saved-section";
 import { MostViewedSection } from "@/components/most-viewed-section";
 import { PlatformStats } from "@/components/platform-stats";
@@ -96,12 +91,10 @@ export default function HomePage() {
       {/* 8. الأكثر حفظاً */}
       {mounted && <MostSavedSection />}
 
-      {/* 9. أقسام أحدث الإعلانات المنفصلة (بدل القسم الموحّد).
-          كل قسم يعرض بطاقاته الديناميكية ويختفي تلقائياً لو فارغ. */}
-      {mounted && <LatestCars />}
-      {mounted && <LatestParts />}
-      {mounted && <LatestServices />}
-      {mounted && <LatestTowTrucks />}
+      {/* 9. أقسام ديناميكية لكل فئة: "أحدث {الفئة}" — تظهر تلقائياً
+          لكل فئة فيها إعلان واحد أو أكثر، مرتّبة بالأكثر نشاطاً، آخر 5
+          لكل قسم، مع lazy-loading وSkeleton. */}
+      {mounted && <DynamicCategorySections />}
 
       {/* ثوابت الأسفل */}
       <CTASection />
