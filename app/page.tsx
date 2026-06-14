@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { BrowseByBrand } from "@/components/browse-by-brand";
 import { CTASection } from "@/components/cta-section";
+import { ExploreCategories } from "@/components/explore-categories";
 import { FeaturedNearYou } from "@/components/featured-near-you";
 import { HomepageBannersCarousel } from "@/components/homepage-banners-carousel";
 import {
@@ -61,12 +62,15 @@ export default function HomePage() {
       {/* 2. قصص المعارض */}
       {mounted && <StoriesRow />}
 
-      {/* 3. Hero Banner — مباشرة بعد القصص (يتحكم به الأدمن) */}
+      {/* 3. استكشف جميع الأقسام — ديناميكي من category-config */}
+      {mounted && <ExploreCategories />}
+
+      {/* 4. Hero Banner — يتحكم به الأدمن */}
       {mounted && bannersEnabled && (
         <HomepageBannersCarousel banners={banners} loading={bannersLoading} />
       )}
 
-      {/* 4. تعطّلت سيارتك؟ */}
+      {/* 5. تعطّلت سيارتك؟ */}
       {mounted && <TowTrucksCTA />}
 
       {/* 4. تصفّح حسب الماركة */}
