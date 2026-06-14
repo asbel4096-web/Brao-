@@ -11,7 +11,7 @@ const FALLBACK = "/icons/car-card.svg";
  * - **swipe على الموبايل** عبر touch gestures (threshold 50px).
  * - **scroll-snap** أصلي للتمرير السلس بين الصور.
  * - dot indicators في الأسفل + counter (1/N) في الأعلى.
- * - thumbnails عند الديسكتوب فقط (مخفية على الموبايل لتوفير المساحة).
+ * - thumbnails أسفل الصورة الرئيسية على كل الشاشات (موبايل + ديسكتوب).
  * - lightbox عند الضغط على أيقونة maximize.
  * - أزرار chevron تظهر على hover للديسكتوب فقط.
  * - keyboard support (سهم يمين/يسار/Escape).
@@ -323,12 +323,13 @@ export function ImageGallery({ images, alt }: Props) {
           )}
         </div>
 
-        {/* thumbnails - مخفية على الموبايل، تظهر على sm+ */}
+        {/* thumbnails - شريط مستقل أسفل الصورة الرئيسية، يظهر على كل
+            الشاشات (موبايل + ديسكتوب) مع تمرير أفقي عند كثرة الصور. */}
         {list.length > 1 && (
           <div
             className="
-              -mx-1 hidden gap-2 overflow-x-auto px-1 pb-1
-              no-scrollbar sm:flex
+              -mx-1 flex gap-2 overflow-x-auto px-1 pb-1
+              no-scrollbar
             "
           >
             {list.map((src, i) => (
@@ -339,8 +340,9 @@ export function ImageGallery({ images, alt }: Props) {
                 aria-label={`صورة ${i + 1}`}
                 aria-current={i === idx}
                 className={`
-                  relative h-20 w-20 shrink-0 overflow-hidden
+                  relative h-16 w-16 shrink-0 overflow-hidden
                   rounded-2xl border-2 transition-all duration-200
+                  sm:h-20 sm:w-20
                   ${
                     i === idx
                       ? "border-brand-600 ring-2 ring-brand-600/30 scale-105"
