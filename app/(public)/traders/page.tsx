@@ -13,6 +13,7 @@ import { BadgeCheck, MapPin, Star, Users } from "lucide-react";
 import { db } from "@/lib/firebase";
 import type { UserProfile } from "@/lib/types";
 import { getTraderDisplayName, formatNumber } from "@/lib/utils";
+import { SponsoredSpotlight } from "@/components/sponsored-spotlight";
 
 const MAX_DEALERS = 60;
 const CACHE_KEY = "bratsho:all-verified-dealers:v1";
@@ -148,6 +149,9 @@ export default function VerifiedDealersIndexPage() {
             </div>
           </div>
         </div>
+
+        {/* إعلانات ممولة من المعارض */}
+        <SponsoredSpotlight title="إعلانات ممولة" bare />
 
         {/* الجسم */}
         {loading && dealers.length === 0 ? (
