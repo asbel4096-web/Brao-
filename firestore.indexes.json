@@ -235,6 +235,66 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "_comment": "DEALER STORIES: قصص معرض حسب الأحدث",
+      "collectionGroup": "dealerStories",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "dealerUid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "_comment": "SPONSORED: إعلانات معتمدة مرتبة حسب boostedUntil (للبانر الممول)",
+      "collectionGroup": "listings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "boostedUntil",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "_comment": "SPONSORED: إعلانات معتمدة مرتبة حسب featuredUntil (للبانر الممول)",
+      "collectionGroup": "listings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "featuredUntil",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "_comment": "SPONSORED: إعلانات معتمدة مرتبة حسب vipUntil (للبانر الممول)",
+      "collectionGroup": "listings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "vipUntil",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []

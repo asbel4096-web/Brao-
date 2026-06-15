@@ -40,9 +40,17 @@ import { trackEvent } from "@/lib/track-event";
  *    composite index).
  */
 
+/**
+ * إعلان "ممول" بأي باقة نشطة: ممول (boostedUntil) أو مميّز (featuredUntil)
+ * أو VIP (vipUntil). كان سابقاً يفحص boostedUntil فقط، فلا تظهر إعلانات
+ * المميّز/VIP في البانر — هذا سبب «الممول لا يظهر للجميع».
+ */
 function isBoosted(l: Listing): boolean {
-  const until = (l as any).boostedUntil?.toMillis?.() || 0;
-  return until > Date.now();
+  const now = Date.now();
+  const boosted = (l as any).boostedUntil?.toMillis?.() || 0;
+  const featured = (l as any).featuredUntil?.toMillis?.() || 0;
+  const vip = (l as any).vipUntil?.toMillis?.() || 0;
+  return boosted > now || featured > now || vip > now;
 }
 
 interface Props {
@@ -84,19 +92,39 @@ export function SponsoredSpotlight({
     let cancelled = false;
     void (async () => {
       try {
-        const snap = await getDocs(
-          query(
-            collection(db, "listings"),
-            where("boostedUntil", ">", Timestamp.fromMillis(Date.now())),
-            orderBy("boostedUntil", "desc"),
-            limit(20)
+        const now = Timestamp.fromMillis(Date.now());
+        // ثلاثة استعلامات (لا يمكن دمج عدم المساواة على حقول مختلفة في
+        // استعلام واحد). كلٌّ مقيَّد بـ status == "approved" — ضروري حتى
+        // ينجح الاستعلام للزوّار: قواعد Firestore ترفض أي استعلام غير
+        // مضمون أن نتائجه كلها معتمدة (هذا سبب عدم ظهور الممول للزوار).
+        // يتطلب فهرساً مركباً (status + <field>) — مضاف في firestore.indexes.json.
+        const fields = ["boostedUntil", "featuredUntil", "vipUntil"] as const;
+        const snaps = await Promise.all(
+          fields.map((f) =>
+            getDocs(
+              query(
+                collection(db, "listings"),
+                where("status", "==", "approved"),
+                where(f, ">", now),
+                orderBy(f, "desc"),
+                limit(20)
+              )
+            ).catch(() => null)
           )
         );
-        if (!cancelled) {
-          setFetched(
-            snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }))
-          );
+        if (cancelled) return;
+
+        // دمج + إزالة التكرار حسب id (إعلان قد يكون له أكثر من باقة).
+        const byId = new Map<string, Listing>();
+        for (const snap of snaps) {
+          if (!snap) continue;
+          for (const d of snap.docs) {
+            if (!byId.has(d.id)) {
+              byId.set(d.id, { id: d.id, ...(d.data() as any) });
+            }
+          }
         }
+        setFetched(Array.from(byId.values()));
       } catch (err) {
         // eslint-disable-next-line no-console
         console.warn("[sponsored] fetch:", (err as any)?.code);

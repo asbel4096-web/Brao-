@@ -59,6 +59,8 @@ export type EntityType = "listing" | "service";
 /** التصنيف العالي للعرض في الرئيسية (يُستخدم في category-mapping). */
 export type HomeBucket =
   | "cars"
+  | "motorcycles"
+  | "bicycles"
   | "parts"
   | "services"
   | "tow"
@@ -354,9 +356,57 @@ const TOW_DETAILED_FIELDS: FieldDef[] = [
   F.phone,
 ];
 
+/* ---------- حقول الدراجات النارية (motorcycles) ---------- */
+const MOTORCYCLE_FIELDS: FieldDef[] = [
+  F.title,
+  {
+    key: "bikeType",
+    label: "نوع الدراجة",
+    type: "select",
+    options: ["رياضية", "كروزر", "سكوتر", "أوف رود", "ATV"],
+    required: true,
+  },
+  { key: "brand", label: "الماركة", type: "text", placeholder: "مثال: Honda / Yamaha" },
+  F.year,
+  { key: "engine", label: "سعة المحرك (cc)", type: "text", placeholder: "مثال: 250" },
+  { key: "mileage", label: "المسافة المقطوعة (كم)", type: "number" },
+  F.condition,
+  F.price,
+  F.city,
+  F.phone,
+];
+
+/* ---------- حقول الدراجات الهوائية (bicycles) ---------- */
+const BICYCLE_FIELDS: FieldDef[] = [
+  F.title,
+  {
+    key: "bikeType",
+    label: "نوع الدراجة",
+    type: "select",
+    options: ["جبلية", "سباق", "مدينة", "كهربائية"],
+    required: true,
+  },
+  { key: "brand", label: "الماركة", type: "text", placeholder: "مثال: Giant / Trek" },
+  { key: "frameSize", label: "مقاس الإطار", type: "text", placeholder: 'مثال: 26" أو L' },
+  F.condition,
+  F.price,
+  F.city,
+  F.phone,
+];
+
 const BY_SLUG: Record<string, Omit<CategoryFieldConfig, "slug">> = {
   // مركبات
   cars: { fields: VEHICLE_FIELDS, entityType: "listing", homeBucket: "cars" },
+  motorcycles: {
+    fields: MOTORCYCLE_FIELDS,
+    entityType: "listing",
+    homeBucket: "motorcycles",
+  },
+  bicycles: {
+    fields: BICYCLE_FIELDS,
+    entityType: "listing",
+    homeBucket: "bicycles",
+  },
   buses: { fields: BUS_FIELDS, entityType: "listing", homeBucket: "cars" },
   trucks: { fields: TRUCK_FIELDS, entityType: "listing", homeBucket: "cars" },
   "accident-cars": {

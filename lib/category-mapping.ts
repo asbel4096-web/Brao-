@@ -43,6 +43,8 @@ export function bucketForSlug(slug: string): HomeBucket {
 export function getHomeBuckets(): HomeBucketDef[] {
   const titles: Record<HomeBucket, string> = {
     cars: "أحدث السيارات",
+    motorcycles: "أحدث الدراجات النارية",
+    bicycles: "أحدث الدراجات الهوائية",
     parts: "أحدث قطع الغيار",
     services: "أحدث خدمات الصيانة",
     tow: "أحدث الساحبات",
@@ -61,6 +63,8 @@ export function getHomeBuckets(): HomeBucketDef[] {
   // ترتيب ثابت للعرض
   const order: HomeBucket[] = [
     "cars",
+    "motorcycles",
+    "bicycles",
     "parts",
     "services",
     "tow",

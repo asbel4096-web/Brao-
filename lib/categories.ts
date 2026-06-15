@@ -19,6 +19,8 @@ export const categories: CategoryDef[] = [
   { slug: "cars", name: "سيارات", icon: "Car", group: "vehicles" },
   { slug: "buses", name: "حافلات", icon: "Bus", group: "vehicles" },
   { slug: "trucks", name: "شاحنات", icon: "Truck", group: "vehicles" },
+  { slug: "motorcycles", name: "دراجات نارية", icon: "Bike", group: "vehicles" },
+  { slug: "bicycles", name: "دراجات هوائية", icon: "Bike", group: "vehicles" },
   { slug: "car-parts", name: "قطع غيار سيارات", icon: "Cog", group: "parts" },
   { slug: "truck-parts", name: "قطع غيار شاحنات", icon: "Cog", group: "parts" },
   { slug: "electric-parts", name: "قطع غيار كهربائية", icon: "Zap", group: "parts" },
@@ -163,6 +165,19 @@ const addListingConfigBySlug: Partial<Record<string, Partial<AddListingCategoryC
     helper:
       "أضف بيانات خدمة السحب أو السطحة: المدينة، المناطق التي تغطيها، رقم التواصل، وحالة التوفر. يمكنك إضافة موقعك لتظهر للمستخدمين الأقرب إليك.",
     showTowTruckFields: true,
+  },
+  // الدراجات النارية والهوائية في مجموعة vehicles، لكنها لا تأخذ حقول
+  // السيارة (وقود/ناقل/مسافة). نُطفئ showVehicleSpecs لتستخدم الحقول
+  // الديناميكية الخاصة بها (نوع الدراجة...) عبر DynamicFields.
+  motorcycles: {
+    helper:
+      "أدخل بيانات الدراجة النارية: النوع (رياضية/كروزر/سكوتر...)، الماركة، سنة الصنع، سعة المحرك، الحالة، السعر، والمدينة.",
+    showVehicleSpecs: false,
+  },
+  bicycles: {
+    helper:
+      "أدخل بيانات الدراجة الهوائية: النوع (جبلية/سباق/مدينة/كهربائية)، الماركة، الحالة، السعر، والمدينة.",
+    showVehicleSpecs: false,
   },
 };
 
