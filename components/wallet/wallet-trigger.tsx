@@ -31,7 +31,7 @@ export function WalletTrigger({ variant = "full", className = "" }: WalletTrigge
   const { user, profile } = useAuth();
   const { enabled } = useWalletEnabled();
   const [balance, setBalance] = useState<number>(
-    Number((profile as any)?.walletBalance || 0)
+    Number((profile as any)?.balance || 0)
   );
 
   // قراءة الرصيد realtime من وثيقة المستخدم
@@ -40,7 +40,7 @@ export function WalletTrigger({ variant = "full", className = "" }: WalletTrigge
     const ref = doc(db, "users", user.uid);
     const unsub = onSnapshot(ref, (snap) => {
       if (snap.exists()) {
-        setBalance(Number(snap.data()?.walletBalance || 0));
+        setBalance(Number(snap.data()?.balance || 0));
       }
     });
     return () => unsub();
