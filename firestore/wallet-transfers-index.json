@@ -1,0 +1,10 @@
+{
+  "_note": "أضيفي هذا الـindex إلى firestore.indexes.json داخل مصفوفة indexes",
+  "_comment": "TRANSFER: فحص الحد اليومي للتحويلات (senderUid + createdAt)",
+  "collectionGroup": "walletTransfers",
+  "queryScope": "COLLECTION",
+  "fields": [
+    { "fieldPath": "senderUid", "order": "ASCENDING" },
+    { "fieldPath": "createdAt", "order": "ASCENDING" }
+  ]
+}

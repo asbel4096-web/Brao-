@@ -1,0 +1,23 @@
+// ⚠️ أضيفي هذا إلى firestore.rules قبل القوس الختامي
+// match /databases/{database}/documents
+//
+// (قبل قاعدة: match /{document=**} { allow read, write: if false; })
+
+    // ============================================================
+    // walletTransfers - سجلّات تحويل الرصيد بين المستخدمين
+    // ============================================================
+    //   {senderUid, senderName, senderPhone, recipientUid, recipientName,
+    //    recipientPhone, amount, note, status, createdAt}
+    //
+    // القراءة: المرسِل أو المستلم فقط (لرؤية سجلّاتهم).
+    // الكتابة: ممنوعة من client تماماً (تتم عبر Admin SDK في API route فقط).
+    //   هذا يضمن أن كل العمليات atomic وآمنة - لا يستطيع المستخدم
+    //   تزوير رصيد أو كتابة تحويل مزيّف.
+    match /walletTransfers/{transferId} {
+      allow read: if signedIn()
+        && (
+          resource.data.senderUid == request.auth.uid
+          || resource.data.recipientUid == request.auth.uid
+        );
+      allow create, update, delete: if false;
+    }

@@ -1,0 +1,38 @@
+// ============================================================
+// قواعد التتبّع الآمن - listings counters + viewers
+// ============================================================
+//
+// الفلسفة: العدّادات (views, favoritesCount, chatClicks, phoneClicks,
+// whatsappClicks, shareClicks) تُكتب فقط عبر API route (Admin SDK)،
+// ولا يُسمح للعميل بكتابتها مباشرة → لا تلاعب بالأرقام.
+//
+// ⚠️ مهم: راجعي قاعدة listings الحالية. لو كانت تسمح للمالك بـ update
+// كامل المستند، فهذا يسمح له نظرياً بتعديل العدّادات. الحل الأنظف:
+// منع تعديل حقول العدّادات من العميل عبر شرط في قاعدة update.
+//
+// مثال (عدّليه ليطابق قاعدتك الحالية):
+//
+//   match /listings/{listingId} {
+//     allow read: if true;
+//     allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid;
+//
+//     // المالك يعدّل إعلانه، لكن لا يلمس حقول العدّادات:
+//     allow update: if signedIn()
+//       && resource.data.ownerId == request.auth.uid
+//       && !request.resource.data.diff(resource.data).affectedKeys()
+//            .hasAny(['views','favoritesCount','chatClicks',
+//                     'phoneClicks','whatsappClicks','shareClicks']);
+//
+//     allow delete: if signedIn() && resource.data.ownerId == request.auth.uid;
+//
+//     // مستندات dedup المشاهدات - يُكتب فقط عبر Admin SDK
+//     match /viewers/{viewerId} {
+//       allow read, write: if false;
+//     }
+//   }
+//
+// ملاحظة: الـAPI route يستخدم Admin SDK الذي يتجاوز كل قواعد Firestore،
+// لذا تستطيع زيادة العدّادات بأمان رغم منع العميل.
+//
+// إن كانت قاعدة listings الحالية لديكِ بسيطة (allow update: if isOwner)،
+// أضيفي شرط الـ affectedKeys أعلاه لمنع تلاعب المالك بأرقامه.
