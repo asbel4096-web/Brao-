@@ -120,9 +120,10 @@ export function SponsoredSpotlight({
       .slice(0, max);
   }, [items, fetched, category, searchQuery, excludeId, max]);
 
-  // إعادة ضبط المؤشّر عند تغيّر القائمة.
+  // بداية عشوائية عند تغيّر القائمة — يمنع ظهور نفس الإعلان أولاً في كل
+  // مرّة (منع التكرار المزعج) ويوزّع الظهور بعدالة على كل المعلنين.
   useEffect(() => {
-    setIdx(0);
+    setIdx(ads.length > 1 ? Math.floor(Math.random() * ads.length) : 0);
   }, [ads.length]);
 
   // Auto-play (يتوقّف عند اللمس/التحويم أو عند إعلان واحد فقط).
@@ -197,10 +198,10 @@ export function SponsoredSpotlight({
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
 
-            {/* شارة ممول */}
+            {/* شارة ممول واضحة */}
             <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-amber-400 px-3 py-1 text-[12px] font-black text-amber-950 shadow-sm">
               <Megaphone size={13} strokeWidth={2.5} />
-              ممول
+              إعلان ممول
             </span>
 
             {/* النص أسفل الصورة */}

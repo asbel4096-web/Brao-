@@ -16,6 +16,7 @@ import { useToast } from "@/contexts/ToastContext";
 import { timeAgo } from "@/lib/utils";
 import type { AppNotification } from "@/lib/types";
 import { PushPermissionBanner } from "@/components/push-permission-banner";
+import { SponsoredSpotlight } from "@/components/sponsored-spotlight";
 
 export default function NotificationsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -113,6 +114,10 @@ export default function NotificationsPage() {
             - المستخدم رفضه عبر زر "ليس الآن"
             متى يظهر: عند default/needs-pwa/denied/error. */}
         <PushPermissionBanner variant="compact" dismissible />
+
+        {/* إعلان ممول داخل صفحة الإشعارات */}
+        <SponsoredSpotlight title="إعلانات ممولة" bare />
+
 
         {loading ? (
           <div className="space-y-3">

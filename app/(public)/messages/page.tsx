@@ -14,6 +14,7 @@ import { Inbox, MessageCircle, Search } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { timeAgo, truncate } from "@/lib/utils";
+import { SponsoredSpotlight } from "@/components/sponsored-spotlight";
 import type { ChatThread } from "@/lib/types";
 
 /**
@@ -137,6 +138,9 @@ export default function MessagesPage() {
             />
           </div>
         )}
+
+        {/* بطاقة ممولة أعلى قائمة المحادثات فقط (ليست داخل المحادثة) */}
+        <SponsoredSpotlight title="إعلانات ممولة" bare />
 
         {/* ============== المحتوى ============== */}
         {loading ? (
