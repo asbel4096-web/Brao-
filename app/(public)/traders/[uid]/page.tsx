@@ -21,6 +21,7 @@ export default function TraderPage() {
   const { user, profile } = useAuth();
   const toast = useToast();
   const [openStoryCat, setOpenStoryCat] = useState<StoryCategory | null>(null);
+  const [chatBusy, setChatBusy] = useState(false);
 
   const {
     profile: trader,
@@ -47,41 +48,57 @@ export default function TraderPage() {
       return;
     }
 
-    if (!listings.length && !services.length) {
-      toast.info("لا يوجد إعلان أو خدمة جاهزة لبدء محادثة مرتبطة بها، لكن سيتم فتح محادثة عامة مع التاجر.");
+    // لا يمكن للتاجر مراسلة نفسه
+    if (trader.uid === user.uid) {
+      toast.warning("لا يمكنك بدء محادثة مع نفسك.");
+      return;
     }
 
-    const anchorItem = listings[0] || services[0];
-    const listingId = anchorItem?.id || `trader_${trader.uid}`;
-    const listingTitle = anchorItem?.title || `محادثة مع ${getTraderDisplayName(trader)}`;
-    const listingImage = anchorItem?.images?.[0] || trader.photoURL || "";
+    if (chatBusy) return;
+    setChatBusy(true);
 
-    const chatId = buildChatId(user.uid, trader.uid, listingId);
-    const chatRef = doc(db, "chats", chatId);
-    const existing = await getDoc(chatRef);
+    try {
+      if (!listings.length && !services.length) {
+        toast.info("لا يوجد إعلان أو خدمة مرتبطة، لكن سيتم فتح محادثة عامة مع التاجر.");
+      }
 
-    if (!existing.exists()) {
-      await setDoc(chatRef, {
-        listingId,
-        listingTitle,
-        listingImage,
-        participants: [user.uid, trader.uid].sort(),
-        participantsInfo: {
-          [user.uid]: {
-            name: profile?.businessName || profile?.name || user.displayName || user.email || user.phoneNumber || "مستخدم",
-            photoURL: profile?.photoURL || user.photoURL || "",
+      const anchorItem = listings[0] || services[0];
+      const listingId = anchorItem?.id || `trader_${trader.uid}`;
+      const listingTitle = anchorItem?.title || `محادثة مع ${getTraderDisplayName(trader)}`;
+      const listingImage = anchorItem?.images?.[0] || trader.photoURL || "";
+
+      const chatId = buildChatId(user.uid, trader.uid, listingId);
+      const chatRef = doc(db, "chats", chatId);
+      const existing = await getDoc(chatRef);
+
+      if (!existing.exists()) {
+        await setDoc(chatRef, {
+          listingId,
+          listingTitle,
+          listingImage,
+          participants: [user.uid, trader.uid].sort(),
+          participantsInfo: {
+            [user.uid]: {
+              name: profile?.businessName || profile?.name || user.displayName || user.email || user.phoneNumber || "مستخدم",
+              photoURL: profile?.photoURL || user.photoURL || "",
+            },
+            [trader.uid]: {
+              name: getTraderDisplayName(trader),
+              photoURL: trader.photoURL || "",
+            },
           },
-          [trader.uid]: {
-            name: getTraderDisplayName(trader),
-            photoURL: trader.photoURL || "",
-          },
-        },
-        unreadCount: { [user.uid]: 0, [trader.uid]: 0 },
-        createdAt: serverTimestamp(),
-      });
+          unreadCount: { [user.uid]: 0, [trader.uid]: 0 },
+          createdAt: serverTimestamp(),
+        });
+      }
+
+      router.push(`/messages/${chatId}`);
+    } catch (err: any) {
+      // بدون هذا الـcatch كان الزر «لا يفعل شيئاً» عند فشل الصلاحيات
+      toast.error(err?.message || "تعذّر فتح المحادثة. حاول مجدداً.");
+    } finally {
+      setChatBusy(false);
     }
-
-    router.push(`/messages/${chatId}`);
   };
 
   if (loading) {
