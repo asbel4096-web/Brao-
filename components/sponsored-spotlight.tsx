@@ -14,6 +14,7 @@ import {
 } from "firebase/firestore";
 import { Megaphone, MapPin, Phone, MessageCircle } from "lucide-react";
 import { db } from "@/lib/firebase";
+import { useAuth } from "@/contexts/AuthContext";
 import type { Listing } from "@/lib/types";
 import { formatPrice, normalizeLibyanPhone } from "@/lib/utils";
 import { trackEvent } from "@/lib/track-event";
@@ -73,6 +74,7 @@ export function SponsoredSpotlight({
   const [fetched, setFetched] = useState<Listing[] | null>(null);
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
+  const { user } = useAuth();
   const seen = useRef<Set<string>>(new Set());
   const touchX = useRef<number | null>(null);
 
@@ -201,7 +203,7 @@ export function SponsoredSpotlight({
             {/* شارة ممول واضحة */}
             <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-amber-400 px-3 py-1 text-[12px] font-black text-amber-950 shadow-sm">
               <Megaphone size={13} strokeWidth={2.5} />
-              إعلان ممول
+              {user && (ad as any).ownerId === user.uid ? "إعلانك الممول" : "إعلان ممول"}
             </span>
 
             {/* النص أسفل الصورة */}

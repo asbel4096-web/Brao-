@@ -176,9 +176,17 @@ export default function MyListingsPage() {
           <h1 className="section-title">إعلاناتي</h1>
           <p className="section-subtitle">إدارة وتعديل إعلاناتك ومتابعة حالتها.</p>
         </div>
-        <Link href="/add-listing" className="btn-action self-start sm:self-end">
-          <Plus size={18} /> إضافة إعلان جديد
-        </Link>
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-end">
+          <Link
+            href="/ads-manager"
+            className="inline-flex items-center gap-1.5 rounded-2xl border border-amber-300 bg-amber-50 px-3.5 py-2.5 text-sm font-black text-amber-700 transition active:scale-95 hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-950/20 dark:text-amber-300"
+          >
+            📢 مدير الإعلانات
+          </Link>
+          <Link href="/add-listing" className="btn-action">
+            <Plus size={18} /> إضافة إعلان جديد
+          </Link>
+        </div>
       </div>
 
       {!loading && items.length > 0 && (

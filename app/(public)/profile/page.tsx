@@ -633,6 +633,31 @@ export default function ProfilePage() {
           />
         </div>
 
+        {/* مدير إعلاناتي */}
+        <Link
+          href="/ads-manager"
+          className="
+            flex items-center justify-between gap-3 rounded-3xl border border-amber-200
+            bg-gradient-to-l from-amber-50 to-white p-4 transition active:scale-[0.99]
+            hover:border-amber-300 dark:border-amber-500/20 dark:from-amber-950/20 dark:to-slate-900
+          "
+        >
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-400/90 text-xl">
+              📢
+            </span>
+            <div>
+              <div className="text-sm font-black text-slate-900 dark:text-white">
+                مدير إعلاناتي
+              </div>
+              <div className="text-xs font-medium text-slate-500">
+                تابع حملاتك الممولة وأوقفها ومدّدها
+              </div>
+            </div>
+          </div>
+          <span className="text-slate-400">‹</span>
+        </Link>
+
         {/* ============================================================
             الإدارة - كرت للأدمن فقط
            ============================================================ */}

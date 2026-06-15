@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useFavorites, useFavoriteState } from "@/hooks/useFavorites";
 import { useToast } from "@/contexts/ToastContext";
 import { formatPrice } from "@/lib/utils";
+import { SponsoredSpotlight } from "@/components/sponsored-spotlight";
 
 /**
  * صفحة المفضلة — أُعيد تصميمها بنفس لغة ListingCard:
@@ -51,6 +52,9 @@ export default function FavoritesPage() {
             : "الإعلانات التي حفظتها للرجوع إليها لاحقاً."}
         </p>
       </div>
+
+      {/* إعلان ممول قد يهمك */}
+      <SponsoredSpotlight title="إعلانات ممولة" bare />
 
       {loading ? (
         <FavoritesGridSkeleton />
