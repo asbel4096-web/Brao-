@@ -24,6 +24,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/components/confirm-dialog";
 import { MyListingCard } from "@/components/my-listing-card";
+import { CampaignManager } from "@/components/campaign/campaign-manager";
 import type { Listing } from "@/lib/types";
 
 type FilterKey = "all" | "approved" | "pending" | "rejected";
@@ -245,16 +246,18 @@ export default function MyListingsPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((it) => (
-            <MyListingCard
-              key={it.id}
-              listing={it}
-              onDelete={handleDelete}
-              featuredState={
-                pendingFeaturedIds.has(it.id) ? { kind: "pending" } : { kind: "none" }
-              }
-              onRequestFeatured={handleRequestFeatured}
-              requestingFeatured={requestingFeaturedId === it.id}
-            />
+            <div key={it.id} className="space-y-2">
+              <MyListingCard
+                listing={it}
+                onDelete={handleDelete}
+                featuredState={
+                  pendingFeaturedIds.has(it.id) ? { kind: "pending" } : { kind: "none" }
+                }
+                onRequestFeatured={handleRequestFeatured}
+                requestingFeatured={requestingFeaturedId === it.id}
+              />
+              <CampaignManager listing={it} />
+            </div>
           ))}
         </div>
       )}
