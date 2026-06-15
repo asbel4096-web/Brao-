@@ -164,7 +164,7 @@ export function ImageGallery({ images, alt }: Props) {
                     ${
                       isFallback
                         ? "object-contain p-12 opacity-60"
-                        : "object-cover cursor-zoom-in"
+                        : "object-contain cursor-zoom-in"
                     }
                   `}
                   draggable={false}
@@ -366,12 +366,15 @@ export function ImageGallery({ images, alt }: Props) {
       {/* Lightbox - تصفّح عمودي احترافي (كل الصور أسفل بعض) */}
       {lightbox && (
         <div
-          className="fixed inset-0 z-[110] flex flex-col bg-black"
+          className="fixed inset-0 z-[110] flex max-w-[100vw] flex-col overflow-x-hidden bg-black"
           role="dialog"
           aria-modal="true"
         >
-          {/* شريط علوي ثابت */}
-          <div className="sticky top-0 z-10 flex h-14 items-center justify-between gap-2 bg-black/90 px-3 backdrop-blur sm:h-16 sm:px-4">
+          {/* شريط علوي ثابت — يحترم نوتش الآيفون عبر Safe Area */}
+          <div
+            style={{ paddingTop: "env(safe-area-inset-top)" }}
+            className="sticky top-0 z-10 flex h-14 items-center justify-between gap-2 bg-black/90 px-3 backdrop-blur sm:h-16 sm:px-4"
+          >
             <a
               href={list[idx]}
               download
@@ -405,7 +408,10 @@ export function ImageGallery({ images, alt }: Props) {
           </div>
 
           {/* قائمة الصور عمودياً مع تمرير سلس */}
-          <div className="flex-1 overflow-y-auto overscroll-contain">
+          <div
+            style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+            className="flex-1 overflow-y-auto overscroll-contain"
+          >
             <div className="mx-auto max-w-3xl">
               {list.map((src, i) => (
                 <div
