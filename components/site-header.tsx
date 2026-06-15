@@ -5,34 +5,32 @@ import Image from "next/image";
 import { WalletTrigger } from "@/components/wallet/wallet-trigger";
 import { usePathname, useRouter } from "next/navigation";
 import { FormEvent, memo, useEffect, useState } from "react";
-import {
-  Bell,
-  Plus,
-  Search,
-  Shield,
-  User as UserIcon,
-} from "lucide-react";
+import { Bell, Plus, Search, Shield, User as UserIcon } from "lucide-react";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { ThemeToggle } from "./theme-toggle";
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
 
 /**
- * Header احترافي بسيط:
+ * Header (إعادة بناء Mobile-First — بلا تموضع absolute).
  *
- * **الموبايل (3 عناصر فقط):**
- *   [Logo + اسم] ………………… [Profile/Login]
- *   [Search field كامل العرض]
+ * لماذا أُعيد بناؤه؟
+ *   النسخة السابقة كانت تضع الشعار `absolute left-1/2 -translate-x-1/2`
+ *   (توسيط مطلق) فوق صفّ flex، فيتراكب الشعار مع رصيد BC وزر الثيم على
+ *   الشاشات الصغيرة (iPhone SE). الحل: صفّ flex واحد `justify-between`
+ *   بثلاثة أبناء (شعار | روابط | إجراءات). أبناء flex لا تتراكب أبداً.
  *
- *   لا أيقونات إضافية - باقي الإجراءات في bottom-nav
- *   (الرئيسية، الإعلانات، الإضافة، المفضلة، الرسائل).
+ * البنية:
+ *   [الشعار]  …(روابط الديسكتوب)…  [إشعارات][محفظة][ثيم][+ ديسكتوب][حساب]
  *
- * **الديسكتوب (lg+):**
- *   [Logo] [Search] [Links] [Notifications] [Theme] [+ إضافة] [Profile]
+ * Safe Area:
+ *   نضيف paddingTop = env(safe-area-inset-top) ليبتعد المحتوى عن النوتش،
+ *   و padding أفقي للـnotch في الوضع الأفقي.
  *
- * هذا يوحّد التجربة:
- * - الموبايل = 100% للبحث (الإجراء الأهم)
- * - الديسكتوب = navigation كامل
+ * Responsive:
+ *   - الموبايل: شعار + (إشعارات/محفظة/ثيم/حساب). زر «إعلان جديد» يظهر sm+.
+ *   - الديسكتوب: + روابط التنقّل في المنتصف.
+ *   كل العناصر `shrink-0` ما عدا منطقة الروابط `min-w-0` لتتقلّص أولاً.
  */
 
 const NAV_LINKS = [
@@ -44,14 +42,11 @@ const NAV_LINKS = [
 function SiteHeaderImpl() {
   const router = useRouter();
   const pathname = usePathname();
-  // في الصفحة الرئيسية يوجد شريط بحث كبير (SearchHero)، فنُخفي بحث
-  // الهيدر هناك لتفادي التكرار وطول الهيدر اللاصق الذي يقصّ أعلى المحتوى.
   const isHome = pathname === "/";
   const { user, profile, isAdmin } = useAuth();
   const [search, setSearch] = useState("");
   const [unreadNotifications, setUnreadNotifications] = useState(0);
 
-  // اشتراك مؤجَّل بالإشعارات (نحتفظ به - مهم للديسكتوب)
   useEffect(() => {
     if (!user) {
       setUnreadNotifications(0);
@@ -108,6 +103,12 @@ function SiteHeaderImpl() {
   return (
     <header
       dir="rtl"
+      // Safe Area: يُبعد الهيدر عن نوتش الآيفون (أعلى + جانبَي الوضع الأفقي)
+      style={{
+        paddingTop: "env(safe-area-inset-top)",
+        paddingLeft: "env(safe-area-inset-left)",
+        paddingRight: "env(safe-area-inset-right)",
+      }}
       className="
         sticky top-0 z-40 border-b border-white/10
         bg-gradient-to-b from-[#0c1a3a] to-[#0a1330]
@@ -115,59 +116,14 @@ function SiteHeaderImpl() {
       "
     >
       <div className="container">
-        {/* ===== الصف العلوي: شعار مركزي + إجراءات على الجانبين ===== */}
-        <div className="relative flex items-center justify-between gap-2 py-2 sm:py-2.5">
-          {/* المجموعة اليمنى (بداية RTL): الثيم + روابط الديسكتوب + إضافة */}
-          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-            <ThemeToggle className="!h-9 !w-9 !border-white/15 !bg-white/10 !text-white hover:!bg-white/20 sm:!h-10 sm:!w-10" />
-
-            <nav
-              className="hidden items-center gap-5 lg:flex"
-              aria-label="القائمة الرئيسية"
-            >
-              {NAV_LINKS.map((l) => (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  prefetch={false}
-                  className="text-sm font-bold text-white/80 transition-colors hover:text-white"
-                >
-                  {l.label}
-                </Link>
-              ))}
-              {isAdmin && (
-                <Link
-                  href="/admin"
-                  prefetch={false}
-                  className="inline-flex items-center gap-1 text-sm font-bold text-action-400 hover:text-action-300"
-                >
-                  <Shield size={14} />
-                  الإدارة
-                </Link>
-              )}
-            </nav>
-
-            <Link
-              href="/add-listing"
-              prefetch={false}
-              className="
-                hidden items-center gap-1.5 rounded-2xl bg-action-500 px-3 py-2
-                text-xs font-black text-white shadow-action transition
-                hover:bg-action-600 active:scale-[0.97]
-                sm:inline-flex sm:px-4 sm:py-2.5 sm:text-sm
-              "
-            >
-              <Plus size={16} />
-              <span>إعلان جديد</span>
-            </Link>
-          </div>
-
-          {/* الشعار المركزي — absolute لضمان التوسيط في جميع الصفحات */}
+        {/* صفّ واحد: شعار | روابط (ديسكتوب) | إجراءات — بلا تراكب */}
+        <div className="flex min-w-0 items-center justify-between gap-2 py-2 sm:py-2.5">
+          {/* الشعار (بداية RTL = يمين) */}
           <Link
             href="/"
             prefetch={false}
             aria-label="براتشو كار - الصفحة الرئيسية"
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+            className="flex shrink-0 items-center"
           >
             <Image
               src="/brand/bratsho-logo.png"
@@ -175,11 +131,38 @@ function SiteHeaderImpl() {
               width={539}
               height={200}
               priority
-              className="h-7 w-auto sm:h-8"
+              className="h-7 w-auto max-w-[130px] sm:h-8 sm:max-w-none"
             />
           </Link>
 
-          {/* المجموعة اليسرى (نهاية RTL): إشعارات + محفظة + حساب */}
+          {/* روابط الديسكتوب (المنتصف المرن — يتقلّص أولاً) */}
+          <nav
+            className="hidden min-w-0 items-center gap-5 lg:flex"
+            aria-label="القائمة الرئيسية"
+          >
+            {NAV_LINKS.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                prefetch={false}
+                className="whitespace-nowrap text-sm font-bold text-white/80 transition-colors hover:text-white"
+              >
+                {l.label}
+              </Link>
+            ))}
+            {isAdmin && (
+              <Link
+                href="/admin"
+                prefetch={false}
+                className="inline-flex items-center gap-1 whitespace-nowrap text-sm font-bold text-action-400 hover:text-action-300"
+              >
+                <Shield size={14} />
+                الإدارة
+              </Link>
+            )}
+          </nav>
+
+          {/* الإجراءات (نهاية RTL = يسار) */}
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             {user && (
               <Link
@@ -191,7 +174,7 @@ function SiteHeaderImpl() {
                     : "الإشعارات"
                 }
                 className="
-                  relative inline-flex h-9 w-9 items-center justify-center
+                  relative inline-flex h-9 w-9 shrink-0 items-center justify-center
                   rounded-2xl border border-white/15 bg-white/5 text-white/90
                   transition hover:bg-white/15 active:scale-95 sm:h-10 sm:w-10
                 "
@@ -212,7 +195,23 @@ function SiteHeaderImpl() {
               </Link>
             )}
 
-            <WalletTrigger variant="compact" />
+            <WalletTrigger variant="compact" className="shrink-0" />
+
+            <ThemeToggle className="!h-9 !w-9 shrink-0 !border-white/15 !bg-white/10 !text-white hover:!bg-white/20 sm:!h-10 sm:!w-10" />
+
+            <Link
+              href="/add-listing"
+              prefetch={false}
+              className="
+                hidden shrink-0 items-center gap-1.5 rounded-2xl bg-action-500 px-3 py-2
+                text-xs font-black text-white shadow-action transition
+                hover:bg-action-600 active:scale-[0.97]
+                sm:inline-flex sm:px-4 sm:py-2.5 sm:text-sm
+              "
+            >
+              <Plus size={16} />
+              <span>إعلان جديد</span>
+            </Link>
 
             {user ? (
               <Link
@@ -220,7 +219,7 @@ function SiteHeaderImpl() {
                 prefetch={false}
                 aria-label="حسابي"
                 className="
-                  inline-flex h-9 w-9 items-center justify-center
+                  inline-flex h-9 w-9 shrink-0 items-center justify-center
                   overflow-hidden rounded-2xl border border-white/15
                   bg-gradient-to-br from-brand-600 to-brand-500
                   text-sm font-black text-white transition active:scale-95
@@ -245,7 +244,7 @@ function SiteHeaderImpl() {
                 prefetch={false}
                 aria-label="تسجيل الدخول"
                 className="
-                  inline-flex h-9 w-9 items-center justify-center
+                  inline-flex h-9 w-9 shrink-0 items-center justify-center
                   rounded-2xl border border-white/15 bg-white/5 text-white
                   transition hover:bg-white/15 active:scale-95 sm:h-10 sm:w-10
                 "
@@ -256,7 +255,7 @@ function SiteHeaderImpl() {
           </div>
         </div>
 
-        {/* ===== شريط البحث (خارج الرئيسية فقط) — يظهر على كل الشاشات ===== */}
+        {/* شريط البحث (خارج الرئيسية فقط) */}
         {!isHome && (
           <form onSubmit={handleSearch} className="relative pb-2.5" role="search">
             <Search
