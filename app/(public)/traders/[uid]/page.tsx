@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
@@ -69,10 +69,14 @@ export default function TraderPage() {
 
       const chatId = buildChatId(user.uid, trader.uid, listingId);
       const chatRef = doc(db, "chats", chatId);
-      const existing = await getDoc(chatRef);
 
-      if (!existing.exists()) {
-        await setDoc(chatRef, {
+      // لا نقرأ المحادثة قبل إنشائها: قراءة مستند غير موجود تُرفض بقاعدة
+      // المشاركين (resource=null) → "Missing or insufficient permissions".
+      // بدلاً من ذلك نكتب بـ merge: ينشئها إن لم تكن موجودة، ولا يكتب فوق
+      // محادثة قائمة (لا نضمّن createdAt/unreadCount حتى لا نُصفّر العدّادات).
+      await setDoc(
+        chatRef,
+        {
           listingId,
           listingTitle,
           listingImage,
@@ -87,10 +91,9 @@ export default function TraderPage() {
               photoURL: trader.photoURL || "",
             },
           },
-          unreadCount: { [user.uid]: 0, [trader.uid]: 0 },
-          createdAt: serverTimestamp(),
-        });
-      }
+        },
+        { merge: true }
+      );
 
       router.push(`/messages/${chatId}`);
     } catch (err: any) {

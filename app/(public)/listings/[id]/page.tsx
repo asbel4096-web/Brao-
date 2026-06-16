@@ -7,7 +7,6 @@ import {
   doc,
   getDoc,
   increment,
-  serverTimestamp,
   setDoc,
   updateDoc,
 } from "firebase/firestore";
@@ -128,10 +127,13 @@ export default function ListingDetailsPage() {
     try {
       const chatId = buildChatId(user.uid, listing.ownerId, listing.id);
       const chatRef = doc(db, "chats", chatId);
-      const existing = await getDoc(chatRef);
 
-      if (!existing.exists()) {
-        await setDoc(chatRef, {
+      // لا نقرأ المحادثة قبل إنشائها (قراءة مستند غير موجود تُرفض بقاعدة
+      // المشاركين). نكتب بـ merge: ينشئها إن لم تكن موجودة دون الكتابة فوق
+      // محادثة قائمة، وبلا createdAt/unreadCount حتى لا نُصفّر العدّادات.
+      await setDoc(
+        chatRef,
+        {
           listingId: listing.id,
           listingTitle: listing.title,
           listingImage: listing.images?.[0] || "",
@@ -152,10 +154,9 @@ export default function ListingDetailsPage() {
               photoURL: seller?.photoURL || "",
             },
           },
-          unreadCount: { [user.uid]: 0, [listing.ownerId]: 0 },
-          createdAt: serverTimestamp(),
-        });
-      }
+        },
+        { merge: true }
+      );
       router.push(`/messages/${chatId}`);
     } catch (err: any) {
       toast.error(err?.message || "تعذّر فتح الدردشة.");
