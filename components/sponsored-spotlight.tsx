@@ -4,7 +4,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Timestamp,
   collection,
   getDocs,
   limit,
@@ -53,6 +52,55 @@ function isBoosted(l: Listing): boolean {
   return boosted > now || featured > now || vip > now;
 }
 
+/**
+ * مجمّع الإعلانات المعتمدة (cache مشترك على مستوى الوحدة).
+ *
+ * بدل ٣ استعلامات تتطلب فهارس مركّبة (status + boostedUntil/featuredUntil/
+ * vipUntil) قد لا تكون منشورة في Firebase Console — وهو سبب اختفاء الممول
+ * للجميع — نجلب أحدث الإعلانات المعتمدة باستخدام الفهرس الموجود أصلاً
+ * (status==approved + createdAt) ثم نفلتر الممولة في الذاكرة. هذا:
+ *  - لا يتطلب أي فهرس جديد (يعمل فوراً بلا أي إجراء في Console).
+ *  - يعمل للزوّار (مقيّد بـ approved حسب قواعد القراءة).
+ *  - يُجلب مرّة واحدة ويُشارَك بين كل نسخ البانر في الصفحة.
+ */
+let _pool: Listing[] | null = null;
+let _poolAt = 0;
+let _poolPromise: Promise<Listing[]> | null = null;
+const POOL_TTL = 120_000; // دقيقتان
+
+async function loadSponsoredPool(): Promise<Listing[]> {
+  const fresh = _pool && Date.now() - _poolAt < POOL_TTL;
+  if (fresh) return _pool as Listing[];
+  if (_poolPromise) return _poolPromise;
+
+  _poolPromise = (async () => {
+    try {
+      const snap = await getDocs(
+        query(
+          collection(db, "listings"),
+          where("status", "==", "approved"),
+          orderBy("createdAt", "desc"),
+          limit(120)
+        )
+      );
+      const arr = snap.docs.map(
+        (d) => ({ id: d.id, ...(d.data() as any) }) as Listing
+      );
+      _pool = arr;
+      _poolAt = Date.now();
+      return arr;
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn("[sponsored] pool:", (err as any)?.code);
+      return _pool || [];
+    } finally {
+      _poolPromise = null;
+    }
+  })();
+
+  return _poolPromise;
+}
+
 interface Props {
   /** قائمة محمّلة مسبقاً (اختياري) — تُفلتر منها الممولة بدل الجلب. */
   items?: Listing[];
@@ -91,45 +139,8 @@ export function SponsoredSpotlight({
     if (items) return;
     let cancelled = false;
     void (async () => {
-      try {
-        const now = Timestamp.fromMillis(Date.now());
-        // ثلاثة استعلامات (لا يمكن دمج عدم المساواة على حقول مختلفة في
-        // استعلام واحد). كلٌّ مقيَّد بـ status == "approved" — ضروري حتى
-        // ينجح الاستعلام للزوّار: قواعد Firestore ترفض أي استعلام غير
-        // مضمون أن نتائجه كلها معتمدة (هذا سبب عدم ظهور الممول للزوار).
-        // يتطلب فهرساً مركباً (status + <field>) — مضاف في firestore.indexes.json.
-        const fields = ["boostedUntil", "featuredUntil", "vipUntil"] as const;
-        const snaps = await Promise.all(
-          fields.map((f) =>
-            getDocs(
-              query(
-                collection(db, "listings"),
-                where("status", "==", "approved"),
-                where(f, ">", now),
-                orderBy(f, "desc"),
-                limit(20)
-              )
-            ).catch(() => null)
-          )
-        );
-        if (cancelled) return;
-
-        // دمج + إزالة التكرار حسب id (إعلان قد يكون له أكثر من باقة).
-        const byId = new Map<string, Listing>();
-        for (const snap of snaps) {
-          if (!snap) continue;
-          for (const d of snap.docs) {
-            if (!byId.has(d.id)) {
-              byId.set(d.id, { id: d.id, ...(d.data() as any) });
-            }
-          }
-        }
-        setFetched(Array.from(byId.values()));
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.warn("[sponsored] fetch:", (err as any)?.code);
-        if (!cancelled) setFetched([]);
-      }
+      const pool = await loadSponsoredPool();
+      if (!cancelled) setFetched(pool);
     })();
     return () => {
       cancelled = true;
