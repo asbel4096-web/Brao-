@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { memo, useState } from "react";
+import { memo, useState, type MouseEvent } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Calendar,
@@ -23,10 +24,15 @@ import {
   isListingFeatured,
   normalizeLibyanPhone,
   timeAgo,
+  buildChatId,
 } from "@/lib/utils";
 import { FavoriteButton } from "./favorite-button";
 import { trackEvent } from "@/lib/track-event";
 import { VerificationBadge } from "@/components/verification/verification-badge";
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
 
 const FALLBACK = "/icons/car-card.svg";
 
@@ -54,6 +60,10 @@ interface ListingCardProps {
 
 function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [chatBusy, setChatBusy] = useState(false);
+  const { user, profile } = useAuth();
+  const router = useRouter();
+  const toast = useToast();
 
   const wa = normalizeLibyanPhone(listing.whatsapp || listing.phone || "");
   const img = listing.images?.[0] || FALLBACK;
@@ -61,6 +71,59 @@ function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
   const imageCount = listing.images?.length || 0;
   const sellerName = getTraderDisplayName({ name: listing.sellerName });
   const detailsHref = `/listings/${listing.id}`;
+
+  // إنشاء/فتح محادثة مع صاحب الإعلان (نفس منطق صفحة التفاصيل).
+  // نستخدم setDoc(merge) دون قراءة مسبقة لتفادي رفض قراءة مستند غير موجود.
+  const handleMessage = async (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    trackEvent(listing.id, "chat");
+
+    if (!user) {
+      router.push(`/login?redirect=/listings/${listing.id}`);
+      return;
+    }
+    if (listing.ownerId === user.uid) {
+      toast.warning("لا يمكنك مراسلة إعلانك الخاص.");
+      return;
+    }
+    if (chatBusy) return;
+    setChatBusy(true);
+    try {
+      const chatId = buildChatId(user.uid, listing.ownerId, listing.id);
+      await setDoc(
+        doc(db, "chats", chatId),
+        {
+          listingId: listing.id,
+          listingTitle: listing.title,
+          listingImage: listing.images?.[0] || "",
+          participants: [user.uid, listing.ownerId].sort(),
+          participantsInfo: {
+            [user.uid]: {
+              name:
+                profile?.businessName ||
+                profile?.name ||
+                user.displayName ||
+                user.email ||
+                user.phoneNumber ||
+                "مستخدم",
+              photoURL: profile?.photoURL || user.photoURL || "",
+            },
+            [listing.ownerId]: {
+              name: sellerName,
+              photoURL: "",
+            },
+          },
+        },
+        { merge: true }
+      );
+      router.push(`/messages/${chatId}`);
+    } catch (err: any) {
+      toast.error(err?.message || "تعذّر فتح المحادثة.");
+    } finally {
+      setChatBusy(false);
+    }
+  };
 
   // مستوى الترقية: VIP > ممول > مميز > عادي
   const vipUntil = (listing as any).vipUntil?.toMillis?.() || 0;
@@ -294,15 +357,16 @@ function ListingCardImpl({ listing, priority = false }: ListingCardProps) {
             اتصال
           </a>
 
-          <Link
-            href={`/messages?listing=${listing.id}`}
-            onClick={() => trackEvent(listing.id, "chat")}
-            className="inline-flex items-center justify-center gap-1 rounded-xl bg-blue-50 py-2.5 text-[11px] font-black text-brand-700 transition active:scale-95 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300"
+          <button
+            type="button"
+            onClick={handleMessage}
+            disabled={chatBusy}
+            className="inline-flex items-center justify-center gap-1 rounded-xl bg-blue-50 py-2.5 text-[11px] font-black text-brand-700 transition active:scale-95 hover:bg-blue-100 disabled:opacity-60 dark:bg-blue-900/20 dark:text-blue-300"
             aria-label="مراسلة"
           >
             <MessageCircle size={14} />
             مراسلة
-          </Link>
+          </button>
         </div>
       </div>
     </motion.article>
