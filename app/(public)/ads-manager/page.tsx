@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -18,15 +18,15 @@ import {
   Phone,
   MessageCircle,
   Wallet,
-  Pause,
-  Play,
   Plus,
   BarChart3,
-  Trash2,
   Heart,
   Share2,
   X,
-  ChevronLeft,
+  TrendingUp,
+  Clock,
+  Sparkles,
+  CalendarPlus,
 } from "lucide-react";
 import { db, auth } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -69,6 +69,7 @@ async function callApi(path: string, body: Record<string, unknown>) {
 }
 
 const num = (v: any) => Number(v) || 0;
+const arNum = (v: number) => v.toLocaleString("ar-LY");
 
 export default function AdsManagerPage() {
   const router = useRouter();
@@ -94,11 +95,9 @@ export default function AdsManagerPage() {
       qy,
       (snap) => {
         const all = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as Ad[];
-        // حملة = ترقية نشطة (مميز/ممول/VIP) أو تاريخ حملة سابق
         const promoted = all.filter(
           (l) => getPromotionTier(l) > 0 || campaignStatus(l) !== "none"
         );
-        // ترتيب: نشطة أولاً ثم متوقفة ثم منتهية، وكل مجموعة بالأحدث
         const rank: Record<CampaignStatus, number> = {
           active: 0,
           paused: 1,
@@ -150,11 +149,14 @@ export default function AdsManagerPage() {
   // إجماليات سريعة
   const totals = useMemo(() => {
     const list = ads || [];
-    return {
-      impressions: list.reduce((s, a) => s + num(a.sponsoredImpressions), 0),
-      clicks: list.reduce((s, a) => s + num(a.sponsoredClicks), 0),
-      calls: list.reduce((s, a) => s + num(a.phoneClicks), 0),
-    };
+    const impressions = list.reduce((s, a) => s + num(a.sponsoredImpressions), 0);
+    const clicks = list.reduce((s, a) => s + num(a.sponsoredClicks), 0);
+    const calls = list.reduce((s, a) => s + num(a.phoneClicks), 0);
+    const activeCount = list.filter(
+      (a) => campaignStatus(a) === "active" || getPromotionTier(a) > 0
+    ).length;
+    const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
+    return { impressions, clicks, calls, activeCount, ctr };
   }, [ads]);
 
   async function doAction(
@@ -179,25 +181,62 @@ export default function AdsManagerPage() {
   if (authLoading || ads === null) return <AdsManagerSkeleton />;
 
   return (
-    <section dir="rtl" className="container py-5 pb-28 sm:py-8">
+    <section dir="rtl" className="container py-4 pb-28 sm:py-7">
       <div className="mx-auto max-w-2xl">
-        {/* العنوان */}
-        <div className="mb-4 flex items-center gap-2">
-          <Megaphone className="text-action-500" />
-          <h1 className="text-2xl font-black text-slate-950 dark:text-white sm:text-3xl">
-            مدير إعلاناتي
-          </h1>
+        {/* ===== الهيرو: شريط القيادة ===== */}
+        <Hero activeCount={totals.activeCount} spend={spend} ctr={totals.ctr} />
+
+        {/* ===== بطاقات الأداء ===== */}
+        <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <StatCard
+            icon={<Eye size={18} />}
+            label="المشاهدات"
+            value={arNum(totals.impressions)}
+            tint="brand"
+          />
+          <StatCard
+            icon={<MousePointerClick size={18} />}
+            label="النقرات"
+            value={arNum(totals.clicks)}
+            tint="emerald"
+          />
+          <StatCard
+            icon={<Phone size={18} />}
+            label="الاتصالات"
+            value={arNum(totals.calls)}
+            tint="amber"
+          />
+          <StatCard
+            icon={<Wallet size={18} />}
+            label="الإنفاق"
+            value={arNum(spend)}
+            suffix="BC"
+            tint="rose"
+          />
         </div>
 
-        {/* إحصائيات سريعة */}
-        <div className="mb-5 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-          <Quick icon={<Eye size={16} />} label="المشاهدات" value={totals.impressions} tint="brand" />
-          <Quick icon={<MousePointerClick size={16} />} label="النقرات" value={totals.clicks} tint="emerald" />
-          <Quick icon={<Phone size={16} />} label="الاتصالات" value={totals.calls} tint="amber" />
-          <Quick icon={<Wallet size={16} />} label="الإنفاق" value={spend} suffix="BC" tint="rose" />
+        {/* ===== قائمة الحملات ===== */}
+        <div className="mt-6 mb-3 flex items-center justify-between">
+          <h2 className="flex items-center gap-2 text-base font-black text-slate-900 dark:text-white">
+            <BarChart3 size={18} className="text-brand-600 dark:text-brand-300" />
+            حملاتي
+            {ads.length > 0 && (
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-black text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+                {arNum(ads.length)}
+              </span>
+            )}
+          </h2>
+          {ads.length > 0 && (
+            <Link
+              href="/my-listings"
+              onClick={() => haptic()}
+              className="inline-flex items-center gap-1 rounded-full bg-action-50 px-3 py-1.5 text-xs font-black text-action-600 transition hover:bg-action-100 dark:bg-action-500/15 dark:text-action-300"
+            >
+              <Plus size={14} /> حملة جديدة
+            </Link>
+          )}
         </div>
 
-        {/* القائمة */}
         {ads.length === 0 ? (
           <EmptyState />
         ) : (
@@ -217,7 +256,6 @@ export default function AdsManagerPage() {
                   haptic();
                   setStatsFor(ad);
                 }}
-                onEnd={() => doAction(ad, "/api/wallet/boost/pause", "تم إيقاف ظهور الحملة")}
               />
             ))}
           </div>
@@ -230,15 +268,14 @@ export default function AdsManagerPage() {
         onClick={() => haptic()}
         className="
           fixed bottom-24 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2
-          rounded-full bg-action-500 px-5 py-3 text-sm font-black text-white
-          shadow-action transition active:scale-95 hover:bg-action-600
+          rounded-full bg-action-500 px-6 py-3.5 text-sm font-black text-white
+          shadow-action ring-4 ring-action-500/15 transition active:scale-95 hover:bg-action-600
         "
       >
         <Megaphone size={18} />
         إنشاء حملة ممولة
       </Link>
 
-      {/* Bottom Sheet — التمديد */}
       {extendFor && (
         <ExtendSheet
           ad={extendFor}
@@ -255,122 +292,71 @@ export default function AdsManagerPage() {
         />
       )}
 
-      {/* Bottom Sheet — الإحصائيات */}
-      {statsFor && (
-        <StatsSheet ad={statsFor} onClose={() => setStatsFor(null)} />
-      )}
+      {statsFor && <StatsSheet ad={statsFor} onClose={() => setStatsFor(null)} />}
     </section>
   );
 }
 
-/* ============== بطاقة الحملة مع السحب ============== */
-function CampaignCard({
-  ad,
-  busy,
-  onPause,
-  onResume,
-  onExtend,
-  onStats,
-  onEnd,
+/* ============== الهيرو ============== */
+function Hero({
+  activeCount,
+  spend,
+  ctr,
 }: {
-  ad: Ad;
-  busy: boolean;
-  onPause: () => void;
-  onResume: () => void;
-  onExtend: () => void;
-  onStats: () => void;
-  onEnd: () => void;
+  activeCount: number;
+  spend: number;
+  ctr: number;
 }) {
-  const status = campaignStatus(ad);
-  const isActive = status === "active" || getPromotionTier(ad) > 0;
-  const isPaused = status === "paused";
-  const remaining = campaignRemainingDays(ad);
-  const img = ad.images?.[0] || "/icons/car-card.svg";
-
-  // السحب لكشف الإجراءات
-  const [dx, setDx] = useState(0);
-  const startX = useRef<number | null>(null);
-  const REVEAL = 132;
-
-  const statusDot =
-    status === "paused"
-      ? "🟠"
-      : status === "expired"
-      ? "🔴"
-      : "🟢";
-  const statusCls =
-    status === "paused"
-      ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
-      : status === "expired"
-      ? "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300"
-      : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300";
-
   return (
-    <div className="relative overflow-hidden rounded-3xl">
-      {/* الدُرج اليميني (سحب لليمين): استئناف/إيقاف */}
-      <div className="absolute inset-y-0 right-0 flex items-center gap-2 pr-3">
-        {isPaused ? (
-          <DrawerBtn color="emerald" icon={<Play size={18} />} label="استئناف" onClick={onResume} disabled={busy} />
-        ) : (
-          <DrawerBtn color="amber" icon={<Pause size={18} />} label="إيقاف" onClick={onPause} disabled={busy || !isActive} />
-        )}
-      </div>
-      {/* الدُرج اليساري (سحب لليسار): إحصائيات/تمديد/إنهاء */}
-      <div className="absolute inset-y-0 left-0 flex items-center gap-2 pl-3">
-        <DrawerBtn color="brand" icon={<BarChart3 size={18} />} label="إحصائيات" onClick={onStats} disabled={busy} />
-        <DrawerBtn color="slate" icon={<Plus size={18} />} label="تمديد" onClick={onExtend} disabled={busy} />
-        <DrawerBtn color="rose" icon={<Trash2 size={18} />} label="إنهاء" onClick={onEnd} disabled={busy || !isActive} />
+    <div className="relative overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-[#071133] via-[#0a1d55] to-[#1c389c] p-5 text-white shadow-blue sm:p-6">
+      {/* وهج زخرفي */}
+      <div className="pointer-events-none absolute -left-10 -top-12 h-40 w-40 rounded-full bg-action-500/25 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-16 -right-8 h-44 w-44 rounded-full bg-brand-400/20 blur-3xl" />
+
+      <div className="relative flex items-start justify-between gap-3">
+        <div>
+          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-white/60">
+            <Sparkles size={13} className="text-action-400" />
+            لوحة الأداء
+          </div>
+          <h1 className="flex items-center gap-2 text-2xl font-black sm:text-3xl">
+            <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-action-500 shadow-action">
+              <Megaphone size={18} />
+            </span>
+            مدير إعلاناتي
+          </h1>
+          <p className="mt-2 text-sm font-bold text-white/70">
+            {activeCount > 0
+              ? `لديك ${arNum(activeCount)} حملة نشطة الآن`
+              : "لا توجد حملات نشطة — موّل إعلاناً للبدء"}
+          </p>
+        </div>
+
+        {/* عدّاد الحملات النشطة */}
+        <div className="shrink-0 rounded-2xl bg-white/10 px-4 py-3 text-center backdrop-blur">
+          <div className="text-3xl font-black leading-none tabular-nums">
+            {arNum(activeCount)}
+          </div>
+          <div className="mt-1 text-[10px] font-black text-white/60">نشطة</div>
+        </div>
       </div>
 
-      {/* البطاقة الأمامية */}
-      <div
-        className="relative flex gap-3 rounded-3xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900"
-        style={{
-          transform: `translateX(${dx}px)`,
-          transition: startX.current === null ? "transform 0.25s ease" : "none",
-          touchAction: "pan-y",
-        }}
-        onTouchStart={(e) => {
-          startX.current = e.touches[0].clientX;
-        }}
-        onTouchMove={(e) => {
-          if (startX.current === null) return;
-          const d = e.touches[0].clientX - startX.current;
-          setDx(Math.max(-REVEAL, Math.min(REVEAL, d)));
-        }}
-        onTouchEnd={() => {
-          startX.current = null;
-          setDx((d) => (d > REVEAL / 2 ? REVEAL : d < -REVEAL / 2 ? -REVEAL : 0));
-          if (Math.abs(dx) > REVEAL / 2) haptic();
-        }}
-      >
-        <Link href={`/listings/${ad.id}`} className="shrink-0">
-          <div className="relative h-20 w-20 overflow-hidden rounded-2xl">
-            <Image src={img} alt={ad.title || ""} fill sizes="80px" className="object-cover" />
+      {/* شريط ملخّص: CTR + الإنفاق */}
+      <div className="relative mt-4 flex gap-2.5">
+        <div className="flex flex-1 items-center gap-2 rounded-2xl bg-white/10 px-3 py-2.5 backdrop-blur">
+          <TrendingUp size={16} className="text-emerald-300" />
+          <div className="min-w-0">
+            <div className="text-[10px] font-bold text-white/55">نسبة النقر CTR</div>
+            <div className="text-sm font-black tabular-nums">{ctr.toFixed(1)}%</div>
           </div>
-        </Link>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <Link
-              href={`/listings/${ad.id}`}
-              className="line-clamp-1 text-sm font-black text-slate-900 dark:text-white"
-            >
-              {ad.title || "إعلان"}
-            </Link>
-            <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-black ${statusCls}`}>
-              {statusDot} {STATUS_LABEL[status]}
-            </span>
-          </div>
-          <p className="mt-0.5 text-xs font-bold text-slate-500">
-            {status === "expired" ? "انتهت" : `متبقٍ ${remaining} يوم`}
-            {isPaused && " (مجمّدة)"}
-          </p>
-          {/* إحصائيات مصغّرة */}
-          <div className="mt-2 flex items-center gap-3 text-[11px] font-bold text-slate-600 dark:text-slate-300">
-            <span className="inline-flex items-center gap-0.5"><Eye size={12} />{num(ad.sponsoredImpressions)}</span>
-            <span className="inline-flex items-center gap-0.5"><MousePointerClick size={12} />{num(ad.sponsoredClicks)}</span>
-            <span className="inline-flex items-center gap-0.5"><Phone size={12} />{num(ad.phoneClicks)}</span>
-            <span className="inline-flex items-center gap-0.5"><MessageCircle size={12} />{num(ad.whatsappClicks)}</span>
+        </div>
+        <div className="flex flex-1 items-center gap-2 rounded-2xl bg-white/10 px-3 py-2.5 backdrop-blur">
+          <Wallet size={16} className="text-action-300" />
+          <div className="min-w-0">
+            <div className="text-[10px] font-bold text-white/55">إجمالي الإنفاق</div>
+            <div className="text-sm font-black tabular-nums">
+              {arNum(spend)} <span className="text-[10px] text-white/50">BC</span>
+            </div>
           </div>
         </div>
       </div>
@@ -378,35 +364,221 @@ function CampaignCard({
   );
 }
 
-function DrawerBtn({
-  color,
+/* ============== بطاقة أداء ============== */
+function StatCard({
   icon,
   label,
-  onClick,
-  disabled,
+  value,
+  suffix,
+  tint,
 }: {
-  color: "emerald" | "amber" | "brand" | "rose" | "slate";
   icon: ReactNode;
   label: string;
-  onClick: () => void;
-  disabled?: boolean;
+  value: string;
+  suffix?: string;
+  tint: "brand" | "emerald" | "amber" | "rose";
 }) {
-  const cls: Record<string, string> = {
-    emerald: "bg-emerald-600 text-white",
-    amber: "bg-amber-500 text-white",
-    brand: "bg-brand-700 text-white",
-    rose: "bg-rose-600 text-white",
-    slate: "bg-slate-700 text-white",
+  const chip: Record<string, string> = {
+    brand: "bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300",
+    emerald:
+      "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300",
+    amber: "bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300",
+    rose: "bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300",
   };
   return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={`flex h-14 w-14 flex-col items-center justify-center gap-0.5 rounded-2xl text-[10px] font-black transition active:scale-90 disabled:opacity-40 ${cls[color]}`}
+    <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
+      <div
+        className={`mb-3 flex h-9 w-9 items-center justify-center rounded-2xl ${chip[tint]}`}
+      >
+        {icon}
+      </div>
+      <div className="text-2xl font-black tabular-nums text-slate-900 dark:text-white">
+        {value}
+        {suffix && (
+          <span className="mr-1 text-xs font-bold text-slate-400">{suffix}</span>
+        )}
+      </div>
+      <div className="mt-0.5 text-xs font-bold text-slate-500 dark:text-slate-400">
+        {label}
+      </div>
+    </div>
+  );
+}
+
+/* ============== بطاقة الحملة (أزرار ظاهرة) ============== */
+function CampaignCard({
+  ad,
+  busy,
+  onPause,
+  onResume,
+  onExtend,
+  onStats,
+}: {
+  ad: Ad;
+  busy: boolean;
+  onPause: () => void;
+  onResume: () => void;
+  onExtend: () => void;
+  onStats: () => void;
+}) {
+  const status = campaignStatus(ad);
+  const isActive = status === "active" || getPromotionTier(ad) > 0;
+  const isPaused = status === "paused";
+  const isExpired = status === "expired";
+  const remaining = campaignRemainingDays(ad);
+  const img = ad.images?.[0] || "/icons/car-card.svg";
+
+  // شريط الأيام المتبقية (نسبةً لـ 30 يوم كحد أقصى مرئي)
+  const pct = isExpired ? 0 : Math.max(6, Math.min(100, (remaining / 30) * 100));
+
+  const pill: Record<CampaignStatus, string> = {
+    active:
+      "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
+    paused: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",
+    expired: "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300",
+    none: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
+  };
+  const dotCls: Record<CampaignStatus, string> = {
+    active: "bg-emerald-500",
+    paused: "bg-amber-500",
+    expired: "bg-rose-500",
+    none: "bg-slate-400",
+  };
+
+  return (
+    <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      {/* الجسم */}
+      <div className="flex gap-3 p-3.5">
+        <Link href={`/listings/${ad.id}`} className="shrink-0">
+          <div className="relative h-[5.5rem] w-[5.5rem] overflow-hidden rounded-2xl ring-1 ring-slate-100 dark:ring-slate-800">
+            <Image
+              src={img}
+              alt={ad.title || ""}
+              fill
+              sizes="88px"
+              className="object-cover"
+            />
+          </div>
+        </Link>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <Link
+              href={`/listings/${ad.id}`}
+              className="line-clamp-1 text-sm font-black text-slate-900 hover:text-brand-700 dark:text-white"
+            >
+              {ad.title || "إعلان"}
+            </Link>
+            <span
+              className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-black ${pill[status]}`}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${dotCls[status]}`} />
+              {STATUS_LABEL[status]}
+            </span>
+          </div>
+
+          {/* الأيام المتبقية + شريط تقدّم */}
+          <div className="mt-2">
+            <div className="mb-1 flex items-center gap-1 text-[11px] font-bold text-slate-500 dark:text-slate-400">
+              <Clock size={12} />
+              {isExpired ? "انتهت مدة الحملة" : `متبقٍ ${arNum(remaining)} يوم`}
+              {isPaused && " · مجمّدة"}
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+              <div
+                className={`h-full rounded-full ${
+                  isExpired
+                    ? "bg-rose-400"
+                    : isPaused
+                      ? "bg-amber-400"
+                      : "bg-gradient-to-l from-action-400 to-brand-500"
+                }`}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+          </div>
+
+          {/* مقاييس مصغّرة */}
+          <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-bold text-slate-600 dark:text-slate-300">
+            <Metric icon={<Eye size={12} />} value={num(ad.sponsoredImpressions)} />
+            <Metric
+              icon={<MousePointerClick size={12} />}
+              value={num(ad.sponsoredClicks)}
+            />
+            <Metric icon={<Phone size={12} />} value={num(ad.phoneClicks)} />
+            <Metric
+              icon={<MessageCircle size={12} />}
+              value={num(ad.whatsappClicks)}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* شريط الإجراءات الظاهرة (يعمل على الجوال والكمبيوتر) */}
+      <div className="flex items-stretch gap-2 border-t border-slate-100 p-2.5 dark:border-slate-800">
+        {/* مفتاح التشغيل/الإيقاف */}
+        {!isExpired ? (
+          <button
+            type="button"
+            onClick={isActive ? onPause : onResume}
+            disabled={busy}
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-slate-50 py-2.5 text-xs font-black text-slate-700 transition active:scale-[0.98] disabled:opacity-50 dark:bg-slate-800 dark:text-slate-200"
+          >
+            <ToggleSwitch on={isActive} />
+            {isActive ? "نشطة" : "متوقفة"}
+          </button>
+        ) : (
+          <span className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-rose-50 py-2.5 text-xs font-black text-rose-600 dark:bg-rose-500/10 dark:text-rose-300">
+            منتهية
+          </span>
+        )}
+
+        <button
+          type="button"
+          onClick={onExtend}
+          disabled={busy}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-action-50 py-2.5 text-xs font-black text-action-600 transition active:scale-[0.98] disabled:opacity-50 dark:bg-action-500/15 dark:text-action-300"
+        >
+          <CalendarPlus size={15} />
+          {isExpired ? "إعادة تفعيل" : "تمديد"}
+        </button>
+
+        <button
+          type="button"
+          onClick={onStats}
+          disabled={busy}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-brand-50 py-2.5 text-xs font-black text-brand-700 transition active:scale-[0.98] disabled:opacity-50 dark:bg-brand-500/15 dark:text-brand-300"
+        >
+          <BarChart3 size={15} />
+          إحصائيات
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Metric({ icon, value }: { icon: ReactNode; value: number }) {
+  return (
+    <span className="inline-flex items-center gap-1 tabular-nums">
+      <span className="text-slate-400 dark:text-slate-500">{icon}</span>
+      {arNum(value)}
+    </span>
+  );
+}
+
+function ToggleSwitch({ on }: { on: boolean }) {
+  return (
+    <span
+      className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition ${
+        on ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"
+      }`}
     >
-      {icon}
-      {label}
-    </button>
+      <span
+        className={`absolute h-4 w-4 rounded-full bg-white shadow transition-all ${
+          on ? "right-0.5" : "right-4"
+        }`}
+      />
+    </span>
   );
 }
 
@@ -435,8 +607,12 @@ function ExtendSheet({
             onClick={() => onPick(ext.days)}
             className="flex flex-col items-center rounded-2xl border border-slate-200 bg-slate-50 py-3 transition hover:border-brand-400 hover:bg-brand-50 active:scale-95 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800"
           >
-            <span className="text-base font-black text-slate-900 dark:text-white">{ext.label}</span>
-            <span className="text-xs font-bold text-brand-700 dark:text-brand-300">{ext.price} BC</span>
+            <span className="text-base font-black text-slate-900 dark:text-white">
+              {ext.label}
+            </span>
+            <span className="text-xs font-bold text-brand-700 dark:text-brand-300">
+              {ext.price} BC
+            </span>
           </button>
         ))}
       </div>
@@ -460,9 +636,9 @@ function StatsSheet({ ad, onClose }: { ad: Ad; onClose: () => void }) {
 
   return (
     <Sheet title="إحصائيات الحملة" subtitle={ad.title} onClose={onClose}>
-      <div className="mb-3 rounded-2xl bg-brand-50 px-3 py-2 text-center dark:bg-brand-900/30">
-        <span className="text-xs font-bold text-slate-500">نسبة النقر للظهور CTR</span>
-        <div className="text-xl font-black text-brand-700 dark:text-brand-300">{ctr.toFixed(1)}%</div>
+      <div className="mb-4 rounded-2xl bg-gradient-to-br from-[#071133] via-[#0a1d55] to-[#1c389c] px-4 py-3 text-center text-white">
+        <span className="text-xs font-bold text-white/60">نسبة النقر للظهور CTR</span>
+        <div className="text-2xl font-black tabular-nums">{ctr.toFixed(1)}%</div>
       </div>
       <div className="space-y-2.5">
         {rows.map((r) => (
@@ -472,7 +648,7 @@ function StatsSheet({ ad, onClose }: { ad: Ad; onClose: () => void }) {
                 {r.icon} {r.label}
               </span>
               <span className="font-black tabular-nums text-slate-900 dark:text-white">
-                {r.value.toLocaleString("ar-LY")}
+                {arNum(r.value)}
               </span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
@@ -510,8 +686,11 @@ function Sheet({
     >
       <div
         dir="rtl"
-        className="w-full max-w-lg rounded-t-3xl bg-white p-5 pb-8 shadow-2xl dark:bg-slate-900"
-        style={{ animation: "sheetUp 0.25s ease" }}
+        className="w-full max-w-lg rounded-t-3xl bg-white p-5 shadow-2xl dark:bg-slate-900"
+        style={{
+          animation: "sheetUp 0.25s ease",
+          paddingBottom: "calc(2rem + env(safe-area-inset-bottom))",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-slate-300 dark:bg-slate-600" />
@@ -524,6 +703,7 @@ function Sheet({
           </div>
           <button
             onClick={onClose}
+            aria-label="إغلاق"
             className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 active:scale-90 dark:bg-slate-800"
           >
             <X size={18} />
@@ -536,56 +716,22 @@ function Sheet({
   );
 }
 
-/* ============== Quick stat ============== */
-function Quick({
-  icon,
-  label,
-  value,
-  suffix,
-  tint,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: number;
-  suffix?: string;
-  tint: "brand" | "emerald" | "amber" | "rose";
-}) {
-  const tints: Record<string, string> = {
-    brand: "text-brand-700 dark:text-brand-300",
-    emerald: "text-emerald-600 dark:text-emerald-400",
-    amber: "text-amber-600 dark:text-amber-400",
-    rose: "text-rose-600 dark:text-rose-400",
-  };
-  return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
-      <div className={`mb-1 flex items-center gap-1 text-xs font-bold ${tints[tint]}`}>
-        {icon}
-        {label}
-      </div>
-      <div className="text-xl font-black tabular-nums text-slate-900 dark:text-white">
-        {value.toLocaleString("ar-LY")}
-        {suffix && <span className="mr-1 text-xs font-bold text-slate-400">{suffix}</span>}
-      </div>
-    </div>
-  );
-}
-
 /* ============== حالات ============== */
 function EmptyState() {
   return (
-    <div className="rounded-3xl border border-dashed border-slate-300 p-10 text-center dark:border-slate-700">
-      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 text-amber-500 dark:bg-amber-900/30">
+    <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center dark:border-slate-700 dark:bg-slate-900">
+      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-action-50 text-action-500 dark:bg-action-500/15">
         <Megaphone size={30} />
       </div>
       <p className="mt-4 text-base font-black text-slate-900 dark:text-white">
         لا توجد حملات ممولة بعد
       </p>
       <p className="mt-1 text-sm text-slate-500">
-        موّل أحد إعلاناتك ليبدأ ظهوره عبر المنصة وتتابع أداءه هنا.
+        موّل أحد إعلاناتك ليتصدّر نتائج المنصة، وتابع أداءه لحظة بلحظة من هنا.
       </p>
       <Link
         href="/my-listings"
-        className="mt-4 inline-flex items-center gap-1.5 rounded-2xl bg-action-500 px-4 py-2.5 text-sm font-black text-white shadow-action active:scale-95"
+        className="mt-5 inline-flex items-center gap-1.5 rounded-2xl bg-action-500 px-5 py-3 text-sm font-black text-white shadow-action active:scale-95"
       >
         <Megaphone size={16} /> إنشاء حملة ممولة
       </Link>
@@ -595,17 +741,23 @@ function EmptyState() {
 
 function AdsManagerSkeleton() {
   return (
-    <section className="container py-5 sm:py-8">
+    <section className="container py-4 sm:py-7">
       <div className="mx-auto max-w-2xl">
-        <div className="mb-4 h-8 w-44 animate-pulse rounded-xl bg-slate-200 dark:bg-slate-700" />
-        <div className="mb-5 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+        <div className="h-36 animate-pulse rounded-[1.75rem] bg-slate-200 dark:bg-slate-800" />
+        <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="h-20 animate-pulse rounded-3xl bg-slate-200 dark:bg-slate-700" />
+            <div
+              key={i}
+              className="h-28 animate-pulse rounded-3xl bg-slate-200 dark:bg-slate-800"
+            />
           ))}
         </div>
-        <div className="space-y-3">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="h-28 animate-pulse rounded-3xl bg-slate-200 dark:bg-slate-700" />
+        <div className="mt-6 space-y-3">
+          {[0, 1].map((i) => (
+            <div
+              key={i}
+              className="h-40 animate-pulse rounded-3xl bg-slate-200 dark:bg-slate-800"
+            />
           ))}
         </div>
       </div>
