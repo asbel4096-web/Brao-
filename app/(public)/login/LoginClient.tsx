@@ -16,8 +16,14 @@ import {
   ChevronLeft,
   Clock,
   RotateCw,
+  AtSign,
+  Lock,
+  Eye,
+  EyeOff,
+  UserCircle2,
 } from "lucide-react";
 import { auth, googleProvider } from "@/lib/firebase";
+import { signInWithUsername } from "@/lib/auth-credentials";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthLayout } from "@/components/auth/auth-layout";
 
@@ -30,7 +36,7 @@ declare global {
 const OTP_RESEND_SECONDS = 144;
 const COUNTRY_CODE = "+218"; // ليبيا
 
-type Step = "phone" | "otp";
+type Step = "phone" | "otp" | "username";
 
 export default function LoginClient() {
   const router = useRouter();
@@ -46,6 +52,10 @@ export default function LoginClient() {
   const [sendingCode, setSendingCode] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [usernameInput, setUsernameInput] = useState("");
+  const [passwordInput, setPasswordInput] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [usernameLoading, setUsernameLoading] = useState(false);
   const [confirmation, setConfirmation] = useState<ConfirmationResult | null>(null);
   const [phoneAuthUnavailable, setPhoneAuthUnavailable] = useState(false);
   const [countdown, setCountdown] = useState(0);
@@ -256,6 +266,31 @@ export default function LoginClient() {
   };
 
   /* ----------------------------------------------------------
+   * الدخول باسم المستخدم + كلمة المرور
+   * ---------------------------------------------------------- */
+  const handleUsernameLogin = async () => {
+    if (usernameLoading) return;
+    setError("");
+    if (!usernameInput.trim() || !passwordInput) {
+      setError("أدخل اسم المستخدم وكلمة المرور.");
+      return;
+    }
+    setUsernameLoading(true);
+    try {
+      await setPersistence(auth, browserLocalPersistence);
+      const res = await signInWithUsername(usernameInput, passwordInput);
+      if (!res.ok) {
+        setError(res.error || "تعذّر تسجيل الدخول.");
+      }
+      // عند النجاح: مستمع AuthContext يلتقط الدخول ويعيد التوجيه تلقائياً.
+    } catch (err: any) {
+      setError(err?.message || "تعذّر تسجيل الدخول.");
+    } finally {
+      setUsernameLoading(false);
+    }
+  };
+
+  /* ----------------------------------------------------------
    * Loading state
    * ---------------------------------------------------------- */
   if (loading) {
@@ -272,6 +307,126 @@ export default function LoginClient() {
   /* ============================================================
    * Step: PHONE
    * ============================================================ */
+  if (step === "username") {
+    return (
+      <AuthLayout
+        title="الدخول باسم المستخدم"
+        description="أدخل اسم المستخدم وكلمة المرور اللذين أنشأتهما."
+        onBack={() => {
+          setError("");
+          setStep("phone");
+        }}
+        backType="back"
+      >
+        <div className="space-y-4">
+          {/* اسم المستخدم */}
+          <div>
+            <label className="mb-2 block text-sm font-black text-slate-900 dark:text-white">
+              اسم المستخدم
+            </label>
+            <div className="relative">
+              <AtSign
+                size={18}
+                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+              />
+              <input
+                type="text"
+                value={usernameInput}
+                onChange={(e) => setUsernameInput(e.target.value.toLowerCase())}
+                placeholder="bratsho_user"
+                dir="ltr"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                autoComplete="username"
+                className="
+                  w-full rounded-2xl border-2 border-slate-200 bg-white px-4 py-3.5
+                  pr-10 text-left text-base outline-none transition
+                  focus:border-brand-400 focus:ring-4 focus:ring-brand-100
+                  dark:border-slate-700 dark:bg-slate-900 dark:text-white
+                  dark:focus:ring-brand-900/40
+                "
+              />
+            </div>
+          </div>
+
+          {/* كلمة المرور */}
+          <div>
+            <label className="mb-2 block text-sm font-black text-slate-900 dark:text-white">
+              كلمة المرور
+            </label>
+            <div className="relative">
+              <Lock
+                size={18}
+                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+              />
+              <input
+                type={showPw ? "text" : "password"}
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                placeholder="********"
+                dir="ltr"
+                autoComplete="current-password"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void handleUsernameLogin();
+                }}
+                className="
+                  w-full rounded-2xl border-2 border-slate-200 bg-white px-4 py-3.5
+                  pr-10 pl-10 text-left text-base outline-none transition
+                  focus:border-brand-400 focus:ring-4 focus:ring-brand-100
+                  dark:border-slate-700 dark:bg-slate-900 dark:text-white
+                  dark:focus:ring-brand-900/40
+                "
+              />
+              <button
+                type="button"
+                onClick={() => setShowPw(!showPw)}
+                aria-label={showPw ? "إخفاء" : "إظهار"}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
+
+          {error && (
+            <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-600 dark:bg-rose-950/40 dark:text-rose-300">
+              {error}
+            </p>
+          )}
+
+          <button
+            type="button"
+            onClick={handleUsernameLogin}
+            disabled={usernameLoading}
+            className="
+              w-full rounded-2xl bg-brand-700 py-4 text-base font-black text-white
+              shadow-blue transition active:scale-[0.99] hover:bg-brand-800
+              disabled:cursor-not-allowed disabled:opacity-60
+            "
+          >
+            {usernameLoading ? "جارٍ الدخول..." : "تسجيل الدخول"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setError("");
+              setStep("phone");
+            }}
+            className="block w-full text-center text-sm font-bold text-slate-500 hover:text-slate-700 hover:underline dark:text-slate-400 dark:hover:text-slate-200"
+          >
+            الدخول عبر الهاتف أو Google
+          </button>
+
+          <p className="text-center text-[11px] leading-relaxed text-slate-400">
+            تُنشأ بيانات الدخول هذه عند أول تسجيل عبر Google أو الهاتف.
+          </p>
+        </div>
+      </AuthLayout>
+    );
+  }
+
   if (step === "phone") {
     return (
       <AuthLayout
@@ -403,6 +558,25 @@ export default function LoginClient() {
           >
             <GoogleIcon />
             {googleLoading ? "جارٍ فتح Google..." : "المتابعة باستخدام Google"}
+          </button>
+
+          {/* ============ الدخول باسم المستخدم ============ */}
+          <button
+            type="button"
+            onClick={() => {
+              setError("");
+              setStep("username");
+            }}
+            className="
+              flex w-full items-center justify-center gap-2 rounded-2xl
+              border-2 border-slate-200 bg-white py-3.5 text-sm font-black
+              text-slate-700 transition hover:bg-slate-50 active:scale-[0.99]
+              dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200
+              dark:hover:bg-slate-800
+            "
+          >
+            <UserCircle2 size={18} />
+            الدخول باسم المستخدم وكلمة المرور
           </button>
 
           {/* ============ موافقة قانونية مباشرة تحت أزرار الدخول ============ */}

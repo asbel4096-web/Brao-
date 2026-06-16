@@ -9,6 +9,8 @@ html.dark { color-scheme: dark; }
 html {
   direction: rtl;
   -webkit-tap-highlight-color: transparent;
+  /* حزام أمان Responsive: يمنع أي طفح/تمرير أفقي على كل الأجهزة */
+  overflow-x: hidden;
 }
 body {
   margin: 0;
@@ -16,6 +18,10 @@ body {
   color: #0b1020;
   font-family: "Segoe UI", Tahoma, Arial, Helvetica, sans-serif;
   min-height: 100dvh;
+  /* يمنع تجاوز أي عنصر عرض الشاشة (خاصة في RTL) */
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
 }
 html.dark body {
   background: #0b1020;
@@ -101,3 +107,36 @@ img { max-width: 100%; height: auto; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 .snap-row { scroll-snap-type: x mandatory; }
 .snap-item { scroll-snap-align: center; }
+
+/* ============================================================
+   توحيد الوضع الليلي على كامل المشروع (Global Dark Unification)
+   ------------------------------------------------------------
+   بعض المكوّنات/الصفحات كُتبت بألوان فاتحة ثابتة (bg-white,
+   text-slate-900, border-slate-200...) بدون نسخة dark:، فكانت
+   تبقى فاتحة في الوضع الليلي. هذه الطبقة تعيد تلوين الأسطح والنصوص
+   والحدود "المحايدة" فقط (slate) في الوضع الليلي على مستوى المشروع كله.
+
+   مهم: نستخدم :where(...) ليبقى وزن المحدِّد منخفضاً (وزن .dark فقط)،
+   فأي عنصر يملك نسخة dark: صريحة (مثل dark:bg-slate-900) يفوز دائماً
+   ويحتفظ بتصميمه؛ بينما العناصر بلا نسخة ليلية تُوحَّد تلقائياً.
+   الألوان المُلوّنة (emerald/rose/amber/brand/action/blue) لا تُمَس.
+   ============================================================ */
+
+/* الأسطح */
+html.dark :where(.bg-white) { background-color: #0f172a; }
+html.dark :where(.bg-slate-50) { background-color: #0f172a; }
+html.dark :where(.bg-slate-100) { background-color: #1e293b; }
+html.dark :where(.bg-slate-200) { background-color: #334155; }
+
+/* النصوص */
+html.dark :where(.text-slate-950) { color: #f8fafc; }
+html.dark :where(.text-slate-900) { color: #f1f5f9; }
+html.dark :where(.text-slate-800) { color: #e2e8f0; }
+html.dark :where(.text-slate-700) { color: #cbd5e1; }
+html.dark :where(.text-slate-600) { color: #94a3b8; }
+html.dark :where(.text-slate-500) { color: #94a3b8; }
+
+/* الحدود والفواصل */
+html.dark :where(.border-slate-200) { border-color: #1e293b; }
+html.dark :where(.border-slate-100) { border-color: #172033; }
+html.dark :where(.divide-slate-200) > * + * { border-color: #1e293b; }

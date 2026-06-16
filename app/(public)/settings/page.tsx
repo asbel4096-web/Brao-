@@ -11,6 +11,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/components/confirm-dialog";
 import { PushPermissionBanner } from "@/components/push-permission-banner";
+import { CredentialsManager } from "@/components/settings/credentials-manager";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -81,6 +82,7 @@ export default function SettingsPage() {
             desc="تعديل الاسم والصورة والمعلومات."
             action={<Link href="/profile" className="btn-secondary">فتح</Link>}
           />
+          <CredentialsManager />
           <Row
             icon={Bell}
             title="الإشعارات"

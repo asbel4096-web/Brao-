@@ -5,19 +5,26 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { updateProfile } from "firebase/auth";
-import { Camera } from "lucide-react";
+import { Camera, Eye, EyeOff, Check, X, AtSign, Lock } from "lucide-react";
 import { db, storage, isBootstrapAdminEmail } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { AuthLayout } from "@/components/auth/auth-layout";
+import {
+  normalizeUsername,
+  validateUsername,
+  validatePassword,
+  saveUsernamePassword,
+} from "@/lib/auth-credentials";
 
-type Step = "name" | "photo" | "contact" | "review";
+type Step = "name" | "credentials" | "photo" | "contact" | "review";
 
 const STEPS: { key: Step; n: number; total: number }[] = [
-  { key: "name", n: 1, total: 4 },
-  { key: "photo", n: 2, total: 4 },
-  { key: "contact", n: 3, total: 4 },
-  { key: "review", n: 4, total: 4 },
+  { key: "name", n: 1, total: 5 },
+  { key: "credentials", n: 2, total: 5 },
+  { key: "photo", n: 3, total: 5 },
+  { key: "contact", n: 4, total: 5 },
+  { key: "review", n: 5, total: 5 },
 ];
 
 /**
@@ -56,6 +63,13 @@ function CompleteProfilePageInner() {
 
   const [step, setStep] = useState<Step>("name");
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [usernameStatus, setUsernameStatus] = useState<
+    "idle" | "checking" | "available" | "taken" | "invalid"
+  >("idle");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [bio, setBio] = useState("");
@@ -106,6 +120,35 @@ function CompleteProfilePageInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [photoFile]);
 
+  // فحص توفّر اسم المستخدم (debounced) عبر قراءة usernames/{username}.
+  useEffect(() => {
+    const u = normalizeUsername(username);
+    if (!u) {
+      setUsernameStatus("idle");
+      return;
+    }
+    if (!validateUsername(u).ok) {
+      setUsernameStatus("invalid");
+      return;
+    }
+    setUsernameStatus("checking");
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      try {
+        const snap = await getDoc(doc(db, "usernames", u));
+        if (cancelled) return;
+        const ownedByMe = snap.exists() && snap.data()?.uid === user?.uid;
+        setUsernameStatus(snap.exists() && !ownedByMe ? "taken" : "available");
+      } catch {
+        if (!cancelled) setUsernameStatus("idle");
+      }
+    }, 450);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [username, user?.uid]);
+
   const handlePhotoChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -129,6 +172,26 @@ function CompleteProfilePageInner() {
       toast.warning("اكتب اسمك للمتابعة.");
       return;
     }
+    if (step === "credentials") {
+      const uVal = validateUsername(username);
+      if (!uVal.ok) {
+        toast.warning(uVal.error!);
+        return;
+      }
+      if (usernameStatus === "taken") {
+        toast.warning("اسم المستخدم محجوز. اختر اسماً آخر.");
+        return;
+      }
+      const pVal = validatePassword(password);
+      if (!pVal.ok) {
+        toast.warning(pVal.error!);
+        return;
+      }
+      if (password !== confirmPassword) {
+        toast.warning("كلمتا المرور غير متطابقتين.");
+        return;
+      }
+    }
     const next = STEPS[stepIndex + 1];
     if (next) setStep(next.key);
   };
@@ -148,9 +211,29 @@ function CompleteProfilePageInner() {
       setStep("name");
       return;
     }
+    if (!validateUsername(username).ok || !validatePassword(password).ok) {
+      toast.error("أكمل اسم المستخدم وكلمة المرور.");
+      setStep("credentials");
+      return;
+    }
+    if (password !== confirmPassword) {
+      toast.error("كلمتا المرور غير متطابقتين.");
+      setStep("credentials");
+      return;
+    }
 
     setSaving(true);
     try {
+      // 0) ضبط اسم المستخدم وكلمة المرور (server-side) قبل إكمال الحساب.
+      //    لو فشلت، نوقف ولا نُعلّم الحساب مكتملاً.
+      const credRes = await saveUsernamePassword(username, password);
+      if (!credRes.ok) {
+        toast.error(credRes.error || "تعذّر حفظ اسم المستخدم وكلمة المرور.");
+        setStep("credentials");
+        setSaving(false);
+        return;
+      }
+
       // رفع الصورة لو موجودة
       let finalPhotoURL = photoURL;
       if (photoFile) {
@@ -209,6 +292,8 @@ function CompleteProfilePageInner() {
           {
             uid: user.uid,
             name: trimmedName,
+            username: normalizeUsername(username),
+            usernameSet: true,
             email: trimmedEmail,
             phone: trimmedPhone,
             bio: trimmedBio,
@@ -232,6 +317,8 @@ function CompleteProfilePageInner() {
           userRef,
           {
             name: trimmedName,
+            username: normalizeUsername(username),
+            usernameSet: true,
             email: trimmedEmail,
             phone: trimmedPhone,
             bio: trimmedBio,
@@ -297,6 +384,20 @@ function CompleteProfilePageInner() {
         <StepProgress current={currentStep.n} total={currentStep.total} />
 
         {step === "name" && <StepName name={name} onChange={setName} />}
+
+        {step === "credentials" && (
+          <StepCredentials
+            username={username}
+            setUsername={setUsername}
+            password={password}
+            setPassword={setPassword}
+            confirmPassword={confirmPassword}
+            setConfirmPassword={setConfirmPassword}
+            showPassword={showPassword}
+            setShowPassword={setShowPassword}
+            usernameStatus={usernameStatus}
+          />
+        )}
 
         {step === "photo" && (
           <StepPhoto
@@ -413,6 +514,163 @@ function StepName({
       />
       <p className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
         يظهر للمشترين على إعلاناتك. يمكنك استخدام اسم نشاطك التجاري.
+      </p>
+    </div>
+  );
+}
+
+function StepCredentials({
+  username,
+  setUsername,
+  password,
+  setPassword,
+  confirmPassword,
+  setConfirmPassword,
+  showPassword,
+  setShowPassword,
+  usernameStatus,
+}: {
+  username: string;
+  setUsername: (v: string) => void;
+  password: string;
+  setPassword: (v: string) => void;
+  confirmPassword: string;
+  setConfirmPassword: (v: string) => void;
+  showPassword: boolean;
+  setShowPassword: (v: boolean) => void;
+  usernameStatus: "idle" | "checking" | "available" | "taken" | "invalid";
+}) {
+  const inputBase =
+    "w-full rounded-2xl border-2 border-slate-200 bg-white px-4 py-3.5 text-base outline-none transition focus:border-brand-400 focus:ring-4 focus:ring-brand-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-brand-900/40";
+
+  const pwMatch = confirmPassword.length > 0 && password === confirmPassword;
+  const pwMismatch = confirmPassword.length > 0 && password !== confirmPassword;
+
+  return (
+    <div className="space-y-4">
+      {/* اسم المستخدم */}
+      <div>
+        <label className="mb-2 block text-sm font-black text-slate-900 dark:text-white">
+          اسم المستخدم
+        </label>
+        <div className="relative">
+          <AtSign
+            size={18}
+            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+          />
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value.toLowerCase())}
+            placeholder="bratsho_user"
+            dir="ltr"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            maxLength={20}
+            className={`${inputBase} pr-10 pl-10 text-left`}
+          />
+          <span className="absolute left-3 top-1/2 -translate-y-1/2">
+            {usernameStatus === "checking" && (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-brand-500 block" />
+            )}
+            {usernameStatus === "available" && (
+              <Check size={18} className="text-emerald-500" />
+            )}
+            {(usernameStatus === "taken" || usernameStatus === "invalid") && (
+              <X size={18} className="text-rose-500" />
+            )}
+          </span>
+        </div>
+        <p
+          className={`mt-1.5 text-[11px] ${
+            usernameStatus === "taken" || usernameStatus === "invalid"
+              ? "text-rose-500"
+              : usernameStatus === "available"
+                ? "text-emerald-600 dark:text-emerald-400"
+                : "text-slate-500 dark:text-slate-400"
+          }`}
+        >
+          {usernameStatus === "taken"
+            ? "هذا الاسم محجوز — جرّب اسماً آخر."
+            : usernameStatus === "available"
+              ? "الاسم متاح ✓"
+              : usernameStatus === "invalid"
+                ? "أحرف إنجليزية صغيرة وأرقام و( _ . ) فقط، 3–20 حرفاً."
+                : "أحرف إنجليزية صغيرة وأرقام و( _ . )، 3–20 حرفاً."}
+        </p>
+      </div>
+
+      {/* كلمة المرور */}
+      <div>
+        <label className="mb-2 block text-sm font-black text-slate-900 dark:text-white">
+          كلمة المرور
+        </label>
+        <div className="relative">
+          <Lock
+            size={18}
+            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+          />
+          <input
+            type={showPassword ? "text" : "password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="********"
+            dir="ltr"
+            autoComplete="new-password"
+            className={`${inputBase} pr-10 pl-10 text-left`}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            aria-label={showPassword ? "إخفاء" : "إظهار"}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+          >
+            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        </div>
+        <p className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+          8 أحرف على الأقل، وتحوي حروفاً وأرقاماً.
+        </p>
+      </div>
+
+      {/* تأكيد كلمة المرور */}
+      <div>
+        <label className="mb-2 block text-sm font-black text-slate-900 dark:text-white">
+          تأكيد كلمة المرور
+        </label>
+        <div className="relative">
+          <Lock
+            size={18}
+            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+          />
+          <input
+            type={showPassword ? "text" : "password"}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="********"
+            dir="ltr"
+            autoComplete="new-password"
+            className={`${inputBase} pr-10 pl-10 text-left ${
+              pwMismatch ? "!border-rose-300 dark:!border-rose-800" : ""
+            } ${pwMatch ? "!border-emerald-300 dark:!border-emerald-800" : ""}`}
+          />
+        </div>
+        {pwMismatch && (
+          <p className="mt-1.5 text-[11px] text-rose-500">
+            كلمتا المرور غير متطابقتين.
+          </p>
+        )}
+        {pwMatch && (
+          <p className="mt-1.5 text-[11px] text-emerald-600 dark:text-emerald-400">
+            متطابقتان ✓
+          </p>
+        )}
+      </div>
+
+      <p className="rounded-2xl bg-brand-50 p-3 text-[11px] leading-relaxed text-brand-700 dark:bg-brand-950/40 dark:text-brand-300">
+        💡 ستتمكّن من الدخول من أي جهاز باستخدام اسم المستخدم وكلمة المرور، إضافةً
+        إلى Google والهاتف.
       </p>
     </div>
   );
@@ -721,6 +979,8 @@ function getStepTitle(step: Step): string {
   switch (step) {
     case "name":
       return "ما اسمك؟";
+    case "credentials":
+      return "اسم المستخدم وكلمة المرور";
     case "photo":
       return "أضف صورة لحسابك";
     case "contact":
@@ -734,6 +994,8 @@ function getStepDescription(step: Step): string {
   switch (step) {
     case "name":
       return "هذا الاسم سيظهر على إعلاناتك للمشترين.";
+    case "credentials":
+      return "تتيح لك الدخول من أي جهاز باسم المستخدم وكلمة المرور.";
     case "photo":
       return "اختياري — لكن الصورة تساعد على بناء الثقة.";
     case "contact":

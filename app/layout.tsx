@@ -6,6 +6,7 @@ import { ToastProvider } from "@/contexts/ToastContext";
 import { ConfirmProvider } from "@/components/confirm-dialog";
 import { ReferralFlowProvider } from "@/components/wallet/referral-flow-provider";
 import { SiteHeader } from "@/components/site-header";
+import { GuestGate } from "@/components/guest-gate";
 import BottomNav from "@/components/bottom-nav";
 import { SITE_URL, SITE_NAME, DEFAULT_DESCRIPTION, DEFAULT_OG_IMAGE } from "@/lib/seo";
 
@@ -63,6 +64,10 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
+  // ضروري: يفعّل env(safe-area-inset-*) على آيفون ذي النوتش/Dynamic Island
+  // وأجهزة أندرويد ذات شريط الإيماءات. بدونه تكون كل قيم Safe Area = 0
+  // ولا يعمل تبعيد الهيدر/المعرض/الشريط السفلي عن النوتش.
+  viewportFit: "cover",
 };
 
 const noFlashScript = `
@@ -90,7 +95,9 @@ export default function RootLayout({
               <ConfirmProvider>
                 <ReferralFlowProvider />
                 <SiteHeader />
-                <main className="pb-20 md:pb-12">{children}</main>
+                <main className="pb-20 md:pb-12">
+                  <GuestGate>{children}</GuestGate>
+                </main>
                 <BottomNav />
               </ConfirmProvider>
             </ToastProvider>

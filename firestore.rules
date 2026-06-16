@@ -156,6 +156,8 @@ service cloud.firestore {
                .hasOnly([
                  'name',
                  'displayName',
+                 'username',
+                 'usernameSet',
                  'email',
                  'phone',
                  'photoURL',
@@ -719,6 +721,14 @@ service cloud.firestore {
           resource.data.senderUid == request.auth.uid
           || resource.data.recipientUid == request.auth.uid
         ));
+      allow create, update, delete: if false;
+    }
+
+    // usernames/{username} - حجز أسماء المستخدمين (doc id = اسم المستخدم).
+    //   تُكتب server-side فقط (Admin SDK يتجاوز القواعد). القراءة عامة
+    //   للتحقق من توفّر الاسم قبل الدخول (لا تحوي بيانات حساسة، فقط uid).
+    match /usernames/{username} {
+      allow read: if true;
       allow create, update, delete: if false;
     }
 
