@@ -120,28 +120,50 @@ export default function ChatRoomPage() {
           await updateDoc(chatRef, { [`unreadCount.${user.uid}`]: 0 });
         } catch {/* غير حرج */}
 
-        unsubThread = onSnapshot(chatRef, (s) => {
-          if (s.exists()) setThread({ id: s.id, ...(s.data() as any) });
-        });
+        unsubThread = onSnapshot(
+          chatRef,
+          (s) => {
+            if (s.exists()) setThread({ id: s.id, ...(s.data() as any) });
+          },
+          (err) => {
+            // eslint-disable-next-line no-console
+            console.warn("[chat] thread listener:", (err as any)?.code);
+          }
+        );
 
         const q = query(
           collection(db, "chats", params.chatId, "messages"),
           orderBy("createdAt", "asc")
         );
-        unsubMessages = onSnapshot(q, (qs) => {
-          const arr: ChatMessage[] = qs.docs.map((d) => ({
-            id: d.id,
-            ...(d.data() as any),
-          }));
-          setMessages(arr);
-          setLoading(false);
-          requestAnimationFrame(() => {
-            scrollRef.current?.scrollTo({
-              top: scrollRef.current.scrollHeight,
-              behavior: "smooth",
+        unsubMessages = onSnapshot(
+          q,
+          (qs) => {
+            const arr: ChatMessage[] = qs.docs.map((d) => ({
+              id: d.id,
+              ...(d.data() as any),
+            }));
+            setMessages(arr);
+            setLoading(false);
+            requestAnimationFrame(() => {
+              scrollRef.current?.scrollTo({
+                top: scrollRef.current.scrollHeight,
+                behavior: "smooth",
+              });
             });
-          });
-        });
+          },
+          (err) => {
+            // بدون هذا المعالج كانت الصفحة تبقى عالقة على "جارٍ التحميل"
+            // إلى الأبد عند أي خطأ قراءة (صلاحيات/شبكة) = "لا تفتح المحادثة".
+            // eslint-disable-next-line no-console
+            console.error("[chat] messages listener:", (err as any)?.code);
+            setError(
+              (err as any)?.code === "permission-denied"
+                ? "تعذّر تحميل الرسائل (صلاحيات). تأكّد من نشر قواعد Firestore."
+                : "تعذّر تحميل الرسائل. تحقّق من اتصالك وحاول مجدداً."
+            );
+            setLoading(false);
+          }
+        );
       } catch (err: any) {
         setError(err?.message || "تعذّر فتح المحادثة.");
         setLoading(false);

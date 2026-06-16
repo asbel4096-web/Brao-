@@ -131,7 +131,8 @@ export function CredentialsManager() {
 
       let res = await saveUsernamePassword(
         username,
-        wantsPassword ? password : undefined
+        wantsPassword ? password : undefined,
+        currentPassword || undefined
       );
 
       // جلسة قديمة (لمستخدمي Google غالباً): أكّد عبر نافذة Google ثم أعد المحاولة.
@@ -144,7 +145,8 @@ export function CredentialsManager() {
         }
         res = await saveUsernamePassword(
           username,
-          wantsPassword ? password : undefined
+          wantsPassword ? password : undefined,
+          currentPassword || undefined
         );
       }
 

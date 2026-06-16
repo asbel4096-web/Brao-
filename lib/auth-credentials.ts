@@ -3,6 +3,7 @@ import {
   reauthenticateWithCredential,
   reauthenticateWithPopup,
   EmailAuthProvider,
+  signOut,
 } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 
@@ -129,7 +130,8 @@ export async function reauthenticate(
  */
 export async function saveUsernamePassword(
   username: string,
-  password?: string
+  password?: string,
+  reSignInPassword?: string
 ): Promise<{ ok: boolean; error?: string; needsReauth?: boolean }> {
   const current = auth.currentUser;
   if (!current) return { ok: false, error: "يجب تسجيل الدخول أولاً." };
@@ -166,7 +168,27 @@ export async function saveUsernamePassword(
       }
       return { ok: false, error: data?.error || "تعذّر حفظ بيانات الدخول." };
     }
-    await current.getIdToken(true);
+
+    // مهم جداً: تغيير البريد/كلمة المرور عبر Admin SDK يُبطِل الجلسة الحالية
+    // (auth/user-token-expired). لذلك نعيد تسجيل الدخول فوراً بالبيانات
+    // الجديدة لاستعادة جلسة صالحة، بدل استخدام token مُبطَل.
+    const pwForReSignIn = password || reSignInPassword;
+    if (pwForReSignIn) {
+      try {
+        await signInWithEmailAndPassword(
+          auth,
+          usernameToLoginEmail(username),
+          pwForReSignIn
+        );
+      } catch (e) {
+        // لو فشلت إعادة الدخول التلقائية، نطلب من المستخدم الدخول يدوياً.
+        return {
+          ok: true,
+          error:
+            "تم الحفظ. سجّل الدخول باسم المستخدم وكلمة المرور الجديدين.",
+        };
+      }
+    }
     return { ok: true };
   } catch (err: any) {
     return { ok: false, error: err?.message || "تعذّر الاتصال بالخادم." };
@@ -182,6 +204,15 @@ export async function signInWithUsername(
   if (!uVal.ok) return { ok: false, error: "اسم المستخدم أو كلمة المرور غير صحيحة." };
 
   try {
+    // نظّف أي جلسة سابقة قد تكون مُبطَلة (auth/user-token-expired) قبل
+    // تسجيل دخول جديد، حتى لا تتداخل جلسة ميتة مع الدخول.
+    if (auth.currentUser) {
+      try {
+        await signOut(auth);
+      } catch {
+        /* تجاهل */
+      }
+    }
     await signInWithEmailAndPassword(
       auth,
       usernameToLoginEmail(username),
