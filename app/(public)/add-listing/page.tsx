@@ -135,6 +135,7 @@ const initialState: FormState = {
 
 const MAX_IMAGES = 20;
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+const DRAFT_KEY = "bratsho:addListingDraft";
 const TOTAL_STEPS = 5;
 
 // مواصفات شائعة تُعرض كـchips. القيمة المخزّنة تبقى نص features
@@ -175,6 +176,7 @@ export default function AddListingPage() {
   const [error, setError] = useState("");
   const [step, setStep] = useState(1);
   const [dragOver, setDragOver] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
 
   const topRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -198,6 +200,62 @@ export default function AddListingPage() {
     setPreviews(urls);
     return () => urls.forEach((u) => URL.revokeObjectURL(u));
   }, [images]);
+
+  // استرجاع المسودة المحفوظة (مرّة واحدة عند الفتح). النصوص فقط — الصور
+  // لا يمكن حفظها محلياً، فيُعاد إضافتها.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      const meaningful =
+        saved &&
+        (saved.title || saved.brand || saved.model || saved.description || saved.price);
+      if (meaningful) {
+        setForm((p) => ({ ...p, ...saved }));
+        setDraftRestored(true);
+      }
+    } catch {
+      /* تجاهل */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // حفظ المسودة تلقائياً عند أي تغيير ذي معنى (نصوص فقط).
+  useEffect(() => {
+    if (typeof window === "undefined" || success) return;
+    const hasContent =
+      form.title || form.brand || form.model || form.description || form.price;
+    try {
+      if (hasContent) {
+        window.localStorage.setItem(DRAFT_KEY, JSON.stringify(form));
+      }
+    } catch {
+      /* تجاهل (مساحة ممتلئة/خاص) */
+    }
+  }, [form, success]);
+
+  const clearDraft = () => {
+    try {
+      if (typeof window !== "undefined") window.localStorage.removeItem(DRAFT_KEY);
+    } catch {
+      /* تجاهل */
+    }
+  };
+
+  const startFresh = () => {
+    clearDraft();
+    setForm((p) => ({
+      ...initialState,
+      sellerName: p.sellerName,
+      phone: p.phone,
+      whatsapp: p.whatsapp,
+    }));
+    setImages([]);
+    setStep(1);
+    setDraftRestored(false);
+  };
 
   // Scroll للأعلى عند تغيير الخطوة
   useEffect(() => {
@@ -487,6 +545,7 @@ export default function AddListingPage() {
       });
 
       setSuccess("تم نشر إعلانك بنجاح! سيظهر للعموم بعد مراجعة المشرف.");
+      clearDraft();
       reset();
       setTimeout(() => router.push("/my-listings"), 1500);
     } catch (err: any) {
@@ -588,6 +647,22 @@ export default function AddListingPage() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {draftRestored && !success && (
+          <div className="mb-3 flex items-center gap-2 rounded-2xl border border-brand-200 bg-brand-50 p-3 dark:border-brand-800 dark:bg-brand-900/20">
+            <FileText size={16} className="shrink-0 text-brand-600 dark:text-brand-300" />
+            <p className="flex-1 text-xs font-bold text-brand-800 dark:text-brand-200">
+              تم استرجاع مسودتك السابقة. أعد إضافة الصور قبل النشر.
+            </p>
+            <button
+              type="button"
+              onClick={startFresh}
+              className="shrink-0 rounded-xl bg-white px-3 py-1.5 text-[11px] font-black text-brand-700 ring-1 ring-brand-200 transition hover:bg-brand-50 dark:bg-slate-800 dark:text-brand-300 dark:ring-brand-800"
+            >
+              ابدأ من جديد
+            </button>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <AnimatePresence mode="wait">
@@ -977,6 +1052,58 @@ export default function AddListingPage() {
                         dir="ltr"
                       />
                     </Field>
+                  </div>
+
+                  <div className="mt-2 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700">
+                    <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-800/50">
+                      <CheckCircle size={14} className="text-brand-600 dark:text-brand-300" />
+                      <span className="text-xs font-black text-slate-700 dark:text-slate-200">
+                        مراجعة الإعلان قبل النشر
+                      </span>
+                    </div>
+                    <div className="flex gap-3 p-3">
+                      {previews[0] ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={previews[0]}
+                          alt="غلاف"
+                          className="h-20 w-24 shrink-0 rounded-xl object-cover ring-1 ring-slate-200 dark:ring-slate-700"
+                        />
+                      ) : (
+                        <div className="flex h-20 w-24 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-[10px] font-bold text-amber-600 dark:bg-amber-500/15 dark:text-amber-300">
+                          لا صور
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <p className="line-clamp-1 text-sm font-black text-slate-900 dark:text-white">
+                          {form.title || "بدون عنوان"}
+                        </p>
+                        <p className="line-clamp-1 text-[11px] text-slate-500 dark:text-slate-400">
+                          {[form.brand, form.model, form.year].filter(Boolean).join(" · ") ||
+                            "—"}
+                        </p>
+                        <div className="flex flex-wrap gap-1.5 pt-0.5">
+                          {form.price && (
+                            <span className="rounded-lg bg-emerald-50 px-2 py-0.5 text-[10px] font-black text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+                              {form.price} د.ل
+                            </span>
+                          )}
+                          {form.city && (
+                            <span className="rounded-lg bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                              {form.city}
+                            </span>
+                          )}
+                          {form.mileage && (
+                            <span className="rounded-lg bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                              {form.mileage} كم
+                            </span>
+                          )}
+                          <span className="rounded-lg bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
+                            {previews.length} صورة
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="mt-2 rounded-2xl border border-brand-100 bg-brand-50/50 p-4">
