@@ -51,6 +51,7 @@ const SimilarListings = dynamic(
 );
 
 import type { Listing, UserProfile } from "@/lib/types";
+import { recordRecentlyViewed } from "@/lib/recently-viewed";
 
 export default function ListingDetailsPage() {
   const params = useParams<{ id: string }>();
@@ -85,6 +86,11 @@ export default function ListingDetailsPage() {
 
         setListing(data);
         setLoading(false);
+
+        // سجّل في "شاهدت مؤخراً" (محلياً) — فقط للإعلانات المعتمدة.
+        if ((data as any).status === "approved") {
+          recordRecentlyViewed(data.id);
+        }
 
         try {
           await updateDoc(ref, { views: increment(1) });

@@ -11,6 +11,7 @@ import { DynamicCategorySections } from "@/components/home-sections/dynamic-cate
 import { MostSavedSection } from "@/components/most-saved-section";
 import { MostViewedSection } from "@/components/most-viewed-section";
 import { PlatformStats } from "@/components/platform-stats";
+import { RecentlyViewedSection } from "@/components/recently-viewed-section";
 import { SearchHero } from "@/components/search-hero";
 import { SiteFooter } from "@/components/site-footer";
 import { SponsoredSpotlight } from "@/components/sponsored-spotlight";
@@ -63,6 +64,9 @@ export default function HomePage() {
 
       {/* إعلان ممول — Sponsored Spotlight أعلى النتائج مباشرة */}
       {mounted && <SponsoredSpotlight />}
+
+      {/* شاهدت مؤخراً — يظهر فقط لمن لديه مشاهدات سابقة */}
+      {mounted && <RecentlyViewedSection />}
 
 
       {/* 2. قصص المعارض */}
