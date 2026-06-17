@@ -22,6 +22,7 @@ import {
   MapPin,
   Pencil,
   Plus,
+  Search,
   Tag,
   Trash2,
 } from "lucide-react";
@@ -107,9 +108,15 @@ export default function AlertsListPage() {
 
   if (authLoading || loading) {
     return (
-      <section className="container py-10">
-        <div className="card mx-auto max-w-md p-8 text-center text-slate-500">
-          جارٍ التحميل...
+      <section className="container py-4 pb-28 sm:py-8">
+        <div className="mx-auto max-w-3xl space-y-4">
+          <div className="h-40 animate-pulse rounded-3xl bg-slate-200 dark:bg-slate-800" />
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="h-44 animate-pulse rounded-3xl bg-slate-200 dark:bg-slate-800"
+            />
+          ))}
         </div>
       </section>
     );
@@ -296,7 +303,15 @@ function AlertCard({
         </div>
       )}
 
-      <div className="mt-3 flex gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+      <Link
+        href={buildMatchesHref(alert)}
+        className="mt-3 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-2xl bg-brand-700 text-xs font-black text-white shadow-blue transition active:scale-[0.98] hover:bg-brand-600"
+      >
+        <Search size={14} />
+        عرض السيارات المطابقة
+      </Link>
+
+      <div className="mt-2 flex gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
         <button
           type="button"
           onClick={onToggle}
@@ -341,4 +356,16 @@ function describeAlert(a: SearchAlert): string {
   if (a.city) parts.push(`في ${a.city}`);
   if (parts.length === 0) return "تنبيه بحث";
   return parts.join(" ");
+}
+
+/** يبني رابط صفحة الإعلانات مفلتراً بمعايير التنبيه (لعرض المطابق فوراً). */
+function buildMatchesHref(a: SearchAlert): string {
+  const sp = new URLSearchParams();
+  const q = [a.brand, a.model].filter(Boolean).join(" ").trim();
+  if (q) sp.set("q", q);
+  if (a.city) sp.set("city", a.city);
+  if (a.priceFrom != null) sp.set("min", String(a.priceFrom));
+  if (a.priceTo != null) sp.set("max", String(a.priceTo));
+  const qs = sp.toString();
+  return qs ? `/listings?${qs}` : "/listings";
 }
