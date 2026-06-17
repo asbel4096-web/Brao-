@@ -34,6 +34,8 @@ import {
   formatRemainingDays,
 } from "@/lib/wallet/boost";
 import { formatBC } from "@/lib/wallet/types";
+import { usePromoPricing } from "@/hooks/wallet/use-promo-pricing";
+import type { PromoServiceKey } from "@/lib/wallet/promo-pricing";
 
 /**
  * BoostSheet - bottom sheet لشراء خدمات boost لإعلان معيّن.
@@ -75,6 +77,11 @@ export function BoostSheet({
   const { balance } = useWallet();
   const toast = useToast();
   const confirm = useConfirm();
+  const { pricing } = usePromoPricing();
+
+  // السعر الفعّال للعرض (السيرفر يتحقّق منه مجدداً عند الشراء).
+  const priceOf = (s: { key: string; price: number }) =>
+    pricing[s.key as PromoServiceKey] ?? s.price;
   const [buying, setBuying] = useState<BoostServiceKey | null>(null);
   const [topupOpen, setTopupOpen] = useState(false);
 
@@ -105,9 +112,9 @@ export function BoostSheet({
 
   const handlePurchase = async (serviceKey: BoostServiceKey) => {
     const service = BOOST_SERVICES[serviceKey];
-    if (balance < service.price) {
+    if (balance < priceOf(service)) {
       toast.warning(
-        `الرصيد غير كافٍ. تحتاج ${service.price - balance} BC إضافية`
+        `الرصيد غير كافٍ. تحتاج ${priceOf(service) - balance} BC إضافية`
       );
       setTopupOpen(true);
       return;
@@ -124,8 +131,8 @@ export function BoostSheet({
         ? `تمديد ${service.label}؟`
         : `شراء ${service.label}؟`,
       message: isExtension
-        ? `سيتم خصم ${formatBC(service.price)} وتمديد المدة ${service.durationDays} أيام إضافية.`
-        : `سيتم خصم ${formatBC(service.price)} من رصيدك.`,
+        ? `سيتم خصم ${formatBC(priceOf(service))} وتمديد المدة ${service.durationDays} أيام إضافية.`
+        : `سيتم خصم ${formatBC(priceOf(service))} من رصيدك.`,
       confirmLabel: "تأكيد الشراء",
       tone: "info",
     });
@@ -273,7 +280,7 @@ export function BoostSheet({
                 {ALL_BOOST_SERVICES.map((service) => {
                   const Icon = SERVICE_ICONS[service.key];
                   const available = isServiceAvailable(service.key);
-                  const canAfford = balance >= service.price;
+                  const canAfford = balance >= priceOf(service);
                   const busy = buying === service.key;
 
                   const isExtension =
@@ -310,7 +317,7 @@ export function BoostSheet({
 
                         <div className="text-end">
                           <p className="text-base font-black tabular-nums text-white">
-                            {service.price}
+                            {priceOf(service)}
                           </p>
                           <p className="text-[9px] font-bold text-slate-500">BC</p>
                         </div>

@@ -7,6 +7,10 @@ import {
 } from "@/lib/admin/api-helpers";
 import { getAuth } from "firebase-admin/auth";
 import { BOOST_SERVICES, type BoostServiceKey } from "@/lib/wallet/boost";
+import {
+  sanitizePromoPricing,
+  type PromoServiceKey,
+} from "@/lib/wallet/promo-pricing";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -87,6 +91,20 @@ export async function POST(request: Request) {
     );
   }
 
+  // السعر الفعّال (قابل للتعديل من لوحة الأدمن) — السيرفر مصدر الحقيقة.
+  // العميل لا يُرسل السعر مطلقاً؛ نقرؤه من config/app.promoPricing مع
+  // التحقّق والرجوع للقيمة الافتراضية عند أي قيمة غير سليمة.
+  let chargePrice = service.price;
+  try {
+    const cfgSnap = await fs.collection("config").doc("app").get();
+    const effective = sanitizePromoPricing(
+      cfgSnap.exists ? cfgSnap.data()?.promoPricing : null
+    );
+    chargePrice = effective[serviceKey as PromoServiceKey] ?? service.price;
+  } catch {
+    chargePrice = service.price;
+  }
+
   // Transaction
   const userRef = fs.collection("users").doc(uid);
   const listingRef = fs.collection("listings").doc(listingId);
@@ -130,18 +148,18 @@ export async function POST(request: Request) {
 
       // فحص الرصيد
       const currentBalance = Number(userData.balance) || 0;
-      if (currentBalance < service.price) {
+      if (currentBalance < chargePrice) {
         throw new Error(
-          `الرصيد غير كافٍ. الحالي: ${currentBalance} BC، المطلوب: ${service.price} BC`
+          `الرصيد غير كافٍ. الحالي: ${currentBalance} BC، المطلوب: ${chargePrice} BC`
         );
       }
 
-      const newBalance = currentBalance - service.price;
+      const newBalance = currentBalance - chargePrice;
 
       // كتابة المعاملة
       tx.set(txRef, {
         userId: uid,
-        amount: -service.price,
+        amount: -chargePrice,
         type:
           serviceKey === "featured"
             ? "featured_listing"

@@ -171,6 +171,12 @@ const NAV_GROUPS: NavGroup[] = [
         permission: "features.toggle",
       },
       {
+        href: "/admin/pricing",
+        label: "أسعار الباقات",
+        Icon: Tag,
+        permission: "features.toggle",
+      },
+      {
         href: "/admin/wallet",
         label: "إدارة المحافظ",
         Icon: WalletIcon,
