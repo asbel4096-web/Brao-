@@ -72,6 +72,8 @@ export default function ChatRoomPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState("");
+  const [otherTyping, setOtherTyping] = useState(false);
+  const typingWriteRef = useRef(0);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const [recording, setRecording] = useState(false);
@@ -117,7 +119,10 @@ export default function ChatRoomPage() {
         setThread(data);
 
         try {
-          await updateDoc(chatRef, { [`unreadCount.${user.uid}`]: 0 });
+          await updateDoc(chatRef, {
+            [`unreadCount.${user.uid}`]: 0,
+            [`lastReadAt.${user.uid}`]: serverTimestamp(),
+          });
         } catch {/* غير حرج */}
 
         unsubThread = onSnapshot(
@@ -200,8 +205,56 @@ export default function ChatRoomPage() {
   }, [thread, user]);
 
   /* ----------------------------------------------------------
-   * Helper موحَّد لإنشاء رسالة
+   * مؤشّر "يكتب الآن": نراقب typingAt للطرف الآخر في وثيقة المحادثة.
+   * نعدّه فعّالاً إذا كان خلال آخر 6 ثوانٍ، ونُخفيه تلقائياً بعدها.
    * ---------------------------------------------------------- */
+  useEffect(() => {
+    if (!thread || !user) {
+      setOtherTyping(false);
+      return;
+    }
+    const otherUid = thread.participants.find((p) => p !== user.uid);
+    if (!otherUid) return;
+    const ms = (thread as any).typingAt?.[otherUid]?.toMillis?.() || 0;
+    const fresh = ms > 0 && Date.now() - ms < 6000;
+    setOtherTyping(fresh);
+    if (fresh) {
+      const t = setTimeout(() => setOtherTyping(false), 6000 - (Date.now() - ms));
+      return () => clearTimeout(t);
+    }
+  }, [thread, user]);
+
+  /* ----------------------------------------------------------
+   * تحديث "آخر قراءة" عند وصول رسائل جديدة من الطرف الآخر والمحادثة
+   * مفتوحة → يرى المُرسِل إيصال ✓✓ مباشرةً.
+   * ---------------------------------------------------------- */
+  useEffect(() => {
+    if (!user || messages.length === 0) return;
+    const last = messages[messages.length - 1];
+    if (last.senderId === user.uid) return; // آخر رسالة منّي، لا حاجة
+    updateDoc(doc(db, "chats", params.chatId), {
+      [`lastReadAt.${user.uid}`]: serverTimestamp(),
+    }).catch(() => {});
+  }, [messages, user, params.chatId]);
+
+  // مؤشّر الكتابة: كتابة/مسح typingAt الخاص بي (مع throttle).
+  const pingTyping = () => {
+    if (!user) return;
+    const now = Date.now();
+    if (now - typingWriteRef.current < 2500) return;
+    typingWriteRef.current = now;
+    updateDoc(doc(db, "chats", params.chatId), {
+      [`typingAt.${user.uid}`]: serverTimestamp(),
+    }).catch(() => {});
+  };
+  const stopTyping = () => {
+    if (!user) return;
+    typingWriteRef.current = 0;
+    updateDoc(doc(db, "chats", params.chatId), {
+      [`typingAt.${user.uid}`]: null,
+    }).catch(() => {});
+  };
+
   const writeMessage = async (
     payload: Partial<ChatMessage> & {
       kind: ChatMessageKind;
@@ -316,6 +369,7 @@ export default function ChatRoomPage() {
       });
       setText("");
       setReplyTarget(null);
+      stopTyping();
     } catch (err: any) {
       toast.error(err?.message || "تعذّر إرسال الرسالة.");
     } finally {
@@ -569,6 +623,13 @@ export default function ChatRoomPage() {
   // حالة النشاط: "متصل الآن" / "آخر ظهور منذ ..." / "غير متصل"
   const statusLabel = onlineShortLabel(otherProfile);
 
+  // وقت آخر قراءة للطرف الآخر (لإيصالات ✓✓).
+  const otherUidForReceipt = thread?.participants.find((p) => p !== user?.uid);
+  const otherReadMs =
+    (otherUidForReceipt &&
+      (thread as any)?.lastReadAt?.[otherUidForReceipt]?.toMillis?.()) ||
+    0;
+
   return (
     <section className="container py-2 sm:py-4">
       <div className="mx-auto flex max-w-3xl flex-col h-[calc(100dvh-120px)] sm:h-[calc(100dvh-140px)]">
@@ -616,12 +677,14 @@ export default function ChatRoomPage() {
               <p
                 className={cn(
                   "truncate text-[11px] font-bold",
-                  statusLabel === "متصل الآن"
-                    ? "text-emerald-600 dark:text-emerald-400"
-                    : "text-slate-500 dark:text-slate-400"
+                  otherTyping
+                    ? "text-brand-600 dark:text-brand-300"
+                    : statusLabel === "متصل الآن"
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : "text-slate-500 dark:text-slate-400"
                 )}
               >
-                {statusLabel}
+                {otherTyping ? "يكتب الآن…" : statusLabel}
               </p>
             </div>
           </Link>
@@ -717,6 +780,11 @@ export default function ChatRoomPage() {
                         mine={mine}
                         isFirstOfRun={isFirstOfRun}
                         myUid={user.uid}
+                        seen={
+                          mine &&
+                          !!m.createdAt?.toMillis &&
+                          m.createdAt.toMillis() <= otherReadMs
+                        }
                         onLongPress={setActionSheetMsg}
                         onToggleReaction={handleToggleReaction}
                       />
@@ -726,6 +794,8 @@ export default function ChatRoomPage() {
               ))}
             </div>
           )}
+
+          {otherTyping && <TypingBubble />}
         </div>
 
         {/* ================ Quick replies ================ */}
@@ -808,7 +878,10 @@ export default function ChatRoomPage() {
                   <input
                     type="text"
                     value={text}
-                    onChange={(e) => setText(e.target.value)}
+                    onChange={(e) => {
+                      setText(e.target.value);
+                      if (e.target.value.trim()) pingTyping();
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
@@ -1164,6 +1237,19 @@ function ProfilePreviewCard({
           </span>
         </Link>
       )}
+    </div>
+  );
+}
+
+/** فقاعة "يكتب الآن" بنقاط متحركة (مثل التطبيقات الكبيرة). */
+function TypingBubble() {
+  return (
+    <div className="flex justify-end" dir="rtl">
+      <div className="mt-1 flex items-center gap-1 rounded-2xl rounded-tr-sm bg-white px-3.5 py-3 shadow-sm ring-1 ring-slate-100 dark:bg-slate-800 dark:ring-slate-700">
+        <span className="h-2 w-2 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.3s]" />
+        <span className="h-2 w-2 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.15s]" />
+        <span className="h-2 w-2 animate-bounce rounded-full bg-slate-400" />
+      </div>
     </div>
   );
 }

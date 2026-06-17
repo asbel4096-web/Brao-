@@ -1,6 +1,6 @@
 "use client";
 
-import { CornerDownLeft, Heart, Pause, Play } from "lucide-react";
+import { Check, CheckCheck, CornerDownLeft, Heart, Pause, Play } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { ChatMessage } from "@/lib/types";
 import { timeAgo } from "@/lib/utils";
@@ -11,6 +11,8 @@ interface Props {
   mine: boolean;
   isFirstOfRun: boolean;
   myUid: string;
+  /** هل قرأ الطرف الآخر هذه الرسالة؟ (لإيصال ✓✓) — للرسائل الخاصة بي فقط. */
+  seen?: boolean;
   /** نقر مطوّل: نطلب من الأب فتح قائمة Reply/React. */
   onLongPress?: (message: ChatMessage) => void;
   /** نقر مزدوج أو نقر شارة القلب: تبديل التفاعل. */
@@ -26,6 +28,7 @@ export function ChatMessageBubble({
   mine,
   isFirstOfRun,
   myUid,
+  seen,
   onLongPress,
   onToggleReaction,
 }: Props) {
@@ -121,12 +124,18 @@ export function ChatMessageBubble({
 
           <div
             className={cn(
-              "mt-1 text-[10px]",
+              "mt-1 flex items-center gap-1 text-[10px]",
               (kind === "image" || kind === "video") && "px-2 pb-1",
               mine ? "text-white/70" : "text-slate-500 dark:text-slate-400"
             )}
           >
-            {timeAgo(message.createdAt)}
+            <span>{timeAgo(message.createdAt)}</span>
+            {mine &&
+              (seen ? (
+                <CheckCheck size={13} className="text-sky-300" />
+              ) : (
+                <Check size={13} className="text-white/55" />
+              ))}
           </div>
         </div>
 
