@@ -150,12 +150,12 @@ export function TransactionsSection({ onViewAll }: Props) {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.2 }}
-      className="rounded-[24px] bg-white p-4 shadow-sm ring-1 ring-slate-100"
+      className="rounded-[24px] bg-white p-4 shadow-sm ring-1 ring-slate-100 dark:bg-slate-900 dark:ring-slate-800"
       dir="rtl"
     >
       {/* Header */}
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-black text-slate-900">
+        <h2 className="text-sm font-black text-slate-900 dark:text-white">
           آخر العمليات
         </h2>
         {transactions.length > 0 && (
@@ -164,7 +164,7 @@ export function TransactionsSection({ onViewAll }: Props) {
             onClick={onViewAll}
             className="
               inline-flex items-center gap-0.5 text-[12px] font-black
-              text-blue-600 hover:text-blue-700
+              text-brand-600 hover:text-brand-700 dark:text-brand-300
             "
           >
             عرض الكل
@@ -251,7 +251,7 @@ function TransactionRow({ tx }: { tx: any }) {
 
       {/* Title + meta */}
       <div className="min-w-0 flex-1 text-end">
-        <p className="truncate text-[13px] font-black text-slate-900">
+        <p className="truncate text-[13px] font-black text-slate-900 dark:text-white">
           {meta.label}
         </p>
         <p className="mt-0.5 truncate text-[10px] text-slate-500">

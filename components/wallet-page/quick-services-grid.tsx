@@ -61,16 +61,16 @@ export function QuickServicesGrid({
       key: "topup",
       label: "شحن رصيد",
       icon: Send,
-      bgClass: "bg-blue-50",
-      iconClass: "text-blue-600",
+      bgClass: "bg-action-50 dark:bg-action-500/15",
+      iconClass: "text-action-600 dark:text-action-300",
       action: onTopup,
     },
     {
       key: "referrals",
       label: "دعوة صديق",
       icon: UserPlus,
-      bgClass: "bg-orange-50",
-      iconClass: "text-orange-600",
+      bgClass: "bg-brand-50 dark:bg-brand-500/15",
+      iconClass: "text-brand-600 dark:text-brand-300",
       action: onReferrals,
       disabled: !referralsEnabled,
     },
@@ -78,32 +78,32 @@ export function QuickServicesGrid({
       key: "transfer",
       label: "تحويل رصيد",
       icon: Zap,
-      bgClass: "bg-emerald-50",
-      iconClass: "text-emerald-600",
+      bgClass: "bg-emerald-50 dark:bg-emerald-500/15",
+      iconClass: "text-emerald-600 dark:text-emerald-300",
       action: () => onTransfer?.(),
     },
     {
       key: "rewards",
       label: "المكافآت",
       icon: Gift,
-      bgClass: "bg-purple-50",
-      iconClass: "text-purple-600",
+      bgClass: "bg-amber-50 dark:bg-amber-500/15",
+      iconClass: "text-amber-600 dark:text-amber-300",
       action: onRewards,
     },
     {
       key: "verification",
       label: "توثيق معرض",
       icon: ShieldCheck,
-      bgClass: "bg-blue-50",
-      iconClass: "text-blue-600",
+      bgClass: "bg-brand-50 dark:bg-brand-500/15",
+      iconClass: "text-brand-600 dark:text-brand-300",
       action: onVerification,
     },
     {
       key: "settings",
       label: "الإعدادات",
       icon: Settings,
-      bgClass: "bg-slate-100",
-      iconClass: "text-slate-600",
+      bgClass: "bg-slate-100 dark:bg-slate-800",
+      iconClass: "text-slate-600 dark:text-slate-300",
       action: () => onSettings?.() || router.push("/profile"),
     },
   ];
@@ -113,13 +113,13 @@ export function QuickServicesGrid({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.1 }}
-      className="rounded-[24px] bg-white p-4 shadow-sm ring-1 ring-slate-100"
+      className="rounded-[24px] bg-white p-4 shadow-sm ring-1 ring-slate-100 dark:bg-slate-900 dark:ring-slate-800"
       dir="rtl"
     >
       {/* Header */}
       <div className="mb-4 flex items-center gap-2">
-        <Zap size={16} className="text-blue-600" />
-        <h2 className="text-sm font-black text-slate-900">
+        <Zap size={16} className="text-action-500" />
+        <h2 className="text-sm font-black text-slate-900 dark:text-white">
           الخدمات السريعة
         </h2>
       </div>
@@ -160,7 +160,7 @@ function ServiceButton({
       <div
         className={`
           relative flex h-14 w-14 items-center justify-center
-          rounded-full ${service.bgClass}
+          rounded-2xl ${service.bgClass}
           shadow-sm transition-shadow
         `}
       >
@@ -178,7 +178,7 @@ function ServiceButton({
       </div>
 
       {/* Label */}
-      <span className="text-[11px] font-bold text-slate-700 leading-tight">
+      <span className="text-[11px] font-bold text-slate-700 leading-tight dark:text-slate-300">
         {service.label}
       </span>
     </motion.button>

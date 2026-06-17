@@ -68,7 +68,7 @@ export default function WalletPage() {
   if (loading || !user || !profile) {
     return (
       <div className="flex h-[70vh] items-center justify-center">
-        <Loader2 size={28} className="animate-spin text-blue-500" />
+        <Loader2 size={28} className="animate-spin text-brand-500" />
       </div>
     );
   }
@@ -77,8 +77,8 @@ export default function WalletPage() {
   if (!walletEnabled) {
     return (
       <section className="container py-6" dir="rtl">
-        <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center">
-          <p className="text-base font-black text-slate-700">
+        <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center dark:border-slate-800 dark:bg-slate-900">
+          <p className="text-base font-black text-slate-700 dark:text-white">
             نظام المحفظة غير مفعَّل حالياً
           </p>
           <p className="mt-1 text-[12px] text-slate-500">
@@ -178,7 +178,7 @@ function PageHeader() {
           href="/profile"
           className="
             relative h-11 w-11 overflow-hidden rounded-full
-            bg-gradient-to-br from-blue-600 to-blue-800
+            bg-gradient-to-br from-[#0a1d55] to-[#1c389c]
             ring-2 ring-white shadow-sm
           "
         >
@@ -197,7 +197,7 @@ function PageHeader() {
           " />
         </Link>
         <div>
-          <h1 className="text-sm font-black text-slate-900">
+          <h1 className="text-sm font-black text-slate-900 dark:text-white">
             {businessName}
           </h1>
           <p className="text-[10px] font-bold text-orange-600">
