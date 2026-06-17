@@ -69,17 +69,17 @@ export function ActiveVerificationCard({ onRenew }: ActiveCardProps) {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.4 }}
-      className="rounded-[24px] bg-white p-4 shadow-sm ring-1 ring-slate-100"
+      className="rounded-[24px] bg-white p-4 shadow-sm ring-1 ring-slate-100 dark:bg-slate-900 dark:ring-slate-800"
       dir="rtl"
     >
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-black text-slate-900">
+        <h2 className="text-sm font-black text-slate-900 dark:text-white">
           توثيق المعرض النشط
         </h2>
         <span
           className="
             inline-flex items-center gap-1 rounded-full
-            bg-emerald-50 px-2.5 py-0.5 text-[10px] font-black text-emerald-700
+            bg-emerald-50 px-2.5 py-0.5 text-[10px] font-black text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300
           "
         >
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -87,10 +87,10 @@ export function ActiveVerificationCard({ onRenew }: ActiveCardProps) {
         </span>
       </div>
 
-      <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-3">
+      <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-800/40">
         <div className="flex items-center gap-3">
           {/* Logo */}
-          <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-white ring-1 ring-slate-200">
+          <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-white ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700">
             {(profile as any)?.dealerLogo || (profile as any)?.photoURL ? (
               <Image
                 src={(profile as any).dealerLogo || (profile as any).photoURL}
@@ -100,7 +100,7 @@ export function ActiveVerificationCard({ onRenew }: ActiveCardProps) {
                 sizes="48px"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-600 to-blue-800 text-sm font-black text-white">
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#0a1d55] to-[#1c389c] text-sm font-black text-white">
                 {dealerName.charAt(0).toUpperCase()}
               </div>
             )}
@@ -109,19 +109,19 @@ export function ActiveVerificationCard({ onRenew }: ActiveCardProps) {
           {/* Info */}
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1">
-              <p className="truncate text-[13px] font-black text-slate-900">
+              <p className="truncate text-[13px] font-black text-slate-900 dark:text-white">
                 {dealerName}
               </p>
               <BadgeCheck
                 size={13}
-                className="shrink-0 text-blue-600"
+                className="shrink-0 text-brand-600 dark:text-brand-300"
                 strokeWidth={2.5}
               />
             </div>
-            <p className="mt-0.5 text-[11px] text-slate-500">
-              الخطة: <span className="font-black text-blue-600">{planLabel[plan] || plan}</span>
+            <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+              الخطة: <span className="font-black text-brand-600 dark:text-brand-300">{planLabel[plan] || plan}</span>
             </p>
-            <p className="mt-0.5 text-[11px] font-black text-emerald-600">
+            <p className="mt-0.5 text-[11px] font-black text-emerald-600 dark:text-emerald-400">
               ينتهي في {daysRemaining} يوم
             </p>
           </div>
@@ -129,15 +129,15 @@ export function ActiveVerificationCard({ onRenew }: ActiveCardProps) {
 
         {/* Progress bar */}
         <div className="mt-3">
-          <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
+          <div className="h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.8, ease: "easeOut" }}
-              className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-700"
+              className="h-full rounded-full bg-gradient-to-r from-brand-500 to-brand-700"
             />
           </div>
-          <div className="mt-1.5 flex items-center justify-between text-[10px] text-slate-500">
+          <div className="mt-1.5 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400">
             <span>{daysRemaining} يوم متبقية</span>
             <span>من {planDurationDays} يوم</span>
           </div>
@@ -150,9 +150,9 @@ export function ActiveVerificationCard({ onRenew }: ActiveCardProps) {
           whileTap={{ scale: 0.97 }}
           className="
             mt-3 inline-flex w-full items-center justify-center gap-1.5
-            rounded-2xl border border-blue-200 bg-blue-50 py-2.5
-            text-[12px] font-black text-blue-700
-            transition hover:bg-blue-100
+            rounded-2xl border border-brand-200 bg-brand-50 py-2.5
+            text-[12px] font-black text-brand-700
+            transition hover:bg-brand-100 dark:border-brand-800 dark:bg-brand-500/15 dark:text-brand-300 dark:hover:bg-brand-500/25
           "
         >
           <Sparkles size={12} />
@@ -182,8 +182,8 @@ export function VerificationBanner({ onStart }: BannerProps) {
       transition={{ duration: 0.3, delay: 0.5 }}
       className="
         relative overflow-hidden rounded-[24px]
-        bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800
-        p-5 shadow-xl shadow-blue-500/20
+        bg-gradient-to-br from-[#071133] via-[#0a1d55] to-[#1c389c]
+        p-5 shadow-blue
       "
       dir="rtl"
     >
@@ -205,7 +205,7 @@ export function VerificationBanner({ onStart }: BannerProps) {
           <h3 className="text-base font-black text-white">
             وثّق معرضك الآن
           </h3>
-          <p className="mt-0.5 text-[11px] leading-5 text-blue-100">
+          <p className="mt-0.5 text-[11px] leading-5 text-white/70">
             احصل على الثقة، وظهر ضمن معارض السيارات الموثوقة
           </p>
         </div>
@@ -217,8 +217,8 @@ export function VerificationBanner({ onStart }: BannerProps) {
         whileTap={{ scale: 0.97 }}
         className="
           mt-4 inline-flex w-full items-center justify-center gap-1.5
-          rounded-2xl bg-white py-3 text-sm font-black text-blue-700
-          shadow-lg transition hover:shadow-xl
+          rounded-2xl bg-action-500 py-3 text-sm font-black text-white
+          shadow-action transition hover:bg-action-600
         "
       >
         ابدأ التوثيق
