@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import {
   Car,
   Bus,
@@ -24,6 +25,7 @@ import {
 } from "lucide-react";
 import { categories, type CategoryDef } from "@/lib/categories";
 import { useCategoryCounts } from "@/hooks/useCategoryCounts";
+import { useCategoryImages } from "@/hooks/useCategoryImages";
 import { formatNumber } from "@/lib/utils";
 
 /**
@@ -69,6 +71,7 @@ const GROUP_STYLE: Record<
 
 export function ExploreCategories() {
   const counts = useCategoryCounts();
+  const images = useCategoryImages();
 
   return (
     <section
@@ -109,6 +112,7 @@ export function ExploreCategories() {
                 key={cat.slug}
                 cat={cat}
                 count={counts[cat.name]}
+                image={images[cat.slug]}
               />
             ))}
           </div>
@@ -121,9 +125,11 @@ export function ExploreCategories() {
 function CategoryCard({
   cat,
   count,
+  image,
 }: {
   cat: CategoryDef;
   count: number | undefined;
+  image?: string;
 }) {
   const Icon = ICON_MAP[cat.icon] || LayoutGrid;
   const style = GROUP_STYLE[cat.group];
@@ -139,11 +145,23 @@ function CategoryCard({
         dark:border-slate-800 dark:bg-slate-900 dark:hover:border-brand-700
       "
     >
-      <span
-        className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${style.iconWrap}`}
-      >
-        <Icon size={19} strokeWidth={2.2} aria-hidden="true" />
-      </span>
+      {image ? (
+        <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-xl ring-1 ring-slate-100 dark:ring-slate-800">
+          <Image
+            src={image}
+            alt={cat.name}
+            fill
+            sizes="40px"
+            className="object-cover"
+          />
+        </span>
+      ) : (
+        <span
+          className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${style.iconWrap}`}
+        >
+          <Icon size={19} strokeWidth={2.2} aria-hidden="true" />
+        </span>
+      )}
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[13px] font-black leading-tight text-slate-900 dark:text-white">
           {cat.name}
