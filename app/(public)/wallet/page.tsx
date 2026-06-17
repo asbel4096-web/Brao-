@@ -121,14 +121,9 @@ export default function WalletPage() {
             onViewAll={() => router.push("/wallet/transactions")}
           />
 
-          {/* 4. BC Services Cards */}
+          {/* 4. باقات الترقية (بأسعار ديناميكية) */}
           <div id="bc-services-section" className="scroll-mt-4">
-            <BCServicesSection
-              onFeatured={() => router.push("/my-listings")}
-              onBoost={() => router.push("/my-listings")}
-              onStrongBoost={() => router.push("/my-listings")}
-              onVerification={() => setPlansOpen(true)}
-            />
+            <BCServicesSection onChoose={() => router.push("/my-listings")} />
           </div>
 
           {/* 5a. Active Verification Card (للموثقين) */}

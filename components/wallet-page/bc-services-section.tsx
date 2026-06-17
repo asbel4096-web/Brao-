@@ -1,93 +1,57 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ChevronLeft, Rocket, ShieldCheck, Sparkles, Zap } from "lucide-react";
+import { ChevronLeft, Rocket, Crown, Sparkles, Zap, type LucideIcon } from "lucide-react";
+import { usePromoPricing } from "@/hooks/wallet/use-promo-pricing";
+import {
+  PROMO_KEYS,
+  PROMO_META,
+  type PromoServiceKey,
+} from "@/lib/wallet/promo-pricing";
 
 /**
- * قسم "خدمات BC" - كروت كبيرة قابلة للشراء.
+ * قسم "باقات الترقية" — الباقات الحقيقية بالأسعار الديناميكية.
  *
- * 4 خدمات:
- *  - إعلان مميز (150 BC / أسبوع)
- *  - رفع إعلان للأعلى (25 BC)
- *  - ظهور أقوى (80 BC)
- *  - توثيق معرض (200 BC / شهر)
+ * يعرض الباقات الأربع (مميّز/مموّل/VIP/عاجل) بأسعارها الفعّالة (المُدارة
+ * من لوحة الأدمن عبر usePromoPricing). الضغط على أي باقة يأخذ المستخدم
+ * لاختيار إعلان لتطبيقها عليه (حيث تتم العملية الفعلية في boost-sheet).
  */
 
 interface Props {
-  onFeatured: () => void;
-  onBoost: () => void;
-  onStrongBoost: () => void;
-  onVerification: () => void;
+  /** يُستدعى عند اختيار أي باقة — عادةً ينتقل إلى "إعلاناتي". */
+  onChoose: (key: PromoServiceKey) => void;
 }
 
-interface ServiceCard {
-  key: string;
-  title: string;
-  description: string;
-  price: number;
-  duration?: string;
-  icon: any;
-  gradient: string;
-  iconBg: string;
-  iconColor: string;
-  action: () => void;
-}
+const CARD_STYLE: Record<
+  PromoServiceKey,
+  { icon: LucideIcon; gradient: string; priceColor: string; badge?: string }
+> = {
+  featured: {
+    icon: Sparkles,
+    gradient: "from-brand-500 to-brand-700",
+    priceColor: "text-brand-600 dark:text-brand-300",
+  },
+  boost: {
+    icon: Rocket,
+    gradient: "from-action-500 to-action-600",
+    priceColor: "text-action-600 dark:text-action-300",
+    badge: "الأكثر طلباً",
+  },
+  vip: {
+    icon: Crown,
+    gradient: "from-amber-400 to-amber-600",
+    priceColor: "text-amber-600 dark:text-amber-300",
+    badge: "الأقوى",
+  },
+  urgent: {
+    icon: Zap,
+    gradient: "from-rose-500 to-rose-600",
+    priceColor: "text-rose-600 dark:text-rose-300",
+  },
+};
 
-export function BCServicesSection({
-  onFeatured,
-  onBoost,
-  onStrongBoost,
-  onVerification,
-}: Props) {
-  const services: ServiceCard[] = [
-    {
-      key: "featured",
-      title: "إعلان مميز",
-      description: "ظهور إعلانك في الصفحة الرئيسية",
-      price: 150,
-      duration: "أسبوع",
-      icon: Sparkles,
-      gradient: "from-blue-500 to-blue-700",
-      iconBg: "bg-blue-50",
-      iconColor: "text-blue-600",
-      action: onFeatured,
-    },
-    {
-      key: "boost",
-      title: "رفع إعلان للأعلى",
-      description: "رفع إعلانك لأعلى القائمة",
-      price: 25,
-      icon: Rocket,
-      gradient: "from-emerald-500 to-emerald-700",
-      iconBg: "bg-emerald-50",
-      iconColor: "text-emerald-600",
-      action: onBoost,
-    },
-    {
-      key: "strong_boost",
-      title: "ظهور أقوى",
-      description: "احصل على مشاهدات أكثر",
-      price: 80,
-      duration: "أسبوع",
-      icon: Zap,
-      gradient: "from-orange-500 to-orange-600",
-      iconBg: "bg-orange-50",
-      iconColor: "text-orange-600",
-      action: onStrongBoost,
-    },
-    {
-      key: "verification",
-      title: "توثيق معرض",
-      description: "ارفع ثقة العملاء وظهور ضمن المعارض الموثقة",
-      price: 200,
-      duration: "شهر",
-      icon: ShieldCheck,
-      gradient: "from-blue-500 to-indigo-700",
-      iconBg: "bg-blue-50",
-      iconColor: "text-blue-600",
-      action: onVerification,
-    },
-  ];
+export function BCServicesSection({ onChoose }: Props) {
+  const { pricing } = usePromoPricing();
 
   return (
     <motion.section
@@ -99,25 +63,24 @@ export function BCServicesSection({
     >
       {/* Header */}
       <div className="flex items-center justify-between px-1">
-        <h2 className="text-sm font-black text-slate-900">
-          خدمات BC
+        <h2 className="text-sm font-black text-slate-900 dark:text-white">
+          باقات الترقية
         </h2>
-        <button
-          type="button"
-          className="
-            inline-flex items-center gap-0.5 text-[12px] font-black
-            text-blue-600 hover:text-blue-700
-          "
-        >
-          عرض الكل
-          <ChevronLeft size={12} />
-        </button>
+        <span className="text-[11px] font-bold text-slate-400">
+          تُطبَّق على إعلاناتك
+        </span>
       </div>
 
       {/* Cards */}
       <div className="space-y-2.5">
-        {services.map((service, i) => (
-          <BCServiceCard key={service.key} service={service} delay={i * 0.05} />
+        {PROMO_KEYS.map((key, i) => (
+          <BCServiceCard
+            key={key}
+            promoKey={key}
+            price={pricing[key]}
+            delay={i * 0.05}
+            onChoose={onChoose}
+          />
         ))}
       </div>
     </motion.section>
@@ -125,71 +88,72 @@ export function BCServicesSection({
 }
 
 function BCServiceCard({
-  service,
+  promoKey,
+  price,
   delay,
+  onChoose,
 }: {
-  service: ServiceCard;
+  promoKey: PromoServiceKey;
+  price: number;
   delay: number;
+  onChoose: (key: PromoServiceKey) => void;
 }) {
-  const Icon = service.icon;
+  const meta = PROMO_META[promoKey];
+  const style = CARD_STYLE[promoKey];
+  const Icon = style.icon;
 
   return (
     <motion.button
       type="button"
-      onClick={service.action}
+      onClick={() => onChoose(promoKey)}
       whileTap={{ scale: 0.98 }}
       initial={{ opacity: 0, x: -8 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.25, delay }}
-      className="
-        group flex w-full items-center gap-4 rounded-[20px]
-        bg-white p-3 text-right shadow-sm ring-1 ring-slate-100
-        transition hover:shadow-md
-      "
+      className="group relative flex w-full items-center gap-4 rounded-[20px] bg-white p-3 text-right shadow-sm ring-1 ring-slate-100 transition hover:shadow-md dark:bg-slate-900 dark:ring-slate-800"
     >
-      {/* 3D-style icon container */}
+      {/* شارة تسويقية */}
+      {style.badge && (
+        <span className="absolute -top-2 left-3 rounded-full bg-gradient-to-l from-action-500 to-action-600 px-2.5 py-0.5 text-[9px] font-black text-white shadow-sm">
+          {style.badge}
+        </span>
+      )}
+
+      {/* أيقونة الباقة */}
       <div className="relative shrink-0">
         <div
-          className={`
-            absolute inset-0 rounded-2xl ${service.iconBg} blur-md opacity-60
-          `}
-        />
-        <div
-          className={`
-            relative flex h-16 w-16 items-center justify-center
-            rounded-2xl bg-gradient-to-br ${service.gradient}
-            shadow-lg
-          `}
+          className={`relative flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br ${style.gradient} shadow-lg`}
         >
           <Icon size={26} className="text-white" strokeWidth={2} />
         </div>
       </div>
 
-      {/* Content */}
+      {/* المحتوى */}
       <div className="min-w-0 flex-1">
-        <h3 className="text-sm font-black text-slate-900">{service.title}</h3>
-        <p className="mt-0.5 text-[11px] leading-5 text-slate-500">
-          {service.description}
+        <div className="flex items-center gap-1.5">
+          <h3 className="text-sm font-black text-slate-900 dark:text-white">
+            {meta.label}
+          </h3>
+          <span className="text-sm">{meta.emoji}</span>
+        </div>
+        <p className="mt-0.5 text-[11px] leading-5 text-slate-500 dark:text-slate-400">
+          {meta.hint}
         </p>
         <div className="mt-1.5 flex items-center gap-2">
-          <span className="text-[13px] font-black text-blue-600 tabular-nums">
-            {service.price} BC
+          <span className={`text-[14px] font-black tabular-nums ${style.priceColor}`}>
+            {price.toLocaleString("en-US")} BC
           </span>
-          {service.duration && (
-            <>
-              <span className="text-slate-300">/</span>
-              <span className="text-[11px] font-bold text-slate-500">
-                {service.duration}
-              </span>
-            </>
-          )}
+          <span className="text-slate-300 dark:text-slate-600">/</span>
+          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+            {meta.durationDays} يوم
+          </span>
         </div>
       </div>
 
-      {/* Arrow */}
+      {/* سهم */}
       <ChevronLeft
         size={16}
-        className="shrink-0 text-slate-300 transition group-hover:text-blue-600"
+        className="shrink-0 text-slate-300 transition group-hover:-translate-x-0.5 group-hover:text-brand-500 dark:text-slate-600"
       />
     </motion.button>
   );
