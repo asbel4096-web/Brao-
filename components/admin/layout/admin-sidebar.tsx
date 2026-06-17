@@ -22,6 +22,9 @@ import {
   BarChart3,
   Coins,
   SearchX,
+  Sun,
+  ScrollText,
+  Copy,
   Image as ImageIcon,
   Wrench,
   ArrowLeftRight,
@@ -64,6 +67,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "نظرة عامة",
     links: [
       { href: "/admin", label: "اللوحة", Icon: LayoutDashboard },
+      { href: "/admin/today", label: "اليوم", Icon: Sun },
       {
         href: "/admin/analytics",
         label: "التحليلات",
@@ -81,6 +85,12 @@ const NAV_GROUPS: NavGroup[] = [
         label: "بحث بلا نتائج",
         Icon: SearchX,
         permission: "analytics.view",
+      },
+      {
+        href: "/admin/audit-log",
+        label: "سجلّ التدقيق",
+        Icon: ScrollText,
+        permission: "logs.view",
       },
     ],
   },
@@ -120,6 +130,12 @@ const NAV_GROUPS: NavGroup[] = [
         label: "مركز الإشراف",
         Icon: ShieldAlert,
         permission: "listings.approve",
+      },
+      {
+        href: "/admin/duplicates",
+        label: "كشف التكرار",
+        Icon: Copy,
+        permission: "listings.view",
       },
       {
         href: "/admin/moderation/reports",
