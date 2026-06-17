@@ -2,16 +2,19 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   collection,
   deleteDoc,
   doc,
+  getDocs,
+  limit,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
   updateDoc,
+  where,
 } from "firebase/firestore";
 import {
   Bell,
@@ -30,7 +33,8 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/components/confirm-dialog";
-import type { SearchAlert } from "@/lib/types";
+import { matchesAlert } from "@/lib/search-alert-match";
+import type { Listing, SearchAlert } from "@/lib/types";
 
 export default function AlertsListPage() {
   const router = useRouter();
@@ -41,6 +45,8 @@ export default function AlertsListPage() {
   const [alerts, setAlerts] = useState<SearchAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [pool, setPool] = useState<Listing[]>([]);
+  const [poolLoaded, setPoolLoaded] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -67,6 +73,46 @@ export default function AlertsListPage() {
     );
     return () => unsub();
   }, [user, authLoading, router, toast]);
+
+  // مجمّع أحدث الإعلانات المعتمدة (لحساب عدّاد المطابقات الحيّ).
+  // يستخدم فهرس status==approved + createdAt الموجود أصلاً — بلا فهرس جديد.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const snap = await getDocs(
+          query(
+            collection(db, "listings"),
+            where("status", "==", "approved"),
+            orderBy("createdAt", "desc"),
+            limit(100)
+          )
+        );
+        if (cancelled) return;
+        const arr = snap.docs
+          .map((d) => ({ id: d.id, ...(d.data() as any) }) as Listing)
+          .filter((l) => (l as any).ownerId !== user.uid);
+        setPool(arr);
+      } catch {
+        /* عدّاد المطابقات اختياري — نتجاهل الفشل */
+      } finally {
+        if (!cancelled) setPoolLoaded(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  // عدد المطابقات لكل تنبيه (ضمن المجمّع المُحمّل).
+  const matchCounts = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const a of alerts) {
+      m[a.id] = pool.reduce((n, l) => (matchesAlert(l, a) ? n + 1 : n), 0);
+    }
+    return m;
+  }, [alerts, pool]);
 
   const handleToggle = async (alert: SearchAlert) => {
     if (!user) return;
@@ -202,6 +248,8 @@ export default function AlertsListPage() {
                 key={alert.id}
                 alert={alert}
                 busy={busyId === alert.id}
+                matchCount={matchCounts[alert.id] ?? 0}
+                countReady={poolLoaded}
                 onToggle={() => handleToggle(alert)}
                 onDelete={() => handleDelete(alert)}
               />
@@ -219,11 +267,15 @@ export default function AlertsListPage() {
 function AlertCard({
   alert,
   busy,
+  matchCount,
+  countReady,
   onToggle,
   onDelete,
 }: {
   alert: SearchAlert;
   busy: boolean;
+  matchCount: number;
+  countReady: boolean;
   onToggle: () => void;
   onDelete: () => void;
 }) {
@@ -287,6 +339,17 @@ function AlertCard({
             </p>
           )}
         </div>
+        {countReady && (
+          <span
+            className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black ${
+              matchCount > 0
+                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
+                : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+            }`}
+          >
+            {matchCount > 0 ? `${matchCount} مطابقة` : "لا مطابقات"}
+          </span>
+        )}
       </div>
 
       {chips.length > 0 && (
@@ -309,6 +372,11 @@ function AlertCard({
       >
         <Search size={14} />
         عرض السيارات المطابقة
+        {countReady && matchCount > 0 && (
+          <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-[10px] tabular-nums">
+            {matchCount}
+          </span>
+        )}
       </Link>
 
       <div className="mt-2 flex gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
