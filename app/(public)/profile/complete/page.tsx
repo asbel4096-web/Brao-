@@ -4,11 +4,12 @@ import { Suspense, ChangeEvent, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { updateProfile } from "firebase/auth";
+import { updateProfile, signOut } from "firebase/auth";
 import { Camera, Eye, EyeOff, Check, X, AtSign, Lock } from "lucide-react";
-import { db, storage, isBootstrapAdminEmail } from "@/lib/firebase";
+import { db, storage, auth, isBootstrapAdminEmail } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
+import { useFeatureFlag } from "@/hooks/features/use-feature-flag";
 import { AuthLayout } from "@/components/auth/auth-layout";
 import {
   normalizeUsername,
@@ -60,6 +61,7 @@ function CompleteProfilePageInner() {
   const params = useSearchParams();
   const { user, profile, loading: authLoading, refreshProfile } = useAuth();
   const toast = useToast();
+  const registrationOn = useFeatureFlag("registration");
 
   const [step, setStep] = useState<Step>("name");
   const [name, setName] = useState("");
@@ -206,6 +208,17 @@ function CompleteProfilePageInner() {
    * ---------------------------------------------------------- */
   const handleSave = async () => {
     if (!user) return;
+    // التسجيل الجديد مغلق من لوحة الأدمن → نمنع إكمال إنشاء الحساب.
+    if (!registrationOn) {
+      toast.error("التسجيل الجديد مغلق مؤقتاً. نعتذر، حاول لاحقاً.");
+      try {
+        await signOut(auth);
+      } catch {
+        /* تجاهل */
+      }
+      router.replace("/login");
+      return;
+    }
     if (!name.trim()) {
       toast.error("الاسم مطلوب.");
       setStep("name");

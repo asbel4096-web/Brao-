@@ -18,6 +18,7 @@ import { StoriesRow } from "@/components/stories/stories-row";
 import { TowTrucksCTA } from "@/components/tow-trucks-cta";
 import { VerifiedDealersRow } from "@/components/verified-dealers-row";
 import { usePublicHomepageConfig } from "@/hooks/use-public-homepage-config";
+import { useFeatureFlag } from "@/hooks/features/use-feature-flag";
 
 /**
  * الصفحة الرئيسية — إعادة تصميم 2026 (Dubizzle / FB Marketplace / OpenSooq).
@@ -45,6 +46,11 @@ export default function HomePage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  // مفاتيح التحكّم من لوحة الأدمن (Feature Flags) — تشغيل/إيقاف فوري.
+  const storiesOn = useFeatureFlag("stories");
+  const towOn = useFeatureFlag("tow_service");
+  const bannersFlag = useFeatureFlag("banners");
+
   // هل البنرات مفعّلة من إعدادات الأدمن؟ (تُعرض كـ Hero بعد القصص مباشرة)
   const bannersEnabled =
     config.sectionsOrder.includes("banners") &&
@@ -60,18 +66,18 @@ export default function HomePage() {
 
 
       {/* 2. قصص المعارض */}
-      {mounted && <StoriesRow />}
+      {mounted && storiesOn && <StoriesRow />}
 
       {/* 3. استكشف جميع الأقسام — ديناميكي من category-config */}
       {mounted && <ExploreCategories />}
 
       {/* 4. Hero Banner — يتحكم به الأدمن */}
-      {mounted && bannersEnabled && (
+      {mounted && bannersEnabled && bannersFlag && (
         <HomepageBannersCarousel banners={banners} loading={bannersLoading} />
       )}
 
       {/* 5. تعطّلت سيارتك؟ */}
-      {mounted && <TowTrucksCTA />}
+      {mounted && towOn && <TowTrucksCTA />}
 
       {/* 4. تصفّح حسب الماركة */}
       {mounted && <BrowseByBrand />}
