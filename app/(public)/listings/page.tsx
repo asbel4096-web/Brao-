@@ -6,6 +6,7 @@ import {
   useDeferredValue,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -221,6 +222,26 @@ function ListingsContent() {
     }
     return [...vipArr, ...boostArr, ...featuredArr, ...regularArr];
   }, [listings, deferredSearch, category, city, sort, minPrice, maxPrice, brand, dynFilters]);
+
+  // تسجيل عمليات البحث التي لا تُرجع نتائج (لرؤى الأدمن — ماذا يطلب الناس
+  // ولا يجدونه). يُسجَّل صامتاً عبر API (Admin SDK) بلا قواعد إضافية.
+  const loggedSearchRef = useRef<string>("");
+  useEffect(() => {
+    const term = deferredSearch.trim();
+    if (loading || term.length < 2) return;
+    if (filtered.length > 0) return;
+    const key = `${term}|${city}`.toLowerCase();
+    if (loggedSearchRef.current === key) return;
+    const t = setTimeout(() => {
+      loggedSearchRef.current = key;
+      fetch("/api/search-log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: term, city, resultCount: 0 }),
+      }).catch(() => {});
+    }, 1200);
+    return () => clearTimeout(t);
+  }, [deferredSearch, filtered.length, loading, city]);
 
   /**
    * تطبيق الفلاتر مباشرة + تحديث الـ URL.

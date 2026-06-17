@@ -20,6 +20,8 @@ import {
   Users as UsersGroup,
   Rocket,
   BarChart3,
+  Coins,
+  SearchX,
   Image as ImageIcon,
   Wrench,
   ArrowLeftRight,
@@ -68,6 +70,18 @@ const NAV_GROUPS: NavGroup[] = [
         Icon: BarChart3,
         permission: "analytics.view",
       },
+      {
+        href: "/admin/revenue",
+        label: "الإيرادات",
+        Icon: Coins,
+        permission: "analytics.view",
+      },
+      {
+        href: "/admin/search-insights",
+        label: "بحث بلا نتائج",
+        Icon: SearchX,
+        permission: "analytics.view",
+      },
     ],
   },
   {
@@ -101,6 +115,12 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "الإشراف",
     links: [
+      {
+        href: "/admin/moderation/queue",
+        label: "مركز الإشراف",
+        Icon: ShieldAlert,
+        permission: "listings.approve",
+      },
       {
         href: "/admin/moderation/reports",
         label: "البلاغات",
