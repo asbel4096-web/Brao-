@@ -356,6 +356,22 @@ export function StoryCreateModal({ open, onClose }: Props) {
                       ? "اختر الوسائط ثم راجع القصة قبل النشر"
                       : "هذه هي المعاينة النهائية قبل النشر"}
                   </p>
+                  {/* مؤشّر تقدّم الخطوات */}
+                  <div className="mt-2 flex items-center gap-1.5">
+                    {[1, 2, 3].map((n) => {
+                      const cur = step === "media" ? 2 : 3;
+                      return (
+                        <span
+                          key={n}
+                          className={`h-1.5 rounded-full transition-all ${
+                            cur >= n
+                              ? "w-6 bg-brand-600"
+                              : "w-3 bg-slate-200 dark:bg-slate-700"
+                          }`}
+                        />
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 
@@ -469,17 +485,36 @@ export function StoryCreateModal({ open, onClose }: Props) {
                         </div>
                       </div>
                     ) : (
-                      <div className="mt-4 rounded-3xl border border-dashed border-slate-300 bg-white p-6 text-center dark:border-slate-700 dark:bg-slate-900">
-                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
-                          <Upload size={24} />
-                        </div>
-                        <p className="mt-3 text-sm font-black text-slate-900 dark:text-white">
-                          ارفع صورًا أو فيديو واحدًا
-                        </p>
-                        <p className="mt-1 text-xs leading-6 text-slate-500 dark:text-slate-400">
-                          صور متعددة كشرائح، أو فيديو واحد قصير يظهر داخل عارض القصص
-                        </p>
-                      </div>
+                      <label
+                        className="
+                          mt-4 flex cursor-pointer flex-col items-center justify-center
+                          rounded-3xl border-2 border-dashed border-brand-300 bg-brand-50/50
+                          p-8 text-center transition active:scale-[0.99]
+                          hover:border-brand-400 hover:bg-brand-50
+                          dark:border-brand-800 dark:bg-brand-900/20
+                        "
+                      >
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"
+                          multiple
+                          className="hidden"
+                          onChange={(event) => void handleMediaChange(event)}
+                        />
+                        <span className="grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-lg shadow-brand-600/30">
+                          <Upload size={26} />
+                        </span>
+                        <span className="mt-3 text-sm font-black text-slate-900 dark:text-white">
+                          اضغط لإضافة صور أو فيديو
+                        </span>
+                        <span className="mt-1 text-xs leading-6 text-slate-500 dark:text-slate-400">
+                          صور متعددة كشرائح، أو فيديو واحد قصير يظهر داخل القصة
+                        </span>
+                        <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-brand-600 px-4 py-2 text-xs font-black text-white shadow-sm">
+                          <Upload size={14} />
+                          اختر من الجهاز
+                        </span>
+                      </label>
                     )}
                   </div>
                 </div>
