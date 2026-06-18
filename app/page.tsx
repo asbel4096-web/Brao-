@@ -24,7 +24,8 @@ import { useFeatureFlag } from "@/hooks/features/use-feature-flag";
 /**
  * الصفحة الرئيسية — ترتيب احترافي 2026 على نمط التطبيقات الكبرى.
  *
- * منطق القمع (Funnel): بحث ← تصفّح ← تفاعل ← اكتشاف ← ثقة ← خدمات ← عمق.
+ * منطق القمع (Funnel): بانر(أدمن) ← بحث ← تصفّح ← تفاعل ← اكتشاف ← ثقة ← خدمات ← عمق.
+ *   0. Banners            — بانر إعلاني يتحكم به الأدمن (أعلى الصفحة، إظهار/إخفاء)
  *   1. SearchHero          — هيرو + بحث + فئات سريعة (نقطة الدخول)
  *   2. ExploreCategories   — شبكة الأقسام (تنقّل أساسي)
  *   3. StoriesRow          — قصص المعارض (تفاعل)
@@ -32,7 +33,6 @@ import { useFeatureFlag } from "@/hooks/features/use-feature-flag";
  *   5. RecentlyViewed      — شاهدت مؤخراً (تخصيص للعائدين)
  *   6. BrowseByBrand       — تصفّح حسب الماركة
  *   7. FeaturedNearYou     — سيارات مميزة قريبة منك
- *   8. Banners             — بانر إعلاني يتحكم به الأدمن (وسط)
  *   9. MostViewed          — الأكثر مشاهدة (رائج)
  *  10. MostSaved           — الأكثر حفظاً
  *  11. VerifiedDealers     — المعارض الموثّقة (ثقة)
@@ -63,6 +63,11 @@ export default function HomePage() {
 
   return (
     <>
+      {/* ===== 0. بانر إعلاني — أعلى الصفحة، يتحكّم به الأدمن (إظهار/إخفاء) ===== */}
+      {mounted && bannersEnabled && bannersFlag && (
+        <HomepageBannersCarousel banners={banners} loading={bannersLoading} />
+      )}
+
       {/* ===== 1. البحث + الهيرو + الفئات السريعة ===== */}
       <SearchHero />
 
@@ -83,11 +88,6 @@ export default function HomePage() {
 
       {/* ===== 7. سيارات مميزة قريبة منك ===== */}
       {mounted && <FeaturedNearYou />}
-
-      {/* ===== 8. بانر إعلاني — يتحكّم به الأدمن (وسط الصفحة) ===== */}
-      {mounted && bannersEnabled && bannersFlag && (
-        <HomepageBannersCarousel banners={banners} loading={bannersLoading} />
-      )}
 
       {/* ===== 9. الأكثر مشاهدة — رائج (دليل اجتماعي) ===== */}
       {mounted && <MostViewedSection />}

@@ -37,7 +37,7 @@ const MOBILE_BREAKPOINT = 640;
 function BannerSkeleton() {
   return (
     <section className="container pt-3 sm:pt-4">
-      <div className="h-[170px] w-full animate-pulse rounded-[26px] bg-slate-200 sm:h-[210px] md:h-[250px] dark:bg-slate-800" />
+      <div className="aspect-[16/9] w-full animate-pulse rounded-[26px] bg-slate-200 sm:aspect-[5/2] dark:bg-slate-800" />
     </section>
   );
 }
@@ -179,17 +179,27 @@ function BannerSlide({ banner, idx }: { banner: HomepageBanner; idx: number }) {
   const content = (
     <div
       className="
-        relative h-[170px] w-full shrink-0 snap-center overflow-hidden rounded-[26px]
-        bg-slate-200 dark:bg-slate-900
-        sm:h-[210px] md:h-[250px]
+        relative aspect-[16/9] w-full shrink-0 snap-center overflow-hidden rounded-[26px]
+        bg-slate-200 dark:bg-slate-900 sm:aspect-[5/2]
       "
     >
+      {/* صورة الجوال (شاشات صغيرة) */}
       <Image
         src={banner.mobileImageUrl || banner.imageUrl}
         alt={banner.title || "بنر"}
         fill
+        sizes="100vw"
+        className="object-cover sm:hidden"
+        priority={idx === 0}
+        loading={idx === 0 ? undefined : "lazy"}
+      />
+      {/* صورة سطح المكتب (شاشات أكبر) */}
+      <Image
+        src={banner.imageUrl || banner.mobileImageUrl}
+        alt={banner.title || "بنر"}
+        fill
         sizes="(min-width: 768px) 1024px, 100vw"
-        className="object-cover"
+        className="hidden object-cover sm:block"
         priority={idx === 0}
         loading={idx === 0 ? undefined : "lazy"}
       />
