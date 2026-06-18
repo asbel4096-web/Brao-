@@ -1,0 +1,8 @@
+<!-- android/app/src/main/res/values/strings.xml -->
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">براتشو كار</string>
+    <string name="title_activity_main">براتشو كار</string>
+    <string name="package_name">com.bratsho.car</string>
+    <string name="custom_url_scheme">com.bratsho.car</string>
+</resources>

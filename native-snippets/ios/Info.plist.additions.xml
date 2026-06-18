@@ -1,0 +1,16 @@
+<!-- ============================================================
+     أضِف هذه المفاتيح داخل ios/App/App/Info.plist (داخل <dict>):
+============================================================ -->
+<key>NSCameraUsageDescription</key>
+<string>نحتاج الوصول إلى الكاميرا لالتقاط صور سيارتك وإضافتها للإعلان.</string>
+
+<key>NSPhotoLibraryUsageDescription</key>
+<string>نحتاج الوصول إلى الصور لاختيار صور إعلانك.</string>
+
+<key>NSPhotoLibraryAddUsageDescription</key>
+<string>لحفظ الصور في معرض جهازك.</string>
+
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>نستخدم موقعك لعرض السيارات القريبة منك وخدمات السحب.</string>
+
+<!-- إشعارات الدفع تُفعّل عبر Capability: Push Notifications + Background Modes(remote notifications) -->

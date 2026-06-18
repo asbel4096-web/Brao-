@@ -1,0 +1,25 @@
+{
+  "_ملاحظة": "ادمج هذه القيم في package.json الحالي (لا تستبدله). الإصدارات لـCapacitor 6 المتوافق مع Next 14.",
+  "scripts": {
+    "cap:sync": "next build && cap sync",
+    "cap:android": "cap open android",
+    "cap:ios": "cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.2.0",
+    "@capacitor/app": "^6.0.2",
+    "@capacitor/camera": "^6.1.2",
+    "@capacitor/geolocation": "^6.1.0",
+    "@capacitor/share": "^6.0.3",
+    "@capacitor/push-notifications": "^6.0.4",
+    "@capacitor/splash-screen": "^6.0.3",
+    "@capacitor/status-bar": "^6.0.2",
+    "@capacitor/keyboard": "^6.0.3",
+    "@capacitor-firebase/messaging": "^6.3.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.0",
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/ios": "^6.2.0"
+  }
+}

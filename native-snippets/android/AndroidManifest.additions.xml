@@ -1,0 +1,29 @@
+<!-- ============================================================
+     أضِف هذه الأذونات داخل <manifest> (قبل <application>):
+     android/app/src/main/AndroidManifest.xml
+============================================================ -->
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.CAMERA" />
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+<uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+<!-- لأجهزة أقدم من Android 13 -->
+<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+    android:maxSdkVersion="32" />
+
+<uses-feature android:name="android.hardware.camera" android:required="false" />
+
+<!-- ============================================================
+     أضِف intent-filter للروابط العميقة داخل <activity ...MainActivity>:
+============================================================ -->
+<!--
+<intent-filter android:autoVerify="true">
+    <action android:name="android.intent.action.VIEW" />
+    <category android:name="android.intent.category.DEFAULT" />
+    <category android:name="android.intent.category.BROWSABLE" />
+    <data android:scheme="https"
+          android:host="www.bratshocar.com" />
+</intent-filter>
+-->
