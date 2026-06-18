@@ -195,7 +195,7 @@ function BannerSlide({ banner, idx }: { banner: HomepageBanner; idx: number }) {
       />
       {/* صورة سطح المكتب (شاشات أكبر) */}
       <Image
-        src={banner.imageUrl || banner.mobileImageUrl}
+        src={banner.imageUrl}
         alt={banner.title || "بنر"}
         fill
         sizes="(min-width: 768px) 1024px, 100vw"
