@@ -3,12 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
+import { Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useStories } from "@/hooks/useStories";
 import { getSeenStoryIdsLocal, groupByOwner, markStorySeenLocal } from "@/lib/stories/helpers";
-import { AddStoryBubble } from "./add-story-bubble";
-import { StoryBubble } from "./story-bubble";
+import { StoryCard } from "./story-card";
 
 /**
  * Lazy load المكوّنات الثقيلة:
@@ -86,18 +86,37 @@ export function StoriesRow() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-1 sm:gap-4">
-            <AddStoryBubble onClick={handleAddStory} />
+          <div className="flex items-stretch gap-2.5 overflow-x-auto no-scrollbar pb-1 sm:gap-3">
+            {/* بطاقة "أضف قصة" كبيرة */}
+            <button
+              type="button"
+              onClick={handleAddStory}
+              aria-label="أضف قصة"
+              className="
+                group relative flex h-[184px] w-[124px] shrink-0 flex-col items-center
+                justify-center gap-2 overflow-hidden rounded-3xl border-2 border-dashed
+                border-brand-300 bg-brand-50/60 transition active:scale-[0.97]
+                hover:border-brand-400 dark:border-brand-800 dark:bg-brand-900/20
+                sm:h-[210px] sm:w-[142px]
+              "
+            >
+              <span className="grid h-12 w-12 place-items-center rounded-full bg-brand-600 text-white shadow-lg shadow-brand-600/30 transition group-active:scale-90">
+                <Plus size={24} strokeWidth={2.5} />
+              </span>
+              <span className="text-[12px] font-black text-brand-700 dark:text-brand-300">
+                أضف قصة
+              </span>
+            </button>
 
             {loading
               ? Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="flex shrink-0 flex-col items-center gap-1">
-                    <div className="h-16 w-16 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800 sm:h-[68px] sm:w-[68px]" />
-                    <div className="h-2.5 w-12 animate-pulse rounded bg-slate-200 dark:bg-slate-800" />
-                  </div>
+                  <div
+                    key={i}
+                    className="h-[184px] w-[124px] shrink-0 animate-pulse rounded-3xl bg-slate-200 dark:bg-slate-800 sm:h-[210px] sm:w-[142px]"
+                  />
                 ))
               : groups.map((group, idx) => (
-                  <StoryBubble
+                  <StoryCard
                     key={group[0].ownerId}
                     stories={group}
                     seen={group.every((story) => seenStoryIds.has(story.id))}
