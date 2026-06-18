@@ -11,7 +11,7 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import { Megaphone, MapPin, Phone, MessageCircle } from "lucide-react";
+import { MapPin, Phone, MessageCircle, ChevronLeft } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Listing } from "@/lib/types";
@@ -205,9 +205,9 @@ export function SponsoredSpotlight({
     >
       <div
         className="
-          relative overflow-hidden rounded-3xl border border-amber-200/70
-          bg-white shadow-[0_4px_24px_-10px_rgba(245,158,11,0.35)]
-          dark:border-amber-500/20 dark:bg-slate-900
+          group relative overflow-hidden rounded-[28px] bg-slate-900
+          shadow-[0_16px_48px_-16px_rgba(249,115,22,0.5)]
+          ring-1 ring-white/10
         "
         onTouchStart={(e) => {
           touchX.current = e.touches[0].clientX;
@@ -228,39 +228,47 @@ export function SponsoredSpotlight({
           className="block"
         >
           {/* الصورة + التراكب */}
-          <div className="relative aspect-[16/10] w-full overflow-hidden sm:aspect-[16/7]">
+          <div className="relative aspect-[16/11] w-full overflow-hidden sm:aspect-[16/7]">
             <Image
               src={img}
               alt={ad.title || "إعلان ممول"}
               fill
               sizes="100vw"
               priority
-              className="object-cover"
+              className="object-cover transition-transform duration-700 group-hover:scale-[1.04]"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent" />
+            {/* توهّج برتقالي علوي خفيف للإحساس الشبابي */}
+            <div className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full bg-action-500/30 blur-3xl" />
 
-            {/* شارة ممول واضحة */}
-            <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-amber-400 px-3 py-1 text-[12px] font-black text-amber-950 shadow-sm">
-              <Megaphone size={13} strokeWidth={2.5} />
-              {user && (ad as any).ownerId === user.uid ? "إعلانك الممول" : "إعلان ممول"}
+            {/* شارة "ممول" — حبّة نابضة + تدرّج برتقالي */}
+            <span className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-l from-action-600 to-action-400 px-3 py-1.5 text-[12px] font-black text-white shadow-lg shadow-action-500/40">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+              </span>
+              {user && (ad as any).ownerId === user.uid ? "إعلانك الممول" : "ممول"}
             </span>
 
             {/* النص أسفل الصورة */}
             <div className="absolute inset-x-0 bottom-0 p-4 text-white">
-              <h3 className="line-clamp-1 text-lg font-black drop-shadow-sm sm:text-xl">
+              <h3 className="line-clamp-1 text-lg font-black drop-shadow-md sm:text-2xl">
                 {ad.title}
               </h3>
-              <div className="mt-1 flex items-center gap-3">
-                <span className="inline-flex items-baseline gap-1 text-xl font-black text-amber-300 sm:text-2xl">
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-baseline rounded-xl bg-action-500 px-3 py-1 text-lg font-black text-white shadow-md shadow-action-500/30 sm:text-xl">
                   {formatPrice(ad.price)}
-                  <span className="text-xs font-bold">د.ل</span>
                 </span>
                 {ad.city && (
-                  <span className="inline-flex items-center gap-1 text-xs font-medium text-white/85">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-xs font-bold text-white backdrop-blur-md">
                     <MapPin size={12} />
                     {ad.city}
                   </span>
                 )}
+                <span className="ms-auto hidden items-center gap-0.5 text-xs font-black text-white/80 transition group-hover:text-white sm:inline-flex">
+                  التفاصيل
+                  <ChevronLeft size={14} />
+                </span>
               </div>
             </div>
           </div>
@@ -278,7 +286,7 @@ export function SponsoredSpotlight({
               void trackEvent(ad.id, "sponsoredClick");
               void trackEvent(ad.id, "phone");
             }}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-brand-700 py-2.5 text-sm font-black text-white transition hover:bg-brand-800 active:scale-95"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-white py-2.5 text-sm font-black text-slate-900 transition hover:bg-slate-100 active:scale-95"
           >
             <Phone size={16} />
             اتصال
@@ -292,7 +300,7 @@ export function SponsoredSpotlight({
                 void trackEvent(ad.id, "sponsoredClick");
                 void trackEvent(ad.id, "whatsapp");
               }}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-emerald-600 py-2.5 text-sm font-black text-white transition hover:bg-emerald-700 active:scale-95"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-emerald-500 py-2.5 text-sm font-black text-white transition hover:bg-emerald-600 active:scale-95"
             >
               <MessageCircle size={16} />
               واتساب
@@ -311,8 +319,8 @@ export function SponsoredSpotlight({
                 onClick={() => setIdx(i)}
                 className={
                   i === idx
-                    ? "h-1.5 w-5 rounded-full bg-amber-500 transition-all"
-                    : "h-1.5 w-1.5 rounded-full bg-slate-300 transition-all dark:bg-slate-600"
+                    ? "h-1.5 w-6 rounded-full bg-action-500 transition-all"
+                    : "h-1.5 w-1.5 rounded-full bg-white/30 transition-all"
                 }
               />
             ))}

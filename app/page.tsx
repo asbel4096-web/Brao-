@@ -22,20 +22,24 @@ import { usePublicHomepageConfig } from "@/hooks/use-public-homepage-config";
 import { useFeatureFlag } from "@/hooks/features/use-feature-flag";
 
 /**
- * الصفحة الرئيسية — إعادة تصميم 2026 (Dubizzle / FB Marketplace / OpenSooq).
+ * الصفحة الرئيسية — ترتيب احترافي 2026 على نمط التطبيقات الكبرى.
  *
- * الترتيب الجديد (Hero Banner مباشرة بعد القصص):
- *   1. SearchHero      — شريط بحث + فئات سريعة (المحتوى العملي مباشرة)
- *   2. StoriesRow      — قصص المعارض (ميزة قائمة)
- *   3. TowTrucksCTA    — "تعطّلت سيارتك؟" (خدمة سريعة بارزة)
- *   4. BrowseByBrand   — تصفّح حسب الماركة (شعارات الماركات)
- *   5. PlatformStats   — الإحصائيات (أرقام + نسبة نمو أسبوعية)
- *   6. FeaturedNearYou — سيارات مميزة قريبة منك (صف أفقي)
- *   7. VerifiedDealers — المعارض المميزة (دائري Stories)
- *   8. MostSaved       — الأكثر حفظاً (صف أفقي)
- *   9. أقسام أحدث الإعلانات المنفصلة (سيارات/قطع غيار/خدمات/ساحبات)
- *
- * البنرات تبقى قسماً يتحكم به الأدمن (يُلحَق حسب homepageConfig).
+ * منطق القمع (Funnel): بحث ← تصفّح ← تفاعل ← اكتشاف ← ثقة ← خدمات ← عمق.
+ *   1. SearchHero          — هيرو + بحث + فئات سريعة (نقطة الدخول)
+ *   2. ExploreCategories   — شبكة الأقسام (تنقّل أساسي)
+ *   3. StoriesRow          — قصص المعارض (تفاعل)
+ *   4. SponsoredSpotlight  — إعلان ممول (بارز)
+ *   5. RecentlyViewed      — شاهدت مؤخراً (تخصيص للعائدين)
+ *   6. BrowseByBrand       — تصفّح حسب الماركة
+ *   7. FeaturedNearYou     — سيارات مميزة قريبة منك
+ *   8. Banners             — بانر إعلاني يتحكم به الأدمن (وسط)
+ *   9. MostViewed          — الأكثر مشاهدة (رائج)
+ *  10. MostSaved           — الأكثر حفظاً
+ *  11. VerifiedDealers     — المعارض الموثّقة (ثقة)
+ *  12. TowTrucksCTA        — خدمة الساحبات
+ *  13. DynamicCategories   — أحدث الإعلانات لكل قسم (تصفّح عميق)
+ *  14. PlatformStats       — إحصائيات المنصّة (مصداقية)
+ *      ← CTASection + SiteFooter
  *
  * ملاحظة hydration: الأقسام التي تقرأ بيانات العميل تُرسَم خلف بوّابة
  * `mounted` لتطابق رندر السيرفر/العميل (تفادي #310/#418).
@@ -59,54 +63,51 @@ export default function HomePage() {
 
   return (
     <>
-      {/* 1. البحث + الفئات السريعة */}
+      {/* ===== 1. البحث + الهيرو + الفئات السريعة ===== */}
       <SearchHero />
 
-      {/* إعلان ممول — Sponsored Spotlight أعلى النتائج مباشرة */}
+      {/* ===== 2. إعلان ممول — Sponsored بارز أعلى الصفحة ===== */}
       {mounted && <SponsoredSpotlight />}
 
-      {/* شاهدت مؤخراً — يظهر فقط لمن لديه مشاهدات سابقة */}
-      {mounted && <RecentlyViewedSection />}
-
-
-      {/* 2. قصص المعارض */}
-      {mounted && storiesOn && <StoriesRow />}
-
-      {/* 3. استكشف جميع الأقسام — ديناميكي من category-config */}
+      {/* ===== 3. استكشف الأقسام — التنقّل الأساسي ===== */}
       {mounted && <ExploreCategories />}
 
-      {/* 4. Hero Banner — يتحكم به الأدمن */}
+      {/* ===== 4. قصص المعارض — تفاعل أعلى الصفحة ===== */}
+      {mounted && storiesOn && <StoriesRow />}
+
+      {/* ===== 5. شاهدت مؤخراً — تخصيص للعائدين (يظهر لمن له سجل) ===== */}
+      {mounted && <RecentlyViewedSection />}
+
+      {/* ===== 6. تصفّح حسب الماركة ===== */}
+      {mounted && <BrowseByBrand />}
+
+      {/* ===== 7. سيارات مميزة قريبة منك ===== */}
+      {mounted && <FeaturedNearYou />}
+
+      {/* ===== 8. بانر إعلاني — يتحكّم به الأدمن (وسط الصفحة) ===== */}
       {mounted && bannersEnabled && bannersFlag && (
         <HomepageBannersCarousel banners={banners} loading={bannersLoading} />
       )}
 
-      {/* 5. تعطّلت سيارتك؟ */}
-      {mounted && towOn && <TowTrucksCTA />}
-
-      {/* 4. تصفّح حسب الماركة */}
-      {mounted && <BrowseByBrand />}
-
-      {/* 5. إحصائيات المنصة */}
-      {mounted && <PlatformStats />}
-
-      {/* 6. سيارات مميزة قريبة منك */}
-      {mounted && <FeaturedNearYou />}
-
-      {/* السيارات الأكثر مشاهدة (يختفي لو لا بيانات) */}
+      {/* ===== 9. الأكثر مشاهدة — رائج (دليل اجتماعي) ===== */}
       {mounted && <MostViewedSection />}
 
-      {/* 7. المعارض المميزة */}
-      {mounted && <VerifiedDealersRow />}
-
-      {/* 8. الأكثر حفظاً */}
+      {/* ===== 10. الأكثر حفظاً ===== */}
       {mounted && <MostSavedSection />}
 
-      {/* 9. أقسام ديناميكية لكل فئة: "أحدث {الفئة}" — تظهر تلقائياً
-          لكل فئة فيها إعلان واحد أو أكثر، مرتّبة بالأكثر نشاطاً، آخر 5
-          لكل قسم، مع lazy-loading وSkeleton. */}
+      {/* ===== 11. المعارض الموثّقة — ثقة ===== */}
+      {mounted && <VerifiedDealersRow />}
+
+      {/* ===== 12. تعطّلت سيارتك؟ — خدمة الساحبات ===== */}
+      {mounted && towOn && <TowTrucksCTA />}
+
+      {/* ===== 13. أحدث الإعلانات لكل قسم — تصفّح عميق ===== */}
       {mounted && <DynamicCategorySections />}
 
-      {/* ثوابت الأسفل */}
+      {/* ===== 14. إحصائيات المنصّة — مصداقية قبل النهاية ===== */}
+      {mounted && <PlatformStats />}
+
+      {/* ===== الثوابت السفلية ===== */}
       <CTASection />
       <SiteFooter />
     </>
