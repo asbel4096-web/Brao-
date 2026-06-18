@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { memo } from "react";
-import { Eye, MapPin, Star, Rocket, Crown, Gauge, Bookmark, Zap } from "lucide-react";
+import { Eye, MapPin, Star, Rocket, Crown, Gauge, Bookmark, Zap, Calendar } from "lucide-react";
 import type { Listing } from "@/lib/types";
 import { formatPrice, formatNumber, isListingFeatured } from "@/lib/utils";
 import { FavoriteButton } from "./favorite-button";
@@ -53,6 +53,7 @@ function CompactListingCardImpl({ listing, showStats = false, priority = false }
   const views = (listing as any).views as number | undefined;
   const saves = (listing as any).favoritesCount as number | undefined;
   const mileage = listing.mileage;
+  const year = (listing as any).year as number | string | undefined;
 
   return (
     <article
@@ -126,8 +127,14 @@ function CompactListingCardImpl({ listing, showStats = false, priority = false }
           <span className="text-lg leading-none">{formatPrice(listing.price)}</span>
         </div>
 
-        {/* المدينة + المسافة المقطوعة */}
-        <div className="mt-2 flex items-center gap-x-3 gap-y-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+        {/* السنة + المدينة + المسافة المقطوعة */}
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+          {year && (
+            <span className="inline-flex items-center gap-1">
+              <Calendar size={12} className="text-brand-600/70" />
+              {year}
+            </span>
+          )}
           {listing.city && (
             <span className="inline-flex items-center gap-1">
               <MapPin size={12} className="text-brand-600/70" />
