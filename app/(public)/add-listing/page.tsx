@@ -3,6 +3,7 @@
 import {
   ChangeEvent,
   FormEvent,
+  type PointerEvent as ReactPointerEvent,
   useEffect,
   useMemo,
   useRef,
@@ -18,6 +19,7 @@ import {
   Check,
   ChevronLeft,
   FileText,
+  GripVertical,
   ImagePlus,
   Loader2,
   Star,
@@ -332,6 +334,56 @@ export default function AddListingPage() {
       next.unshift(moved);
       return next;
     });
+  };
+
+  /* ----------------------------------------------------------
+   * سحب الصور لإعادة الترتيب (Pointer Events — يعمل على اللمس والفأرة).
+   * السحب يبدأ من مقبض السحب فقط كي لا يتعطّل تمرير الصفحة.
+   * ---------------------------------------------------------- */
+  const dragFrom = useRef<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+
+  const reorderImages = (from: number, to: number) => {
+    setImages((prev) => {
+      if (
+        from === to ||
+        from < 0 ||
+        to < 0 ||
+        from >= prev.length ||
+        to >= prev.length
+      )
+        return prev;
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+  };
+
+  const onDragHandleDown = (idx: number) => (e: ReactPointerEvent) => {
+    dragFrom.current = idx;
+    setDragOverIdx(idx);
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {
+      /* تجاهل */
+    }
+  };
+  const onDragHandleMove = (e: ReactPointerEvent) => {
+    if (dragFrom.current == null) return;
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const cell = el?.closest("[data-img-index]") as HTMLElement | null;
+    if (cell) {
+      const ti = Number(cell.dataset.imgIndex);
+      if (!Number.isNaN(ti)) setDragOverIdx(ti);
+    }
+  };
+  const onDragHandleUp = () => {
+    const from = dragFrom.current;
+    const to = dragOverIdx;
+    dragFrom.current = null;
+    setDragOverIdx(null);
+    if (from != null && to != null) reorderImages(from, to);
   };
 
   const wa = useMemo(
@@ -721,7 +773,13 @@ export default function AddListingPage() {
                   ) : (
                     <div className="space-y-3">
                       {/* الصورة الرئيسية كبيرة */}
-                      <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-slate-100">
+                      <div
+                        data-img-index={0}
+                        className={cn(
+                          "relative aspect-[4/3] overflow-hidden rounded-2xl bg-slate-100 transition",
+                          dragOverIdx === 0 && dragFrom.current !== null && "ring-4 ring-brand-400"
+                        )}
+                      >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={previews[0]}
@@ -731,6 +789,18 @@ export default function AddListingPage() {
                         <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-brand-600 px-3 py-1 text-[11px] font-black text-white shadow">
                           <Star size={11} /> الصورة الرئيسية
                         </span>
+                        <button
+                          type="button"
+                          onPointerDown={onDragHandleDown(0)}
+                          onPointerMove={onDragHandleMove}
+                          onPointerUp={onDragHandleUp}
+                          onPointerCancel={onDragHandleUp}
+                          style={{ touchAction: "none" }}
+                          className="absolute bottom-3 right-3 inline-flex cursor-grab items-center gap-1 rounded-full bg-black/55 px-2.5 py-1.5 text-[10px] font-bold text-white backdrop-blur active:cursor-grabbing"
+                          aria-label="اسحب لإعادة الترتيب"
+                        >
+                          <GripVertical size={13} /> اسحب
+                        </button>
                         <button
                           type="button"
                           onClick={() => removeImage(0)}
@@ -748,7 +818,13 @@ export default function AddListingPage() {
                           return (
                             <div
                               key={idx}
-                              className="group relative aspect-square overflow-hidden rounded-xl bg-slate-100"
+                              data-img-index={idx}
+                              className={cn(
+                                "group relative aspect-square overflow-hidden rounded-xl bg-slate-100 transition",
+                                dragOverIdx === idx &&
+                                  dragFrom.current !== null &&
+                                  "ring-4 ring-brand-400"
+                              )}
                             >
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
@@ -757,6 +833,18 @@ export default function AddListingPage() {
                                 onClick={() => moveImageToFirst(idx)}
                                 className="h-full w-full cursor-pointer object-cover"
                               />
+                              <button
+                                type="button"
+                                onPointerDown={onDragHandleDown(idx)}
+                                onPointerMove={onDragHandleMove}
+                                onPointerUp={onDragHandleUp}
+                                onPointerCancel={onDragHandleUp}
+                                style={{ touchAction: "none" }}
+                                className="absolute bottom-1 right-1 grid h-6 w-6 cursor-grab place-items-center rounded-full bg-black/55 text-white backdrop-blur active:cursor-grabbing"
+                                aria-label="اسحب لإعادة الترتيب"
+                              >
+                                <GripVertical size={12} />
+                              </button>
                               <button
                                 type="button"
                                 onClick={() => removeImage(idx)}
@@ -783,7 +871,8 @@ export default function AddListingPage() {
                         )}
                       </div>
                       <p className="text-center text-[11px] text-slate-400">
-                        {images.length} صور · اضغط على صورة لجعلها الرئيسية
+                        {images.length} صور · اضغط على صورة لجعلها الرئيسية · اسحب
+                        من المقبض ⠿ لإعادة الترتيب
                       </p>
                     </div>
                   )}
