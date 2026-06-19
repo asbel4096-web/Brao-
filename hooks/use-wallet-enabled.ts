@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useAllFeatureFlags } from "@/hooks/features/use-feature-flag";
 
 /**
  * useWalletEnabled
@@ -61,6 +62,36 @@ export function useWalletEnabled() {
 
     return () => unsub();
   }, []);
+
+  return { enabled, loading };
+}
+
+/**
+ * useWalletVisible
+ *
+ * المفتاح الموحَّد لإظهار/إخفاء المحفظة في الواجهة (زر الشريط العلوي + صفحة /wallet).
+ *
+ * يدمج مصدري التحكّم الموجودين في لوحة الأدمن:
+ *   1) config/app.walletEnabled        ← صفحة /admin/wallet-settings
+ *   2) featureFlags/wallet.enabled      ← صفحة /admin/settings/features
+ *
+ * القاعدة: المحفظة تظهر فقط إذا لم يُطفئها أيٌّ من المفتاحين.
+ *   - إيقاف من أي صفحة منهما ⇒ تختفي فوراً (realtime).
+ *
+ * ملاحظة مهمة حول الافتراضات:
+ *   - نحجب عبر الـfeature flag فقط إذا كانت الوثيقة موجودة ومضبوطة enabled=false
+ *     صراحةً. وثيقة غير موجودة = لا تحجب، حتى لا تُخفى المحفظة افتراضياً
+ *     (لأن الافتراضي لفلاغ wallet هو false، ولا نريد إخفاءها بلا قصد).
+ */
+export function useWalletVisible() {
+  const { enabled: configEnabled, loading: configLoading } = useWalletEnabled();
+  const { flags, loaded: flagsLoaded } = useAllFeatureFlags();
+
+  const walletFlag = flags.get("wallet");
+  const flagBlocks = flagsLoaded && !!walletFlag && walletFlag.enabled === false;
+
+  const enabled = configEnabled && !flagBlocks;
+  const loading = configLoading || !flagsLoaded;
 
   return { enabled, loading };
 }

@@ -6,7 +6,7 @@ import { doc, onSnapshot } from "firebase/firestore";
 import { Wallet } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { useWalletEnabled } from "@/hooks/use-wallet-enabled";
+import { useWalletVisible } from "@/hooks/use-wallet-enabled";
 
 /**
  * WalletTrigger - زر المحفظة في الشريط العلوي.
@@ -29,7 +29,7 @@ interface WalletTriggerProps {
 
 export function WalletTrigger({ variant = "full", className = "" }: WalletTriggerProps) {
   const { user, profile } = useAuth();
-  const { enabled } = useWalletEnabled();
+  const { enabled } = useWalletVisible();
   const [balance, setBalance] = useState<number>(
     Number((profile as any)?.balance || 0)
   );

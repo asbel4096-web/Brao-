@@ -536,6 +536,17 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // config/app - إعدادات عامة للتطبيق (walletEnabled، صور الأقسام،
+    //   الأسعار...). لا تحوي بيانات حساسة.
+    // القراءة: public — يجب أن تكون عامة لأن useWalletEnabled() يقرأها
+    //   من المتصفح مباشرة لإظهار/إخفاء زر المحفظة. بدون هذه القاعدة كانت
+    //   القراءة تُرفض (catch-all) فيفشل الـhook ويُبقي المحفظة ظاهرة دائماً.
+    // الكتابة: ممنوعة من الـclient — تتم حصراً عبر Admin SDK في API routes.
+    match /config/{docId} {
+      allow read: if true;
+      allow create, update, delete: if false;
+    }
+
     // ============================================================
     // Broadcasts - سجلّ الإشعارات الجماعية التي يُرسلها الأدمن.
     // الكتابة تتم حصراً من API route عبر Firebase Admin SDK (يتجاوز

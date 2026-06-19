@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { Bell, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
-import { useWalletEnabled } from "@/hooks/use-wallet-enabled";
+import { useWalletVisible } from "@/hooks/use-wallet-enabled";
 import { TopupSheet } from "@/components/wallet/topup-sheet";
 import { ReferralsSheet } from "@/components/wallet/referrals-sheet";
 import { PlansSheet } from "@/components/wallet/plans-sheet";
@@ -37,7 +37,7 @@ import {
 export default function WalletPage() {
   const router = useRouter();
   const { user, profile, loading } = useAuth();
-  const { enabled: walletEnabled } = useWalletEnabled();
+  const { enabled: walletEnabled } = useWalletVisible();
 
   const [topupOpen, setTopupOpen] = useState(false);
   const [referralsOpen, setReferralsOpen] = useState(false);
