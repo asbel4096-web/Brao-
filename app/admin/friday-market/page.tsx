@@ -10,7 +10,6 @@ import {
   where,
 } from "firebase/firestore";
 import {
-  Flame,
   Loader2,
   Save,
   ShoppingCart,

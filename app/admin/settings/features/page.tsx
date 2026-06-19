@@ -12,6 +12,7 @@ import {
   Truck,
   UserPlus,
   Image,
+  ShoppingCart,
 } from "lucide-react";
 import { useAdminRole } from "@/hooks/admin/use-admin-role";
 import { useAllFeatureFlags } from "@/hooks/features/use-feature-flag";
@@ -34,6 +35,7 @@ const FLAG_ICONS: Record<FeatureFlagKey, any> = {
   tow_service: Truck,
   registration: UserPlus,
   banners: Image,
+  friday_market: ShoppingCart,
   maintenance: Wrench,
 };
 

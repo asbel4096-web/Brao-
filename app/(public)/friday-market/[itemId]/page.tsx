@@ -202,7 +202,7 @@ export default function FridayItemPage() {
             />
           </div>
         </div>
-        {item.images?.length > 1 && (
+        {(item.images?.length ?? 0) > 1 && (
           <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
             {item.images.map((src, i) => (
               <button
