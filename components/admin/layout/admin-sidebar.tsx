@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   ListChecks,
+  ShoppingCart,
   Users,
   Shield,
   Megaphone,
@@ -109,6 +110,12 @@ const NAV_GROUPS: NavGroup[] = [
         label: "طلبات التمييز",
         Icon: Sparkles,
         permission: "listings.feature",
+      },
+      {
+        href: "/admin/friday-market",
+        label: "سوق الجمعة",
+        Icon: ShoppingCart,
+        permission: "settings.edit",
       },
     ],
   },

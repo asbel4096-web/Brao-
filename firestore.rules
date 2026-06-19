@@ -548,6 +548,28 @@ service cloud.firestore {
     }
 
     // ============================================================
+    // سوق الجمعة (Friday Market)
+    // ------------------------------------------------------------
+    // الإعلانات: القراءة عامة (تصفّح السوق + الأرشيف).
+    //   الإنشاء/التعديل: server-only عبر Admin SDK (API routes) — هذا
+    //   يفرض "الجمعة فقط" + ضبط weekKey + منع تزوير featured/الحالة.
+    //   الحذف: يسمح لصاحب الإعلان بحذف إعلانه، أو الأدمن. (الحذف من
+    //   لوحة الأدمن يمرّ عبر API لتحديث العدّاد، لكن نسمح لصاحبه أيضاً.)
+    // ============================================================
+    match /fridayMarket/{itemId} {
+      allow read: if true;
+      allow create, update: if false; // server-only (Admin SDK)
+      allow delete: if isAdmin()
+        || (signedIn() && resource.data.ownerId == request.auth.uid);
+    }
+
+    // ملخّص جلسات الجمعة (للأرشيف + العدّاد). تُكتب server-side فقط.
+    match /fridayMarketWeeks/{weekKey} {
+      allow read: if true;
+      allow create, update, delete: if false; // server-only (Admin SDK)
+    }
+
+    // ============================================================
     // Broadcasts - سجلّ الإشعارات الجماعية التي يُرسلها الأدمن.
     // الكتابة تتم حصراً من API route عبر Firebase Admin SDK (يتجاوز
     // القواعد)، لذلك الـallow create/update/delete = false للـclient.

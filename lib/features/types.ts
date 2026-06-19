@@ -35,6 +35,8 @@ export const FEATURE_FLAGS = {
   REGISTRATION: "registration",
   /** بانرات الصفحة الرئيسية. */
   BANNERS: "banners",
+  /** سوق الجمعة — حدث أسبوعي يفتح يوم الجمعة فقط. */
+  FRIDAY_MARKET: "friday_market",
   /** وضع الصيانة — عند التفعيل يُغلق التطبيق للزوّار (يبقى للأدمن). */
   MAINTENANCE: "maintenance",
 } as const;
@@ -97,6 +99,11 @@ export const FLAG_METADATA: Record<
   banners: {
     label: "بانرات الصفحة الرئيسية",
     description: "عرض شريط البانرات الإعلانية في الواجهة",
+    defaultEnabled: true,
+  },
+  friday_market: {
+    label: "سوق الجمعة",
+    description: "حدث أسبوعي يفتح يوم الجمعة فقط للنشر السريع + بانر الصفحة الرئيسية",
     defaultEnabled: true,
   },
   maintenance: {

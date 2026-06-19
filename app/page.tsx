@@ -6,6 +6,7 @@ import { BrowseByBrand } from "@/components/browse-by-brand";
 import { CTASection } from "@/components/cta-section";
 import { ExploreCategories } from "@/components/explore-categories";
 import { FeaturedNearYou } from "@/components/featured-near-you";
+import { FridayMarketBanner } from "@/components/friday-market/friday-market-banner";
 import { HomepageBannersCarousel } from "@/components/homepage-banners-carousel";
 import { DynamicCategorySections } from "@/components/home-sections/dynamic-category-sections";
 import { MostSavedSection } from "@/components/most-saved-section";
@@ -70,6 +71,9 @@ export default function HomePage() {
 
       {/* ===== 1. البحث + الهيرو + الفئات السريعة ===== */}
       <SearchHero />
+
+      {/* ===== 🛒 سوق الجمعة — بانر كبير قبل الأقسام (يظهر عند تفعيل الميزة) ===== */}
+      {mounted && <FridayMarketBanner />}
 
       {/* ===== 2. إعلان ممول — Sponsored بارز أعلى الصفحة ===== */}
       {mounted && <SponsoredSpotlight />}
