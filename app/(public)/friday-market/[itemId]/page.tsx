@@ -35,6 +35,7 @@ import {
 } from "@/lib/friday-market/types";
 import { trackFridayView } from "@/lib/friday-market/track-view";
 import { MarketItemCard } from "@/components/friday-market/market-item-card";
+import { ReportButton } from "@/components/report/report-button";
 
 export default function FridayItemPage() {
   const params = useParams<{ itemId: string }>();
@@ -191,6 +192,19 @@ export default function FridayItemPage() {
         <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-l from-orange-500 to-red-600 px-2.5 py-1 text-[11px] font-black text-white">
           <Flame size={12} /> عرض الجمعة
         </span>
+
+        <div className="ms-auto">
+          <ReportButton
+            targetType="fridayMarket"
+            targetId={item.id}
+            targetMeta={{
+              title: item.title,
+              ownerId: item.ownerId,
+              snapshot: `سوق الجمعة — ${item.title} — ${formatPrice(item.price)}`,
+            }}
+            variant="text"
+          />
+        </div>
       </div>
 
       {/* معرض الصور */}

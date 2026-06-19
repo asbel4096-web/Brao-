@@ -14,6 +14,7 @@ import {
   type FridayMarketSettings,
 } from "@/lib/friday-market/types";
 import { computeMarketState } from "@/lib/friday-market/market-time";
+import { matchBannedWords, type BannedWordLike } from "@/lib/moderation/match-banned";
 
 /**
  * POST /api/friday-market/post
@@ -110,6 +111,21 @@ export async function POST(request: Request) {
     return jsonError("اختر القسم", 400);
   }
   if (images.length < 1) return jsonError("أضف صورة واحدة على الأقل", 400);
+
+  // 4.5) فحص الكلمات المحظورة على الاسم (الدفاع الفعلي — server-side)
+  try {
+    const bwSnap = await fs.collection("bannedWords").get();
+    const words: BannedWordLike[] = bwSnap.docs.map((d) => {
+      const data = d.data() || {};
+      return { word: String(data.word || ""), severity: data.severity === "warn" ? "warn" : "block" };
+    });
+    const hit = matchBannedWords(title, words);
+    if (hit && hit.severity === "block") {
+      return jsonError(`الاسم يحوي كلمة غير مسموحة: "${hit.matchedWord}"`, 400);
+    }
+  } catch {
+    // فشل قراءة القائمة لا يجب أن يُعطّل النشر — الفلترة client-side تبقى خط أول
+  }
 
   // 5) حدّ ناعم لكل مستخدم في الجلسة
   try {

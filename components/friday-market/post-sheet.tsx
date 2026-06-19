@@ -7,6 +7,7 @@ import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { auth, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
+import { useBannedWordsCheck } from "@/hooks/admin/use-banned-words-check";
 import {
   FRIDAY_CATEGORIES,
   FRIDAY_MAX_IMAGES,
@@ -30,6 +31,7 @@ interface PickedImage {
 export function PostSheet({ open, onClose, onPosted, weekKey, isLive }: Props) {
   const { user, profile } = useAuth();
   const toast = useToast();
+  const { check: checkBannedWords } = useBannedWordsCheck();
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const [images, setImages] = useState<PickedImage[]>([]);
@@ -92,6 +94,13 @@ export function PostSheet({ open, onClose, onPosted, weekKey, isLive }: Props) {
     if (title.trim().length < 2) return toast.warning("اكتب اسم المنتج");
     if (!price || Number(price) < 0) return toast.warning("أدخل السعر");
     if (phone.trim().length < 6) return toast.warning("أدخل رقم الهاتف");
+
+    // فحص فوري للكلمات المحظورة على الاسم
+    const hit = checkBannedWords(title);
+    if (hit && hit.severity === "block") {
+      toast.error(`الاسم يحوي كلمة غير مسموحة: "${hit.matchedWord}"`);
+      return;
+    }
 
     setSubmitting(true);
     try {

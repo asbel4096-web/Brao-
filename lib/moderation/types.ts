@@ -13,13 +13,14 @@ import type { Timestamp } from "firebase/firestore";
 // ============================================================
 // Target types
 // ============================================================
-export const REPORT_TARGET_TYPES = ["listing", "comment", "user"] as const;
+export const REPORT_TARGET_TYPES = ["listing", "comment", "user", "fridayMarket"] as const;
 export type ReportTargetType = (typeof REPORT_TARGET_TYPES)[number];
 
 export const TARGET_TYPE_LABELS: Record<ReportTargetType, string> = {
   listing: "إعلان",
   comment: "تعليق",
   user: "مستخدم",
+  fridayMarket: "عرض سوق الجمعة",
 };
 
 // ============================================================
@@ -60,6 +61,16 @@ export const USER_REASONS: ReportReason[] = [
   { key: "other", label: "سبب آخر" },
 ];
 
+export const FRIDAY_MARKET_REASONS: ReportReason[] = [
+  { key: "fake", label: "عرض مزيف", description: "محتوى غير حقيقي أو نصب" },
+  { key: "spam", label: "عرض سبام" },
+  { key: "offensive", label: "محتوى مسيء أو غير لائق" },
+  { key: "wrong_category", label: "قسم خاطئ" },
+  { key: "fraud", label: "احتيال أو سعر مضلّل" },
+  { key: "prohibited", label: "سلعة ممنوعة" },
+  { key: "other", label: "سبب آخر" },
+];
+
 export function getReasonsFor(type: ReportTargetType): ReportReason[] {
   switch (type) {
     case "listing":
@@ -68,6 +79,8 @@ export function getReasonsFor(type: ReportTargetType): ReportReason[] {
       return COMMENT_REASONS;
     case "user":
       return USER_REASONS;
+    case "fridayMarket":
+      return FRIDAY_MARKET_REASONS;
   }
 }
 

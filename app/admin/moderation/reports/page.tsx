@@ -7,6 +7,7 @@ import {
   RefreshCw,
   ListChecks,
   MessageCircle,
+  ShoppingCart,
   User as UserIcon,
   ArrowLeft,
   Clock,
@@ -239,6 +240,8 @@ function ReportRow({ report }: { report: ReportDoc }) {
       ? ListChecks
       : report.targetType === "comment"
       ? MessageCircle
+      : report.targetType === "fridayMarket"
+      ? ShoppingCart
       : UserIcon;
 
   return (

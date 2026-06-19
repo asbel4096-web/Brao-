@@ -139,6 +139,9 @@ export default function ReportDetailPage() {
   } else if (report.targetType === "user") {
     targetLink = `/admin/users/${report.targetId}`;
     targetLinkLabel = "فتح ملف المستخدم";
+  } else if (report.targetType === "fridayMarket") {
+    targetLink = `/friday-market/${report.targetId}`;
+    targetLinkLabel = "فتح عرض سوق الجمعة";
   }
 
   const handleAction = async (resolution: ResolutionKey) => {
@@ -347,7 +350,8 @@ export default function ReportDetailPage() {
               disabled={busy !== null}
               onClick={() => handleAction("warn")}
             />
-            {report.targetType !== "user" && (
+            {(report.targetType === "listing" ||
+              report.targetType === "comment") && (
               <ActionBtn
                 icon={Trash2}
                 label={
