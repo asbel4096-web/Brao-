@@ -33,6 +33,7 @@ import {
   fridayCategoryLabel,
   type FridayMarketItem,
 } from "@/lib/friday-market/types";
+import { trackFridayView } from "@/lib/friday-market/track-view";
 import { MarketItemCard } from "@/components/friday-market/market-item-card";
 
 export default function FridayItemPage() {
@@ -60,6 +61,8 @@ export default function FridayItemPage() {
           setNotFound(true);
         } else {
           setItem({ id: snap.id, ...(snap.data() as Omit<FridayMarketItem, "id">) });
+          // تسجيل مشاهدة (مرّة لكل زائر — الخادم يضمن ذلك)
+          trackFridayView(snap.id);
         }
       } catch {
         if (!cancelled) setNotFound(true);
