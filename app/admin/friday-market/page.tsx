@@ -61,6 +61,7 @@ export default function AdminFridayMarketPage() {
   );
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [togglingEnabled, setTogglingEnabled] = useState(false);
 
   useEffect(() => {
     if (!allowed) return;
@@ -102,7 +103,31 @@ export default function AdminFridayMarketPage() {
     }
   };
 
-  /* ===================== إدارة الإعلانات ===================== */
+  // زر التفعيل يحفظ فوراً (بدون الحاجة لزر "حفظ")
+  const setEnabled = async (v: boolean) => {
+    const nextSettings = { ...settings, enabled: v };
+    setSettings(nextSettings);
+    setTogglingEnabled(true);
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      const res = await fetch("/api/admin/friday-market/settings", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken || ""}`,
+        },
+        body: JSON.stringify(nextSettings),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data?.error || "فشل");
+      toast.success(v ? "تم تفعيل سوق الجمعة" : "تم إيقاف سوق الجمعة");
+    } catch (e: any) {
+      setSettings((s) => ({ ...s, enabled: !v })); // تراجع عند الفشل
+      toast.error(e?.message || "تعذّر تحديث الحالة");
+    } finally {
+      setTogglingEnabled(false);
+    }
+  };
   const [tab, setTab] = useState<"active" | "archived">("active");
   const [selectedWeek, setSelectedWeek] = useState<string>("");
   const [items, setItems] = useState<FridayMarketItem[]>([]);
@@ -342,11 +367,16 @@ export default function AdminFridayMarketPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            <Row label="تفعيل سوق الجمعة" hint="إيقافه يخفي البانر والصفحة عن الجميع">
-              <Toggle
-                on={settings.enabled !== false}
-                onChange={(v) => setSettings((s) => ({ ...s, enabled: v }))}
-              />
+            <Row label="تفعيل سوق الجمعة" hint="إيقافه يخفي البانر والصفحة عن الجميع فوراً">
+              <div className="flex items-center gap-2">
+                {togglingEnabled && (
+                  <Loader2 size={15} className="animate-spin text-action-500" />
+                )}
+                <Toggle
+                  on={settings.enabled !== false}
+                  onChange={(v) => setEnabled(v)}
+                />
+              </div>
             </Row>
             <Row label="يوم الفتح">
               <select

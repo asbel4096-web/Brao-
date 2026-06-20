@@ -67,57 +67,71 @@ export default function FridayMarketPage() {
     return items.filter((it) => it.title?.toLowerCase().includes(q));
   }, [items, search]);
 
+  // السوق موقوف من الأدمن → إخفاء الصفحة عن الجميع
+  if (!stateLoading && settings.enabled === false) {
+    return (
+      <div className="container flex min-h-[70vh] flex-col items-center justify-center text-center" dir="rtl">
+        <div className="text-5xl">🛒</div>
+        <h1 className="mt-4 text-lg font-black text-slate-800 dark:text-slate-100">
+          سوق الجمعة غير متاح حالياً
+        </h1>
+        <p className="mt-1 text-sm font-semibold text-slate-500">
+          تابعنا — سيعود قريباً
+        </p>
+        <Link
+          href="/"
+          className="mt-5 rounded-full bg-action-500 px-6 py-2.5 text-sm font-bold text-white"
+        >
+          العودة للرئيسية
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="pb-24" dir="rtl">
       {/* ===== الرأس: بانر + عدّاد + عدد ===== */}
       <section className="container pt-4">
-        <div
-          className="relative overflow-hidden rounded-[28px] p-5 text-white shadow-lg"
-          style={{
-            background:
-              "linear-gradient(135deg, #f97316 0%, #ea580c 45%, #b91c1c 100%)",
-          }}
-        >
-          <div className="pointer-events-none absolute -left-12 -top-12 h-44 w-44 rounded-full bg-white/15 blur-2xl" />
-          <div className="pointer-events-none absolute -bottom-14 -right-8 h-48 w-48 rounded-full bg-amber-300/20 blur-2xl" />
+        <div className="relative overflow-hidden rounded-[28px] border border-white/60 bg-white/70 p-5 shadow-[0_12px_34px_-10px_rgba(15,23,42,0.2)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/55">
+          <div className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full bg-action-400/20 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-14 -left-8 h-40 w-40 rounded-full bg-amber-300/15 blur-3xl" />
 
           <div className="relative">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/20 ring-1 ring-white/30 backdrop-blur">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-action-400 to-action-600 text-white shadow-md shadow-action-500/30">
                 <ShoppingCart size={24} strokeWidth={2.4} />
               </div>
               <div>
-                <h1 className="text-xl font-black leading-tight">
+                <h1 className="text-xl font-black leading-tight text-slate-900 dark:text-white">
                   {settings.bannerTitle || "🛒 سوق الجمعة"}
                 </h1>
-                <p className="text-[12px] font-medium text-white/85">
+                <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
                   {weekLabel}
                 </p>
               </div>
             </div>
 
             {/* العدّاد */}
-            <div className="mt-4 rounded-2xl bg-black/15 p-3 backdrop-blur">
-              <p className="mb-2 text-[12px] font-bold text-white/85">
+            <div className="mt-4 rounded-2xl border border-slate-100 bg-white/60 p-3 backdrop-blur dark:border-slate-800 dark:bg-slate-800/40">
+              <p className="mb-2 text-[12px] font-bold text-slate-500 dark:text-slate-400">
                 {isLive ? "⏳ يُغلق السوق خلال" : "🗓️ يفتح السوق خلال"}
               </p>
               <MarketCountdown
                 ms={isLive ? msRemaining : msUntilOpen}
                 variant="boxes"
-                onDark
               />
             </div>
 
             {/* عدد الإعلانات اليوم */}
             <div className="mt-3 flex items-center gap-2 text-[13px] font-bold">
-              <span className="rounded-full bg-white/20 px-3 py-1">
+              <span className="rounded-full bg-action-50 px-3 py-1 text-action-700 dark:bg-action-500/10 dark:text-action-300">
                 🔥 {todayCount === null ? "…" : formatNumber(todayCount)} إعلان اليوم
               </span>
               {settings.showArchive !== false && (
                 <Link
                   href="/friday-market/archive"
                   prefetch={false}
-                  className="inline-flex items-center gap-1 rounded-full bg-white/20 px-3 py-1"
+                  className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
                 >
                   <Archive size={13} /> الأرشيف
                 </Link>
