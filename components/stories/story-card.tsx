@@ -23,9 +23,20 @@ interface Props {
 function StoryCardImpl({ stories, seen = false, onClick }: Props) {
   const first = stories[0];
   const owner = first.ownerName || "مستخدم";
-  const cover =
-    first.coverUrl || first.media[0]?.thumbnailUrl || first.media[0]?.url || FALLBACK;
-  const avatar = first.ownerPhotoURL || cover || FALLBACK;
+
+  const firstMedia = first.media[0];
+  const videoUrl = firstMedia?.kind === "video" ? firstMedia.url : null;
+  // صورة غلاف حقيقية (poster) إن وُجدت — وليست رابط الفيديو نفسه
+  const posterImage =
+    [first.coverUrl, firstMedia?.thumbnailUrl].find(
+      (u) => u && u !== videoUrl
+    ) || null;
+  // لا توجد صورة غلاف لفيديو → نعرض أول إطار من الفيديو مباشرةً
+  const showVideoCover = !!videoUrl && !posterImage;
+  const coverImg = posterImage || FALLBACK;
+  // الأيقونة لا تأخذ رابط فيديو أبداً (تفادياً للصورة المكسورة)
+  const avatar = first.ownerPhotoURL || posterImage || FALLBACK;
+
   const hasVideo = stories.some((s) => s.media.some((m) => m.kind === "video"));
   const isService = first.type === "service";
 
@@ -42,14 +53,26 @@ function StoryCardImpl({ stories, seen = false, onClick }: Props) {
       "
     >
       {/* خلفية القصة */}
-      <Image
-        src={cover}
-        alt={owner}
-        fill
-        sizes="142px"
-        referrerPolicy="no-referrer"
-        className="object-cover transition-transform duration-500 group-hover:scale-105"
-      />
+      {showVideoCover ? (
+        <video
+          src={videoUrl ? `${videoUrl}#t=0.1` : undefined}
+          muted
+          playsInline
+          preload="metadata"
+          aria-hidden
+          tabIndex={-1}
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+      ) : (
+        <Image
+          src={coverImg}
+          alt={owner}
+          fill
+          sizes="142px"
+          referrerPolicy="no-referrer"
+          className="object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+      )}
       {/* تدرّج علوي خفيف + سفلي داكن لقراءة الاسم */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/25" />
 
@@ -66,10 +89,10 @@ function StoryCardImpl({ stories, seen = false, onClick }: Props) {
           <Image
             src={avatar}
             alt=""
-            width={42}
-            height={42}
+            width={36}
+            height={36}
             referrerPolicy="no-referrer"
-            className="h-10 w-10 rounded-full object-cover"
+            className="h-8 w-8 rounded-full object-cover"
           />
         </span>
       </span>

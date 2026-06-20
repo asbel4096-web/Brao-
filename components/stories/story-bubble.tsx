@@ -14,7 +14,14 @@ interface Props {
 function StoryBubbleImpl({ stories, seen = false, onClick }: Props) {
   const first = stories[0];
   const owner = first.ownerName || "مستخدم";
-  const cover = first.coverUrl || first.media[0]?.thumbnailUrl || first.media[0]?.url || "";
+  const firstMedia = first.media[0];
+  const videoUrl = firstMedia?.kind === "video" ? firstMedia.url : null;
+  const posterImage =
+    [first.coverUrl, firstMedia?.thumbnailUrl].find(
+      (u) => u && u !== videoUrl
+    ) || null;
+  const showVideoCover = !!videoUrl && !posterImage;
+  const cover = posterImage || "/icons/car-card.svg";
   const hasVideo = stories.some((story) => story.media.some((media) => media.kind === "video"));
   const isService = first.type === "service";
 
@@ -34,14 +41,26 @@ function StoryBubbleImpl({ stories, seen = false, onClick }: Props) {
         ].join(" ")}
       >
         <div className="relative rounded-full bg-white p-[2px] dark:bg-slate-950">
-          <Image
-            src={cover}
-            alt={owner}
-            width={68}
-            height={68}
-            referrerPolicy="no-referrer"
-            className="h-16 w-16 rounded-full object-cover sm:h-[68px] sm:w-[68px]"
-          />
+          {showVideoCover ? (
+            <video
+              src={videoUrl ? `${videoUrl}#t=0.1` : undefined}
+              muted
+              playsInline
+              preload="metadata"
+              aria-hidden
+              tabIndex={-1}
+              className="h-16 w-16 rounded-full object-cover sm:h-[68px] sm:w-[68px]"
+            />
+          ) : (
+            <Image
+              src={cover}
+              alt={owner}
+              width={68}
+              height={68}
+              referrerPolicy="no-referrer"
+              className="h-16 w-16 rounded-full object-cover sm:h-[68px] sm:w-[68px]"
+            />
+          )}
 
           {hasVideo ? (
             <span className="absolute inset-x-0 bottom-1 mx-auto flex h-5 w-5 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur">
