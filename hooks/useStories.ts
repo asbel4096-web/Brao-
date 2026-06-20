@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   collection,
+  limit,
   onSnapshot,
   orderBy,
   query,
@@ -20,10 +21,13 @@ export function useStories() {
   useEffect(() => {
     const now = Timestamp.now();
 
+    // نجلب فقط أحدث القصص (لا نُحمّل آلاف القصص دفعة واحدة).
+    // orderBy(expiresAt desc) = الأحدث انتهاءً = الأحدث نشراً.
     const q = query(
       collection(db, "stories"),
       where("expiresAt", ">", now),
-      orderBy("expiresAt", "desc")
+      orderBy("expiresAt", "desc"),
+      limit(60)
     );
 
     const unsub = onSnapshot(
