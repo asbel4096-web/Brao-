@@ -38,6 +38,7 @@ import {
 } from "@/lib/categories";
 import { formatPrice, normalizeLibyanPhone } from "@/lib/utils";
 import { applyBratshoWatermark } from "@/lib/image-watermark";
+import { enhanceImage } from "@/lib/image-enhance";
 import { cn } from "@/lib/utils";
 import { DynamicFields } from "@/components/categories/dynamic-fields";
 import { useBannedWordsCheck } from "@/hooks/admin/use-banned-words-check";
@@ -172,6 +173,7 @@ export default function AddListingPage() {
 
   const [form, setForm] = useState<FormState>(initialState);
   const [images, setImages] = useState<File[]>([]);
+  const [autoEnhance, setAutoEnhance] = useState(true);
   const [previews, setPreviews] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState("");
@@ -487,11 +489,12 @@ export default function AddListingPage() {
     try {
       setSubmitting(true);
 
-      // رفع الصور - مع دمج شعار براتشو كار تلقائياً قبل الرفع
+      // رفع الصور - تحسين تلقائي (اختياري) ثم دمج شعار براتشو كار قبل الرفع
       const imageUrls: string[] = [];
       for (let i = 0; i < images.length; i++) {
         const original = images[i];
-        const stamped = await applyBratshoWatermark(original);
+        const prepared = autoEnhance ? await enhanceImage(original) : original;
+        const stamped = await applyBratshoWatermark(prepared);
         const safe = stamped.name.replace(/\s+/g, "-").toLowerCase();
         const r = ref(
           storage,
@@ -873,6 +876,34 @@ export default function AddListingPage() {
                       <p className="text-center text-[11px] text-slate-400">
                         {images.length} صور · اضغط على صورة لجعلها الرئيسية · اسحب
                         من المقبض ⠿ لإعادة الترتيب
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={() => setAutoEnhance((v) => !v)}
+                        className="mt-2 flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-slate-700 dark:bg-slate-800"
+                      >
+                        <span className="flex items-center gap-1.5 text-[13px] font-bold text-slate-700 dark:text-slate-200">
+                          ✨ تحسين الصور تلقائياً
+                        </span>
+                        <span
+                          className={[
+                            "relative h-6 w-11 shrink-0 rounded-full transition",
+                            autoEnhance
+                              ? "bg-emerald-500"
+                              : "bg-slate-300 dark:bg-slate-600",
+                          ].join(" ")}
+                        >
+                          <span
+                            className={[
+                              "absolute top-1 h-4 w-4 rounded-full bg-white transition-all",
+                              autoEnhance ? "right-1" : "right-6",
+                            ].join(" ")}
+                          />
+                        </span>
+                      </button>
+                      <p className="mt-1 text-center text-[10px] text-slate-400">
+                        يضبط الإضاءة والألوان ويصغّر الحجم — صور أوضح ورفع أسرع
                       </p>
                     </div>
                   )}
