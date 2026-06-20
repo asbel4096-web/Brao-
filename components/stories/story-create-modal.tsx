@@ -30,6 +30,7 @@ import {
   STORY_MAX_VIDEO_DURATION_SEC,
   STORY_IMAGE_LIMIT,
   validateStoryFiles,
+  captureVideoPoster,
 } from "@/lib/stories/helpers";
 import { STORY_TYPE_META } from "@/lib/stories/types";
 import { StoryTypePicker } from "./story-type-picker";
@@ -240,6 +241,27 @@ export function StoryCreateModal({ open, onClose }: Props) {
 
         const url = await getDownloadURL(storageRef);
 
+        // للفيديو: التقط صورة مصغّرة حقيقية (poster) وارفعها كغلاف،
+        // لأن <img> في الصفحة الرئيسية لا يعرض الفيديو نفسه.
+        let thumbnailUrl: string | undefined = undefined;
+        if (draft.kind === "video") {
+          try {
+            const poster = await captureVideoPoster(draft.file);
+            if (poster) {
+              const posterPath = `${storagePath}-poster.jpg`;
+              const posterRef = ref(storage, posterPath);
+              await uploadBytes(posterRef, poster, {
+                contentType: "image/jpeg",
+                cacheControl: "public, max-age=31536000",
+              });
+              uploadedPaths.push(posterPath);
+              thumbnailUrl = await getDownloadURL(posterRef);
+            }
+          } catch {
+            /* تجاهل فشل المصغّرة — سنترك الغلاف فارغاً بدل كسر الرفع */
+          }
+        }
+
         uploadedMedia.push(
           deepRemoveUndefined({
             id: draft.id,
@@ -251,7 +273,7 @@ export function StoryCreateModal({ open, onClose }: Props) {
             durationSec: draft.durationSec,
             width: draft.width,
             height: draft.height,
-            thumbnailUrl: draft.kind === "video" ? url : undefined,
+            thumbnailUrl,
           })
         );
       }

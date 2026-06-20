@@ -11,7 +11,7 @@ export const STORY_LIFETIME_MS = 24 * 60 * 60 * 1000;
 export const STORY_IMAGE_LIMIT = 10;
 export const STORY_VIDEO_LIMIT = 1;
 export const STORY_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
-export const STORY_VIDEO_MAX_BYTES = 25 * 1024 * 1024;
+export const STORY_VIDEO_MAX_BYTES = 100 * 1024 * 1024;
 export const STORY_MAX_VIDEO_DURATION_SEC = 30;
 export const STORY_DEFAULT_IMAGE_DURATION_MS = 5000;
 
@@ -177,6 +177,69 @@ export async function loadVideoMetadata(file: File): Promise<{
   }
 }
 
+/**
+ * يلتقط صورة مصغّرة (poster) من أول إطار في الفيديو ليُستخدم كغلاف الستوري
+ * في الصفحة الرئيسية (لأن <img> لا يعرض الفيديو نفسه).
+ * يُعيد Blob صورة JPEG، أو null عند الفشل (نتراجع لرابط الفيديو حينها).
+ */
+export async function captureVideoPoster(file: File): Promise<Blob | null> {
+  if (typeof window === "undefined") return null;
+  const url = URL.createObjectURL(file);
+  const video = document.createElement("video");
+
+  try {
+    return await new Promise<Blob | null>((resolve) => {
+      let settled = false;
+      const done = (b: Blob | null) => {
+        if (settled) return;
+        settled = true;
+        resolve(b);
+      };
+
+      video.preload = "auto";
+      video.muted = true;
+      video.playsInline = true;
+      video.crossOrigin = "anonymous";
+
+      const grab = () => {
+        try {
+          const w = video.videoWidth;
+          const h = video.videoHeight;
+          if (!w || !h) return done(null);
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return done(null);
+          ctx.drawImage(video, 0, 0, w, h);
+          canvas.toBlob((b) => done(b), "image/jpeg", 0.82);
+        } catch {
+          done(null);
+        }
+      };
+
+      video.onloadeddata = () => {
+        // ننتقل لإطار مبكّر (وليس 0 تماماً) لتفادي الإطار الأسود
+        try {
+          video.currentTime = Math.min(0.1, (video.duration || 1) / 2);
+        } catch {
+          grab();
+        }
+      };
+      video.onseeked = grab;
+      video.onerror = () => done(null);
+      // أمان: لو لم يُطلق أي حدث خلال 6 ثوانٍ
+      setTimeout(() => done(null), 6000);
+
+      video.src = url;
+    });
+  } finally {
+    try {
+      URL.revokeObjectURL(url);
+    } catch {}
+  }
+}
+
 export async function validateStoryFiles(files: File[]): Promise<{
   mediaKind?: StoryMediaKind;
   drafts?: StoryUploadDraft[];
@@ -228,7 +291,7 @@ export async function validateStoryFiles(files: File[]): Promise<{
         return { error: "صيغة الفيديو غير مدعومة. استخدم MP4 أو WEBM أو MOV." };
       }
       if (file.size > STORY_VIDEO_MAX_BYTES) {
-        return { error: "حجم الفيديو يجب ألا يتجاوز 25 ميجابايت." };
+        return { error: "حجم الفيديو يجب ألا يتجاوز 100 ميجابايت." };
       }
 
       const meta = await loadVideoMetadata(file);

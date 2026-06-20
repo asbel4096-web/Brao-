@@ -39,7 +39,7 @@ service firebase.storage {
       allow write: if isOwner(userId)
         && (
           imageUnder(8 * 1024 * 1024)
-          || videoUnder(25 * 1024 * 1024)
+          || videoUnder(100 * 1024 * 1024)
         );
     }
 
@@ -47,6 +47,13 @@ service firebase.storage {
       allow read: if true;
       allow write: if isOwner(userId)
         && imageUnder(10 * 1024 * 1024);
+    }
+
+    // فيديو الإعلان - قصير، الكل يقرأ، صاحبه فقط يرفع (حتى 50MB).
+    match /listing-videos/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOwner(userId)
+        && videoUnder(50 * 1024 * 1024);
     }
 
     match /users/{userId}/{allPaths=**} {
