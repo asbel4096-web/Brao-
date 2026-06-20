@@ -31,8 +31,6 @@ function StoryCardImpl({ stories, seen = false, onClick }: Props) {
     [first.coverUrl, firstMedia?.thumbnailUrl].find(
       (u) => u && u !== videoUrl
     ) || null;
-  // لا توجد صورة غلاف لفيديو → نعرض أول إطار من الفيديو مباشرةً
-  const showVideoCover = !!videoUrl && !posterImage;
   const coverImg = posterImage || FALLBACK;
   // الأيقونة لا تأخذ رابط فيديو أبداً (تفادياً للصورة المكسورة)
   const avatar = first.ownerPhotoURL || posterImage || FALLBACK;
@@ -52,17 +50,21 @@ function StoryCardImpl({ stories, seen = false, onClick }: Props) {
         sm:h-[210px] sm:w-[142px]
       "
     >
-      {/* خلفية القصة */}
-      {showVideoCover ? (
-        <video
-          src={videoUrl ? `${videoUrl}#t=0.1` : undefined}
-          muted
-          playsInline
-          preload="metadata"
-          aria-hidden
-          tabIndex={-1}
-          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+      {/* خلفية القصة — صورة خفيفة فقط (لا نُركّب فيديو في الصف حفاظاً على
+          خفّة الرئيسية؛ الفيديو يُشغَّل داخل المشغّل عند الفتح فقط). */}
+      {posterImage ? (
+        <Image
+          src={posterImage}
+          alt={owner}
+          fill
+          sizes="142px"
+          referrerPolicy="no-referrer"
+          className="object-cover transition-transform duration-500 group-hover:scale-105"
         />
+      ) : videoUrl ? (
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-700 to-slate-900">
+          <Play size={34} className="text-white/70" fill="currentColor" />
+        </div>
       ) : (
         <Image
           src={coverImg}

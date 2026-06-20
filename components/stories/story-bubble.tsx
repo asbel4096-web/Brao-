@@ -20,7 +20,6 @@ function StoryBubbleImpl({ stories, seen = false, onClick }: Props) {
     [first.coverUrl, firstMedia?.thumbnailUrl].find(
       (u) => u && u !== videoUrl
     ) || null;
-  const showVideoCover = !!videoUrl && !posterImage;
   const cover = posterImage || "/icons/car-card.svg";
   const hasVideo = stories.some((story) => story.media.some((media) => media.kind === "video"));
   const isService = first.type === "service";
@@ -41,16 +40,19 @@ function StoryBubbleImpl({ stories, seen = false, onClick }: Props) {
         ].join(" ")}
       >
         <div className="relative rounded-full bg-white p-[2px] dark:bg-slate-950">
-          {showVideoCover ? (
-            <video
-              src={videoUrl ? `${videoUrl}#t=0.1` : undefined}
-              muted
-              playsInline
-              preload="metadata"
-              aria-hidden
-              tabIndex={-1}
+          {posterImage ? (
+            <Image
+              src={cover}
+              alt={owner}
+              width={68}
+              height={68}
+              referrerPolicy="no-referrer"
               className="h-16 w-16 rounded-full object-cover sm:h-[68px] sm:w-[68px]"
             />
+          ) : videoUrl ? (
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-slate-600 to-slate-800 sm:h-[68px] sm:w-[68px]">
+              <Play size={20} className="text-white/80" fill="currentColor" />
+            </div>
           ) : (
             <Image
               src={cover}
