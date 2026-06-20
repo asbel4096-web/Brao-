@@ -110,6 +110,10 @@ export interface FridayMarketSettings {
 
   /** إظهار رابط الأرشيف للمستخدمين. */
   showArchive?: boolean;
+
+  /** آخر جمعة أُرسل لها إشعار الفتح (weekKey) — لمنع الإرسال المكرّر. */
+  lastNotifiedWeek?: string;
+  lastNotifiedAt?: unknown;
 }
 
 export const DEFAULT_FRIDAY_SETTINGS: FridayMarketSettings = {

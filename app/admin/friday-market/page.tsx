@@ -21,6 +21,8 @@ import {
   ChevronDown,
   CheckSquare,
   Square,
+  Send,
+  BellRing,
 } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { useAdminRole } from "@/hooks/admin/use-admin-role";
@@ -63,6 +65,14 @@ export default function AdminFridayMarketPage() {
   const [saving, setSaving] = useState(false);
   const [togglingEnabled, setTogglingEnabled] = useState(false);
 
+  // إشعار فتح السوق
+  const [notifyTitle, setNotifyTitle] = useState("🛒 سوق الجمعة فُتح الآن!");
+  const [notifyBody, setNotifyBody] = useState(
+    "عروض الجمعة متاحة لوقت محدود — تصفّح وانشر عرضك السريع الآن 🔥"
+  );
+  const [sendingNotify, setSendingNotify] = useState(false);
+  const [notifiedWeek, setNotifiedWeek] = useState<string>("");
+
   useEffect(() => {
     if (!allowed) return;
     (async () => {
@@ -72,7 +82,10 @@ export default function AdminFridayMarketPage() {
           headers: { Authorization: `Bearer ${idToken || ""}` },
         });
         const data = await res.json();
-        if (res.ok && data.settings) setSettings(data.settings);
+        if (res.ok && data.settings) {
+          setSettings(data.settings);
+          setNotifiedWeek(data.settings.lastNotifiedWeek || "");
+        }
       } catch {
         /* default */
       } finally {
@@ -126,6 +139,58 @@ export default function AdminFridayMarketPage() {
       toast.error(e?.message || "تعذّر تحديث الحالة");
     } finally {
       setTogglingEnabled(false);
+    }
+  };
+
+  // إرسال إشعار "فُتح السوق" لكل المستخدمين
+  const sendNotification = async (force = false) => {
+    if (!force && notifyTitle.trim().length < 3) {
+      toast.warning("اكتب عنواناً للإشعار");
+      return;
+    }
+    if (
+      !force &&
+      !confirm("إرسال إشعار فتح السوق لكل المستخدمين الآن؟")
+    )
+      return;
+
+    setSendingNotify(true);
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      const res = await fetch("/api/admin/friday-market/notify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken || ""}`,
+        },
+        body: JSON.stringify({
+          title: notifyTitle.trim(),
+          body: notifyBody.trim(),
+          force,
+        }),
+      });
+      const data = await res.json();
+
+      // سبق الإرسال لهذه الجمعة → اطلب تأكيداً وأعد الإرسال بـforce
+      if (res.ok && data.already) {
+        if (confirm("⚠️ سبق إرسال إشعار لجمعة هذا الأسبوع. إعادة الإرسال للجميع؟")) {
+          await sendNotification(true);
+        }
+        return;
+      }
+
+      if (!res.ok || !data.ok) throw new Error(data?.error || "فشل الإرسال");
+
+      setNotifiedWeek(data.weekKey || currentWeekKey);
+      toast.success(
+        `تم الإرسال ✅ — ${formatNumber(data.pushSent || 0)} إشعار فوري + ${formatNumber(
+          data.recipientCount || 0
+        )} داخل التطبيق`
+      );
+    } catch (e: any) {
+      toast.error(e?.message || "تعذّر إرسال الإشعار");
+    } finally {
+      setSendingNotify(false);
     }
   };
   const [tab, setTab] = useState<"active" | "archived">("active");
@@ -454,6 +519,68 @@ export default function AdminFridayMarketPage() {
             </button>
           </div>
         )}
+      </section>
+
+      {/* ===== إشعار فتح السوق ===== */}
+      <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-100 dark:bg-slate-900 dark:ring-slate-800">
+        <div className="mb-1 flex items-center gap-2">
+          <BellRing size={18} className="text-action-500" />
+          <h2 className="text-base font-black text-slate-900 dark:text-white">
+            إشعار فتح السوق
+          </h2>
+        </div>
+        <p className="mb-4 text-xs font-semibold text-slate-400">
+          يصل لكل المستخدمين (إشعار فوري + داخل التطبيق) ويفتح صفحة سوق الجمعة.
+          أرسله صباح كل جمعة لزيادة التفاعل.
+        </p>
+
+        {notifiedWeek && notifiedWeek === currentWeekKey && (
+          <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
+            ✓ تم الإرسال لجمعة هذا الأسبوع
+          </div>
+        )}
+
+        <div className="space-y-3">
+          <div>
+            <label className="mb-1.5 block text-sm font-bold text-slate-700 dark:text-slate-200">
+              العنوان
+            </label>
+            <input
+              value={notifyTitle}
+              onChange={(e) => setNotifyTitle(e.target.value)}
+              maxLength={100}
+              className={inputCls + " w-full"}
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-bold text-slate-700 dark:text-slate-200">
+              النص
+            </label>
+            <textarea
+              value={notifyBody}
+              onChange={(e) => setNotifyBody(e.target.value)}
+              maxLength={500}
+              rows={3}
+              className={inputCls + " w-full resize-none"}
+            />
+          </div>
+
+          <button
+            onClick={() => sendNotification(false)}
+            disabled={sendingNotify}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-orange-500 to-red-600 py-3 text-sm font-black text-white shadow-md transition active:scale-[0.98] disabled:opacity-60"
+          >
+            {sendingNotify ? (
+              <>
+                <Loader2 size={16} className="animate-spin" /> جاري الإرسال...
+              </>
+            ) : (
+              <>
+                <Send size={16} /> أرسل إشعار فتح السوق
+              </>
+            )}
+          </button>
+        </div>
       </section>
 
       {/* ===== إدارة الإعلانات ===== */}
