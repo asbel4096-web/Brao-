@@ -531,7 +531,7 @@ export default function AdminFridayMarketPage() {
         </div>
         <p className="mb-4 text-xs font-semibold text-slate-400">
           يصل لكل المستخدمين (إشعار فوري + داخل التطبيق) ويفتح صفحة سوق الجمعة.
-          أرسله صباح كل جمعة لزيادة التفاعل.
+          يُرسَل تلقائياً صباح يوم فتح السوق، ويمكنك إرساله يدوياً الآن أيضاً.
         </p>
 
         {notifiedWeek && notifiedWeek === currentWeekKey && (

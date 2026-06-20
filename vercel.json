@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/refresh-stats",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/friday-market-open",
+      "schedule": "0 6 * * *"
     }
   ]
 }
