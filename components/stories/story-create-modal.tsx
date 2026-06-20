@@ -3,7 +3,7 @@
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { addDoc, collection, serverTimestamp, Timestamp } from "firebase/firestore";
-import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { deleteObject, getDownloadURL, ref, uploadBytes, uploadBytesResumable } from "firebase/storage";
 import {
   ArrowRight,
   Check,
@@ -252,9 +252,27 @@ export function StoryCreateModal({ open, onClose }: Props) {
         const storagePath = `stories/${user.uid}/${Date.now()}-${index + 1}-${safeName}`;
         const storageRef = ref(storage, storagePath);
 
-        await uploadBytes(storageRef, fileToUpload, {
-          contentType: fileToUpload.type,
-          cacheControl: "public, max-age=31536000",
+        // رفع بتتبّع التقدّم الحقيقي (مثل إنستغرام)
+        await new Promise<void>((resolve, reject) => {
+          const task = uploadBytesResumable(storageRef, fileToUpload, {
+            contentType: fileToUpload.type,
+            cacheControl: "public, max-age=31536000",
+          });
+          task.on(
+            "state_changed",
+            (snap) => {
+              const pct = snap.totalBytes
+                ? Math.round((snap.bytesTransferred / snap.totalBytes) * 100)
+                : 0;
+              setStatusText(
+                draft.kind === "video"
+                  ? `جاري رفع الفيديو… ${pct}%`
+                  : `جاري رفع الصور… ${pct}%`
+              );
+            },
+            reject,
+            () => resolve()
+          );
         });
         uploadedPaths.push(storagePath);
 

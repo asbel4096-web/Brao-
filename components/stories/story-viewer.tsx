@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { doc, runTransaction, serverTimestamp } from "firebase/firestore";
+import { doc, deleteDoc, runTransaction, serverTimestamp } from "firebase/firestore";
+import { deleteObject, ref as storageRef } from "firebase/storage";
 import {
   Bookmark,
   Eye,
@@ -19,9 +20,10 @@ import {
   Volume2,
   VolumeX,
   Wrench,
+  Trash2,
   X,
 } from "lucide-react";
-import { db } from "@/lib/firebase";
+import { db, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { OwnerOnly } from "@/components/owner-only";
@@ -64,10 +66,12 @@ export function StoryViewer({
   onViewedStory,
 }: Props) {
   const { user } = useAuth();
+  const toast = useToast();
   const pages = useMemo(() => buildStoryPages(stories), [stories]);
   const [index, setIndex] = useState(startIndex);
   const [progress, setProgress] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [dragOffsetY, setDragOffsetY] = useState(0);
   // نسبة الصورة/الفيديو (height / width). > 1 يعني طولية، < 1 عرضية.
   // null حتى يُحمَّل المحتوى. تُحدَّد عبر onLoad/onLoadedMetadata.
@@ -295,6 +299,40 @@ export function StoryViewer({
   const prev = () => {
     if (index > 0) {
       setIndex((current) => current - 1);
+    }
+  };
+
+  // حذف القصة (لصاحبها فقط) — يحذف الملفات + الوثيقة، ثم يُغلق.
+  const deleteStory = async () => {
+    if (!user || !currentStory || currentStory.ownerId !== user.uid) return;
+    setPaused(true);
+    const ok =
+      typeof window !== "undefined"
+        ? window.confirm("حذف هذه القصة نهائياً؟")
+        : true;
+    if (!ok) {
+      setPaused(false);
+      return;
+    }
+    setDeleting(true);
+    try {
+      // حذف ملفات التخزين (أفضل جهد — لا نوقف الحذف إن فشل ملف)
+      for (const m of currentStory.media) {
+        if (!m.storagePath) continue;
+        try {
+          await deleteObject(storageRef(storage, m.storagePath));
+        } catch {}
+        try {
+          await deleteObject(storageRef(storage, `${m.storagePath}-poster.jpg`));
+        } catch {}
+      }
+      await deleteDoc(doc(db, "stories", currentStory.id));
+      toast.success("تم حذف القصة");
+      onClose();
+    } catch {
+      toast.error("تعذّر حذف القصة، حاول مجدداً");
+      setDeleting(false);
+      setPaused(false);
     }
   };
 
@@ -565,6 +603,29 @@ export function StoryViewer({
                 <Eye size={12} />
                 {formatStoryCount(Number(currentStory.viewsCount || 0))}
               </div>
+            </OwnerOnly>
+
+            <OwnerOnly ownerId={currentStory.ownerId}>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void deleteStory();
+                }}
+                disabled={deleting}
+                className="
+                  inline-flex h-9 w-9 shrink-0 items-center justify-center
+                  rounded-full bg-white/15 backdrop-blur-md transition
+                  active:scale-95 hover:bg-rose-500/40 disabled:opacity-60
+                "
+                aria-label="حذف القصة"
+              >
+                {deleting ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Trash2 size={16} />
+                )}
+              </button>
             </OwnerOnly>
 
             <div className="flex-1" />
