@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import type { DealerStory, StoryCategory } from "@/lib/dealer/stories";
@@ -41,6 +41,8 @@ export function StoryViewer({
   const [currentIdx, setCurrentIdx] = useState(startIndex);
   const [progress, setProgress] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const catMeta = findCategory(category);
   const currentStory = stories[currentIdx];
@@ -54,9 +56,10 @@ export function StoryViewer({
     }
   }, [open, startIndex]);
 
-  // Progress + auto-advance
+  // Progress + auto-advance (للصور فقط — الفيديو يقود تقدّمه بنفسه)
   useEffect(() => {
     if (!open || paused || !currentStory) return;
+    if (currentStory.mediaType === "video") return;
 
     const interval = setInterval(() => {
       setProgress((p) => {
@@ -76,6 +79,22 @@ export function StoryViewer({
 
     return () => clearInterval(interval);
   }, [open, paused, currentIdx, currentStory, stories.length, onClose]);
+
+  // تحكّم تشغيل الفيديو: يبدأ من البداية، يتزامن مع الإيقاف المؤقت،
+  // ويتراجع للكتم لو منع المتصفّح التشغيل التلقائي بصوت (يضمن سلاسة بلا توقّف).
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || currentStory?.mediaType !== "video") return;
+    if (paused) {
+      v.pause();
+      return;
+    }
+    void v.play().catch(() => {
+      setMuted(true);
+      v.muted = true;
+      void v.play().catch(() => {});
+    });
+  }, [paused, currentStory, currentIdx]);
 
   const handleNext = useCallback(() => {
     if (currentIdx < stories.length - 1) {
@@ -126,11 +145,23 @@ export function StoryViewer({
           <div className="absolute inset-0 flex items-center justify-center">
             {currentStory.mediaType === "video" ? (
               <video
+                ref={videoRef}
                 src={currentStory.mediaURL}
                 autoPlay
                 playsInline
-                muted={false}
+                muted={muted}
+                preload="auto"
                 className="h-full w-full object-contain"
+                onTimeUpdate={(e) => {
+                  const v = e.currentTarget;
+                  if (v.duration && isFinite(v.duration) && v.duration > 0) {
+                    setProgress(
+                      Math.min(100, (v.currentTime / v.duration) * 100)
+                    );
+                  }
+                }}
+                onEnded={handleNext}
+                onError={() => handleNext()}
               />
             ) : (
               <Image

@@ -108,11 +108,14 @@ export function StoryViewer({
       const media = page?.media;
       if (!media?.url) continue;
       if (media.kind === "video") {
-        // preload="metadata" يكفي لبدء سريع دون تحميل الفيديو كاملاً (توفير بيانات)
+        // الفيديو التالي مباشرة: حمّله فعلياً (auto) ليبدأ التشغيل فوراً
+        // بلا تقطيع عند الانتقال؛ الذي بعده يكفيه metadata (توفير بيانات).
         const v = document.createElement("video");
-        v.preload = "metadata";
+        const isImmediateNext = page === pages[index + 1];
+        v.preload = isImmediateNext ? "auto" : "metadata";
         v.muted = true;
         v.src = media.url;
+        v.load();
         created.push(v);
       } else {
         const img = new window.Image();
@@ -220,17 +223,22 @@ export function StoryViewer({
       });
     }
 
-    intervalRef.current = setInterval(() => {
-      const elapsed =
-        elapsedBeforePauseRef.current + (Date.now() - startedAtRef.current);
-      const pct = Math.min(100, (elapsed / currentDurationMs) * 100);
-      setProgress(pct);
+    // المؤقّت بساعة الحائط للصور فقط. الفيديو يقود تقدّمه بنفسه عبر
+    // onTimeUpdate/onEnded — فيتوقّف التقدّم تلقائياً أثناء التخزين المؤقت
+    // (buffering) ولا يتقدّم الستوري قبل أن يكمل الفيديو فعلياً = تشغيل سلس.
+    if (currentMedia?.kind !== "video") {
+      intervalRef.current = setInterval(() => {
+        const elapsed =
+          elapsedBeforePauseRef.current + (Date.now() - startedAtRef.current);
+        const pct = Math.min(100, (elapsed / currentDurationMs) * 100);
+        setProgress(pct);
 
-      if (pct >= 100) {
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        next();
-      }
-    }, 50);
+        if (pct >= 100) {
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          next();
+        }
+      }, 50);
+    }
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
@@ -391,6 +399,14 @@ export function StoryViewer({
               preload="auto"
               poster={currentMedia.thumbnailUrl || undefined}
               onEnded={next}
+              onTimeUpdate={(e) => {
+                const v = e.currentTarget;
+                if (v.duration && isFinite(v.duration) && v.duration > 0) {
+                  setProgress(
+                    Math.min(100, (v.currentTime / v.duration) * 100)
+                  );
+                }
+              }}
               onLoadedMetadata={(e) => {
                 const v = e.currentTarget;
                 if (v.videoWidth && v.videoHeight) {
