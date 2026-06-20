@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Flame } from "lucide-react";
+import { Flame, Eye } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import {
   fridayCategoryEmoji,
@@ -69,9 +69,16 @@ export function MarketItemCard({
           <h3 className="mt-0.5 line-clamp-2 min-h-[2.4em] text-[13px] font-bold leading-tight text-slate-800 dark:text-slate-100">
             {item.title}
           </h3>
-          <p className="mt-1 text-[11px] font-semibold text-slate-400">
-            {fridayCategoryLabel(item.category)}
-            {item.city ? ` · ${item.city}` : ""}
+          <p className="mt-1 flex items-center gap-1.5 text-[11px] font-semibold text-slate-400">
+            <span>
+              {fridayCategoryLabel(item.category)}
+              {item.city ? ` · ${item.city}` : ""}
+            </span>
+            {(item.views || 0) > 0 && (
+              <span className="inline-flex items-center gap-0.5 text-slate-400">
+                · <Eye size={11} /> {item.views}
+              </span>
+            )}
           </p>
         </div>
       </motion.article>

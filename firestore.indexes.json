@@ -379,6 +379,56 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "_comment": "سوق الجمعة - الأكثر مشاهدة: weekKey + status + views + الأحدث",
+      "collectionGroup": "fridayMarket",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "weekKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "views",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "_comment": "سوق الجمعة - الأكثر مشاهدة بقسم: weekKey + status + category + views + الأحدث",
+      "collectionGroup": "fridayMarket",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "weekKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "category",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "views",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []

@@ -38,6 +38,8 @@ interface Options {
   archived?: boolean;
   /** إيقاف الجلب (مثلاً قبل معرفة weekKey). */
   paused?: boolean;
+  /** الترتيب: "newest" الأحدث (افتراضي) | "popular" الأكثر مشاهدة. */
+  sort?: "newest" | "popular";
 }
 
 export function useMarketItems({
@@ -45,6 +47,7 @@ export function useMarketItems({
   category,
   archived = false,
   paused = false,
+  sort = "newest",
 }: Options) {
   const [items, setItems] = useState<FridayMarketItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -67,12 +70,17 @@ export function useMarketItems({
       if (category && category !== "all") {
         constraints.push(where("category", "==", category));
       }
-      constraints.push(orderBy("createdAt", "desc"));
+      if (sort === "popular") {
+        constraints.push(orderBy("views", "desc"));
+        constraints.push(orderBy("createdAt", "desc"));
+      } else {
+        constraints.push(orderBy("createdAt", "desc"));
+      }
       if (after) constraints.push(startAfter(after));
       constraints.push(fbLimit(PAGE_SIZE));
       return query(base, ...constraints);
     },
-    [weekKey, status, category]
+    [weekKey, status, category, sort]
   );
 
   const fetchPage = useCallback(
@@ -125,7 +133,7 @@ export function useMarketItems({
     setHasMore(true);
     fetchPage(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [weekKey, category, status, paused]);
+  }, [weekKey, category, status, paused, sort]);
 
   const loadMore = useCallback(() => {
     if (loading || loadingMore || !hasMore || paused) return;

@@ -32,6 +32,7 @@ export default function FridayMarketPage() {
 
   const [category, setCategory] = useState("all");
   const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<"newest" | "popular">("newest");
   const [postOpen, setPostOpen] = useState(false);
   const [todayCount, setTodayCount] = useState<number | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -39,6 +40,7 @@ export default function FridayMarketPage() {
   const { items, loading, loadingMore, hasMore, loadMore } = useMarketItems({
     weekKey,
     category,
+    sort,
     paused: stateLoading,
   });
   const { items: featured } = useMarketFeatured(weekKey, 8);
@@ -178,10 +180,34 @@ export default function FridayMarketPage() {
 
       {/* ===== الشبكة ===== */}
       <section className="container mt-5">
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex items-center justify-between gap-2">
           <h2 className="text-base font-black text-slate-900 dark:text-white">
-            أحدث العروض
+            {sort === "popular" ? "🔥 الأكثر رواجاً" : "أحدث العروض"}
           </h2>
+          <div className="flex rounded-full bg-slate-100 p-0.5 dark:bg-slate-800">
+            <button
+              onClick={() => setSort("newest")}
+              className={[
+                "rounded-full px-3 py-1.5 text-xs font-bold transition",
+                sort === "newest"
+                  ? "bg-white text-action-600 shadow-sm dark:bg-slate-700 dark:text-action-300"
+                  : "text-slate-500",
+              ].join(" ")}
+            >
+              الأحدث
+            </button>
+            <button
+              onClick={() => setSort("popular")}
+              className={[
+                "rounded-full px-3 py-1.5 text-xs font-bold transition",
+                sort === "popular"
+                  ? "bg-white text-action-600 shadow-sm dark:bg-slate-700 dark:text-action-300"
+                  : "text-slate-500",
+              ].join(" ")}
+            >
+              🔥 الأكثر رواجاً
+            </button>
+          </div>
         </div>
 
         {!isOpen && !stateLoading ? (
