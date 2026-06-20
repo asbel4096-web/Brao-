@@ -32,6 +32,7 @@ import {
   validateStoryFiles,
   captureVideoPoster,
 } from "@/lib/stories/helpers";
+import { compressVideo } from "@/lib/video-compress";
 import { STORY_TYPE_META } from "@/lib/stories/types";
 import { StoryTypePicker } from "./story-type-picker";
 import { CarFields } from "./story-fields/car-fields";
@@ -83,6 +84,7 @@ export function StoryCreateModal({ open, onClose }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [payload, setPayload] = useState<Partial<StoryPayload>>({});
   const [publishing, setPublishing] = useState(false);
+  const [statusText, setStatusText] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -229,12 +231,29 @@ export function StoryCreateModal({ open, onClose }: Props) {
       const uploadedMedia: StoryMediaItem[] = [];
 
       for (const [index, draft] of drafts.entries()) {
-        const safeName = draft.file.name.replace(/\s+/g, "-").toLowerCase();
+        // ضغط الفيديو قبل الرفع (حيث يُدعم) — أسرع رفعاً على الشبكات الضعيفة
+        let fileToUpload: File = draft.file;
+        if (draft.kind === "video") {
+          setStatusText("جاري ضغط الفيديو…");
+          try {
+            fileToUpload = await compressVideo(draft.file, {
+              onProgress: (r) =>
+                setStatusText(`جاري ضغط الفيديو… ${Math.round(r * 100)}%`),
+            });
+          } catch {
+            fileToUpload = draft.file;
+          }
+          setStatusText("جاري رفع الفيديو…");
+        }
+
+        const safeName = (fileToUpload.name || draft.file.name)
+          .replace(/\s+/g, "-")
+          .toLowerCase();
         const storagePath = `stories/${user.uid}/${Date.now()}-${index + 1}-${safeName}`;
         const storageRef = ref(storage, storagePath);
 
-        await uploadBytes(storageRef, draft.file, {
-          contentType: draft.file.type,
+        await uploadBytes(storageRef, fileToUpload, {
+          contentType: fileToUpload.type,
           cacheControl: "public, max-age=31536000",
         });
         uploadedPaths.push(storagePath);
@@ -268,8 +287,8 @@ export function StoryCreateModal({ open, onClose }: Props) {
             kind: draft.kind,
             url,
             storagePath,
-            mimeType: draft.mimeType,
-            sizeBytes: draft.sizeBytes,
+            mimeType: fileToUpload.type || draft.mimeType,
+            sizeBytes: fileToUpload.size,
             durationSec: draft.durationSec,
             width: draft.width,
             height: draft.height,
@@ -329,6 +348,7 @@ export function StoryCreateModal({ open, onClose }: Props) {
       toast.error(message);
     } finally {
       setPublishing(false);
+      setStatusText("");
     }
   };
 
@@ -675,6 +695,12 @@ export function StoryCreateModal({ open, onClose }: Props) {
                       </div>
                     </div>
                   </div>
+
+                  {publishing && statusText ? (
+                    <p className="mb-2 text-center text-[12px] font-bold text-action-600 dark:text-action-400">
+                      {statusText}
+                    </p>
+                  ) : null}
 
                   <div className="flex flex-col gap-3 sm:flex-row">
                     <button
