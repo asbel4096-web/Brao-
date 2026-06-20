@@ -10,6 +10,8 @@ import {
   MessageCircle,
   Phone,
   Flame,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import {
   collection,
@@ -21,7 +23,7 @@ import {
   setDoc,
   where,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import {
@@ -36,6 +38,7 @@ import {
 import { trackFridayView } from "@/lib/friday-market/track-view";
 import { MarketItemCard } from "@/components/friday-market/market-item-card";
 import { ReportButton } from "@/components/report/report-button";
+import { EditSheet } from "@/components/friday-market/edit-sheet";
 
 export default function FridayItemPage() {
   const params = useParams<{ itemId: string }>();
@@ -50,6 +53,8 @@ export default function FridayItemPage() {
   const [activeImg, setActiveImg] = useState(0);
   const [similar, setSimilar] = useState<FridayMarketItem[]>([]);
   const [chatLoading, setChatLoading] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // جلب الإعلان
   useEffect(() => {
@@ -177,6 +182,30 @@ export default function FridayItemPage() {
   }
 
   const wa = normalizeLibyanPhone(item.whatsapp || item.phone || "");
+  const isOwner = !!user && item.ownerId === user.uid;
+
+  const deleteItem = async () => {
+    if (!confirm("حذف هذا العرض نهائياً؟")) return;
+    setDeleting(true);
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      const res = await fetch("/api/friday-market/delete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken || ""}`,
+        },
+        body: JSON.stringify({ itemId: item.id }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data?.error || "تعذّر الحذف");
+      toast.success("تم حذف العرض");
+      router.replace("/friday-market");
+    } catch (e: any) {
+      toast.error(e?.message || "تعذّر الحذف");
+      setDeleting(false);
+    }
+  };
 
   return (
     <div className="pb-28" dir="rtl">
@@ -194,18 +223,50 @@ export default function FridayItemPage() {
         </span>
 
         <div className="ms-auto">
-          <ReportButton
-            targetType="fridayMarket"
-            targetId={item.id}
-            targetMeta={{
-              title: item.title,
-              ownerId: item.ownerId,
-              snapshot: `سوق الجمعة — ${item.title} — ${formatPrice(item.price)}`,
-            }}
-            variant="text"
-          />
+          {isOwner ? (
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setEditOpen(true)}
+                className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-600 active:scale-95 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+              >
+                <Pencil size={12} /> تعديل
+              </button>
+              <button
+                onClick={deleteItem}
+                disabled={deleting}
+                className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-white px-3 py-1.5 text-[11px] font-bold text-rose-600 active:scale-95 disabled:opacity-50 dark:border-rose-900/50 dark:bg-slate-900"
+              >
+                {deleting ? (
+                  <Loader2 size={12} className="animate-spin" />
+                ) : (
+                  <Trash2 size={12} />
+                )}
+                حذف
+              </button>
+            </div>
+          ) : (
+            <ReportButton
+              targetType="fridayMarket"
+              targetId={item.id}
+              targetMeta={{
+                title: item.title,
+                ownerId: item.ownerId,
+                snapshot: `سوق الجمعة — ${item.title} — ${formatPrice(item.price)}`,
+              }}
+              variant="text"
+            />
+          )}
         </div>
       </div>
+
+      <EditSheet
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        item={item}
+        onUpdated={(fields) =>
+          setItem((prev) => (prev ? { ...prev, ...fields } : prev))
+        }
+      />
 
       {/* معرض الصور */}
       <div className="container">
