@@ -23,6 +23,8 @@ import {
   Square,
   Send,
   BellRing,
+  TrendingUp,
+  Flame,
 } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { useAdminRole } from "@/hooks/admin/use-admin-role";
@@ -270,6 +272,20 @@ export default function AdminFridayMarketPage() {
     [items]
   );
 
+  // إحصائيات الجلسة (مشتقّة من العروض المحمّلة)
+  const stats = useMemo(() => {
+    const totalOffers = items.length;
+    let topCat: { label: string; emoji: string; count: number } | null = null;
+    for (const s of grouped) {
+      if (!topCat || s.items.length > topCat.count) {
+        topCat = { label: s.label, emoji: s.emoji, count: s.items.length };
+      }
+    }
+    const avgViews =
+      totalOffers > 0 ? Math.round(totalViews / totalOffers) : 0;
+    return { totalOffers, avgViews, topCat };
+  }, [items, grouped, totalViews]);
+
   /* ---------- التحديد ---------- */
   const toggleItem = (id: string) => {
     setSelected((prev) => {
@@ -420,6 +436,43 @@ export default function AdminFridayMarketPage() {
           </p>
         </div>
       </header>
+
+      {/* ===== لوحة الإحصائيات ===== */}
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <StatCard
+          label="عروض الجلسة"
+          value={formatNumber(stats.totalOffers)}
+          icon={<ShoppingCart size={18} />}
+          tone="action"
+        />
+        <StatCard
+          label="إجمالي المشاهدات"
+          value={formatNumber(totalViews)}
+          icon={<Eye size={18} />}
+          tone="blue"
+        />
+        <StatCard
+          label="متوسط المشاهدات"
+          value={formatNumber(stats.avgViews)}
+          icon={<TrendingUp size={18} />}
+          tone="emerald"
+        />
+        <StatCard
+          label="أنشط قسم"
+          value={
+            stats.topCat && stats.topCat.count > 0
+              ? `${stats.topCat.emoji} ${stats.topCat.label}`
+              : "—"
+          }
+          sub={
+            stats.topCat && stats.topCat.count > 0
+              ? `${formatNumber(stats.topCat.count)} عرض`
+              : undefined
+          }
+          icon={<Flame size={18} />}
+          tone="rose"
+        />
+      </section>
 
       {/* ===== الإعدادات ===== */}
       <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-100 dark:bg-slate-900 dark:ring-slate-800">
@@ -850,6 +903,45 @@ function ItemRow({
 /* ===================== عناصر مساعدة ===================== */
 const inputCls =
   "rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-800 outline-none focus:border-action-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100";
+
+const STAT_TONES: Record<string, string> = {
+  action: "bg-action-50 text-action-600 dark:bg-action-500/10 dark:text-action-300",
+  blue: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-300",
+  emerald: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300",
+  rose: "bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-300",
+};
+
+function StatCard({
+  label,
+  value,
+  sub,
+  icon,
+  tone = "action",
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  icon: React.ReactNode;
+  tone?: "action" | "blue" | "emerald" | "rose";
+}) {
+  return (
+    <div className="rounded-2xl bg-white p-3.5 shadow-sm ring-1 ring-slate-100 dark:bg-slate-900 dark:ring-slate-800">
+      <div
+        className={
+          "mb-2 flex h-8 w-8 items-center justify-center rounded-xl " +
+          (STAT_TONES[tone] || STAT_TONES.action)
+        }
+      >
+        {icon}
+      </div>
+      <p className="truncate text-lg font-black text-slate-900 dark:text-white">
+        {value}
+      </p>
+      <p className="text-[11px] font-bold text-slate-400">{label}</p>
+      {sub && <p className="mt-0.5 text-[11px] font-semibold text-slate-400">{sub}</p>}
+    </div>
+  );
+}
 
 function Row({
   label,
