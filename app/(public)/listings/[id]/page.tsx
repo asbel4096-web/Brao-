@@ -33,6 +33,7 @@ import {
 } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import ListingComments from "@/components/listing-comments";
+import { useFeatureFlag } from "@/hooks/features/use-feature-flag";
 import { SponsoredSpotlight } from "@/components/sponsored-spotlight";
 import { ImageGallery } from "@/components/image-gallery";
 import { DynamicSpecs } from "@/components/dynamic-specs";
@@ -64,6 +65,8 @@ export default function ListingDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [missing, setMissing] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
+  const commentsFlag = useFeatureFlag("comments");
+  const chatEnabled = useFeatureFlag("chat");
   const [descExpanded, setDescExpanded] = useState(false);
 
   /* ---------------- جلب البيانات (محفوظ كما هو) ---------------- */
@@ -454,7 +457,7 @@ export default function ListingDetailsPage() {
         <div id="comments" className="mt-3 scroll-mt-24">
           <ListingComments
             listingId={listing.id}
-            commentsEnabled={listing.commentsEnabled !== false}
+            commentsEnabled={listing.commentsEnabled !== false && commentsFlag}
             ownerId={listing.ownerId}
           />
         </div>
@@ -489,7 +492,7 @@ export default function ListingDetailsPage() {
             >
               <MessageCircle size={18} /> واتساب
             </a>
-          ) : (
+          ) : chatEnabled ? (
             <button
               type="button"
               onClick={() => void startChat()}
@@ -498,7 +501,7 @@ export default function ListingDetailsPage() {
             >
               <MessageCircle size={18} /> {chatLoading ? "..." : "مراسلة"}
             </button>
-          )}
+          ) : null}
 
           <a
             href={listing.phone ? `tel:${listing.phone}` : "#"}

@@ -39,6 +39,12 @@ export const FEATURE_FLAGS = {
   FRIDAY_MARKET: "friday_market",
   /** وضع الصيانة — عند التفعيل يُغلق التطبيق للزوّار (يبقى للأدمن). */
   MAINTENANCE: "maintenance",
+  /** قسم المعارض والتجّار الموثّقين في الصفحة الرئيسية. */
+  DEALERS: "dealers",
+  /** التعليقات على الإعلانات. */
+  COMMENTS: "comments",
+  /** الدردشة/مراسلة البائعين. */
+  CHAT: "chat",
 } as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAGS)[keyof typeof FEATURE_FLAGS];
@@ -110,6 +116,21 @@ export const FLAG_METADATA: Record<
     label: "وضع الصيانة",
     description: "إغلاق التطبيق مؤقتاً للزوّار (يبقى متاحاً للأدمن فقط)",
     defaultEnabled: false,
+  },
+  dealers: {
+    label: "قسم المعارض",
+    description: "عرض المعارض والتجّار الموثّقين في الصفحة الرئيسية",
+    defaultEnabled: true,
+  },
+  comments: {
+    label: "التعليقات",
+    description: "السماح بالتعليق على الإعلانات",
+    defaultEnabled: true,
+  },
+  chat: {
+    label: "الدردشة",
+    description: "مراسلة البائعين عبر المحادثات",
+    defaultEnabled: true,
   },
 };
 

@@ -13,6 +13,7 @@ import { BadgeCheck, ChevronLeft, MapPin, Star } from "lucide-react";
 import { db } from "@/lib/firebase";
 import type { UserProfile } from "@/lib/types";
 import { getTraderDisplayName, formatNumber } from "@/lib/utils";
+import { useFeatureFlag } from "@/hooks/features/use-feature-flag";
 
 /** نحصر العدد كي لا يثقل الصفحة الرئيسية. */
 const MAX_DEALERS = 12;
@@ -53,6 +54,7 @@ export function VerifiedDealersRow() {
   // الـcache يُقرأ داخل useEffect بعد الـhydration.
   const [dealers, setDealers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const dealersEnabled = useFeatureFlag("dealers");
 
   useEffect(() => {
     // قراءة الـcache بعد الـhydration (آمن الآن).
@@ -110,6 +112,7 @@ export function VerifiedDealersRow() {
   }, []);
 
   // إخفاء القسم كلياً عند التحميل أو عدم وجود معارض.
+  if (!dealersEnabled) return null;
   if (loading || dealers.length === 0) return null;
 
   return (
