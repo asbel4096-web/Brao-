@@ -51,6 +51,7 @@ export interface AdminUser {
   lastActiveAt?: any;
   city?: string;
   businessName?: string;
+  followersCount?: number;
 }
 
 interface State {

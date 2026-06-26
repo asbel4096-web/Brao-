@@ -7,6 +7,7 @@ import {
   Ban,
   MoreVertical,
   User as UserIcon,
+  Users,
 } from "lucide-react";
 import { RoleBadge } from "@/components/admin/ui/role-badge";
 import type { AdminUser } from "@/hooks/admin/use-users-list";
@@ -156,6 +157,15 @@ function UserRow({ user }: { user: AdminUser }) {
             <>
               <span aria-hidden="true">·</span>
               <span>انضم {formatDate(user.createdAt)}</span>
+            </>
+          )}
+          {(user.isVerifiedDealer || (user.followersCount ?? 0) > 0) && (
+            <>
+              <span aria-hidden="true">·</span>
+              <span className="inline-flex items-center gap-1">
+                <Users size={11} />
+                {user.followersCount || 0} متابع
+              </span>
             </>
           )}
         </div>

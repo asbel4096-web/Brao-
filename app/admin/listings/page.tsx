@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import {
   collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, updateDoc,
 } from "firebase/firestore";
-import { CheckCircle, XCircle, Trash2, ExternalLink, X } from "lucide-react";
+import { CheckCircle, XCircle, Trash2, ExternalLink, X, ThumbsUp, MessageSquare, Eye } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { createNotification } from "@/lib/notifications";
 import { useToast } from "@/contexts/ToastContext";
@@ -192,6 +192,22 @@ export default function AdminListingsPage() {
                   <p className="mt-1 text-sm font-black text-brand-700 dark:text-brand-300">
                     {formatPrice(it.price)}
                   </p>
+                  <div className="mt-1.5 flex flex-wrap gap-3 text-xs text-slate-500 dark:text-slate-400">
+                    <span className="inline-flex items-center gap-1">
+                      <ThumbsUp size={12} className="text-[#1877F2]" />
+                      {it.likesCount || 0} إعجاب
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <MessageSquare size={12} />
+                      {it.commentsCount || 0} تعليق
+                    </span>
+                    {typeof it.viewsCount === "number" && (
+                      <span className="inline-flex items-center gap-1">
+                        <Eye size={12} />
+                        {it.viewsCount} مشاهدة
+                      </span>
+                    )}
+                  </div>
                   {it.rejectionReason && (
                     <p className="mt-2 rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:bg-rose-900/30 dark:text-rose-300">
                       سبب الرفض السابق: {it.rejectionReason}
