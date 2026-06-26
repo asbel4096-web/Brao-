@@ -120,6 +120,32 @@ export default function AdminListingsPage() {
     }
   };
 
+  const resetLikes = async (it: any) => {
+    const ok = await confirm({
+      title: "حذف كل الإعجابات؟",
+      message: `سيتم حذف جميع إعجابات "${it.title}" وتصفير العدّاد. لا يمكن التراجع.`,
+      confirmLabel: "حذف الإعجابات",
+      tone: "danger",
+    });
+    if (!ok) return;
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      const res = await fetch("/api/admin/engagement/reset", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken || ""}`,
+        },
+        body: JSON.stringify({ type: "likes", id: it.id }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || "فشل التنفيذ");
+      toast.success(`تم حذف ${data.removed} إعجاب.`);
+    } catch (e: any) {
+      toast.error(e?.message || "تعذّر حذف الإعجابات.");
+    }
+  };
+
   return (
     <div className="space-y-5">
       <div>
@@ -237,6 +263,14 @@ export default function AdminListingsPage() {
                     <button onClick={() => remove(it)} className="btn-danger !py-2 !px-3 !text-xs">
                       <Trash2 size={14} /> حذف
                     </button>
+                    {(it.likesCount || 0) > 0 && (
+                      <button
+                        onClick={() => resetLikes(it)}
+                        className="btn-secondary !py-2 !px-3 !text-xs !border-rose-300 !text-rose-700"
+                      >
+                        <ThumbsUp size={13} /> حذف الإعجابات
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

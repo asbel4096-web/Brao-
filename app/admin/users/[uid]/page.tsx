@@ -12,6 +12,7 @@ import {
   Mail,
   MapPin,
   Phone,
+  Users,
   Settings,
   Shield,
   Trash2,
@@ -19,11 +20,12 @@ import {
   User as UserIcon,
 } from "lucide-react";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminRole } from "@/hooks/admin/use-admin-role";
 import { useUserActions } from "@/hooks/admin/use-user-actions";
 import { useConfirm } from "@/components/confirm-dialog";
+import { useToast } from "@/contexts/ToastContext";
 import { RoleBadge } from "@/components/admin/ui/role-badge";
 import { BanUserDialog } from "@/components/admin/modules/users/ban-user-dialog";
 import { RoleSelectorDialog } from "@/components/admin/modules/users/role-selector-dialog";
@@ -58,6 +60,7 @@ interface UserDoc {
   isVerifiedDealer?: boolean;
   verifiedAt?: any;
   verifiedBy?: string;
+  followersCount?: number;
   banned?: boolean;
   bannedAt?: any;
   bannedBy?: string;
@@ -90,6 +93,35 @@ export default function AdminUserDetailPage() {
   const { can, isSuperAdmin } = useAdminRole();
   const { ban, unban, verify, unverify, setRole, softDelete, busy } = useUserActions();
   const confirm = useConfirm();
+  const toast = useToast();
+
+  const handleResetFollowers = async () => {
+    if (!uid) return;
+    const ok = await confirm({
+      title: "حذف كل المتابعين؟",
+      message:
+        "سيتم حذف جميع متابعي هذا المعرض وتصفير العدّاد. لا يمكن التراجع.",
+      confirmLabel: "حذف المتابعين",
+      tone: "danger",
+    });
+    if (!ok) return;
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      const res = await fetch("/api/admin/engagement/reset", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken || ""}`,
+        },
+        body: JSON.stringify({ type: "followers", id: uid }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || "فشل التنفيذ");
+      toast.success(`تم حذف ${data.removed} متابع.`);
+    } catch (e: any) {
+      toast.error(e?.message || "تعذّر حذف المتابعين.");
+    }
+  };
 
   const [user, setUser] = useState<UserDoc | null>(null);
   const [loading, setLoading] = useState(true);
@@ -456,6 +488,17 @@ export default function AdminUserDetailPage() {
                 tone="rose"
               />
             )}
+            {can("users.edit") &&
+              (user.isVerifiedDealer || (user.followersCount ?? 0) > 0) && (
+                <ActionButton
+                  icon={Users}
+                  label="حذف المتابعين"
+                  description={`تصفير المتابعين (${user.followersCount || 0})`}
+                  onClick={handleResetFollowers}
+                  disabled={busy !== null}
+                  tone="rose"
+                />
+              )}
           </div>
           {isSelf && (
             <p className="mt-2 px-1 text-[11px] text-slate-500 dark:text-slate-400">
