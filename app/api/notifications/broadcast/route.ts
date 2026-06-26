@@ -90,6 +90,9 @@ export async function POST(request: Request) {
       body?: string;
       type?: string;
       link?: string;
+      segment?: string;
+      targetUserId?: string;
+      imageUrl?: string;
     };
     try {
       payload = await request.json();
@@ -104,6 +107,37 @@ export async function POST(request: Request) {
     const body = String(payload.body || "").trim();
     const type = String(payload.type || "").trim();
     const link = payload.link ? String(payload.link).trim() : "";
+    // الشريحة المستهدفة (افتراضي: الكل)
+    const segment = String(payload.segment || "all").trim();
+    const targetUserId = String(payload.targetUserId || "").trim();
+    // صورة اختيارية (يجب أن تكون رابط https)
+    const imageUrl = payload.imageUrl ? String(payload.imageUrl).trim() : "";
+
+    const ALLOWED_SEGMENTS = new Set([
+      "all",
+      "verified",
+      "dealers",
+      "showrooms",
+      "user",
+    ]);
+    if (!ALLOWED_SEGMENTS.has(segment)) {
+      return NextResponse.json(
+        { ok: false, error: "شريحة غير صالحة." },
+        { status: 400 }
+      );
+    }
+    if (segment === "user" && !targetUserId) {
+      return NextResponse.json(
+        { ok: false, error: "حدّد معرّف المستخدم المستهدف." },
+        { status: 400 }
+      );
+    }
+    if (imageUrl && !imageUrl.startsWith("https://")) {
+      return NextResponse.json(
+        { ok: false, error: "رابط الصورة يجب أن يبدأ بـ https://" },
+        { status: 400 }
+      );
+    }
 
     if (!title || title.length < 3) {
       return NextResponse.json(
@@ -188,6 +222,9 @@ export async function POST(request: Request) {
       body,
       type,
       link,
+      segment,
+      targetUserId: segment === "user" ? targetUserId : null,
+      image: imageUrl || null,
       createdBy: callerUid,
       createdByEmail: callerDoc.data()?.email || "",
       createdAt: FieldValue.serverTimestamp(),
@@ -200,14 +237,54 @@ export async function POST(request: Request) {
     // ============================================================
     // 4) قراءة كل المستخدمين (IDs فقط، خفيف)
     // ============================================================
-    // select() بدون args يجلب وثائق بدون أي حقل = أخفّ قراءة ممكنة.
-    const usersSnap = await adminFs
-      .collection("users")
-      .select()
-      .limit(MAX_RECIPIENTS)
-      .get();
-
-    const allUids = usersSnap.docs.map((d) => d.id);
+    // ============================================================
+    // 4) تحديد المستلمين حسب الشريحة
+    // ============================================================
+    let allUids: string[] = [];
+    if (segment === "user") {
+      // مستخدم محدّد — نتأكّد من وجوده
+      const targetDoc = await adminFs
+        .collection("users")
+        .doc(targetUserId)
+        .get();
+      if (targetDoc.exists) allUids = [targetUserId];
+    } else if (segment === "all") {
+      // select() بدون args يجلب وثائق بدون أي حقل = أخفّ قراءة ممكنة.
+      const usersSnap = await adminFs
+        .collection("users")
+        .select()
+        .limit(MAX_RECIPIENTS)
+        .get();
+      allUids = usersSnap.docs.map((d) => d.id);
+    } else {
+      // verified / dealers / showrooms → نبدأ من الموثّقين ثم نفلتر النوع.
+      const usersSnap = await adminFs
+        .collection("users")
+        .where("isVerifiedDealer", "==", true)
+        .select("verificationType", "businessName", "dealerName", "dealerLogo")
+        .limit(MAX_RECIPIENTS)
+        .get();
+      allUids = usersSnap.docs
+        .filter((d) => {
+          if (segment === "verified") return true;
+          const data = d.data() as any;
+          const vt = data.verificationType as string | undefined;
+          if (segment === "dealers") {
+            return (
+              vt === "dealer" ||
+              (!vt && !!data.businessName && !data.dealerName)
+            );
+          }
+          if (segment === "showrooms") {
+            return (
+              vt === "showroom" ||
+              (!vt && (!!data.dealerName || !!data.dealerLogo))
+            );
+          }
+          return false;
+        })
+        .map((d) => d.id);
+    }
 
     if (allUids.length === 0) {
       await broadcastRef.update({
@@ -241,6 +318,7 @@ export async function POST(request: Request) {
           type,
           title,
           body,
+          image: imageUrl || null,
           link: link || "/notifications",
           read: false,
           createdAt: FieldValue.serverTimestamp(),
@@ -270,39 +348,68 @@ export async function POST(request: Request) {
     let invalidCleaned = 0;
 
     try {
-      // collectionGroup يجلب كل users/*/fcmTokens/* في query واحد - أسرع.
-      const tokensSnap = await adminFs
-        .collectionGroup("fcmTokens")
-        .limit(FCM_BATCH_SIZE)
-        .get();
-
-      tokensConsidered = tokensSnap.size;
-
-      if (tokensConsidered > 0) {
-        const tokenDocs = tokensSnap.docs
+      // جمع توكنات FCM حسب الشريحة.
+      type TokDoc = {
+        ref: FirebaseFirestore.DocumentReference;
+        token: string;
+      };
+      let _tokenDocs: TokDoc[] = [];
+      if (segment === "all") {
+        // collectionGroup يجلب كل users/*/fcmTokens/* في query واحد - أسرع.
+        const tokensSnap = await adminFs
+          .collectionGroup("fcmTokens")
+          .limit(FCM_BATCH_SIZE)
+          .get();
+        _tokenDocs = tokensSnap.docs
           .map((d) => ({
             ref: d.ref,
             token: (d.data().token as string) || "",
           }))
           .filter((t) => t.token);
+      } else {
+        // توكنات المستلمين المحدّدين فقط (شريحة محدّدة).
+        for (const uid of allUids) {
+          if (_tokenDocs.length >= FCM_BATCH_SIZE) break;
+          const snap = await adminFs
+            .collection("users")
+            .doc(uid)
+            .collection("fcmTokens")
+            .get();
+          for (const d of snap.docs) {
+            const token = (d.data().token as string) || "";
+            if (token) _tokenDocs.push({ ref: d.ref, token });
+          }
+        }
+      }
+
+      tokensConsidered = _tokenDocs.length;
+
+      if (tokensConsidered > 0) {
+        const tokenDocs = _tokenDocs;
 
         if (tokenDocs.length > 0) {
           const messaging = getAdminMessaging(adminApp);
           const response = await messaging.sendEachForMulticast({
             tokens: tokenDocs.map((t) => t.token),
-            notification: { title, body },
+            notification: {
+              title,
+              body,
+              ...(imageUrl ? { imageUrl } : {}),
+            },
             data: {
               title,
               body,
               link: link || "/notifications",
               tag: type,
               broadcastId,
+              ...(imageUrl ? { image: imageUrl } : {}),
             },
             webpush: {
               fcmOptions: { link: link || "/notifications" },
               notification: {
                 icon: "/icons/icon-192.png",
                 badge: "/icons/icon-192.png",
+                ...(imageUrl ? { image: imageUrl } : {}),
                 dir: "rtl",
                 lang: "ar",
                 tag: type,

@@ -59,6 +59,11 @@ export default function AdminBroadcastPage() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [link, setLink] = useState("");
+  const [segment, setSegment] = useState<
+    "all" | "verified" | "dealers" | "showrooms" | "user"
+  >("all");
+  const [targetUserId, setTargetUserId] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
   const [sending, setSending] = useState(false);
   const [lastResult, setLastResult] = useState<BroadcastResult | null>(null);
 
@@ -81,19 +86,31 @@ export default function AdminBroadcastPage() {
   const trimmedTitle = title.trim();
   const trimmedBody = body.trim();
   const trimmedLink = link.trim();
+  const trimmedTarget = targetUserId.trim();
+  const trimmedImage = imageUrl.trim();
+
+  const SEGMENT_LABELS: Record<string, string> = {
+    all: "كل المستخدمين",
+    verified: "كل الموثّقين",
+    dealers: "التجار الموثّقون",
+    showrooms: "المعارض الموثّقة",
+    user: "مستخدم محدّد",
+  };
 
   const canSubmit =
     trimmedTitle.length >= 3 &&
     trimmedTitle.length <= 100 &&
     trimmedBody.length >= 5 &&
     trimmedBody.length <= 500 &&
+    (segment !== "user" || trimmedTarget.length > 0) &&
+    (!trimmedImage || trimmedImage.startsWith("https://")) &&
     !sending;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
 
     const ok = await confirm({
-      title: "إرسال الإشعار لكل المستخدمين؟",
+      title: `إرسال الإشعار إلى: ${SEGMENT_LABELS[segment]}؟`,
       message: `سيصل هذا الإشعار لجميع مستخدمي براتشو كار. لا يمكن التراجع.\n\nالعنوان: "${trimmedTitle}"`,
       confirmLabel: "إرسال الآن",
       tone: "warning",
@@ -121,6 +138,9 @@ export default function AdminBroadcastPage() {
           body: trimmedBody,
           type,
           link: trimmedLink || undefined,
+          segment,
+          targetUserId: segment === "user" ? trimmedTarget : undefined,
+          imageUrl: trimmedImage || undefined,
         }),
       });
 
@@ -143,6 +163,8 @@ export default function AdminBroadcastPage() {
       setTitle("");
       setBody("");
       setLink("");
+      setTargetUserId("");
+      setImageUrl("");
     } catch (err: any) {
       toast.error(err?.message || "حدث خطأ غير متوقّع.");
     } finally {
@@ -330,6 +352,81 @@ export default function AdminBroadcastPage() {
             <p className="mt-1 text-[11px] text-slate-500">
               عند الضغط على الإشعار، سيُفتح هذا المسار. اتركه فارغاً ليفتح
               قائمة الإشعارات.
+            </p>
+          </div>
+
+          {/* الشريحة المستهدفة */}
+          <div>
+            <label className="mb-1.5 block text-sm font-black text-slate-900 dark:text-white">
+              الشريحة المستهدفة
+            </label>
+            <select
+              value={segment}
+              onChange={(e) => setSegment(e.target.value as any)}
+              disabled={sending}
+              className="
+                w-full rounded-2xl border border-slate-200 bg-white px-4 py-3
+                text-sm outline-none transition focus:border-brand-400
+                dark:border-slate-700 dark:bg-slate-900 disabled:opacity-60
+              "
+            >
+              <option value="all">كل المستخدمين</option>
+              <option value="verified">كل الموثّقين</option>
+              <option value="dealers">التجار الموثّقون</option>
+              <option value="showrooms">المعارض الموثّقة</option>
+              <option value="user">مستخدم محدّد</option>
+            </select>
+          </div>
+
+          {segment === "user" && (
+            <div>
+              <label
+                htmlFor="bc-target"
+                className="mb-1.5 block text-sm font-black text-slate-900 dark:text-white"
+              >
+                معرّف المستخدم (UID)
+              </label>
+              <input
+                id="bc-target"
+                type="text"
+                value={targetUserId}
+                onChange={(e) => setTargetUserId(e.target.value)}
+                placeholder="uid المستخدم المستهدف"
+                disabled={sending}
+                dir="ltr"
+                className="
+                  w-full rounded-2xl border border-slate-200 bg-white px-4 py-3
+                  text-sm outline-none transition focus:border-brand-400
+                  dark:border-slate-700 dark:bg-slate-900 disabled:opacity-60
+                "
+              />
+            </div>
+          )}
+
+          {/* صورة الإشعار (اختياري) */}
+          <div>
+            <label
+              htmlFor="bc-image"
+              className="mb-1.5 block text-sm font-black text-slate-900 dark:text-white"
+            >
+              رابط صورة الإشعار (اختياري)
+            </label>
+            <input
+              id="bc-image"
+              type="text"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              placeholder="https://..."
+              disabled={sending}
+              dir="ltr"
+              className="
+                w-full rounded-2xl border border-slate-200 bg-white px-4 py-3
+                text-sm outline-none transition focus:border-brand-400
+                dark:border-slate-700 dark:bg-slate-900 disabled:opacity-60
+              "
+            />
+            <p className="mt-1 text-[11px] text-slate-500">
+              صورة كبيرة تظهر داخل الإشعار. يجب أن تبدأ بـ https://
             </p>
           </div>
         </div>
