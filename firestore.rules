@@ -332,6 +332,7 @@ service cloud.firestore {
       allow read: if listingVisible();
 
       allow create: if signedIn()
+        && isActiveUser()
         && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.status == 'pending';
 
@@ -339,7 +340,13 @@ service cloud.firestore {
           signedIn()
           && resource.data.ownerId == request.auth.uid
           && request.resource.data.ownerId == resource.data.ownerId
-          && request.resource.data.status == resource.data.status
+          // المالك يستطيع إبقاء الحالة كما هي، أو إرجاع إعلانه إلى
+          // 'pending' فقط (إعادة مراجعة بعد التعديل). لا يستطيع ترقيته
+          // إلى approved/featured بنفسه — يبقى ذلك للأدمن/السيرفر.
+          && (
+            request.resource.data.status == resource.data.status
+            || request.resource.data.status == 'pending'
+          )
           // المالك ممنوع من تعديل حقول التمييز/التعزيز/الترقية - هذه
           // تُدار server-side فقط عبر API routes (الأدمن أو شراء BC).
           // كذلك ممنوع من تعديل عدّادات الإحصائيات (تُكتب server-side
@@ -471,6 +478,7 @@ service cloud.firestore {
         allow read: if signedIn()
           && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
         allow create: if signedIn()
+          && isActiveUser()
           && request.resource.data.senderId == request.auth.uid
           && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
         // التحديث مسموح فقط لحقل reactions، وفقط للمشتركين في المحادثة.

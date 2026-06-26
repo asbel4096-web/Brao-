@@ -215,10 +215,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsub = onSnapshot(
       userRef,
       (snap) => {
-        if (!snap.exists()) return;
+        if (!snap.exists()) {
+          // الحساب حُذف من لوحة الإدارة → تسجيل خروج فوري.
+          signOut(auth).catch(() => {});
+          return;
+        }
         const data = snap.data() as UserProfile;
-        // لو عُطّل الحساب أثناء الجلسة، لا نُحدّث (يُدار في loadProfile/مكان آخر)
-        if ((data as any).disabled === true) return;
+        // حُظر/عُطّل/حُذف أثناء الجلسة → تسجيل خروج فوري وإيقاف الصلاحيات.
+        if (
+          (data as any).banned === true ||
+          (data as any).disabled === true ||
+          (data as any).deleted === true
+        ) {
+          signOut(auth).catch(() => {});
+          return;
+        }
         setProfile((prev) =>
           prev ? { ...prev, ...(data as any), uid: user.uid } : prev
         );
