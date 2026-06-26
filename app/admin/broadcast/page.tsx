@@ -25,6 +25,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/components/confirm-dialog";
 import { auth, storage } from "@/lib/firebase";
+import { AdminPageSkeleton } from "@/components/admin/ui/admin-loading";
 import { BROADCAST_TYPES, type BroadcastTypeKey } from "@/lib/types";
 
 interface BroadcastResult {
@@ -77,11 +78,7 @@ export default function AdminBroadcastPage() {
   const [lastResult, setLastResult] = useState<BroadcastResult | null>(null);
 
   if (authLoading) {
-    return (
-      <div className="container py-10 text-center text-slate-500">
-        جارٍ التحميل...
-      </div>
-    );
+    return <AdminPageSkeleton variant="form" />;
   }
 
   if (!profile?.isAdmin) {

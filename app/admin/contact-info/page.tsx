@@ -13,6 +13,7 @@ import {
   Save,
 } from "lucide-react";
 import { db } from "@/lib/firebase";
+import { AdminPageSkeleton } from "@/components/admin/ui/admin-loading";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import {
@@ -98,11 +99,7 @@ export default function AdminContactInfoPage() {
   };
 
   if (authLoading || loading) {
-    return (
-      <div className="container py-10 text-center text-slate-500">
-        جارٍ التحميل...
-      </div>
-    );
+    return <AdminPageSkeleton variant="form" />;
   }
 
   if (!profile?.isAdmin) {

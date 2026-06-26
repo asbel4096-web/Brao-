@@ -22,6 +22,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { db } from "@/lib/firebase";
+import { AdminPageSkeleton } from "@/components/admin/ui/admin-loading";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   BROADCAST_TYPES,
@@ -102,11 +103,7 @@ export default function BroadcastHistoryPage() {
   }, [authLoading, profile?.isAdmin]);
 
   if (authLoading) {
-    return (
-      <div className="container py-10 text-center text-slate-500">
-        جارٍ التحميل...
-      </div>
-    );
+    return <AdminPageSkeleton variant="table" />;
   }
 
   if (!profile?.isAdmin) {

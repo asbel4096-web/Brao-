@@ -22,6 +22,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { db } from "@/lib/firebase";
+import { AdminPageSkeleton } from "@/components/admin/ui/admin-loading";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/components/confirm-dialog";
@@ -145,11 +146,7 @@ export default function AdminFeaturedRequestsPage() {
   };
 
   if (authLoading) {
-    return (
-      <div className="container py-10 text-center text-slate-500">
-        جارٍ التحميل...
-      </div>
-    );
+    return <AdminPageSkeleton variant="table" />;
   }
 
   if (!profile?.isAdmin) {
