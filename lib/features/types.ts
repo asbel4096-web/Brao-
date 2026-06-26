@@ -45,6 +45,10 @@ export const FEATURE_FLAGS = {
   COMMENTS: "comments",
   /** الدردشة/مراسلة البائعين. */
   CHAT: "chat",
+  /** نظام الإعجاب (👍) على الإعلانات. */
+  LIKES: "likes",
+  /** نظام متابعة المعارض. */
+  FOLLOWS: "follows",
 } as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAGS)[keyof typeof FEATURE_FLAGS];
@@ -130,6 +134,16 @@ export const FLAG_METADATA: Record<
   chat: {
     label: "الدردشة",
     description: "مراسلة البائعين عبر المحادثات",
+    defaultEnabled: true,
+  },
+  likes: {
+    label: "نظام الإعجاب 👍",
+    description: "زر الإعجاب على الإعلانات في التطبيق والموقع",
+    defaultEnabled: true,
+  },
+  follows: {
+    label: "نظام المتابعة",
+    description: "متابعة المعارض وعدّاد المتابعين",
     defaultEnabled: true,
   },
 };

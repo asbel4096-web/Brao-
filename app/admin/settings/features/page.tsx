@@ -16,6 +16,8 @@ import {
   Store,
   MessageSquare,
   MessageCircle,
+  ThumbsUp,
+  UserCheck,
 } from "lucide-react";
 import { useAdminRole } from "@/hooks/admin/use-admin-role";
 import { useAllFeatureFlags } from "@/hooks/features/use-feature-flag";
@@ -43,6 +45,8 @@ const FLAG_ICONS: Record<FeatureFlagKey, any> = {
   dealers: Store,
   comments: MessageSquare,
   chat: MessageCircle,
+  likes: ThumbsUp,
+  follows: UserCheck,
 };
 
 export default function FeatureFlagsPage() {
