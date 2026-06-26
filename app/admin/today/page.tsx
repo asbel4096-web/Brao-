@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AdminPageSkeleton } from "@/components/admin/ui/admin-loading";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -11,7 +12,6 @@ import {
   Wallet,
   CheckCircle2,
   XCircle,
-  Loader2,
   type LucideIcon,
 } from "lucide-react";
 import { auth } from "@/lib/firebase";
@@ -49,9 +49,7 @@ export default function AdminTodayPage() {
 
   if (authLoading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="animate-spin text-brand-600" />
-      </div>
+      <AdminPageSkeleton variant="table" />
     );
   }
   if ((profile as any)?.isAdmin !== true) {

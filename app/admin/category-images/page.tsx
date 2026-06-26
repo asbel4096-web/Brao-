@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { AdminPageSkeleton } from "@/components/admin/ui/admin-loading";
 import Link from "next/link";
 import Image from "next/image";
 import { getDownloadURL, ref as storageRef, uploadBytes } from "firebase/storage";
@@ -102,9 +103,7 @@ export default function AdminCategoryImagesPage() {
 
   if (authLoading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="animate-spin text-brand-600" />
-      </div>
+      <AdminPageSkeleton variant="table" />
     );
   }
   if ((profile as any)?.isAdmin !== true) {

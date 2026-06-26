@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { AdminPageSkeleton } from "@/components/admin/ui/admin-loading";
 import {
   collection,
   getDocs,
@@ -405,9 +406,7 @@ export default function AdminFridayMarketPage() {
   /* ===================== العرض ===================== */
   if (roleLoading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="animate-spin text-action-500" />
-      </div>
+      <AdminPageSkeleton variant="table" />
     );
   }
   if (!allowed) {

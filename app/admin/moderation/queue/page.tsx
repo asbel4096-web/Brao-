@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { AdminPageSkeleton } from "@/components/admin/ui/admin-loading";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -169,9 +170,7 @@ export default function ModerationQueuePage() {
 
   if (authLoading || items === null) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="animate-spin text-brand-600" />
-      </div>
+      <AdminPageSkeleton variant="table" />
     );
   }
   if (!can("listings.approve")) {

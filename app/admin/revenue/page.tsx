@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AdminPageSkeleton } from "@/components/admin/ui/admin-loading";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import {
@@ -8,7 +9,6 @@ import {
   TrendingUp,
   Wallet,
   Coins,
-  Loader2,
   type LucideIcon,
 } from "lucide-react";
 import { auth } from "@/lib/firebase";
@@ -66,9 +66,7 @@ export default function AdminRevenuePage() {
 
   if (authLoading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="animate-spin text-brand-600" />
-      </div>
+      <AdminPageSkeleton variant="cards" />
     );
   }
   if ((profile as any)?.isAdmin !== true) {

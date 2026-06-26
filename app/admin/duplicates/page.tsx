@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AdminPageSkeleton } from "@/components/admin/ui/admin-loading";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Copy, Phone, Loader2, AlertTriangle } from "lucide-react";
+import { ArrowRight, Copy, Phone, AlertTriangle } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -42,9 +43,7 @@ export default function DuplicatesPage() {
 
   if (authLoading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="animate-spin text-brand-600" />
-      </div>
+      <AdminPageSkeleton variant="table" />
     );
   }
   if ((profile as any)?.isAdmin !== true) {

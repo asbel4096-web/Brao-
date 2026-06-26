@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AdminPageSkeleton } from "@/components/admin/ui/admin-loading";
 import Link from "next/link";
 import {
   ArrowRight,
   ScrollText,
-  Loader2,
   Ban,
   ShieldCheck,
   UserCog,
@@ -76,9 +76,7 @@ export default function AuditLogPage() {
 
   if (authLoading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="animate-spin text-brand-600" />
-      </div>
+      <AdminPageSkeleton variant="table" />
     );
   }
   if ((profile as any)?.isAdmin !== true) {
