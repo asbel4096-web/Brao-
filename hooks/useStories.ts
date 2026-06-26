@@ -43,6 +43,9 @@ export function useStories() {
             id: docSnap.id,
           } as StoryDocument;
 
+          // تجاهل القصص التي أخفاها الأدمن.
+          if ((raw as any).hidden === true) return;
+
           const display = toDisplayItem(story);
           if (display && display.expiresAtMs > nowMs) {
             nextItems.push(display);

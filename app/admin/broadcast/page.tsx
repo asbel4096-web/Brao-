@@ -1,7 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import NextLink from "next/link";
+import {
+  getDownloadURL,
+  ref as storageRef,
+  uploadBytes,
+} from "firebase/storage";
 import {
   Megaphone,
   Sparkles,
@@ -12,12 +17,14 @@ import {
   AlertCircle,
   CheckCircle2,
   History,
+  ImagePlus,
+  X,
   Link as LinkIcon,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/components/confirm-dialog";
-import { auth } from "@/lib/firebase";
+import { auth, storage } from "@/lib/firebase";
 import { BROADCAST_TYPES, type BroadcastTypeKey } from "@/lib/types";
 
 interface BroadcastResult {
@@ -64,6 +71,8 @@ export default function AdminBroadcastPage() {
   >("all");
   const [targetUserId, setTargetUserId] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [imageUploading, setImageUploading] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
   const [sending, setSending] = useState(false);
   const [lastResult, setLastResult] = useState<BroadcastResult | null>(null);
 
@@ -105,6 +114,35 @@ export default function AdminBroadcastPage() {
     (segment !== "user" || trimmedTarget.length > 0) &&
     (!trimmedImage || trimmedImage.startsWith("https://")) &&
     !sending;
+
+  const handleImageUpload = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("الملف يجب أن يكون صورة.");
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      toast.error("حجم الصورة كبير (الحد الأقصى 3MB).");
+      return;
+    }
+    setImageUploading(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `homepage/banners/broadcast-${Date.now()}.${ext}`;
+      const r = storageRef(storage, path);
+      await uploadBytes(r, file, { contentType: file.type });
+      const url = await getDownloadURL(r);
+      setImageUrl(url);
+      toast.success("تم رفع الصورة.");
+    } catch (err: any) {
+      toast.error(
+        err?.code === "storage/unauthorized"
+          ? "لا تملك صلاحية الرفع."
+          : err?.message || "تعذّر رفع الصورة."
+      );
+    } finally {
+      setImageUploading(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
@@ -409,24 +447,73 @@ export default function AdminBroadcastPage() {
               htmlFor="bc-image"
               className="mb-1.5 block text-sm font-black text-slate-900 dark:text-white"
             >
-              رابط صورة الإشعار (اختياري)
+              صورة الإشعار (اختياري)
             </label>
+
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleImageUpload(f);
+                e.target.value = "";
+              }}
+            />
+
+            {imageUrl ? (
+              <div className="flex items-center gap-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={imageUrl}
+                  alt="صورة الإشعار"
+                  className="h-16 w-24 rounded-xl object-cover border border-slate-200 dark:border-slate-700"
+                />
+                <button
+                  type="button"
+                  onClick={() => setImageUrl("")}
+                  disabled={sending}
+                  className="inline-flex items-center gap-1 rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-100 disabled:opacity-60 dark:bg-rose-500/10"
+                >
+                  <X size={14} /> إزالة
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                disabled={sending || imageUploading}
+                className="
+                  inline-flex items-center gap-2 rounded-2xl border border-dashed
+                  border-slate-300 bg-white px-4 py-3 text-sm font-bold
+                  text-slate-700 transition hover:border-brand-400
+                  dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200
+                  disabled:opacity-60
+                "
+              >
+                <ImagePlus size={16} />
+                {imageUploading ? "جارٍ الرفع..." : "رفع صورة"}
+              </button>
+            )}
+
             <input
               id="bc-image"
               type="text"
               value={imageUrl}
               onChange={(e) => setImageUrl(e.target.value)}
-              placeholder="https://..."
-              disabled={sending}
+              placeholder="أو الصق رابط https://..."
+              disabled={sending || imageUploading}
               dir="ltr"
               className="
-                w-full rounded-2xl border border-slate-200 bg-white px-4 py-3
+                mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3
                 text-sm outline-none transition focus:border-brand-400
                 dark:border-slate-700 dark:bg-slate-900 disabled:opacity-60
               "
             />
             <p className="mt-1 text-[11px] text-slate-500">
-              صورة كبيرة تظهر داخل الإشعار. يجب أن تبدأ بـ https://
+              صورة كبيرة تظهر داخل الإشعار (حتى 3MB). يمكنك الرفع أو لصق رابط
+              https://
             </p>
           </div>
         </div>
