@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AdminPageSkeleton } from "@/components/admin/ui/admin-loading";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -87,9 +88,7 @@ export default function WalletSettingsPage() {
 
   if (authLoading || !user || !profile || localEnabled === null) {
     return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <Loader2 size={28} className="animate-spin text-blue-500" />
-      </div>
+      <AdminPageSkeleton variant="form" />
     );
   }
 
