@@ -17,6 +17,8 @@ export interface Listing {
   brand?: string;
   model?: string;
   color?: string;
+  cylinders?: number | null;
+  vin?: string;
   engine?: string;
   features?: string[];
   defects?: string[];

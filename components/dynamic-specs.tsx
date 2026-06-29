@@ -84,6 +84,18 @@ function buildSpecs(listing: Listing, bucket: HomeBucket): SpecItem[] {
     push(l.year, Calendar, "السنة", String(l.year));
     push(l.brand, Car, "الماركة", String(l.brand));
     push(l.engine, Cog, "المحرك", String(l.engine));
+    // حقول إضافية (مطابقة لـSchema التطبيق)
+    push(l.color, Settings, "اللون", String(l.color));
+    push(l.cylinders, Cog, "عدد الأسطوانات", String(l.cylinders));
+    push(l.vin, Car, "رقم الهيكل", String(l.vin));
+    if (Array.isArray((l as { features?: string[] }).features) &&
+        (l as { features?: string[] }).features!.length) {
+      specs.push({
+        icon: CheckCircle2,
+        label: "المميزات",
+        value: (l as { features?: string[] }).features!.join("، "),
+      });
+    }
     // حقول الحافلات/الشاحنات المتخصّصة
     push(l.seats, Users, "عدد المقاعد", String(l.seats));
     push(l.payload, Truck, "الحمولة", `${l.payload} طن`);

@@ -50,6 +50,8 @@ interface FormState {
   model: string;
   year: string;
   color: string;
+  cylinders: string;
+  vin: string;
   engine: string;
   transmission: string;
   fuel: string;
@@ -97,6 +99,8 @@ const initialState: FormState = {
   model: "",
   year: "",
   color: "",
+  cylinders: "",
+  vin: "",
   engine: "",
   transmission: "أوتوماتيك",
   fuel: "بنزين",
@@ -527,6 +531,8 @@ export default function AddListingPage() {
         brand: form.brand.trim(),
         model: form.model.trim(),
         color: form.color.trim(),
+        ...(form.cylinders ? { cylinders: Number(form.cylinders) || null } : {}),
+        ...(form.vin.trim() ? { vin: form.vin.trim() } : {}),
         engine: form.engine.trim(),
         price: Number(form.price) || 0,
         city: form.city,
@@ -1066,6 +1072,24 @@ export default function AddListingPage() {
                         value={form.color}
                         onChange={(e) => set("color", e.target.value)}
                         placeholder="أبيض"
+                        className={inputCls}
+                      />
+                    </Field>
+                    <Field label="عدد الأسطوانات">
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        value={form.cylinders}
+                        onChange={(e) => set("cylinders", e.target.value)}
+                        placeholder="مثال: 4"
+                        className={inputCls}
+                      />
+                    </Field>
+                    <Field label="رقم الهيكل (VIN)">
+                      <input
+                        value={form.vin}
+                        onChange={(e) => set("vin", e.target.value)}
+                        placeholder="17 خانة"
                         className={inputCls}
                       />
                     </Field>

@@ -254,6 +254,46 @@ function FieldRenderer({
     );
   }
 
+  // chips (المميزات: اختيار متعدّد، تُخزَّن نصاً مفصولاً بـ«، »)
+  if (field.type === "chips") {
+    const selected = strValue
+      ? strValue.split("،").map((s) => s.trim()).filter(Boolean)
+      : [];
+    const toggle = (opt: string) => {
+      const next = selected.includes(opt)
+        ? selected.filter((x) => x !== opt)
+        : [...selected, opt];
+      onChange(field.key, next.join("، "));
+    };
+    return (
+      <div className="block">
+        {label}
+        <div className="flex flex-wrap gap-2">
+          {(field.options ?? []).map((opt) => {
+            const on = selected.includes(opt);
+            return (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => toggle(opt)}
+                className={
+                  "rounded-full border px-3.5 py-1.5 text-[13px] font-bold transition " +
+                  (on
+                    ? "border-brand-500 bg-brand-500 text-white"
+                    : "border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200")
+                }
+              >
+                {on ? "✓ " : ""}
+                {opt}
+              </button>
+            );
+          })}
+        </div>
+        {field.hint && <Hint text={field.hint} />}
+      </div>
+    );
+  }
+
   // price / number / phone / text / model
   const inputType =
     field.type === "price" || field.type === "number"

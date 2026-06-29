@@ -134,6 +134,49 @@ const F = {
     type: "text",
     placeholder: "المناطق التي تغطيها الخدمة",
   } as FieldDef,
+  // ---------- حقول إضافية (مطابقة لـSchema التطبيق) ----------
+  color: {
+    key: "color",
+    label: "اللون",
+    type: "text",
+    placeholder: "مثال: أبيض",
+  } as FieldDef,
+  cylinders: {
+    key: "cylinders",
+    label: "عدد الأسطوانات",
+    type: "number",
+  } as FieldDef,
+  vin: {
+    key: "vin",
+    label: "رقم الهيكل (VIN)",
+    type: "text",
+    placeholder: "17 خانة",
+  } as FieldDef,
+  features: {
+    key: "features",
+    label: "المميزات",
+    type: "chips",
+    options: [
+      "فتحة سقف",
+      "كاميرا خلفية",
+      "حساسات خلفية",
+      "حساسات أمامية",
+      "مرايا كهربائية",
+      "نظام ملاحة",
+      "مقاعد جلد",
+      "مقاعد مدفّأة",
+      "بلوتوث",
+      "تشغيل بصمة",
+      "شاشة لمس",
+      "مثبت سرعة",
+    ],
+  } as FieldDef,
+  address: {
+    key: "address",
+    label: "العنوان التفصيلي",
+    type: "text",
+    placeholder: "الشارع/المنطقة",
+  } as FieldDef,
 };
 
 /* ---------- حقول السيارات (vehicles) ---------- */
@@ -156,6 +199,10 @@ const VEHICLE_FIELDS: FieldDef[] = [
     options: ["بنزين", "ديزل", "كهرباء", "هجين"],
   },
   { key: "mileage", label: "المسافة المقطوعة (كم)", type: "number" },
+  F.color,
+  F.cylinders,
+  F.vin,
+  F.features,
   F.price,
   F.city,
   F.phone,
@@ -182,6 +229,7 @@ const WORKSHOP_FIELDS: FieldDef[] = [
   F.description,
   { key: "rating", label: "التقييم", type: "rating" },
   F.city,
+  F.address,
   F.phone,
 ];
 
@@ -190,6 +238,7 @@ const DEALER_FIELDS: FieldDef[] = [
   { key: "title", label: "اسم المعرض", type: "text", required: true },
   F.description,
   F.city,
+  F.address,
   F.phone,
 ];
 
@@ -210,6 +259,8 @@ const ACCIDENT_FIELDS: FieldDef[] = [
     label: "قابلة للإصلاح",
     type: "toggle",
   },
+  F.color,
+  F.vin,
   F.description,
   F.price,
   F.city,
@@ -233,6 +284,8 @@ const BUS_FIELDS: FieldDef[] = [
     options: ["بنزين", "ديزل", "كهرباء", "هجين"],
   },
   { key: "mileage", label: "المسافة المقطوعة (كم)", type: "number" },
+  F.color,
+  F.features,
   F.condition,
   F.price,
   F.city,
@@ -248,6 +301,8 @@ const TRUCK_FIELDS: FieldDef[] = [
   { key: "payload", label: "الحمولة (طن)", type: "number" },
   { key: "engine", label: "المحرك", type: "text", placeholder: "مثال: 3.0" },
   { key: "mileage", label: "المسافة المقطوعة (كم)", type: "number" },
+  F.color,
+  F.vin,
   F.condition,
   F.price,
   F.city,
@@ -370,6 +425,7 @@ const MOTORCYCLE_FIELDS: FieldDef[] = [
   F.year,
   { key: "engine", label: "سعة المحرك (cc)", type: "text", placeholder: "مثال: 250" },
   { key: "mileage", label: "المسافة المقطوعة (كم)", type: "number" },
+  F.color,
   F.condition,
   F.price,
   F.city,

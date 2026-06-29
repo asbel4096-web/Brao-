@@ -89,6 +89,8 @@ export default function EditListingPage() {
         brand: form.brand?.trim() || "",
         model: form.model?.trim() || "",
         color: form.color?.trim() || "",
+        cylinders: form.cylinders ? Number(form.cylinders) || null : null,
+        vin: form.vin?.trim() || "",
         engine: form.engine?.trim() || "",
         price: Number(form.price) || 0,
         city: form.city || "",
@@ -210,6 +212,14 @@ export default function EditListingPage() {
             <div>
               <label className="label">اللون</label>
               <input className="input" value={form.color || ""} onChange={(e) => set("color", e.target.value)} />
+            </div>
+            <div>
+              <label className="label">عدد الأسطوانات</label>
+              <input className="input" type="number" value={form.cylinders || ""} onChange={(e) => set("cylinders", e.target.value)} />
+            </div>
+            <div>
+              <label className="label">رقم الهيكل (VIN)</label>
+              <input className="input" value={form.vin || ""} onChange={(e) => set("vin", e.target.value)} />
             </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
