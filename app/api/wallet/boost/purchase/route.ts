@@ -29,12 +29,12 @@ export const maxDuration = 15;
  *     - الإعلان ليس محذوفاً/مؤرشفاً
  *     - الرصيد كافٍ
  *  2. transactional:
- *     - يخصم BC
+ *     - يخصم رصيد (د.ل)
  *     - يكتب walletTransactions
  *     - يُحدّث الإعلان حسب الباقة:
  *        featured (مميز): featured=true, featuredUntil = +3 أيام
- *        boost (ممول): boostedUntil = +7 أيام
- *        vip (VIP): vipUntil = +14 يوم + featured للصفحة الرئيسية
+ *        boost (ممول): boostedUntil = +3 أيام
+ *        vip (VIP): vipUntil = +3 أيام + featured للصفحة الرئيسية
  *
  * تراكم: لو الإعلان مُرقّى حالياً، تُضاف المدة للوقت المتبقي
  *        (المستخدم لا يخسر الأيام المتبقية).
@@ -150,7 +150,7 @@ export async function POST(request: Request) {
       const currentBalance = Number(userData.balance) || 0;
       if (currentBalance < chargePrice) {
         throw new Error(
-          `الرصيد غير كافٍ. الحالي: ${currentBalance} BC، المطلوب: ${chargePrice} BC`
+          `الرصيد غير كافٍ. الحالي: ${currentBalance} د.ل، المطلوب: ${chargePrice} د.ل`
         );
       }
 
