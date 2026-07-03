@@ -37,7 +37,7 @@ export type CampaignStatus = "active" | "paused" | "expired" | "none";
 /** باقات تمديد الحملة الممولة (أيام إضافية). */
 export interface BoostExtension {
   days: number;
-  price: number; // BC
+  price: number; // د.ل (LYD)
   label: string;
 }
 

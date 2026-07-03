@@ -6,7 +6,7 @@ import type { Timestamp } from "firebase/firestore";
  * البنية في Firestore:
  *   users/{uid} = {
  *     ...existing fields,
- *     balance: number,           // الرصيد الحالي (BC)
+ *     balance: number,           // الرصيد الحالي (د.ل)
  *     referralCode: string,      // كود الإحالة الفريد
  *     referredBy?: string,       // كود من دعا هذا المستخدم
  *     referralsCount: number,    // عدد من دعاهم
@@ -98,7 +98,7 @@ export interface WalletTransaction {
 // Pricing
 // ============================================================
 /**
- * أسعار الخدمات بـBC.
+ * أسعار الخدمات بالدينار الليبي (د.ل).
  * مركزية هنا لتسهيل التحديث (نقطة واحدة).
  */
 export const PRICING = {
@@ -112,13 +112,13 @@ export const PRICING = {
   BOOST_STRONG: 80,
   VIP_ACCOUNT: 300,
   REFERRAL_REWARD: 10,
-  // باقات الترقية الهرمية (مميز < ممول < VIP)
-  PROMO_FEATURED: 50, // مميز - 3 أيام
-  PROMO_BOOST: 120, // ممول - 7 أيام
-  PROMO_VIP: 200, // VIP - 14 يوم
-  // إضافة مستقلة (add-on) - شارة "عاجل" حمراء على البطاقة، أرخص باقة.
-  // ليست مرتبة ضمن سُلّم الأولوية، بل وسم سريع يدل على رغبة بيع عاجلة.
-  PROMO_URGENT: 30, // عاجل - 3 أيام
+  // باقات الترقية بالدينار الليبي (LYD / د.ل) — الأسماء التجارية:
+  // featured=ممول عادي، boost=دبل ممول، vip=دبل X، urgent=دبل XX. المدّة 3 أيام لكلٍّ.
+  PROMO_FEATURED: 60, // ممول عادي (Normal) - 3 أيام - 60 د.ل
+  PROMO_BOOST: 100, // دبل ممول (Double) - 3 أيام - 100 د.ل
+  PROMO_VIP: 150, // دبل X (Double X) - 3 أيام - 150 د.ل
+  // وسم "عاجل" (add-on): يُضاف فوق أي باقة، لا يدخل ترتيب الأولوية.
+  PROMO_URGENT: 200, // دبل XX (Double XX) - 3 أيام - 200 د.ل
 } as const;
 
 // ============================================================
@@ -168,13 +168,13 @@ export type VerificationPlanKey = (typeof VERIFICATION_PLANS)[number]["key"];
 // Helpers
 // ============================================================
 
-/** صياغة رقم العملة بإضافة "BC". */
+/** صياغة رقم العملة بالدينار الليبي (الاسم `formatBC` محفوظ للتوافق). */
 export function formatBC(amount: number): string {
-  return `${amount.toLocaleString("ar-LY")} BC`;
+  return `${amount.toLocaleString("ar-LY")} د.ل`;
 }
 
 /** صياغة مع علامة + أو - حسب الاتجاه. */
 export function formatBCSigned(amount: number): string {
   const sign = amount > 0 ? "+" : "";
-  return `${sign}${amount.toLocaleString("ar-LY")} BC`;
+  return `${sign}${amount.toLocaleString("ar-LY")} د.ل`;
 }

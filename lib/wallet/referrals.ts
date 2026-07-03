@@ -22,7 +22,7 @@ import type { Timestamp } from "firebase/firestore";
  *   3. B يفتح الرابط → الكود يُحفظ في localStorage
  *   4. B يُسجّل → الكود يُطبَّق (referredBy = code) + يُنشأ referral doc بحالة "pending"
  *   5. B ينشر إعلاناً → الإعلان يُعتمد من الأدمن
- *   6. عند الاعتماد: claim API يُمنح A و B كلٌّ 10 BC + status = "completed"
+ *   6. عند الاعتماد: claim API يُمنح A و B كلٌّ 10 د.ل + status = "completed"
  */
 
 export const REFERRAL_REWARD_BC = 10;
@@ -108,7 +108,7 @@ export function buildReferralLink(code: string, origin?: string): string {
 /** نص مشاركة WhatsApp. */
 export function buildWhatsAppShareText(code: string, link: string): string {
   return encodeURIComponent(
-    `🚗 تطبيق براتشو كار - أفضل منصة لبيع وشراء السيارات في ليبيا.\n\nسجّل عبر رابط الدعوة واحصل على ${REFERRAL_REWARD_BC} BC هدية عند نشر إعلانك الأول:\n${link}\n\nكود الدعوة: ${code}`
+    `🚗 تطبيق براتشو كار - أفضل منصة لبيع وشراء السيارات في ليبيا.\n\nسجّل عبر رابط الدعوة واحصل على ${REFERRAL_REWARD_BC} د.ل هدية عند نشر إعلانك الأول:\n${link}\n\nكود الدعوة: ${code}`
   );
 }
 

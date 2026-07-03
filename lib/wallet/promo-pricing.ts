@@ -18,8 +18,8 @@ export const PROMO_META: Record<
   { label: string; emoji: string; durationDays: number; hint: string }
 > = {
   featured: { label: "مميّز", emoji: "⭐", durationDays: 3, hint: "ظهور مميّز 3 أيام" },
-  boost: { label: "مموّل", emoji: "🚀", durationDays: 7, hint: "تعزيز قوي 7 أيام" },
-  vip: { label: "VIP", emoji: "👑", durationDays: 14, hint: "أعلى أولوية 14 يوم" },
+  boost: { label: "مموّل", emoji: "🚀", durationDays: 3, hint: "تعزيز قوي 3 أيام" },
+  vip: { label: "VIP", emoji: "👑", durationDays: 3, hint: "أعلى أولوية 3 أيام" },
   urgent: { label: "عاجل", emoji: "⚡", durationDays: 3, hint: "وسم عاجل 3 أيام" },
 };
 

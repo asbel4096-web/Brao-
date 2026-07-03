@@ -1,12 +1,12 @@
 import type { Timestamp } from "firebase/firestore";
 
 /**
- * BC Transfer System - تحويل الرصيد بين المستخدمين.
+ * نظام تحويل الرصيد بالدينار الليبي (د.ل) بين المستخدمين.
  *
  * القواعد:
  *  - البحث عن المستلم برقم الهاتف
  *  - بدون رسوم (المبلغ المُرسَل = المبلغ المُستلَم)
- *  - حد أدنى 10 BC، أقصى 1000 BC لكل تحويلة
+ *  - حد أدنى 10 د.ل، أقصى 1000 د.ل لكل تحويلة
  *  - أقصى 5 تحويلات في اليوم لكل مرسِل
  *
  * البنية في Firestore:
@@ -62,10 +62,10 @@ export function validateTransferAmount(
     return { ok: false, error: "المبلغ يجب أن يكون رقماً صحيحاً" };
   }
   if (amount < TRANSFER_MIN_BC) {
-    return { ok: false, error: `الحد الأدنى للتحويل ${TRANSFER_MIN_BC} BC` };
+    return { ok: false, error: `الحد الأدنى للتحويل ${TRANSFER_MIN_BC} د.ل` };
   }
   if (amount > TRANSFER_MAX_BC) {
-    return { ok: false, error: `الحد الأقصى للتحويل ${TRANSFER_MAX_BC} BC` };
+    return { ok: false, error: `الحد الأقصى للتحويل ${TRANSFER_MAX_BC} د.ل` };
   }
   if (amount > senderBalance) {
     return { ok: false, error: "رصيدك غير كافٍ" };

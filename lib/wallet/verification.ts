@@ -10,7 +10,7 @@ import { VERIFICATION_PLANS, type VerificationPlanKey } from "./types";
  *   - verificationStatus: "active" | "expired" | "cancelled" | "granted"
  *   - verifiedSince: Timestamp (متى بدأ آخر اشتراك)
  *
- * "granted" = منحه الأدمن مجاناً (بدون خصم BC). نُفرّقه عن "active"
+ * "granted" = منحه الأدمن مجاناً (بدون خصم رصيد). نُفرّقه عن "active"
  * لكي نعرف هل المستخدم دفع أم لا (مهم للإحصاءات).
  *
  * عند الانتهاء: status يتحول لـ"expired" والـUI يخفي الشارة.

@@ -7,17 +7,17 @@ import { PRICING } from "./types";
  *
  * 3 باقات هرمية (من الأعلى للأدنى):
  *
- * 🥇 vip (إعلان VIP) - 200 BC, 14 يوم:
+ * 🥇 vip (دبل X) - 150 د.ل، 3 أيام:
  *    - أعلى أولوية في المنصة + ظهور في الصفحة الرئيسية
  *    - شارة ذهبية + تمييز بصري خاص (إطار ذهبي)
  *    - الحقول: vipUntil + featured=true + featuredUntil (للصفحة الرئيسية)
  *
- * 🥈 boost (إعلان ممول) - 120 BC, 7 أيام:
+ * 🥈 boost (دبل ممول) - 100 د.ل، 3 أيام:
  *    - أولوية أعلى من المميز + ظهور أقوى في البحث
  *    - شارة خضراء
  *    - الحقول: boostedUntil
  *
- * 🥉 featured (إعلان مميز) - 50 BC, 3 أيام:
+ * 🥉 featured (ممول عادي) - 60 د.ل، 3 أيام:
  *    - أولوية أعلى من العادي
  *    - شارة زرقاء
  *    - الحقول: featured=true + featuredUntil
@@ -25,7 +25,7 @@ import { PRICING } from "./types";
  * ترتيب الأولوية في القوائم:
  *   VIP > ممول > مميز > عادي
  *
- * ⚡ إضافة مستقلة: "عاجل" (urgent) - 30 BC, 3 أيام:
+ * ⚡ إضافة مستقلة: "عاجل" (دبل XX / urgent) - 200 د.ل، 3 أيام:
  *    - شارة حمراء فقط (لا تغيّر ترتيب الأولوية)
  *    - تُضاف فوق أي باقة (أو بمفردها) عبر الحقل urgentUntil
  *
@@ -80,7 +80,7 @@ export const BOOST_SERVICES: Record<BoostServiceKey, BoostService> = {
       "أولوية أعلى من الإعلانات العادية",
       "ظهور أفضل في نتائج البحث",
     ],
-    price: PRICING.PROMO_FEATURED, // 50
+    price: PRICING.PROMO_FEATURED, // 60 د.ل
     durationDays: 3,
     icon: "Star",
     emoji: "🥉",
@@ -100,8 +100,8 @@ export const BOOST_SERVICES: Record<BoostServiceKey, BoostService> = {
       "ظهور أقوى في نتائج البحث",
       "فرص مشاهدة وتواصل أكبر",
     ],
-    price: PRICING.PROMO_BOOST, // 120
-    durationDays: 7,
+    price: PRICING.PROMO_BOOST, // 100 د.ل
+    durationDays: 3,
     icon: "Rocket",
     emoji: "🥈",
     badgeCls: "bg-emerald-600 text-white",
@@ -121,8 +121,8 @@ export const BOOST_SERVICES: Record<BoostServiceKey, BoostService> = {
       "ظهور في الصفحة الرئيسية",
       "تمييز بصري خاص للإعلان",
     ],
-    price: PRICING.PROMO_VIP, // 200
-    durationDays: 14,
+    price: PRICING.PROMO_VIP, // 150 د.ل
+    durationDays: 3,
     icon: "Crown",
     emoji: "🥇",
     badgeCls: "bg-amber-400 text-amber-950",
@@ -141,7 +141,7 @@ export const BOOST_SERVICES: Record<BoostServiceKey, BoostService> = {
       "تلفت انتباه المشترين للبيع السريع",
       "تُضاف فوق أي باقة ترقية أخرى",
     ],
-    price: PRICING.PROMO_URGENT, // 30
+    price: PRICING.PROMO_URGENT, // 200 د.ل
     durationDays: 3,
     icon: "Zap",
     emoji: "⚡",
