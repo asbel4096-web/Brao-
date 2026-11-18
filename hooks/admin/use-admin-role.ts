@@ -8,6 +8,7 @@ import {
   canPerformAll,
 } from "@/lib/admin/permissions";
 import type { AdminRole } from "@/lib/admin/roles";
+import { ALL_ROLES } from "@/lib/admin/roles";
 
 /**
  * Hook موحّد للتعامل مع role + permissions في كل صفحات/مكوّنات الأدمن.
@@ -33,11 +34,11 @@ export function useAdminRole() {
   //   isAdmin=false → null.
   const role: AdminRole | null = useMemo(() => {
     if (!profile) return null;
+    // W0 (= server E2a): a stored role counts only when isAdmin === true and it is a known role.
+    if (profile.isAdmin !== true) return null;
     const explicitRole = (profile as any).role as AdminRole | undefined;
-    if (explicitRole) return explicitRole;
-    // توافق رجعي للأدمنين القدامى الذين لا يحملون role
-    if (profile.isAdmin) return "admin";
-    return null;
+    if (!explicitRole) return "admin"; // توافق رجعي: isAdmin بلا role
+    return (ALL_ROLES as string[]).includes(explicitRole) ? explicitRole : null;
   }, [profile]);
 
   const can = useMemo(() => (action: string) => canPerform(role, action), [role]);

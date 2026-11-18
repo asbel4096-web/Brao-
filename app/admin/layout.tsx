@@ -40,7 +40,7 @@ export default function AdminLayout({
   useEffect(() => {
     if (authLoading || roleLoading) return;
     if (!user) {
-      router.replace("/login?next=/admin");
+      router.replace("/login?redirect=/admin");
     }
   }, [user, authLoading, roleLoading, router]);
 

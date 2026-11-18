@@ -145,12 +145,10 @@ export function isIosSafariNeedsPwa(): boolean {
 // ============================================================================
 
 /** قائمة إيميلات الأدمن لـ bootstrap أوّل أدمن. لا تُستخدم لتقييم الصلاحيات. */
-export const BOOTSTRAP_ADMIN_EMAILS: string[] = (
-  process.env.NEXT_PUBLIC_ADMIN_EMAILS || ""
-)
-  .split(",")
-  .map((s) => s.trim().toLowerCase())
-  .filter(Boolean);
+// W0 (2026-11-19): no longer read from NEXT_PUBLIC_ADMIN_EMAILS — a NEXT_PUBLIC_ value is inlined into the
+// public JavaScript bundle, which exposed the admin e-mail addresses. There is no e-mail bootstrap any more:
+// admins are granted only by a super admin from /admin/users (checked on the server).
+export const BOOTSTRAP_ADMIN_EMAILS: string[] = [];
 
 /**
  * يفحص ما إذا كان الإيميل في قائمة bootstrap.

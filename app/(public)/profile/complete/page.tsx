@@ -6,7 +6,7 @@ import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { updateProfile, signOut } from "firebase/auth";
 import { Camera, Eye, EyeOff, Check, X, AtSign, Lock } from "lucide-react";
-import { db, storage, auth, isBootstrapAdminEmail } from "@/lib/firebase";
+import { db, storage, auth } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useFeatureFlag } from "@/hooks/features/use-feature-flag";
@@ -17,6 +17,7 @@ import {
   validatePassword,
   saveUsernamePassword,
 } from "@/lib/auth-credentials";
+import { safeRedirect } from "@/lib/safe-redirect";
 
 type Step = "name" | "credentials" | "photo" | "contact" | "review";
 
@@ -79,7 +80,8 @@ function CompleteProfilePageInner() {
   const [photoURL, setPhotoURL] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const redirectTo = params.get("redirect") || "/profile";
+  // W0: only same-site relative paths
+  const redirectTo = safeRedirect(params.get("redirect"), "/profile");
 
   /* ----------------------------------------------------------
    * تهيئة من profile (لو موجود) + redirect لو مكتمل
@@ -298,7 +300,9 @@ function CompleteProfilePageInner() {
         //   - isAdmin إما غير موجود، أو false، أو true عند bootstrap.
         // لذلك نُرسل uid + isAdmin صراحةً هنا (ليس في الـupdate).
         // ----------------------------------------------------------
-        const shouldBootstrapAdmin = isBootstrapAdminEmail(user.email);
+        // W0: a new profile is never admin. Admins are granted from /admin/users (server side);
+        // the old e-mail bootstrap ran in the browser and shipped the admin e-mails in the bundle.
+        const shouldBootstrapAdmin = false;
 
         await setDoc(
           userRef,

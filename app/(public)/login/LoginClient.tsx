@@ -26,6 +26,7 @@ import { auth, googleProvider } from "@/lib/firebase";
 import { signInWithUsername } from "@/lib/auth-credentials";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthLayout } from "@/components/auth/auth-layout";
+import { safeRedirect } from "@/lib/safe-redirect";
 
 declare global {
   interface Window {
@@ -63,7 +64,8 @@ export default function LoginClient() {
   const recaptchaRef = useRef<HTMLDivElement | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const redirectTo = params.get("redirect") || "/profile";
+  // W0: only same-site relative paths (accepts ?next= from the admin layout too)
+  const redirectTo = safeRedirect(params.get("redirect") ?? params.get("next"), "/profile");
   // تطبيع الرقم: نزيل أي أصفار بادئة قبل دمجه مع رمز الدولة.
   // أرقام ليبيا المحلية تبدأ بـ0 (مثل 0913441664)، لكن الصيغة الدولية
   // لا تحوي هذا الصفر (+218913441664). بدون إزالته يصبح الرقم

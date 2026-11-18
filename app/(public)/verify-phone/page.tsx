@@ -23,6 +23,7 @@ import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { AuthLayout } from "@/components/auth/auth-layout";
+import { safeRedirect } from "@/lib/safe-redirect";
 
 declare global {
   interface Window {
@@ -69,7 +70,8 @@ function VerifyPhoneClient() {
   const recaptchaRef = useRef<HTMLDivElement | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const redirectTo = params.get("redirect") || "/profile";
+  // W0: only same-site relative paths
+  const redirectTo = safeRedirect(params.get("redirect"), "/profile");
   const fullPhone = `${COUNTRY_CODE}${phoneDigits}`;
 
   /* ----------------------------------------------------------
