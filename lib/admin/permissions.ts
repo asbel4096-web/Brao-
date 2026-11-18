@@ -15,6 +15,11 @@ import {
   type Permission,
 } from "./roles";
 
+// E2c SECURITY HOTFIX (2026-11-16): these are Super-Admin-only. They are granted
+// only by "*" and never by a module wildcard (so "users.*" does not include
+// users.role_assign — previously any `admin` could assign roles, incl. super_admin).
+const SUPER_ADMIN_ONLY = new Set<string>(["users.role_assign", "system.manage"]);
+
 export function canPerform(
   role: AdminRole | null | undefined,
   action: Permission | string
@@ -26,6 +31,8 @@ export function canPerform(
 
   // Super Admin أو ما يحوي "*"
   if (perms.includes("*")) return true;
+
+  if (SUPER_ADMIN_ONLY.has(action)) return false;
 
   // فحص exact match
   if (perms.includes(action)) return true;
