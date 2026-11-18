@@ -6,6 +6,7 @@ import {
   jsonError,
   FieldValue,
 } from "@/lib/admin/api-helpers";
+import { createHash } from "crypto";
 
 /**
  * POST /api/listings/track
@@ -27,8 +28,8 @@ import {
  *  - لا يُحتسب أي حدث من المالك على إعلانه (نتحقق من ownerId).
  *  - "view": مرّة واحدة لكل مستخدم/زائر عبر مستند dedup في
  *    listings/{id}/viewers/{viewerKey}. لو موجود، لا نزيد.
- *  - باقي الأحداث: تُحتسب (نقرة فعلية) لكن نمنع المالك.
- *  - viewerKey: uid للمسجّل، أو hash للزائر (يُمرَّر من العميل).
+ *  - باقي الأحداث: مرّة واحدة لكل زائر/حدث/ساعة عبر listings/{id}/eventDedup (W0)، ونمنع المالك.
+ *  - viewerKey: uid للمسجّل، أو hash لعنوان الشبكة للزائر (W0: مفتاح guestKey من العميل لم يعد يُعتمد).
  */
 
 const EVENT_FIELD: Record<string, string> = {
@@ -86,7 +87,19 @@ export async function POST(req: NextRequest) {
     }
 
     const field = EVENT_FIELD[event];
-    const viewerKey = uid || (guestKey ? `g_${guestKey}` : null);
+    // W0: only live listings are counted, and sponsored events only while the boost runs.
+    if (listing.status !== "approved") {
+      return Response.json({ success: true, skipped: "not_live" });
+    }
+    if (event.startsWith("sponsored")) {
+      const until = listing.boostedUntil?.toMillis?.() ?? 0;
+      if (until <= Date.now()) return Response.json({ success: true, skipped: "not_sponsored" });
+    }
+    // W0: a guest is keyed by its network address (the client-side guestKey is no
+    // longer trusted), so rotating that key no longer inflates the counters.
+    const ip = (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || req.headers.get("x-real-ip") || "unknown";
+    const ipHash = createHash("sha256").update(ip).digest("hex").slice(0, 16);
+    const viewerKey = uid || `g_${ipHash}`;
 
     // المشاهدة: dedup مرّة واحدة لكل viewer
     if (event === "view") {
@@ -105,12 +118,17 @@ export async function POST(req: NextRequest) {
       return Response.json({ success: true, counted: result.counted });
     }
 
-    // favorite / chat / phone / whatsapp / share → زيادة العدّاد
-    await listingRef.update({
-      [field]: FieldValue.increment(1),
+    // favorite / chat / phone / whatsapp / share / sponsored* → زيادة العدّاد
+    // W0: at most once per viewer, listing and event per hour (de-dup document).
+    const hour = Math.floor(Date.now() / 3_600_000);
+    const dedupRef = listingRef.collection("eventDedup").doc(`${event}_${viewerKey}_${hour}`);
+    const counted = await db.runTransaction(async (tx) => {
+      if ((await tx.get(dedupRef)).exists) return false;
+      tx.set(dedupRef, { at: FieldValue.serverTimestamp() });
+      tx.update(listingRef, { [field]: FieldValue.increment(1) });
+      return true;
     });
-
-    return Response.json({ success: true, counted: true });
+    return Response.json({ success: true, counted });
   } catch (err: any) {
     return jsonError(err?.message || "فشل التسجيل", 500);
   }

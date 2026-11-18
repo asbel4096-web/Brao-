@@ -4,6 +4,7 @@ import {
   getAdminFirestore,
   FieldValue,
 } from "@/lib/admin/api-helpers";
+import { createHash } from "crypto";
 
 /**
  * POST /api/search-log  (عام)
@@ -27,6 +28,15 @@ export async function POST(req: NextRequest) {
     const resultCount = Number(body?.resultCount) || 0;
 
     const fs = getAdminFirestore(getAdminApp());
+    // W0: one log per network address, query and hour (no flooding the admin insights).
+    const ip = (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || req.headers.get("x-real-ip") || "unknown";
+    const hour = Math.floor(Date.now() / 3_600_000);
+    const key = createHash("sha256").update(`${ip}|${normalized}|${hour}`).digest("hex").slice(0, 32);
+    try {
+      await fs.collection("searchLogDedup").doc(key).create({ at: FieldValue.serverTimestamp() });
+    } catch {
+      return NextResponse.json({ ok: true, skipped: true });
+    }
     await fs.collection("searchLogs").add({
       query: normalized,
       queryRaw: raw.slice(0, 80),

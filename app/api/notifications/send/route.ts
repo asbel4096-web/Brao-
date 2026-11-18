@@ -7,6 +7,9 @@ import {
 } from "firebase-admin/app";
 import { getMessaging as getAdminMessaging } from "firebase-admin/messaging";
 import { getFirestore as getAdminFirestore } from "firebase-admin/firestore";
+import { FieldValue } from "firebase-admin/firestore";
+import { verifyActiveUserToken } from "@/lib/server/active-user";
+import { safeRedirect } from "@/lib/safe-redirect";
 
 /**
  * API route: POST /api/notifications/send
@@ -82,6 +85,7 @@ export async function POST(request: Request) {
       body?: string;
       link?: string;
       tag?: string;
+      notificationId?: string;
     };
     try {
       payload = await request.json();
@@ -92,7 +96,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { userId, title, body, link, tag } = payload;
+    const { userId, title, body, link, tag, notificationId } = payload;
     if (!userId || !title || !body) {
       return NextResponse.json(
         { ok: false, error: "userId, title, body are required" },
@@ -119,7 +123,8 @@ export async function POST(request: Request) {
     let callerUid: string;
     let callerIsAdmin = false;
     try {
-      const decoded = await auth.verifyIdToken(idToken);
+      // W0: ban-aware (revoked tokens and banned accounts are refused)
+      const decoded = await verifyActiveUserToken(idToken);
       callerUid = decoded.uid;
     } catch {
       return NextResponse.json(
@@ -143,8 +148,67 @@ export async function POST(request: Request) {
     // طبيعية (تعليق، رد، رسالة) وهذه نقاط مشروعة.
     // الحماية الفعلية ضد abuse: rate limiting (مؤجَّل) + Firestore rules
     // على notifications collection.
-    if (!callerIsAdmin && callerUid === userId) {
-      // المستخدم يحاول إرسال لنفسه - نادراً يحدث، نسمح بهدوء.
+    // ------------------------------------------------------------------
+    // W0 security (2026-11-19): a push is sent only for a real event.
+    //  - admin: free text (link still same-site);
+    //  - website notifications: the caller passes the notificationId it just
+    //    created; title/body/link come from that document, once (pushed=true);
+    //  - chat (mobile app): link /chat/{id} and BOTH caller and recipient must be
+    //    participants of that chat.
+    // Anything else is refused, links are same-site paths only, and a caller can
+    // send at most PUSH_PER_MINUTE pushes per minute.
+    // ------------------------------------------------------------------
+    const cap = (v: unknown, n: number) => String(v ?? "").trim().slice(0, n);
+    let finalTitle = cap(title, 80);
+    let finalBody = cap(body, 240);
+    let finalLink = safeRedirect(link, "/notifications");
+
+    if (!callerIsAdmin) {
+      const PUSH_PER_MINUTE = 30;
+      const rlRef = adminFs.collection("rateLimits").doc(`push_${callerUid}`);
+      const allowed = await adminFs.runTransaction(async (tx) => {
+        const now = Date.now();
+        const d = (await tx.get(rlRef)).data() || {};
+        const fresh = !d.windowStart || now - Number(d.windowStart) > 60_000;
+        const count = fresh ? 0 : Number(d.count) || 0;
+        if (count >= PUSH_PER_MINUTE) return false;
+        tx.set(rlRef, { windowStart: fresh ? now : d.windowStart, count: count + 1 });
+        return true;
+      });
+      if (!allowed) {
+        return NextResponse.json({ ok: false, error: "Too many notifications" }, { status: 429 });
+      }
+
+      if (typeof notificationId === "string" && notificationId) {
+        const nRef = adminFs.collection("notifications").doc(notificationId);
+        const doc = await adminFs.runTransaction(async (tx) => {
+          const snap = await tx.get(nRef);
+          const n = snap.data();
+          if (!snap.exists || !n || n.userId !== userId || n.pushedAt) return null;
+          const created = n.createdAt?.toMillis?.() ?? 0;
+          if (!created || Date.now() - created > 5 * 60_000) return null;
+          tx.update(nRef, { pushedAt: FieldValue.serverTimestamp(), pushedBy: callerUid });
+          return n;
+        });
+        if (!doc) {
+          return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+        }
+        finalTitle = cap(doc.title, 80);
+        finalBody = cap(doc.body, 240);
+        finalLink = safeRedirect(doc.link, "/notifications");
+      } else {
+        const m = /^\/chat\/([A-Za-z0-9_-]{1,200})$/.exec(String(link || ""));
+        const chat = m ? await adminFs.collection("chats").doc(m[1]).get() : null;
+        const parts: unknown = chat?.exists ? chat.data()?.participants : null;
+        const ok = Array.isArray(parts) && parts.includes(callerUid) && parts.includes(userId) && callerUid !== userId;
+        if (!m || !ok) {
+          return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+        }
+        finalLink = `/chat/${m[1]}`;
+      }
+    }
+    if (!finalTitle || !finalBody) {
+      return NextResponse.json({ ok: false, error: "Empty notification" }, { status: 400 });
     }
 
     // -- 3) fetch tokens for target user
@@ -173,16 +237,16 @@ export async function POST(request: Request) {
       tokens: tokenDocs.map((t) => t.token),
       // notification field يجعل المتصفح يعرض الـnotif تلقائياً حتى لو
       // الـSW لم يستلم الـevent. data field يصل لـonBackgroundMessage.
-      notification: { title, body },
+      notification: { title: finalTitle, body: finalBody },
       data: {
-        title,
-        body,
-        link: link || "/notifications",
+        title: finalTitle,
+        body: finalBody,
+        link: finalLink,
         tag: tag || "bratsho",
       },
       webpush: {
         fcmOptions: {
-          link: link || "/notifications",
+          link: finalLink,
         },
         notification: {
           icon: "/icons/icon-192.png",

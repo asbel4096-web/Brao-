@@ -19,10 +19,12 @@ export async function createNotification(params: {
   link?: string;
   meta?: Record<string, any>;
 }): Promise<void> {
+  // W0: the push API only sends for a notification the caller just created (its id).
+  let created: { id: string } | null = null;
   try {
     // 1) اكتب الـnotification document - الأهم. القائمة الموجودة في
     //    /notifications تعتمد على onSnapshot هذه الـcollection.
-    await addDoc(collection(db, "notifications"), {
+    created = await addDoc(collection(db, "notifications"), {
       userId: params.userId,
       type: params.type,
       title: params.title,
@@ -60,6 +62,7 @@ export async function createNotification(params: {
       },
       body: JSON.stringify({
         userId: params.userId,
+        notificationId: created?.id,
         title: params.title,
         body: params.body,
         link: params.link,
