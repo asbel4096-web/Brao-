@@ -50,7 +50,7 @@ export async function POST(
 ) {
   // 1) Auth: نستخدم نفس permission كـusers.ban (أدمن قوي)
   // يمكن تعديلها لاحقاً لـwallet.manage مخصصة
-  const result = await verifyAdminRequest(request, "users.edit");
+  const result = await verifyAdminRequest(request, "finance.manage");
   if (result instanceof NextResponse) return result;
   const caller = result;
 

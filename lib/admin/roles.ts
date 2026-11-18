@@ -74,6 +74,9 @@ export const PERMISSIONS = {
   ANALYTICS_VIEW: "analytics.view",
   ANALYTICS_EXPORT: "analytics.export",
 
+  // المالية: المحافظ، الشحن، الترويج، الاشتراكات (E2 hotfix — ليست لدور support)
+  FINANCE_MANAGE: "finance.manage",
+
   // النظام
   LOGS_VIEW: "logs.view",
   SYSTEM_MANAGE: "system.manage", // Super Admin فقط
@@ -101,6 +104,7 @@ export const ROLE_PERMISSIONS: Record<AdminRole, readonly (Permission | string)[
     "features.*",
     "settings.*",
     "analytics.*",
+    "finance.*", // E2: wallet / top-up / boost / subscription money actions
     "logs.view",
     // ⚠️ بدون users.role_assign و system.manage - تلك للـSuper Admin فقط
   ],

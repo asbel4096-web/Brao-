@@ -27,7 +27,7 @@ export async function POST(
   request: Request,
   { params }: { params: { listingId: string } }
 ) {
-  const result = await verifyAdminRequest(request, "users.edit");
+  const result = await verifyAdminRequest(request, "finance.manage");
   if (result instanceof NextResponse) return result;
   const caller = result;
 

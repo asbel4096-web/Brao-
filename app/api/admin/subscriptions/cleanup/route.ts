@@ -31,7 +31,7 @@ export const maxDuration = 30;
 const MAX_UPDATES_PER_RUN = 200;
 
 export async function POST(request: Request) {
-  const result = await verifyAdminRequest(request, "users.edit");
+  const result = await verifyAdminRequest(request, "finance.manage");
   if (result instanceof NextResponse) return result;
   const caller = result;
 
