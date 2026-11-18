@@ -11,7 +11,7 @@ import {
 } from "firebase-admin/firestore";
 import { getAuth as getAdminAuth } from "firebase-admin/auth";
 import { canPerform } from "@/lib/admin/permissions";
-import type { AdminRole } from "@/lib/admin/roles";
+import { ALL_ROLES, type AdminRole } from "@/lib/admin/roles";
 
 /**
  * مكتبة مشتركة لكل API routes الأدمن.
@@ -119,15 +119,22 @@ export async function verifyAdminRequest(
   }
 
   const userData = userDoc.data() || {};
-  const explicitRole = userData.role as AdminRole | undefined;
   const isAdminFlag = userData.isAdmin === true;
+  const explicitRole: unknown = userData.role;
 
-  // توافق رجعي: isAdmin=true بدون role → نعامله "admin"
-  const role: AdminRole | null = explicitRole
-    ? explicitRole
-    : isAdminFlag
-    ? "admin"
-    : null;
+  // E2 SECURITY HOTFIX (2026-11-16): `role` on the user's own document is NOT
+  // trusted on its own — it can be self-written when the profile is created.
+  // A role is honoured only when isAdmin === true (granted by admins / Admin
+  // SDK), and only if it is a known role. isAdmin=true without a role is
+  // treated as "admin" (backward compatible); an unknown role is rejected.
+  let role: AdminRole | null = null;
+  if (isAdminFlag) {
+    if (explicitRole === undefined || explicitRole === null || explicitRole === "") {
+      role = "admin";
+    } else if (typeof explicitRole === "string" && (ALL_ROLES as string[]).includes(explicitRole)) {
+      role = explicitRole as AdminRole;
+    }
+  }
 
   if (!role) {
     return jsonError("Forbidden: not an admin", 403);

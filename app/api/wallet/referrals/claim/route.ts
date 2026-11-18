@@ -76,10 +76,9 @@ export async function POST(request: Request) {
     // Admin call - فحص الصلاحيات
     const callerSnap = await fs.collection("users").doc(callerUid).get();
     const callerData = callerSnap.data() || {};
-    const isAdmin =
-      callerData.role === "super_admin" ||
-      callerData.role === "admin" ||
-      callerData.isAdmin === true;
+    // E2 SECURITY HOTFIX: a role on the caller's own document is not trusted
+    // (self-writable at profile creation) — only the isAdmin flag counts.
+    const isAdmin = callerData.isAdmin === true;
     if (!isAdmin) {
       return jsonError("غير مصرَّح", 403);
     }
