@@ -107,7 +107,8 @@ export async function verifyAdminRequest(
 
   let uid: string;
   try {
-    const decoded = await auth.verifyIdToken(idToken);
+    // W0: checkRevoked — tokens revoked at ban time (and disabled accounts) are refused.
+    const decoded = await auth.verifyIdToken(idToken, true);
     uid = decoded.uid;
   } catch {
     return jsonError("Invalid auth token", 401);
@@ -119,6 +120,10 @@ export async function verifyAdminRequest(
   }
 
   const userData = userDoc.data() || {};
+  // W0: a banned account loses every admin capability at once.
+  if (userData.banned === true) {
+    return jsonError("Forbidden: account banned", 403);
+  }
   const isAdminFlag = userData.isAdmin === true;
   const explicitRole: unknown = userData.role;
 

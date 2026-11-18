@@ -7,6 +7,7 @@ import {
 } from "@/lib/admin/api-helpers";
 import { getAuth } from "firebase-admin/auth";
 import { VERIFICATION_PLANS } from "@/lib/wallet/types";
+import { verifyActiveUserToken } from "@/lib/server/active-user";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
 
   let decoded;
   try {
-    decoded = await getAuth(app).verifyIdToken(idToken);
+    decoded = await verifyActiveUserToken(idToken);
   } catch {
     return jsonError("Invalid token", 401);
   }

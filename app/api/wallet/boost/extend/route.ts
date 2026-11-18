@@ -7,6 +7,7 @@ import {
 } from "@/lib/admin/api-helpers";
 import { getAuth } from "firebase-admin/auth";
 import { getExtension } from "@/lib/wallet/campaign";
+import { verifyActiveUserToken } from "@/lib/server/active-user";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
   let uid: string;
   let email = "";
   try {
-    const dec = await getAuth(app).verifyIdToken(authHeader.slice(7));
+    const dec = await verifyActiveUserToken(authHeader.slice(7));
     uid = dec.uid;
     email = dec.email || "";
   } catch {

@@ -15,6 +15,7 @@ import {
 } from "@/lib/friday-market/types";
 import { computeMarketState } from "@/lib/friday-market/market-time";
 import { matchBannedWords, type BannedWordLike } from "@/lib/moderation/match-banned";
+import { verifyActiveUserToken } from "@/lib/server/active-user";
 
 /**
  * POST /api/friday-market/post
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
   let uid: string;
   let tokenName = "";
   try {
-    const decoded = await getAdminAuth(app).verifyIdToken(idToken);
+    const decoded = await verifyActiveUserToken(idToken);
     uid = decoded.uid;
     tokenName = (decoded as any).name || "";
   } catch {

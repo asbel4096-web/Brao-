@@ -10,6 +10,7 @@ import {
   MAX_REFERRALS_PER_DAY,
   REFERRAL_REWARD_BC,
 } from "@/lib/wallet/referrals";
+import { verifyActiveUserToken } from "@/lib/server/active-user";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -51,7 +52,7 @@ export async function POST(request: Request) {
 
   let decoded;
   try {
-    decoded = await getAuth(app).verifyIdToken(idToken);
+    decoded = await verifyActiveUserToken(idToken);
   } catch {
     return jsonError("Invalid token", 401);
   }

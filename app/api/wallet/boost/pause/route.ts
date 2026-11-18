@@ -6,6 +6,7 @@ import {
   FieldValue,
 } from "@/lib/admin/api-helpers";
 import { getAuth } from "firebase-admin/auth";
+import { verifyActiveUserToken } from "@/lib/server/active-user";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
 
   let uid: string;
   try {
-    uid = (await getAuth(app).verifyIdToken(authHeader.slice(7))).uid;
+    uid = (await verifyActiveUserToken(authHeader.slice(7))).uid;
   } catch {
     return jsonError("Invalid token", 401);
   }

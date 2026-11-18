@@ -7,6 +7,7 @@ import {
   verifyAdminRequest,
   FieldValue,
 } from "@/lib/admin/api-helpers";
+import { getAuth } from "firebase-admin/auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -108,6 +109,14 @@ export async function POST(
 
   try {
     await batch.commit();
+
+    // W0: end every session of the banned user now. API routes verify with checkRevoked and
+    // refuse banned accounts, so the ban takes effect immediately on the server.
+    try {
+      await getAuth(app).revokeRefreshTokens(targetUid);
+    } catch {
+      /* no Firebase Auth user (e.g. already deleted) — the Firestore ban still applies */
+    }
   } catch (err: any) {
     // eslint-disable-next-line no-console
     console.error("[ban] batch failed:", err?.message);

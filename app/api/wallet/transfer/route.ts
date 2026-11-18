@@ -12,6 +12,7 @@ import {
   MAX_TRANSFERS_PER_DAY,
   normalizePhoneForSearch,
 } from "@/lib/wallet/transfer";
+import { verifyActiveUserToken } from "@/lib/server/active-user";
 
 /**
  * التحقق من الـID token وإرجاع الـuid.
@@ -23,7 +24,7 @@ async function getUidFromRequest(req: NextRequest): Promise<string | null> {
   if (!match) return null;
   try {
     getAdminApp();
-    const decoded = await getAuth().verifyIdToken(match[1]);
+    const decoded = await verifyActiveUserToken(match[1]);
     return decoded.uid || null;
   } catch {
     return null;

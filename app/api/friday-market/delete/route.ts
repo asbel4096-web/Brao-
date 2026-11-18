@@ -6,6 +6,7 @@ import {
   FieldValue,
   jsonError,
 } from "@/lib/admin/api-helpers";
+import { verifyActiveUserToken } from "@/lib/server/active-user";
 
 /**
  * POST /api/friday-market/delete
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
 
   let uid: string;
   try {
-    const decoded = await getAdminAuth(app).verifyIdToken(idToken);
+    const decoded = await verifyActiveUserToken(idToken);
     uid = decoded.uid;
   } catch {
     return jsonError("جلسة غير صالحة", 401);

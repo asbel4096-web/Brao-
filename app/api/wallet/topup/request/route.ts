@@ -14,6 +14,7 @@ import {
   TOPUP_MIN_AMOUNT,
   type PaymentMethodKey,
 } from "@/lib/wallet/topup";
+import { verifyActiveUserToken } from "@/lib/server/active-user";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
 
   let decoded;
   try {
-    decoded = await getAuth(app).verifyIdToken(idToken);
+    decoded = await verifyActiveUserToken(idToken);
   } catch {
     return jsonError("Invalid token", 401);
   }

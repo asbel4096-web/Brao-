@@ -6,6 +6,7 @@ import {
   jsonError,
   FieldValue,
 } from "@/lib/admin/api-helpers";
+import { verifyActiveUserToken } from "@/lib/server/active-user";
 
 /**
  * POST /api/auth/set-credentials
@@ -35,7 +36,7 @@ async function getUidFromRequest(
   if (!match) return { uid: null, stale: false };
   try {
     getAdminApp();
-    const decoded = await getAuth().verifyIdToken(match[1]);
+    const decoded = await verifyActiveUserToken(match[1]);
     // فحص الحداثة: آخر مصادقة خلال آخر 5 دقائق (عمليات حسّاسة).
     const FRESH_WINDOW = 5 * 60; // ثانية
     const authTime = (decoded as any).auth_time as number | undefined;

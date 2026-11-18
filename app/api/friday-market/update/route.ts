@@ -11,6 +11,7 @@ import {
   FRIDAY_TITLE_MAX,
 } from "@/lib/friday-market/types";
 import { matchBannedWords, type BannedWordLike } from "@/lib/moderation/match-banned";
+import { verifyActiveUserToken } from "@/lib/server/active-user";
 
 /**
  * POST /api/friday-market/update
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
 
   let uid: string;
   try {
-    const decoded = await getAdminAuth(app).verifyIdToken(idToken);
+    const decoded = await verifyActiveUserToken(idToken);
     uid = decoded.uid;
   } catch {
     return jsonError("جلسة غير صالحة", 401);
