@@ -6,6 +6,8 @@ import {
   jsonError,
   FieldValue,
 } from "@/lib/admin/api-helpers";
+import { verifyAdminRequest } from "@/lib/admin/api-helpers";
+import { NextResponse } from "next/server";
 
 /**
  * POST /api/admin/wallet-settings
@@ -17,25 +19,9 @@ import {
  */
 
 async function getAdminUid(req: NextRequest): Promise<string | null> {
-  const authHeader = req.headers.get("authorization") || "";
-  const match = authHeader.match(/^Bearer\s+(.+)$/i);
-  if (!match) return null;
-  try {
-    getAdminApp();
-    const decoded = await getAuth().verifyIdToken(match[1]);
-    if (!decoded?.uid) return null;
-
-    // تحقق من isAdmin في Firestore
-    const db = getAdminFirestore();
-    const userSnap = await db.collection("users").doc(decoded.uid).get();
-    if (!userSnap.exists) return null;
-    const data = userSnap.data() || {};
-    if (data.isAdmin !== true) return null;
-
-    return decoded.uid;
-  } catch {
-    return null;
-  }
+  // W0: one authorization path — "finance.manage" (money settings), banned/revoked rejected.
+  const gate = await verifyAdminRequest(req, "finance.manage");
+  return gate instanceof NextResponse ? null : gate.uid;
 }
 
 export async function POST(req: NextRequest) {

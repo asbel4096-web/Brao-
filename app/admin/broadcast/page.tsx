@@ -27,6 +27,7 @@ import { useConfirm } from "@/components/confirm-dialog";
 import { auth, storage } from "@/lib/firebase";
 import { AdminPageSkeleton } from "@/components/admin/ui/admin-loading";
 import { BROADCAST_TYPES, type BroadcastTypeKey } from "@/lib/types";
+import { AdminPermissionGate } from "@/components/admin/ui/admin-permission-gate";
 
 interface BroadcastResult {
   recipientCount: number;
@@ -58,7 +59,7 @@ const TEXT_FOR: Record<BroadcastTypeKey, string> = {
   broadcast_general: "text-brand-700 dark:text-brand-300",
 };
 
-export default function AdminBroadcastPage() {
+function AdminBroadcastPageContent() {
   const { profile, loading: authLoading } = useAuth();
   const toast = useToast();
   const confirm = useConfirm();
@@ -626,5 +627,14 @@ function Stat({
         {value.toLocaleString("ar-LY")}
       </p>
     </div>
+  );
+}
+
+// W0 security: per-page permission (the admin layout only checks "is staff").
+export default function AdminBroadcastPage() {
+  return (
+    <AdminPermissionGate permission="broadcast.send" label="إرسال الإشعارات الجماعية">
+      <AdminBroadcastPageContent />
+    </AdminPermissionGate>
   );
 }

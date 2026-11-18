@@ -16,10 +16,11 @@ import {
 } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
+import { AdminPermissionGate } from "@/components/admin/ui/admin-permission-gate";
 
 const arNum = (v: number) => (Number(v) || 0).toLocaleString("ar-LY");
 
-export default function AdminTodayPage() {
+function AdminTodayPageContent() {
   const { profile, loading: authLoading } = useAuth();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -153,5 +154,14 @@ function TodayCard({
         {label}
       </div>
     </div>
+  );
+}
+
+// W0 security: per-page permission (the admin layout only checks "is staff").
+export default function AdminTodayPage() {
+  return (
+    <AdminPermissionGate permission="analytics.view" label="رؤية ملخّص اليوم">
+      <AdminTodayPageContent />
+    </AdminPermissionGate>
   );
 }

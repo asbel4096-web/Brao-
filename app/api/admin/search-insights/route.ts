@@ -5,6 +5,7 @@ import {
   getAdminFirestore,
   jsonError,
 } from "@/lib/admin/api-helpers";
+import { verifyAdminRequest } from "@/lib/admin/api-helpers";
 
 /**
  * GET /api/admin/search-insights  (أدمن فقط)
@@ -16,17 +17,9 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 async function isAdmin(req: NextRequest): Promise<boolean> {
-  const m = (req.headers.get("authorization") || "").match(/^Bearer\s+(.+)$/i);
-  if (!m) return false;
-  try {
-    getAdminApp();
-    const decoded = await getAuth().verifyIdToken(m[1]);
-    const fs = getAdminFirestore(getAdminApp());
-    const snap = await fs.collection("users").doc(decoded.uid).get();
-    return snap.exists && snap.data()?.isAdmin === true;
-  } catch {
-    return false;
-  }
+  // W0: one authorization path — role + "analytics.view" permission (not just isAdmin), banned/revoked rejected.
+  const gate = await verifyAdminRequest(req, "analytics.view");
+  return !(gate instanceof NextResponse);
 }
 
 export async function GET(req: NextRequest) {

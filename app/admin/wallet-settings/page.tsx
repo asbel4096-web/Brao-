@@ -16,6 +16,7 @@ import { auth } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useWalletEnabled } from "@/hooks/use-wallet-enabled";
+import { AdminPermissionGate } from "@/components/admin/ui/admin-permission-gate";
 
 /**
  * صفحة تحكم الأدمن بالمحفظة - /admin/wallet-settings
@@ -28,7 +29,7 @@ import { useWalletEnabled } from "@/hooks/use-wallet-enabled";
  * متاح للأدمن فقط.
  */
 
-export default function WalletSettingsPage() {
+function WalletSettingsPageContent() {
   const router = useRouter();
   const { user, profile, loading: authLoading } = useAuth();
   const toast = useToast();
@@ -216,5 +217,14 @@ export default function WalletSettingsPage() {
         </p>
       </div>
     </section>
+  );
+}
+
+// W0 security: per-page permission (the admin layout only checks "is staff").
+export default function WalletSettingsPage() {
+  return (
+    <AdminPermissionGate permission="finance.manage" label="تعديل إعدادات المحفظة">
+      <WalletSettingsPageContent />
+    </AdminPermissionGate>
   );
 }

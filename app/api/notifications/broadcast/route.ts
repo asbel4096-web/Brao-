@@ -10,6 +10,7 @@ import {
   getFirestore as getAdminFirestore,
   FieldValue,
 } from "firebase-admin/firestore";
+import { verifyAdminRequest } from "@/lib/admin/api-helpers";
 
 /**
  * POST /api/notifications/broadcast
@@ -200,16 +201,10 @@ export async function POST(request: Request) {
     }
 
     const adminFs = getAdminFirestore(adminApp);
+    // W0: one authorization path — the broadcast.send permission (support/analytics staff cannot broadcast).
+    const gate = await verifyAdminRequest(request, "broadcast.send");
+    if (gate instanceof NextResponse) return gate;
     const callerDoc = await adminFs.collection("users").doc(callerUid).get();
-    const callerIsAdmin =
-      callerDoc.exists && callerDoc.data()?.isAdmin === true;
-
-    if (!callerIsAdmin) {
-      return NextResponse.json(
-        { ok: false, error: "Forbidden: admin only" },
-        { status: 403 }
-      );
-    }
 
     // ============================================================
     // 3) إنشاء وثيقة broadcast سجلّ

@@ -10,8 +10,9 @@ import { auth, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { categories } from "@/lib/categories";
+import { AdminPermissionGate } from "@/components/admin/ui/admin-permission-gate";
 
-export default function AdminCategoryImagesPage() {
+function AdminCategoryImagesPageContent() {
   const { profile, loading: authLoading } = useAuth();
   const toast = useToast();
   const [images, setImages] = useState<Record<string, string>>({});
@@ -215,5 +216,14 @@ export default function AdminCategoryImagesPage() {
         </div>
       )}
     </div>
+  );
+}
+
+// W0 security: per-page permission (the admin layout only checks "is staff").
+export default function AdminCategoryImagesPage() {
+  return (
+    <AdminPermissionGate permission="content.edit" label="إدارة صور الأقسام">
+      <AdminCategoryImagesPageContent />
+    </AdminPermissionGate>
   );
 }

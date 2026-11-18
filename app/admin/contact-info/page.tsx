@@ -21,6 +21,7 @@ import {
   clearContactSettingsCache,
 } from "@/hooks/useContactSettings";
 import type { ContactSettings } from "@/lib/types";
+import { AdminPermissionGate } from "@/components/admin/ui/admin-permission-gate";
 
 /**
  * صفحة الأدمن: تعديل معلومات التواصل العامة.
@@ -29,7 +30,7 @@ import type { ContactSettings } from "@/lib/types";
  * كل حقل اختياري - لو تركه الأدمن فارغاً، البطاقة المقابلة تختفي من
  * صفحة التواصل. يسمح بإخفاء قنوات لا يدعمها الفريق حالياً.
  */
-export default function AdminContactInfoPage() {
+function AdminContactInfoPageContent() {
   const { profile, loading: authLoading } = useAuth();
   const toast = useToast();
 
@@ -257,5 +258,14 @@ function Field({
         "
       />
     </div>
+  );
+}
+
+// W0 security: per-page permission (the admin layout only checks "is staff").
+export default function AdminContactInfoPage() {
+  return (
+    <AdminPermissionGate permission="contact_info.edit" label="تعديل معلومات التواصل">
+      <AdminContactInfoPageContent />
+    </AdminPermissionGate>
   );
 }

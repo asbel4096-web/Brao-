@@ -28,6 +28,7 @@ import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/components/confirm-dialog";
 import { formatDateTime } from "@/lib/utils";
 import type { FeaturedRequest } from "@/lib/types";
+import { AdminPermissionGate } from "@/components/admin/ui/admin-permission-gate";
 
 type StatusFilter = "pending" | "approved" | "rejected" | "all";
 const DURATION_OPTIONS = [3, 7, 14] as const;
@@ -41,7 +42,7 @@ type Duration = (typeof DURATION_OPTIONS)[number];
  *  3) موافقة → اختيار مدة (3/7/14) → تحديث الإعلان نفسه بـfeatured=true.
  *  4) رفض → فقط تحديث الطلب بـstatus="rejected" (الإعلان لا يتغيّر).
  */
-export default function AdminFeaturedRequestsPage() {
+function AdminFeaturedRequestsPageContent() {
   const { profile, loading: authLoading } = useAuth();
   const toast = useToast();
   const confirm = useConfirm();
@@ -501,5 +502,14 @@ function ApproveModal({
         </div>
       </div>
     </div>
+  );
+}
+
+// W0 security: per-page permission (the admin layout only checks "is staff").
+export default function AdminFeaturedRequestsPage() {
+  return (
+    <AdminPermissionGate permission="listings.feature" label="مراجعة طلبات التمييز">
+      <AdminFeaturedRequestsPageContent />
+    </AdminPermissionGate>
   );
 }

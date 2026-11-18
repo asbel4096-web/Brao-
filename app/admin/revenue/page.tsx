@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
+import { AdminPermissionGate } from "@/components/admin/ui/admin-permission-gate";
 
 const GrowthChart = dynamic(
   () => import("@/components/admin/charts/growth-chart").then((m) => m.GrowthChart),
@@ -34,7 +35,7 @@ interface RevenueData {
   txCount: number;
 }
 
-export default function AdminRevenuePage() {
+function AdminRevenuePageContent() {
   const { profile, loading: authLoading } = useAuth();
   const [data, setData] = useState<RevenueData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -226,5 +227,14 @@ function MiniStat({
         {label}
       </div>
     </div>
+  );
+}
+
+// W0 security: per-page permission (the admin layout only checks "is staff").
+export default function AdminRevenuePage() {
+  return (
+    <AdminPermissionGate permission="analytics.view" label="رؤية الإيرادات">
+      <AdminRevenuePageContent />
+    </AdminPermissionGate>
   );
 }

@@ -15,6 +15,7 @@ import {
   PROMO_PRICE_MAX,
   type PromoServiceKey,
 } from "@/lib/wallet/promo-pricing";
+import { AdminPermissionGate } from "@/components/admin/ui/admin-permission-gate";
 
 /**
  * /admin/pricing — تعديل أسعار باقات الترقية (مميّز/مموّل/VIP/عاجل).
@@ -22,7 +23,7 @@ import {
  * يقرأ ويكتب عبر /api/admin/pricing (Admin SDK). السيرفر هو مصدر الحقيقة
  * عند الشراء — العميل لا يُرسل السعر أبداً.
  */
-export default function AdminPricingPage() {
+function AdminPricingPageContent() {
   const { profile, loading: authLoading } = useAuth();
   const toast = useToast();
 
@@ -213,5 +214,14 @@ export default function AdminPricingPage() {
         تغيير السعر لا يؤثّر على الحملات الجارية، فقط على عمليات الشراء الجديدة.
       </p>
     </div>
+  );
+}
+
+// W0 security: per-page permission (the admin layout only checks "is staff").
+export default function AdminPricingPage() {
+  return (
+    <AdminPermissionGate permission="finance.manage" label="التحكم بالأسعار">
+      <AdminPricingPageContent />
+    </AdminPermissionGate>
   );
 }

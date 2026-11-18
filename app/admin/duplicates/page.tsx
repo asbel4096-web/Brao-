@@ -7,6 +7,7 @@ import Image from "next/image";
 import { ArrowRight, Copy, Phone, AlertTriangle } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
+import { AdminPermissionGate } from "@/components/admin/ui/admin-permission-gate";
 
 const arNum = (v: number) => (Number(v) || 0).toLocaleString("ar-LY");
 
@@ -16,7 +17,7 @@ const STATUS_AR: Record<string, string> = {
   rejected: "مرفوض",
 };
 
-export default function DuplicatesPage() {
+function DuplicatesPageContent() {
   const { profile, loading: authLoading } = useAuth();
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState("");
@@ -175,5 +176,14 @@ export default function DuplicatesPage() {
         </>
       ) : null}
     </div>
+  );
+}
+
+// W0 security: per-page permission (the admin layout only checks "is staff").
+export default function DuplicatesPage() {
+  return (
+    <AdminPermissionGate permission="listings.view" label="كشف التكرار">
+      <DuplicatesPageContent />
+    </AdminPermissionGate>
   );
 }

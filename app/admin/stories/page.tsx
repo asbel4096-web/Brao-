@@ -27,6 +27,7 @@ import { AdminPageSkeleton } from "@/components/admin/ui/admin-loading";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/components/confirm-dialog";
+import { AdminPermissionGate } from "@/components/admin/ui/admin-permission-gate";
 
 interface AdminStory {
   id: string;
@@ -54,7 +55,7 @@ function fmt(ms: number): string {
   }
 }
 
-export default function AdminStoriesPage() {
+function AdminStoriesPageContent() {
   const { profile, loading: authLoading } = useAuth();
   const toast = useToast();
   const confirm = useConfirm();
@@ -268,5 +269,14 @@ export default function AdminStoriesPage() {
         </div>
       )}
     </div>
+  );
+}
+
+// W0 security: per-page permission (the admin layout only checks "is staff").
+export default function AdminStoriesPage() {
+  return (
+    <AdminPermissionGate permission="listings.view" label="إشراف القصص">
+      <AdminStoriesPageContent />
+    </AdminPermissionGate>
   );
 }

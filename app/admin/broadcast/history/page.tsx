@@ -29,6 +29,7 @@ import {
   type BroadcastRecord,
   type BroadcastTypeKey,
 } from "@/lib/types";
+import { AdminPermissionGate } from "@/components/admin/ui/admin-permission-gate";
 
 /**
  * سجلّ الإشعارات الجماعية (broadcasts) للأدمن.
@@ -71,7 +72,7 @@ function formatDate(ts: any): string {
   });
 }
 
-export default function BroadcastHistoryPage() {
+function BroadcastHistoryPageContent() {
   const { profile, loading: authLoading } = useAuth();
   const [items, setItems] = useState<BroadcastRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -284,5 +285,14 @@ function Stat({
       <span className="tabular-nums">{value.toLocaleString("ar-LY")}</span>
       <span className="text-slate-400 dark:text-slate-500">{label}</span>
     </div>
+  );
+}
+
+// W0 security: per-page permission (the admin layout only checks "is staff").
+export default function BroadcastHistoryPage() {
+  return (
+    <AdminPermissionGate permission="broadcast.send" label="رؤية سجلّ البث">
+      <BroadcastHistoryPageContent />
+    </AdminPermissionGate>
   );
 }

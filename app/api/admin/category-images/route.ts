@@ -7,6 +7,7 @@ import {
   FieldValue,
 } from "@/lib/admin/api-helpers";
 import { categories } from "@/lib/categories";
+import { verifyAdminRequest } from "@/lib/admin/api-helpers";
 
 /**
  * إدارة صور الأقسام — للأدمن فقط.
@@ -20,17 +21,9 @@ export const runtime = "nodejs";
 const VALID_SLUGS = new Set(categories.map((c) => c.slug));
 
 async function isAdmin(req: NextRequest): Promise<boolean> {
-  const m = (req.headers.get("authorization") || "").match(/^Bearer\s+(.+)$/i);
-  if (!m) return false;
-  try {
-    getAdminApp();
-    const decoded = await getAuth().verifyIdToken(m[1]);
-    const fs = getAdminFirestore(getAdminApp());
-    const snap = await fs.collection("users").doc(decoded.uid).get();
-    return snap.exists && snap.data()?.isAdmin === true;
-  } catch {
-    return false;
-  }
+  // W0: one authorization path — role + "content.edit" permission (not just isAdmin), banned/revoked rejected.
+  const gate = await verifyAdminRequest(req, "content.edit");
+  return !(gate instanceof NextResponse);
 }
 
 export async function GET(req: NextRequest) {

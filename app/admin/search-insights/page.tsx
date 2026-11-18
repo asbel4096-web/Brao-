@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowRight, SearchX, TrendingUp, MapPin } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
+import { AdminPermissionGate } from "@/components/admin/ui/admin-permission-gate";
 
 const arNum = (v: number) => (Number(v) || 0).toLocaleString("ar-LY");
 
@@ -16,7 +17,7 @@ interface Insight {
   cities: string[];
 }
 
-export default function SearchInsightsPage() {
+function SearchInsightsPageContent() {
   const { profile, loading: authLoading } = useAuth();
   const [items, setItems] = useState<Insight[] | null>(null);
   const [meta, setMeta] = useState({ total: 0, unique: 0 });
@@ -176,5 +177,14 @@ export default function SearchInsightsPage() {
         </>
       )}
     </div>
+  );
+}
+
+// W0 security: per-page permission (the admin layout only checks "is staff").
+export default function SearchInsightsPage() {
+  return (
+    <AdminPermissionGate permission="analytics.view" label="رؤية تحليلات البحث">
+      <SearchInsightsPageContent />
+    </AdminPermissionGate>
   );
 }

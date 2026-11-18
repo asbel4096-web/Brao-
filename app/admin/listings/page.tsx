@@ -11,8 +11,9 @@ import { createNotification } from "@/lib/notifications";
 import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/components/confirm-dialog";
 import { formatPrice, timeAgo } from "@/lib/utils";
+import { AdminPermissionGate } from "@/components/admin/ui/admin-permission-gate";
 
-export default function AdminListingsPage() {
+function AdminListingsPageContent() {
   const toast = useToast();
   const confirm = useConfirm();
   const [items, setItems] = useState<any[]>([]);
@@ -376,5 +377,14 @@ function RejectDialog({
         </div>
       </div>
     </div>
+  );
+}
+
+// W0 security: per-page permission (the admin layout only checks "is staff").
+export default function AdminListingsPage() {
+  return (
+    <AdminPermissionGate permission="listings.view" label="إدارة الإعلانات">
+      <AdminListingsPageContent />
+    </AdminPermissionGate>
   );
 }

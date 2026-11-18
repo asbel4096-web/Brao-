@@ -16,11 +16,12 @@ import { useConfirm } from "@/components/confirm-dialog";
 import { CAR_BRANDS, type CarBrand } from "@/lib/car-brands";
 import { BrandLogo } from "@/components/brand-logo";
 import { useBrandLogos } from "@/hooks/useBrandLogos";
+import { AdminPermissionGate } from "@/components/admin/ui/admin-permission-gate";
 
 const MAX_BYTES = 2 * 1024 * 1024; // 2MB
 const ALLOWED = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"];
 
-export default function AdminBrandsPage() {
+function AdminBrandsPageContent() {
   const { isAdmin } = useAuth();
   const toast = useToast();
   const confirm = useConfirm();
@@ -201,5 +202,14 @@ export default function AdminBrandsPage() {
         })}
       </div>
     </div>
+  );
+}
+
+// W0 security: per-page permission (the admin layout only checks "is staff").
+export default function AdminBrandsPage() {
+  return (
+    <AdminPermissionGate permission="brands.edit" label="إدارة شعارات الماركات">
+      <AdminBrandsPageContent />
+    </AdminPermissionGate>
   );
 }

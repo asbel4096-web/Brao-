@@ -12,6 +12,7 @@ import {
   PROMO_PRICE_MIN,
   PROMO_PRICE_MAX,
 } from "@/lib/wallet/promo-pricing";
+import { verifyAdminRequest } from "@/lib/admin/api-helpers";
 
 /**
  * أسعار باقات الترقية — للأدمن فقط.
@@ -27,20 +28,9 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 async function getAdminUid(req: NextRequest): Promise<string | null> {
-  const authHeader = req.headers.get("authorization") || "";
-  const match = authHeader.match(/^Bearer\s+(.+)$/i);
-  if (!match) return null;
-  try {
-    getAdminApp();
-    const decoded = await getAuth().verifyIdToken(match[1]);
-    if (!decoded?.uid) return null;
-    const fs = getAdminFirestore(getAdminApp());
-    const userSnap = await fs.collection("users").doc(decoded.uid).get();
-    if (!userSnap.exists || userSnap.data()?.isAdmin !== true) return null;
-    return decoded.uid;
-  } catch {
-    return null;
-  }
+  // W0: one authorization path — "finance.manage" (money settings), banned/revoked rejected.
+  const gate = await verifyAdminRequest(req, "finance.manage");
+  return gate instanceof NextResponse ? null : gate.uid;
 }
 
 export async function GET(req: NextRequest) {

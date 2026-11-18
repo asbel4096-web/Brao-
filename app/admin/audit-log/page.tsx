@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
+import { AdminPermissionGate } from "@/components/admin/ui/admin-permission-gate";
 
 interface LogItem {
   id: string;
@@ -46,7 +47,7 @@ function fmt(ms: number) {
   });
 }
 
-export default function AuditLogPage() {
+function AuditLogPageContent() {
   const { profile, loading: authLoading } = useAuth();
   const [items, setItems] = useState<LogItem[] | null>(null);
   const [error, setError] = useState("");
@@ -162,5 +163,14 @@ export default function AuditLogPage() {
         </div>
       )}
     </div>
+  );
+}
+
+// W0 security: per-page permission (the admin layout only checks "is staff").
+export default function AuditLogPage() {
+  return (
+    <AdminPermissionGate permission="logs.view" label="رؤية سجلّ التدقيق">
+      <AuditLogPageContent />
+    </AdminPermissionGate>
   );
 }
