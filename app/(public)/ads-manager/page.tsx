@@ -210,7 +210,7 @@ export default function AdsManagerPage() {
             icon={<Wallet size={18} />}
             label="الإنفاق"
             value={arNum(spend)}
-            suffix="BC"
+            suffix="د.ل"
             tint="rose"
           />
         </div>
@@ -355,7 +355,7 @@ function Hero({
           <div className="min-w-0">
             <div className="text-[10px] font-bold text-white/55">إجمالي الإنفاق</div>
             <div className="text-sm font-extrabold tabular-nums">
-              {arNum(spend)} <span className="text-[10px] text-white/50">BC</span>
+              {arNum(spend)} <span className="text-[10px] text-white/50">د.ل</span>
             </div>
           </div>
         </div>
@@ -597,7 +597,7 @@ function ExtendSheet({
   return (
     <Sheet title="تمديد الحملة" subtitle={ad.title} onClose={onClose}>
       <p className="mb-3 text-xs font-bold text-slate-500">
-        اختر عدد الأيام (تُخصم من رصيد BC):
+        اختر عدد الأيام (تُخصم من رصيدك):
       </p>
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
         {BOOST_EXTENSIONS.map((ext) => (
@@ -611,7 +611,7 @@ function ExtendSheet({
               {ext.label}
             </span>
             <span className="text-xs font-bold text-brand-700 dark:text-brand-300">
-              {ext.price} BC
+              {ext.price} د.ل
             </span>
           </button>
         ))}

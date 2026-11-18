@@ -465,7 +465,7 @@ function CancelDialog({ uid, onClose }: { uid: string; onClose: () => void }) {
       }
       toast.success(
         data.refunded
-          ? `تم الإلغاء واسترداد ${data.refundAmount} BC`
+          ? `تم الإلغاء واسترداد ${data.refundAmount} د.ل`
           : "تم إلغاء الاشتراك"
       );
       onClose();
@@ -532,7 +532,7 @@ function CancelDialog({ uid, onClose }: { uid: string; onClose: () => void }) {
                 استرداد الرصيد
               </p>
               <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                يعيد BC المخصومة من آخر عملية شراء
+                يعيد المبلغ المخصوم من آخر عملية شراء
               </p>
             </div>
           </label>

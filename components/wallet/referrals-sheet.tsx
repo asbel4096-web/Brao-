@@ -109,7 +109,7 @@ export function ReferralsSheet({ open, onClose }: Props) {
       try {
         await navigator.share({
           title: "براتشو كار - دعوة",
-          text: `سجّل عبر رابط الدعوة واحصل على ${REFERRAL_REWARD_BC} BC هدية`,
+          text: `سجّل عبر رابط الدعوة واحصل على ${REFERRAL_REWARD_BC} د.ل هدية`,
           url: link,
         });
         return;
@@ -214,7 +214,7 @@ function ComingSoon() {
       </div>
       <h3 className="text-lg font-extrabold text-slate-950 dark:text-white">نظام الإحالات قريباً</h3>
       <p className="mt-1 text-[12px] text-slate-500 dark:text-slate-400">
-        ستحصل على {REFERRAL_REWARD_BC} BC عن كل صديق تدعوه
+        ستحصل على {REFERRAL_REWARD_BC} د.ل عن كل صديق تدعوه
       </p>
     </div>
   );
@@ -242,7 +242,7 @@ function NotActivated({
             ادعُ أصدقاءك واربح
           </h3>
           <p className="mt-1 text-sm text-white/90">
-            احصل على {REFERRAL_REWARD_BC} BC عن كل صديق
+            احصل على {REFERRAL_REWARD_BC} د.ل عن كل صديق
           </p>
         </div>
       </div>
@@ -270,7 +270,7 @@ function NotActivated({
         <StepRow
           num="4"
           title="تحصلان على المكافأة!"
-          desc={`${REFERRAL_REWARD_BC} BC لك + ${REFERRAL_REWARD_BC} BC له`}
+          desc={`${REFERRAL_REWARD_BC} د.ل لك + ${REFERRAL_REWARD_BC} د.ل له`}
           isLast
         />
       </div>
@@ -373,7 +373,7 @@ function ActivatedView({
             </span>
           </div>
           <p className="mt-1 text-[11px] text-brand-200">
-            ربحت {completedCount * REFERRAL_REWARD_BC} BC من الإحالات
+            ربحت {completedCount * REFERRAL_REWARD_BC} د.ل من الإحالات
           </p>
         </div>
       </div>
@@ -541,7 +541,7 @@ function ReferralRow({ referral }: { referral: any }) {
       {isCompleted && (
         <div className="text-end">
           <p className="text-[11px] font-extrabold tabular-nums text-emerald-400">
-            +{REFERRAL_REWARD_BC} BC
+            +{REFERRAL_REWARD_BC} د.ل
           </p>
         </div>
       )}

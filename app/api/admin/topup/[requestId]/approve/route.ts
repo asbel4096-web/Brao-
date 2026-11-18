@@ -133,7 +133,7 @@ export async function POST(
       userId: txData.userId,
       type: "wallet_topup_approved",
       title: "تمت الموافقة على طلب الشحن",
-      body: `تم إضافة ${txData.amount} BC إلى رصيدك`,
+      body: `تم إضافة ${txData.amount} د.ل إلى رصيدك`,
       link: "/profile",
       read: false,
       createdAt: FieldValue.serverTimestamp(),

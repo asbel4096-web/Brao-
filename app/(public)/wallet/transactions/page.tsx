@@ -229,7 +229,7 @@ function SummaryTile({
         <span className="text-[11px] font-bold text-white/60">{label}</span>
       </div>
       <div className="text-xl font-extrabold tabular-nums">
-        {value} <span className="text-xs font-bold text-white/50">BC</span>
+        {value} <span className="text-xs font-bold text-white/50">د.ل</span>
       </div>
     </div>
   );
@@ -282,7 +282,7 @@ function TxRow({ tx }: { tx: any }) {
         >
           {positive ? "+" : "−"}
           {arNum(amount)}
-          <span className="mr-0.5 text-[10px] font-bold text-slate-400"> BC</span>
+          <span className="mr-0.5 text-[10px] font-bold text-slate-400"> د.ل</span>
         </p>
         {typeof tx.balanceAfter === "number" && (
           <p className="mt-0.5 text-[9px] text-slate-400">

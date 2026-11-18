@@ -68,10 +68,10 @@ export async function POST(request: Request) {
   // Validation
   const amount = Number(body.amount);
   if (!Number.isFinite(amount) || amount < TOPUP_MIN_AMOUNT) {
-    return jsonError(`الحد الأدنى للشحنة: ${TOPUP_MIN_AMOUNT} BC`, 400);
+    return jsonError(`الحد الأدنى للشحنة: ${TOPUP_MIN_AMOUNT} د.ل`, 400);
   }
   if (amount > TOPUP_MAX_AMOUNT) {
-    return jsonError(`الحد الأقصى للشحنة الواحدة: ${TOPUP_MAX_AMOUNT} BC`, 400);
+    return jsonError(`الحد الأقصى للشحنة الواحدة: ${TOPUP_MAX_AMOUNT} د.ل`, 400);
   }
 
   const method = findPaymentMethod(body.paymentMethod || "");

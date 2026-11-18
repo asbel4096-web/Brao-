@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
     const n = Number(body?.[k]);
     if (!Number.isFinite(n) || n < PROMO_PRICE_MIN || n > PROMO_PRICE_MAX) {
       return jsonError(
-        `سعر "${k}" غير صالح. يجب أن يكون بين ${PROMO_PRICE_MIN} و ${PROMO_PRICE_MAX} BC.`,
+        `سعر "${k}" غير صالح. يجب أن يكون بين ${PROMO_PRICE_MIN} و ${PROMO_PRICE_MAX} د.ل`,
         400
       );
     }

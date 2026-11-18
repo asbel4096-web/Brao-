@@ -76,7 +76,7 @@ export async function POST(
   }
   if (Math.abs(amount) > MAX_SINGLE_ADJUST) {
     return jsonError(
-      `الحد الأقصى للعملية الواحدة: ${MAX_SINGLE_ADJUST} BC`,
+      `الحد الأقصى للعملية الواحدة: ${MAX_SINGLE_ADJUST} د.ل`,
       400
     );
   }
@@ -126,7 +126,7 @@ export async function POST(
       // فحص: لا رصيد سالب
       if (newBalance < 0) {
         throw new Error(
-          `الرصيد غير كافٍ. الحالي: ${currentBalance} BC، المطلوب: ${Math.abs(amount)} BC`
+          `الرصيد غير كافٍ. الحالي: ${currentBalance} د.ل، المطلوب: ${Math.abs(amount)} د.ل`
         );
       }
 

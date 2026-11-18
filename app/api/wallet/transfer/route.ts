@@ -71,10 +71,10 @@ export async function POST(req: NextRequest) {
       return jsonError("مبلغ غير صحيح", 400);
     }
     if (amount < TRANSFER_MIN_BC) {
-      return jsonError(`الحد الأدنى ${TRANSFER_MIN_BC} BC`, 400);
+      return jsonError(`الحد الأدنى ${TRANSFER_MIN_BC} د.ل`, 400);
     }
     if (amount > TRANSFER_MAX_BC) {
-      return jsonError(`الحد الأقصى ${TRANSFER_MAX_BC} BC`, 400);
+      return jsonError(`الحد الأقصى ${TRANSFER_MAX_BC} د.ل`, 400);
     }
 
     if (!recipientPhoneRaw) {
@@ -215,7 +215,7 @@ export async function POST(req: NextRequest) {
         userId: recipientUid,
         type: "wallet_transfer",
         title: "وصلك رصيد جديد 💰",
-        body: `استلمت ${amount} BC من ${senderName}`,
+        body: `استلمت ${amount} د.ل من ${senderName}`,
         read: false,
         link: "/wallet",
         createdAt: FieldValue.serverTimestamp(),

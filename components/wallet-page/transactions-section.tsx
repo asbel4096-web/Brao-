@@ -267,7 +267,7 @@ function TransactionRow({ tx }: { tx: any }) {
             isCredit ? "text-emerald-600" : "text-rose-600"
           }`}
         >
-          {isCredit ? "+" : ""}{tx.amount} BC
+          {isCredit ? "+" : ""}{tx.amount} د.ل
         </p>
         <p className="mt-0.5 text-[9px] text-slate-400">{timeText}</p>
       </div>

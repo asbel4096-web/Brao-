@@ -80,7 +80,7 @@ export async function POST(request: Request) {
       const balance = Number(u.balance) || 0;
       if (balance < ext.price)
         throw new Error(
-          `الرصيد غير كافٍ. الحالي: ${balance} BC، المطلوب: ${ext.price} BC`
+          `الرصيد غير كافٍ. الحالي: ${balance} د.ل، المطلوب: ${ext.price} د.ل`
         );
       const newBalance = balance - ext.price;
 

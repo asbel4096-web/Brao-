@@ -103,7 +103,7 @@ export default function AdminTransfersPage() {
             تحويلات الرصيد
           </h1>
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
-            مراقبة تحويلات BC بين المستخدمين
+            مراقبة تحويلات الرصيد بين المستخدمين
           </p>
         </div>
       </header>
@@ -119,7 +119,7 @@ export default function AdminTransfersPage() {
         <StatCard
           icon={Coins}
           label="مجموع المبالغ"
-          value={`${totalAmount.toLocaleString("en-US")} BC`}
+          value={`${totalAmount.toLocaleString("en-US")} د.ل`}
           tone="emerald"
         />
         <StatCard
@@ -227,7 +227,7 @@ function TransferRowItem({ transfer: t }: { transfer: TransferRow }) {
       </div>
       <div className="shrink-0 text-start">
         <p className="text-[14px] font-extrabold tabular-nums text-emerald-600">
-          {t.amount} BC
+          {t.amount} د.ل
         </p>
       </div>
     </div>

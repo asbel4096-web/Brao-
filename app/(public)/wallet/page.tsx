@@ -182,7 +182,7 @@ function PageHeader() {
             <img src={avatar} alt="" className="h-full w-full object-cover" />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-sm font-extrabold text-white">
-              BC
+              {businessName.charAt(0)}
             </div>
           )}
           {/* Online indicator */}

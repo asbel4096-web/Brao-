@@ -94,7 +94,7 @@ export default function AdminRevenuePage() {
         </Link>
         <div>
           <h1 className="text-xl font-extrabold text-slate-900 dark:text-white sm:text-2xl">
-            الإيرادات واقتصاد BC
+            الإيرادات واقتصاد المحفظة
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             نظرة مالية على المنصّة
@@ -128,7 +128,7 @@ export default function AdminRevenuePage() {
                   {arNum(data.totalRevenue)}
                 </span>
                 <span className="rounded-lg bg-emerald-500/20 px-2 py-1 text-sm font-extrabold text-emerald-300">
-                  BC
+                  د.ل
                 </span>
               </div>
               <p className="mt-2 text-[11px] text-white/45">
@@ -139,20 +139,20 @@ export default function AdminRevenuePage() {
 
           {/* بطاقات مصغّرة */}
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-            <MiniStat icon={Coins} tone="emerald" label="إجمالي الشحن" value={`${arNum(data.totalTopups)} BC`} />
+            <MiniStat icon={Coins} tone="emerald" label="إجمالي الشحن" value={`${arNum(data.totalTopups)} د.ل`} />
             <MiniStat icon={TrendingUp} tone="brand" label="عدد العمليات" value={arNum(data.txCount)} />
             <MiniStat
               icon={Wallet}
               tone="action"
               label="متوسط العملية"
-              value={`${arNum(data.txCount ? data.totalRevenue / data.txCount : 0)} BC`}
+              value={`${arNum(data.txCount ? data.totalRevenue / data.txCount : 0)} د.ل`}
             />
           </div>
 
           {/* رسم الإيراد اليومي */}
           <GrowthChart
             title="الإيراد اليومي"
-            description="آخر 30 يوم (BC)"
+            description="آخر 30 يوم (د.ل)"
             data={data.daily}
             color="emerald"
           />
@@ -173,7 +173,7 @@ export default function AdminRevenuePage() {
                         {s.label}
                       </span>
                       <span className="font-extrabold tabular-nums text-slate-900 dark:text-white">
-                        {arNum(s.amount)} BC
+                        {arNum(s.amount)} د.ل
                       </span>
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">

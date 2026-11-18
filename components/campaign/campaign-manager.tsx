@@ -186,7 +186,7 @@ export function CampaignManager({ listing }: Props) {
       {showExtend && (
         <div className="mt-3 rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
           <p className="mb-2 text-xs font-bold text-slate-500">
-            اختر عدد الأيام (تُخصم من رصيد BC):
+            اختر عدد الأيام (تُخصم من رصيدك):
           </p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {BOOST_EXTENSIONS.map((ext) => (
@@ -206,7 +206,7 @@ export function CampaignManager({ listing }: Props) {
                   {ext.label}
                 </span>
                 <span className="text-[11px] font-bold text-brand-700 dark:text-brand-300">
-                  {ext.price} BC
+                  {ext.price} د.ل
                 </span>
               </button>
             ))}

@@ -68,11 +68,11 @@ export function TopupSheet({ open, onClose }: Props) {
   const handleSubmit = async () => {
     const num = Number(amount);
     if (!Number.isFinite(num) || num < TOPUP_MIN_AMOUNT) {
-      toast.warning(`الحد الأدنى ${TOPUP_MIN_AMOUNT} BC`);
+      toast.warning(`الحد الأدنى ${TOPUP_MIN_AMOUNT} د.ل`);
       return;
     }
     if (num > TOPUP_MAX_AMOUNT) {
-      toast.warning(`الحد الأقصى ${TOPUP_MAX_AMOUNT} BC`);
+      toast.warning(`الحد الأقصى ${TOPUP_MAX_AMOUNT} د.ل`);
       return;
     }
     if (!contactNumber.trim() || contactNumber.trim().length < 6) {
@@ -214,7 +214,7 @@ export function TopupSheet({ open, onClose }: Props) {
                     {/* Amount */}
                     <div>
                       <label className="block text-xs font-extrabold text-slate-600 dark:text-slate-300">
-                        المبلغ (BC) *
+                        المبلغ (د.ل) *
                       </label>
                       <input
                         type="number"

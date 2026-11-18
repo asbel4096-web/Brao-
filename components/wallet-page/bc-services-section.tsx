@@ -141,7 +141,7 @@ function BCServiceCard({
         </p>
         <div className="mt-1.5 flex items-center gap-2">
           <span className={`text-[14px] font-extrabold tabular-nums ${style.priceColor}`}>
-            {price.toLocaleString("en-US")} BC
+            {price.toLocaleString("en-US")} د.ل
           </span>
           <span className="text-slate-300 dark:text-slate-600">/</span>
           <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">

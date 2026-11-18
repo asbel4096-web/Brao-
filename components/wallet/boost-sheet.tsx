@@ -114,7 +114,7 @@ export function BoostSheet({
     const service = BOOST_SERVICES[serviceKey];
     if (balance < priceOf(service)) {
       toast.warning(
-        `الرصيد غير كافٍ. تحتاج ${priceOf(service) - balance} BC إضافية`
+        `الرصيد غير كافٍ. تحتاج ${priceOf(service) - balance} د.ل إضافية`
       );
       setTopupOpen(true);
       return;
@@ -319,7 +319,7 @@ export function BoostSheet({
                           <p className="text-base font-extrabold tabular-nums text-slate-950 dark:text-white">
                             {priceOf(service)}
                           </p>
-                          <p className="text-[9px] font-bold text-slate-500">BC</p>
+                          <p className="text-[9px] font-bold text-slate-500">د.ل</p>
                         </div>
                       </div>
 

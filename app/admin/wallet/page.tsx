@@ -197,7 +197,7 @@ export default function AdminWalletPage() {
                   {(u.balance || 0).toLocaleString("en-US")}
                 </p>
                 <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
-                  BC
+                  د.ل
                 </p>
               </div>
             </Link>

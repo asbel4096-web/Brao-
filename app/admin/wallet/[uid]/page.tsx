@@ -142,7 +142,7 @@ export default function AdminUserWalletPage() {
           <span className="text-4xl font-black tabular-nums text-white">
             {balance.toLocaleString("en-US")}
           </span>
-          <span className="text-sm font-extrabold text-brand-200">BC</span>
+          <span className="text-sm font-extrabold text-brand-200">د.ل</span>
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-2">
@@ -318,8 +318,8 @@ function AdjustDialog({
       }
       toast.success(
         mode === "credit"
-          ? `تمت إضافة ${num} BC. الرصيد الجديد: ${data.balanceAfter}`
-          : `تم خصم ${num} BC. الرصيد الجديد: ${data.balanceAfter}`
+          ? `تمت إضافة ${num} د.ل — الرصيد الجديد: ${data.balanceAfter}`
+          : `تم خصم ${num} د.ل — الرصيد الجديد: ${data.balanceAfter}`
       );
       onClose();
     } catch (err: any) {
@@ -359,7 +359,7 @@ function AdjustDialog({
         <div className="space-y-3">
           <div>
             <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
-              المبلغ (BC)
+              المبلغ (د.ل)
             </label>
             <input
               type="number"

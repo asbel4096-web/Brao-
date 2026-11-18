@@ -104,7 +104,7 @@ export async function POST(request: Request) {
       const currentBalance = Number(userData.balance) || 0;
       if (currentBalance < plan.price) {
         throw new Error(
-          `الرصيد غير كافٍ. الحالي: ${currentBalance} BC، المطلوب: ${plan.price} BC`
+          `الرصيد غير كافٍ. الحالي: ${currentBalance} د.ل، المطلوب: ${plan.price} د.ل`
         );
       }
 

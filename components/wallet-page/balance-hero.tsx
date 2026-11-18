@@ -8,7 +8,7 @@ import { useWallet } from "@/hooks/wallet/use-wallet";
  * بطاقة الرصيد الرئيسية — بأسلوب بطاقة دفع فاخرة بهوية Bratsho.
  *
  *  - تدرّج كحلي (هوية المنصّة) + لمسة برتقالية + شريحة بطاقة (chip).
- *  - الرصيد بخط كبير + ما يعادله بالدينار + علامة BC مائية.
+ *  - الرصيد بخط كبير بالدينار الليبي (د.ل) + علامة «د.ل» مائية (قرار المالك ق٨: وحدة المحفظة د.ل).
  *  - زرّان: "شحن رصيد" (برتقالي) + "استخدام الرصيد" (زجاجي).
  */
 
@@ -19,11 +19,6 @@ interface Props {
 
 export function BalanceHero({ onTopup, onUse }: Props) {
   const { balance } = useWallet();
-  // Bratsho DS (ق٧): أرقام en-US — كان ar-LY يكتب «50,00» فتُقرأ الفاصلة فاصل آلاف
-  const lyd = balance.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
 
   return (
     <motion.div
@@ -37,9 +32,9 @@ export function BalanceHero({ onTopup, onUse }: Props) {
       <div className="pointer-events-none absolute -left-10 -top-12 h-44 w-44 rounded-full bg-action-500/30 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-14 -right-8 h-44 w-44 rounded-full bg-brand-400/20 blur-3xl" />
 
-      {/* علامة BC مائية */}
+      {/* علامة «د.ل» مائية */}
       <span className="pointer-events-none absolute -bottom-6 left-3 select-none text-[7rem] font-extrabold leading-none text-white/[0.05]">
-        BC
+        د.ل
       </span>
 
       {/* نمط نقاط خفيف */}
@@ -84,12 +79,9 @@ export function BalanceHero({ onTopup, onUse }: Props) {
               {balance.toLocaleString("en-US")}
             </span>
             <span className="rounded-lg bg-action-500/20 px-2 py-1 text-sm font-extrabold text-action-300">
-              BC
+              د.ل
             </span>
           </div>
-          <p className="mt-2 text-[11px] text-white/45">
-            ≈ <span className="num">{lyd}</span> د.ل
-          </p>
         </div>
 
         {/* الأزرار */}

@@ -73,7 +73,7 @@ export const FLAG_METADATA: Record<
   },
   referrals: {
     label: "نظام الإحالات",
-    description: "روابط الدعوة + مكافآت 10 BC لكل طرف",
+    description: "روابط الدعوة + مكافآت 10 د.ل لكل طرف",
     defaultEnabled: false,
   },
   vip: {
@@ -83,12 +83,12 @@ export const FLAG_METADATA: Record<
   },
   boosts: {
     label: "تعزيز الإعلانات",
-    description: "Boost سريع للإعلانات بـBC",
+    description: "Boost سريع للإعلانات من رصيد المحفظة",
     defaultEnabled: false,
   },
   verification_paid: {
     label: "اشتراكات توثيق المعارض",
-    description: "اشتراك شهري مدفوع للتوثيق (200 BC شهرياً)",
+    description: "اشتراك شهري مدفوع للتوثيق (200 د.ل شهرياً)",
     defaultEnabled: false,
   },
   stories: {

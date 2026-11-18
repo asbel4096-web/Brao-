@@ -249,7 +249,7 @@ function FormStep({
       <div className="rounded-2xl bg-brand-50 px-4 py-3 text-center">
         <p className="text-[11px] text-brand-600">رصيدك الحالي</p>
         <p className="text-xl font-extrabold text-brand-700 tabular-nums">
-          {currentBalance.toLocaleString("en-US")} BC
+          {currentBalance.toLocaleString("en-US")} د.ل
         </p>
       </div>
 
@@ -276,7 +276,7 @@ function FormStep({
       {/* Amount */}
       <div>
         <label className="text-xs font-extrabold text-slate-700">
-          المبلغ (BC)
+          المبلغ (د.ل)
         </label>
         <input
           type="number"
@@ -312,7 +312,7 @@ function FormStep({
           ))}
         </div>
         <p className="mt-1.5 text-[10px] text-slate-400">
-          الحد الأدنى {TRANSFER_MIN_BC} BC · الأقصى {TRANSFER_MAX_BC} BC · 5 تحويلات يومياً
+          الحد الأدنى {TRANSFER_MIN_BC} د.ل · الأقصى {TRANSFER_MAX_BC} د.ل · 5 تحويلات يومياً
         </p>
       </div>
 
@@ -376,7 +376,7 @@ function ConfirmStep({
       <div className="rounded-3xl bg-gradient-to-br from-brand-600 to-brand-700 p-6 text-center">
         <p className="text-[12px] text-brand-100">المبلغ المُحوَّل</p>
         <p className="mt-1 text-4xl font-black text-white tabular-nums">
-          {amount} <span className="text-lg">BC</span>
+          {amount} <span className="text-lg">د.ل</span>
         </p>
       </div>
 
@@ -487,7 +487,7 @@ function SuccessStep({
       <h3 className="text-lg font-extrabold text-slate-900">تم التحويل بنجاح!</h3>
       <p className="mt-1 text-sm text-slate-500">
         أرسلت{" "}
-        <span className="font-extrabold text-emerald-600">{amount} BC</span> إلى{" "}
+        <span className="font-extrabold text-emerald-600">{amount} د.ل</span> إلى{" "}
         <span className="font-extrabold text-slate-900">{recipientName}</span>
       </p>
 

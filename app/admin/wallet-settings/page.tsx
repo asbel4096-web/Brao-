@@ -113,7 +113,7 @@ export default function WalletSettingsPage() {
             إعدادات المحفظة
           </h1>
           <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            تحكّم بإظهار نظام المحفظة (BC) للمستخدمين
+            تحكّم بإظهار نظام المحفظة للمستخدمين
           </p>
         </div>
       </header>
@@ -136,7 +136,7 @@ export default function WalletSettingsPage() {
 
           <div className="min-w-0 flex-1">
             <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
-              نظام المحفظة (BC)
+              نظام المحفظة
             </h2>
             <p className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-400">
               {localEnabled
@@ -187,7 +187,7 @@ export default function WalletSettingsPage() {
         >
           {localEnabled ? <Eye size={14} /> : <EyeOff size={14} />}
           {localEnabled
-            ? "المستخدمون يرون زر المحفظة وصفحتها وكل خدمات BC"
+            ? "المستخدمون يرون زر المحفظة وصفحتها وكل خدمات المحفظة"
             : "المحفظة مخفية تماماً - لن يراها أي مستخدم"}
         </div>
       </div>
@@ -200,7 +200,7 @@ export default function WalletSettingsPage() {
         <ul className="mt-2 space-y-1.5 text-[11px] text-slate-600 dark:text-slate-400">
           <li className="flex items-center gap-1.5">
             <span className="h-1 w-1 rounded-full bg-slate-400" />
-            زر المحفظة (BC) في الشريط العلوي
+            زر المحفظة في الشريط العلوي
           </li>
           <li className="flex items-center gap-1.5">
             <span className="h-1 w-1 rounded-full bg-slate-400" />
@@ -208,7 +208,7 @@ export default function WalletSettingsPage() {
           </li>
           <li className="flex items-center gap-1.5">
             <span className="h-1 w-1 rounded-full bg-slate-400" />
-            خدمات BC (إعلان مميز، رفع، توثيق، تحويل)
+            خدمات المحفظة (إعلان مميز، رفع، توثيق، تحويل)
           </li>
         </ul>
         <p className="mt-3 text-[10px] text-slate-400">

@@ -115,7 +115,7 @@ export function useAllReferrals() {
   const total = referrals.length;
   const completed = referrals.filter((r) => r.status === "completed").length;
   const pending = referrals.filter((r) => r.status === "pending").length;
-  const rewardsPaid = completed * 2 * 10; // 10 BC × طرفين × completed
+  const rewardsPaid = completed * 2 * 10; // 10 د.ل × طرفين × completed
 
   return {
     referrals,

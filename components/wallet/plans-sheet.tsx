@@ -94,7 +94,7 @@ export function PlansSheet({ open, onClose }: Props) {
 
     if (balance < plan.price) {
       toast.warning(
-        `الرصيد غير كافٍ. تحتاج ${plan.price - balance} BC إضافية`
+        `الرصيد غير كافٍ. تحتاج ${plan.price - balance} د.ل إضافية`
       );
       return;
     }
@@ -273,7 +273,7 @@ export function PlansSheet({ open, onClose }: Props) {
                               <p className="text-base font-extrabold tabular-nums text-slate-950 dark:text-white">
                                 {plan.price.toLocaleString("en-US")}
                               </p>
-                              <p className="text-[9px] font-bold text-slate-500">BC</p>
+                              <p className="text-[9px] font-bold text-slate-500">د.ل</p>
                             </div>
                           </div>
 

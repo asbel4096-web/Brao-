@@ -66,7 +66,7 @@ export function WalletTrigger({ variant = "full", className = "" }: WalletTrigge
       <span className={`num font-extrabold ${isCompact ? "text-[13px]" : "text-[13px]"}`}>
         {balance.toLocaleString("en-US")}
       </span>
-      <span className="text-[11px] font-bold text-brand-100">BC</span>
+      <span className="text-[11px] font-bold text-brand-100">د.ل</span>
       <Wallet size={isCompact ? 14 : 15} strokeWidth={2.2} />
     </Link>
   );

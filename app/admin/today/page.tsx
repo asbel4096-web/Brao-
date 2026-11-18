@@ -65,8 +65,8 @@ export default function AdminTodayPage() {
         { icon: UserPlus, label: "تسجيلات اليوم", value: arNum(data.newUsers), tone: "brand" },
         { icon: ListPlus, label: "إعلانات جديدة", value: arNum(data.newListings), tone: "action" },
         { icon: Clock, label: "بانتظار المراجعة", value: arNum(data.pendingNow), tone: "amber" },
-        { icon: Coins, label: "إيراد اليوم", value: `${arNum(data.revenueToday)} BC`, tone: "emerald" },
-        { icon: Wallet, label: "شحن اليوم", value: `${arNum(data.topupsToday)} BC`, tone: "brand" },
+        { icon: Coins, label: "إيراد اليوم", value: `${arNum(data.revenueToday)} د.ل`, tone: "emerald" },
+        { icon: Wallet, label: "شحن اليوم", value: `${arNum(data.topupsToday)} د.ل`, tone: "brand" },
         { icon: CheckCircle2, label: "اعتُمد اليوم", value: arNum(data.approvedToday), tone: "emerald" },
         { icon: XCircle, label: "رُفض اليوم", value: arNum(data.rejectedToday), tone: "rose" },
       ]

@@ -142,7 +142,7 @@ export default function AdminPricingPage() {
       </div>
 
       <div className="rounded-2xl border border-brand-100 bg-brand-50/60 p-4 text-xs font-bold text-brand-800 dark:border-brand-900/40 dark:bg-brand-900/20 dark:text-brand-200">
-        السعر بوحدة BC. السيرفر يتحقّق من السعر عند كل عملية شراء، فلا يمكن
+        السعر بالدينار الليبي (د.ل). السيرفر يتحقّق من السعر عند كل عملية شراء، فلا يمكن
         لأي مستخدم الدفع بأقل من السعر المحدّد هنا.
       </div>
 
@@ -179,7 +179,7 @@ export default function AdminPricingPage() {
                   className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pl-14 text-lg font-extrabold tabular-nums text-slate-900 outline-none transition focus:border-brand-400 focus:bg-white disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 />
                 <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xs font-extrabold text-slate-400">
-                  BC
+                  د.ل
                 </span>
               </label>
             </div>

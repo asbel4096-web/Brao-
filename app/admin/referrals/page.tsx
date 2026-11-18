@@ -69,7 +69,7 @@ export default function AdminReferralsPage() {
         />
         <StatBox
           label="مكافآت صُرفت"
-          value={`${stats.rewardsPaid.toLocaleString("en-US")} BC`}
+          value={`${stats.rewardsPaid.toLocaleString("en-US")} د.ل`}
           icon={Coins}
           tone="action"
         />
@@ -79,7 +79,7 @@ export default function AdminReferralsPage() {
       <div className="rounded-2xl border border-brand-200 bg-brand-50/50 p-4 dark:border-brand-900/40 dark:bg-brand-900/10">
         <p className="text-[12px] leading-6 text-brand-900 dark:text-brand-200">
           <strong>كيف يعمل النظام؟</strong> كل صديق يُكمل أول إعلان معتمد عبر دعوة،
-          يحصل الطرفان على {REFERRAL_REWARD_BC} BC. الحد الأقصى 5 مكافآت يومياً
+          يحصل الطرفان على {REFERRAL_REWARD_BC} د.ل، الحد الأقصى 5 مكافآت يومياً
           للمُحيل الواحد (anti-abuse).
         </p>
       </div>
@@ -186,7 +186,7 @@ export default function AdminReferralsPage() {
                     </span>
                     {isCompleted && (
                       <p className="mt-1 text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400">
-                        +{REFERRAL_REWARD_BC * 2} BC
+                        +{REFERRAL_REWARD_BC * 2} د.ل
                       </p>
                     )}
                   </div>
