@@ -181,7 +181,7 @@ export function InfoEditTab() {
       />
 
       <div>
-        <label className="block text-xs font-black text-slate-700 dark:text-slate-300">
+        <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
           نبذة عن المعرض
         </label>
         <textarea
@@ -193,7 +193,7 @@ export function InfoEditTab() {
           className="
             mt-1.5 w-full resize-none rounded-2xl border border-slate-200
             bg-white px-3 py-2.5 text-sm outline-none
-            placeholder:text-slate-400 focus:border-blue-500
+            placeholder:text-slate-400 focus:border-brand-500
             dark:border-slate-700 dark:bg-slate-900 dark:text-white
           "
         />
@@ -204,7 +204,7 @@ export function InfoEditTab() {
 
       {/* ===== ساعات العمل ===== */}
       <div>
-        <label className="flex items-center gap-1.5 text-xs font-black text-slate-700 dark:text-slate-300">
+        <label className="flex items-center gap-1.5 text-xs font-extrabold text-slate-700 dark:text-slate-300">
           <Clock size={12} />
           ساعات العمل
         </label>
@@ -217,7 +217,7 @@ export function InfoEditTab() {
                 key={day.key}
                 className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900"
               >
-                <span className="w-16 shrink-0 text-xs font-black text-slate-700 dark:text-slate-200">
+                <span className="w-16 shrink-0 text-xs font-extrabold text-slate-700 dark:text-slate-200">
                   {day.label}
                 </span>
                 {isClosed ? (
@@ -232,7 +232,7 @@ export function InfoEditTab() {
                       onChange={(e) =>
                         setDayTime(day.key, "open", e.target.value)
                       }
-                      className="flex-1 rounded-xl border border-slate-200 bg-white px-2 py-1.5 text-xs outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      className="flex-1 rounded-xl border border-slate-200 bg-white px-2 py-1.5 text-xs outline-none focus:border-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                     />
                     <span className="text-xs text-slate-400">–</span>
                     <input
@@ -241,7 +241,7 @@ export function InfoEditTab() {
                       onChange={(e) =>
                         setDayTime(day.key, "close", e.target.value)
                       }
-                      className="flex-1 rounded-xl border border-slate-200 bg-white px-2 py-1.5 text-xs outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      className="flex-1 rounded-xl border border-slate-200 bg-white px-2 py-1.5 text-xs outline-none focus:border-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                     />
                   </div>
                 )}
@@ -249,7 +249,7 @@ export function InfoEditTab() {
                   type="button"
                   onClick={() => toggleDayClosed(day.key)}
                   className={
-                    "shrink-0 rounded-xl px-2.5 py-1.5 text-[11px] font-black transition " +
+                    "shrink-0 rounded-xl px-2.5 py-1.5 text-[11px] font-extrabold transition " +
                     (isClosed
                       ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30"
                       : "bg-rose-50 text-rose-600 dark:bg-rose-900/30")
@@ -299,9 +299,9 @@ export function InfoEditTab() {
         whileTap={{ scale: 0.97 }}
         className="
           inline-flex w-full items-center justify-center gap-1.5
-          rounded-2xl bg-blue-600 py-3 text-sm font-black text-white
-          shadow-lg shadow-blue-500/30 transition
-          hover:bg-blue-700 disabled:opacity-60
+          rounded-2xl bg-brand-600 py-3 text-sm font-extrabold text-white
+          shadow-lg shadow-brand-500/30 transition
+          hover:bg-brand-700 disabled:opacity-60
         "
       >
         {saving ? (
@@ -345,7 +345,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="flex items-center gap-1.5 text-xs font-black text-slate-700 dark:text-slate-300">
+      <label className="flex items-center gap-1.5 text-xs font-extrabold text-slate-700 dark:text-slate-300">
         <Icon size={12} />
         {label}
         {required && <span className="text-rose-500">*</span>}
@@ -360,7 +360,7 @@ function Field({
         className="
           mt-1.5 w-full rounded-2xl border border-slate-200 bg-white
           px-3 py-2.5 text-sm outline-none
-          placeholder:text-slate-400 focus:border-blue-500
+          placeholder:text-slate-400 focus:border-brand-500
           dark:border-slate-700 dark:bg-slate-900 dark:text-white
         "
       />

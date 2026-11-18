@@ -658,7 +658,7 @@ export default function ChatRoomPage() {
                   className="h-10 w-10 rounded-full object-cover ring-2 ring-brand-100 dark:ring-brand-900/40"
                 />
               ) : (
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-brand-700 to-brand-500 text-xs font-black text-white">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-brand-700 to-brand-500 text-xs font-extrabold text-white">
                   {(other?.name || "م").charAt(0).toUpperCase()}
                 </div>
               )}
@@ -671,7 +671,7 @@ export default function ChatRoomPage() {
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-black text-slate-900 dark:text-white sm:text-[15px]">
+              <p className="truncate text-sm font-extrabold text-slate-900 dark:text-white sm:text-[15px]">
                 {other?.name || "مستخدم"}
               </p>
               <p
@@ -809,7 +809,7 @@ export default function ChatRoomPage() {
                 disabled={sending}
                 className="
                   rounded-full border-2 border-brand-200 bg-white px-4 py-1.5
-                  text-xs font-black text-brand-700 transition
+                  text-xs font-extrabold text-brand-700 transition
                   hover:bg-brand-50 active:scale-95
                   disabled:opacity-50
                   dark:border-brand-700 dark:bg-slate-900 dark:text-brand-300
@@ -829,7 +829,7 @@ export default function ChatRoomPage() {
             <div className="flex items-start gap-2 border-b border-slate-200/70 px-3 pt-2 pb-2 dark:border-slate-700/70">
               <div className="mt-0.5 h-full w-0.5 shrink-0 rounded-full bg-brand-500" />
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1 text-[10px] font-black text-brand-700 dark:text-brand-300">
+                <div className="flex items-center gap-1 text-[10px] font-extrabold text-brand-700 dark:text-brand-300">
                   <CornerDownLeft size={11} />
                   رد على {replyTarget.senderName}
                 </div>
@@ -1043,7 +1043,7 @@ export default function ChatRoomPage() {
             <button
               type="button"
               onClick={() => setActionSheetMsg(null)}
-              className="mt-1 flex w-full items-center justify-center rounded-2xl bg-slate-100 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+              className="mt-1 flex w-full items-center justify-center rounded-2xl bg-slate-100 py-3 text-sm font-extrabold text-slate-700 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
             >
               إلغاء
             </button>
@@ -1158,14 +1158,14 @@ function ProfilePreviewCard({
             className="h-16 w-16 rounded-full object-cover ring-2 ring-brand-100 dark:ring-brand-900/40"
           />
         ) : (
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-brand-700 to-brand-500 text-lg font-black text-white">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-brand-700 to-brand-500 text-lg font-extrabold text-white">
             {(otherName || "م").charAt(0).toUpperCase()}
           </div>
         )}
       </Link>
 
       {/* الاسم */}
-      <p className="mt-2 text-sm font-black text-slate-900 dark:text-white">
+      <p className="mt-2 text-sm font-extrabold text-slate-900 dark:text-white">
         {otherName}
       </p>
 
@@ -1196,7 +1196,7 @@ function ProfilePreviewCard({
           href={`/traders/${otherUid}`}
           className="
             inline-flex h-9 flex-1 items-center justify-center rounded-xl
-            border border-slate-200 bg-white px-3 text-xs font-black
+            border border-slate-200 bg-white px-3 text-xs font-extrabold
             text-slate-700 transition hover:bg-slate-50
             dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200
             dark:hover:bg-slate-700
@@ -1209,7 +1209,7 @@ function ProfilePreviewCard({
             href={`/listings/${listingId}`}
             className="
               inline-flex h-9 flex-1 items-center justify-center gap-1.5
-              rounded-xl bg-brand-700 px-3 text-xs font-black text-white
+              rounded-xl bg-brand-700 px-3 text-xs font-extrabold text-white
               shadow-blue transition hover:bg-brand-600
             "
           >

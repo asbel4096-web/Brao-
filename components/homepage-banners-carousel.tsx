@@ -213,7 +213,7 @@ function BannerSlide({ banner, idx }: { banner: HomepageBanner; idx: number }) {
       {hasText && (
         <div className="absolute inset-x-0 bottom-0 p-4 pb-7 text-white sm:p-6 sm:pb-8">
           {banner.title && (
-            <h3 className="text-lg font-black leading-tight drop-shadow-sm sm:text-2xl md:text-[26px]">
+            <h3 className="text-lg font-extrabold leading-tight drop-shadow-sm sm:text-2xl md:text-[26px]">
               {banner.title}
             </h3>
           )}
@@ -226,7 +226,7 @@ function BannerSlide({ banner, idx }: { banner: HomepageBanner; idx: number }) {
             <span
               className="
                 mt-2.5 inline-flex items-center gap-1 rounded-full
-                bg-action-500 px-3.5 py-1.5 text-[12px] font-black text-white
+                bg-action-500 px-3.5 py-1.5 text-[12px] font-extrabold text-white
                 shadow-lg sm:text-[13px]
               "
             >

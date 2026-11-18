@@ -123,7 +123,7 @@ export default function AdminSubscriptionsPage() {
             <BadgeCheck size={20} strokeWidth={2.2} />
           </div>
           <div>
-            <h1 className="text-lg font-black text-slate-900 dark:text-white sm:text-xl">
+            <h1 className="text-lg font-extrabold text-slate-900 dark:text-white sm:text-xl">
               اشتراكات التوثيق
             </h1>
             <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
@@ -144,7 +144,7 @@ export default function AdminSubscriptionsPage() {
               type="button"
               onClick={() => setTab(t.key)}
               className={`
-                shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-black transition
+                shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-extrabold transition
                 ${active
                   ? "bg-emerald-500 text-white shadow-sm"
                   : "border border-slate-200 bg-white text-slate-600 hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
@@ -186,7 +186,7 @@ export default function AdminSubscriptionsPage() {
       ) : filtered.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center dark:border-slate-700 dark:bg-slate-900">
           <Sparkles size={36} className="mx-auto mb-2 text-slate-300 dark:text-slate-600" />
-          <p className="text-sm font-black text-slate-700 dark:text-slate-200">
+          <p className="text-sm font-extrabold text-slate-700 dark:text-slate-200">
             {search ? "لا نتائج للبحث" : "لا توجد اشتراكات في هذه الفئة"}
           </p>
         </div>
@@ -209,7 +209,7 @@ export default function AdminSubscriptionsPage() {
                 className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 transition hover:border-emerald-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-emerald-700"
               >
                 <div
-                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-sm font-black text-white ${
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-sm font-extrabold text-white ${
                     isActive
                       ? "bg-gradient-to-br from-emerald-500 to-emerald-600"
                       : "bg-slate-400 dark:bg-slate-700"
@@ -221,7 +221,7 @@ export default function AdminSubscriptionsPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
-                    <p className="truncate text-sm font-black text-slate-900 dark:text-white">
+                    <p className="truncate text-sm font-extrabold text-slate-900 dark:text-white">
                       {u.businessName || u.name || u.email || u.id}
                     </p>
                     {isActive && (
@@ -238,12 +238,12 @@ export default function AdminSubscriptionsPage() {
                   )}
                   <div className="mt-1 flex items-center gap-2 text-[10px]">
                     {plan && (
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 font-black text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 font-extrabold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                         {plan.label}
                       </span>
                     )}
                     {u.verificationStatus === "granted" && (
-                      <span className="rounded-full bg-purple-100 px-2 py-0.5 font-black text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+                      <span className="rounded-full bg-brand-100 px-2 py-0.5 font-extrabold text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
                         مجاني
                       </span>
                     )}
@@ -251,7 +251,7 @@ export default function AdminSubscriptionsPage() {
                 </div>
                 <div className="text-end">
                   <p
-                    className={`text-[11px] font-black ${
+                    className={`text-[11px] font-extrabold ${
                       !isActive
                         ? "text-rose-600 dark:text-rose-400"
                         : days !== null && days <= 7

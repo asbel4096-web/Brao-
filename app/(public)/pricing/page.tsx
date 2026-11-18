@@ -29,7 +29,7 @@ export default function PricingPage() {
                 <span className="badge-action">الأكثر طلباً</span>
               </div>
             )}
-            <h3 className="text-2xl font-black dark:text-white">{p.name}</h3>
+            <h3 className="text-2xl font-extrabold dark:text-white">{p.name}</h3>
             <div className="mt-4 flex items-end gap-2">
               <span className="text-4xl font-black text-brand-700 dark:text-brand-300">
                 {p.price === 0 ? "مجاني" : formatPrice(p.price)}

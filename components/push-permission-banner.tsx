@@ -150,7 +150,7 @@ export function PushPermissionBanner({
           disabled={busy}
           className="
             mt-3 inline-flex h-9 items-center gap-1.5 rounded-2xl
-            border border-slate-300 bg-white px-4 text-xs font-black
+            border border-slate-300 bg-white px-4 text-xs font-extrabold
             text-slate-700 transition hover:bg-slate-50
             disabled:opacity-60
             dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200
@@ -179,7 +179,7 @@ export function PushPermissionBanner({
           disabled={busy}
           className="
             inline-flex h-10 items-center gap-1.5 rounded-2xl
-            bg-action-500 px-5 text-sm font-black text-white shadow-action
+            bg-action-500 px-5 text-sm font-extrabold text-white shadow-action
             transition hover:bg-action-600 active:scale-95
             disabled:opacity-60
           "
@@ -270,7 +270,7 @@ function BannerShell({
 
 function BannerTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="text-sm font-black text-slate-900 dark:text-white sm:text-base">
+    <h3 className="text-sm font-extrabold text-slate-900 dark:text-white sm:text-base">
       {children}
     </h3>
   );

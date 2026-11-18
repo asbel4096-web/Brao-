@@ -95,7 +95,7 @@ export function AdminTopbar({ onMenuClick }: Props) {
       {profile && (
         <div className="flex items-center gap-2">
           <div className="hidden text-left sm:flex sm:flex-col sm:items-end sm:leading-none">
-            <span className="max-w-[140px] truncate text-[12px] font-black text-slate-900 dark:text-white">
+            <span className="max-w-[140px] truncate text-[12px] font-extrabold text-slate-900 dark:text-white">
               {profile.name || profile.email || "أدمن"}
             </span>
             <div className="mt-1">
@@ -106,7 +106,7 @@ export function AdminTopbar({ onMenuClick }: Props) {
             className="
               flex h-9 w-9 items-center justify-center rounded-xl
               bg-gradient-to-br from-brand-700 to-brand-500
-              text-[12px] font-black text-white shadow-sm
+              text-[12px] font-extrabold text-white shadow-sm
             "
           >
             {(profile.name || profile.email || "?").charAt(0).toUpperCase()}

@@ -4,11 +4,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Bookmark, Heart, MapPin } from "lucide-react";
+import { Heart, MapPin } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFavorites, useFavoriteState } from "@/hooks/useFavorites";
 import { useToast } from "@/contexts/ToastContext";
-import { formatPrice } from "@/lib/utils";
+import { NoImage, PriceLine } from "@/components/vehicle-card-parts";
 import { SponsoredSpotlight } from "@/components/sponsored-spotlight";
 
 /**
@@ -48,7 +48,7 @@ export default function FavoritesPage() {
         </h1>
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
           {favorites.length > 0
-            ? `${favorites.length.toLocaleString("ar-LY")} إعلان محفوظ`
+            ? `${favorites.length.toLocaleString("en-US")} إعلان محفوظ`
             : "الإعلانات التي حفظتها للرجوع إليها لاحقاً."}
         </p>
       </div>
@@ -99,81 +99,49 @@ function FavoriteCard({
         className="relative block aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-800"
         aria-label={snap?.title || "إعلان"}
       >
-        <Image
-          src={snap?.image || "/icons/car-card.svg"}
+        {snap?.image ? (
+          <Image
+          src={snap.image}
           alt={snap?.title || "إعلان"}
           fill
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 33vw"
           loading="lazy"
-          className={
-            snap?.image
-              ? "object-cover transition duration-500 group-hover:scale-[1.04]"
-              : "object-contain p-12 opacity-50"
-          }
-        />
+          className="object-cover transition duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <NoImage />
+        )}
 
-        {snap?.image && (
-          <>
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/35 to-transparent"
-            />
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/45 to-transparent"
-            />
-          </>
+        {/* القسم كشارة محايدة (Bratsho DS) */}
+        {snap?.category && (
+          <span className="badge-cat pointer-events-none absolute right-2.5 top-2.5">{snap.category}</span>
         )}
 
         {/* زر إزالة المفضلة (Bookmark filled) */}
-        <div className="absolute left-3 top-3">
+        <div className="absolute left-1.5 top-1.5">
           <RemoveFavoriteButton
             listingId={favorite.listingId}
             snapshot={snap}
           />
         </div>
 
-        {/* السعر */}
-        <div className="absolute bottom-3 right-3">
-          <div
-            className="
-              rounded-2xl border border-white/20
-              bg-brand-700/95 px-3.5 py-2
-              shadow-blue backdrop-blur-md
-            "
-          >
-            <span className="text-base font-black leading-none text-white sm:text-lg">
-              {formatPrice(snap?.price || 0)}
-            </span>
-          </div>
-        </div>
+        
       </Link>
 
-      <div className="flex flex-1 flex-col p-3.5 sm:p-4">
-        <span className="badge !py-0.5 !text-[10px] sm:!text-xs">
-          {snap?.category || "إعلان"}
-        </span>
-
-        <Link href={detailsHref} prefetch={false} className="mt-2 group/title">
+      <div className="flex flex-1 flex-col gap-1 p-3.5">
+        <Link href={detailsHref} prefetch={false} className="group/title">
           <h3
-            className="
-              line-clamp-2 min-h-[2.5rem] text-sm font-black leading-snug
-              text-slate-950 transition-colors
-              group-hover/title:text-brand-700
-              dark:text-white dark:group-hover/title:text-brand-300
-              sm:text-base
-            "
+            className="truncate text-[15px] font-bold leading-[22px] text-slate-950 transition-colors group-hover/title:text-brand-700 dark:text-white dark:group-hover/title:text-brand-300"
           >
             {snap?.title || "إعلان"}
           </h3>
         </Link>
 
+        <div className="mt-1.5"><PriceLine price={snap?.price || 0} /></div>
+
         {snap?.city && (
-          <div className="mt-2 inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
-            <MapPin
-              size={12}
-              className="text-brand-700/70 dark:text-brand-300/70"
-            />
+          <div className="mt-auto flex items-center gap-1 border-t border-slate-100 pt-2 text-[11.5px] font-medium text-slate-500 dark:border-slate-800 dark:text-slate-400">
+            <MapPin size={12} className="shrink-0" />
             {snap.city}
           </div>
         )}
@@ -181,9 +149,7 @@ function FavoriteCard({
         <Link
           href={detailsHref}
           prefetch={false}
-          className="
-            btn-primary mt-3 !py-2 !text-xs
-          "
+          className="btn-soft btn-sm mt-2.5"
         >
           عرض الإعلان
         </Link>
@@ -229,14 +195,11 @@ function RemoveFavoriteButton({
       type="button"
       onClick={handle}
       aria-label="إزالة من المفضلة"
-      className="
-        inline-flex h-10 w-10 items-center justify-center
-        rounded-full border border-white/30 bg-brand-700/95
-        text-white shadow-blue backdrop-blur transition
-        hover:bg-brand-800 active:scale-95
-      "
+      className="grid h-11 w-11 place-items-center transition active:scale-95"
     >
-      <Bookmark size={18} className="fill-current" />
+      <span className="grid h-9 w-9 place-items-center rounded-full bg-white/90 text-rose-600 shadow-sm">
+        <Heart size={18} className="fill-current" />
+      </span>
     </button>
   );
 }
@@ -275,17 +238,17 @@ function EmptyState() {
       <div
         className="
           mx-auto flex h-16 w-16 items-center justify-center
-          rounded-2xl bg-rose-50 text-rose-600
+          rounded-full bg-rose-50 text-rose-600
           dark:bg-rose-900/30 dark:text-rose-400
         "
       >
         <Heart size={28} />
       </div>
-      <p className="mt-4 text-base font-black text-slate-900 dark:text-white">
+      <p className="mt-4 text-lg font-extrabold text-slate-950 dark:text-white">
         لا توجد إعلانات في المفضلة
       </p>
       <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-        احفظ أي إعلان يعجبك بزر <Bookmark size={14} className="mx-1 inline-block" /> لتجده هنا بسرعة.
+        احفظ أي إعلان يعجبك بزر <Heart size={14} className="mx-1 inline-block text-rose-600" /> لتجده هنا بسرعة.
       </p>
       <Link
         href="/listings"

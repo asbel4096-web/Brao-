@@ -30,7 +30,7 @@ export default function NotFound() {
       <h1 className="text-6xl font-black text-brand-700 dark:text-brand-300">
         404
       </h1>
-      <h2 className="mt-3 text-xl font-black text-slate-900 dark:text-white">
+      <h2 className="mt-3 text-xl font-extrabold text-slate-900 dark:text-white">
         الإعلان غير متوفر
       </h2>
       <p className="mt-2 max-w-sm text-sm text-slate-500 dark:text-slate-400">
@@ -41,14 +41,14 @@ export default function NotFound() {
       <div className="mt-7 flex flex-col gap-3 sm:flex-row">
         <Link
           href="/"
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-700 px-6 py-3 text-sm font-black text-white shadow-sm transition hover:bg-brand-800"
+          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-700 px-6 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-brand-800"
         >
           <Home size={17} />
           العودة للرئيسية
         </Link>
         <Link
           href="/listings"
-          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-extrabold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
         >
           <Search size={17} />
           تصفّح الإعلانات

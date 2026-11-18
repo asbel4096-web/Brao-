@@ -144,7 +144,7 @@ export function GalleryEditTab() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs font-black uppercase tracking-wider text-slate-400">
+          <p className="text-xs font-extrabold uppercase tracking-wider text-slate-400">
             صور المعرض
           </p>
           <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
@@ -159,8 +159,8 @@ export function GalleryEditTab() {
             whileTap={{ scale: 0.97 }}
             className="
               inline-flex items-center gap-1.5 rounded-2xl
-              bg-blue-600 px-4 py-2 text-[12px] font-black
-              text-white shadow-md transition hover:bg-blue-700
+              bg-brand-600 px-4 py-2 text-[12px] font-extrabold
+              text-white shadow-md transition hover:bg-brand-700
               disabled:opacity-60
             "
           >
@@ -189,12 +189,12 @@ export function GalleryEditTab() {
             flex aspect-video w-full flex-col items-center justify-center
             gap-2 rounded-3xl border-2 border-dashed border-slate-300
             bg-slate-50 text-slate-400 transition
-            hover:border-blue-500 hover:text-blue-500 active:scale-[0.99]
+            hover:border-brand-500 hover:text-brand-500 active:scale-[0.99]
             dark:border-slate-700 dark:bg-slate-900
           "
         >
           <ImageIcon size={36} />
-          <p className="text-sm font-black">اضغطي لإضافة صور المعرض</p>
+          <p className="text-sm font-extrabold">اضغطي لإضافة صور المعرض</p>
           <p className="text-[10px]">داخل المعرض، الواجهة، السيارات...</p>
         </button>
       ) : (
@@ -252,7 +252,7 @@ export function GalleryEditTab() {
                 flex aspect-square items-center justify-center
                 rounded-2xl border-2 border-dashed border-slate-300
                 bg-slate-50 text-slate-400 transition
-                hover:border-blue-500 hover:text-blue-500
+                hover:border-brand-500 hover:text-brand-500
                 dark:border-slate-700 dark:bg-slate-900
               "
               aria-label="إضافة صورة"
@@ -265,14 +265,14 @@ export function GalleryEditTab() {
 
       {/* Upload progress */}
       {uploading && progress.total > 0 && (
-        <div className="rounded-2xl bg-blue-50 p-3 dark:bg-blue-900/20">
-          <div className="flex items-center gap-2 text-[12px] font-black text-blue-700 dark:text-blue-300">
+        <div className="rounded-2xl bg-brand-50 p-3 dark:bg-brand-900/20">
+          <div className="flex items-center gap-2 text-[12px] font-extrabold text-brand-700 dark:text-brand-300">
             <Loader2 size={12} className="animate-spin" />
             جارٍ رفع {progress.current} من {progress.total}...
           </div>
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-blue-100 dark:bg-blue-900/40">
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-brand-100 dark:bg-brand-900/40">
             <div
-              className="h-full bg-blue-600 transition-all"
+              className="h-full bg-brand-600 transition-all"
               style={{
                 width: `${(progress.current / progress.total) * 100}%`,
               }}

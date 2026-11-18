@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 import { CAR_BRANDS } from "@/lib/car-brands";
 import { BrandLogo } from "@/components/brand-logo";
 import { useBrandLogos } from "@/hooks/useBrandLogos";
@@ -25,28 +26,29 @@ export function BrowseByBrand() {
     <section className="py-4 sm:py-5">
       <div className="container">
         <div className="mb-3 flex items-center justify-between gap-3 px-1">
-          <h2 className="text-base font-black text-slate-900 dark:text-white sm:text-lg">
+          <h2 className="text-xl font-extrabold leading-[30px] text-slate-950 dark:text-white">
             تصفّح حسب الماركة
           </h2>
           <Link
             href="/listings"
             className="
-              inline-flex items-center gap-0.5 text-xs font-black
+              inline-flex items-center gap-0.5 text-xs font-extrabold
               text-brand-700 transition hover:text-brand-800
               dark:text-brand-300 dark:hover:text-brand-200
             "
           >
-            عرض الكل ←
+            عرض الكل
+            <ChevronLeft size={14} />
           </Link>
         </div>
       </div>
 
       <div
         className="
-          flex gap-2 overflow-x-auto px-4 pb-1
+          mx-auto flex max-w-7xl gap-2 overflow-x-auto px-4 pb-1
           snap-x snap-mandatory scroll-px-4
-          scrollbar-hide [&::-webkit-scrollbar]:hidden
-          sm:gap-2.5 sm:px-6
+          [&::-webkit-scrollbar]:hidden
+          sm:gap-2.5 sm:px-6 lg:px-8
         "
         style={{ scrollbarWidth: "none" }}
       >
@@ -76,7 +78,7 @@ export function BrowseByBrand() {
               </span>
               {/* عدد الإعلانات لكل ماركة (يظهر فقط عند توفّره) */}
               {typeof count === "number" && (
-                <span className="text-[11px] font-black text-brand-700 dark:text-brand-300">
+                <span className="text-[11px] font-extrabold text-brand-700 dark:text-brand-300">
                   {formatNumber(count)}
                 </span>
               )}

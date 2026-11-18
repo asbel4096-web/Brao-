@@ -3,169 +3,118 @@
 import Link from "next/link";
 import Image from "next/image";
 import { memo } from "react";
-import { Eye, MapPin, Star, Rocket, Crown, Gauge, Bookmark, Zap, Calendar } from "lucide-react";
+import { Clock3, Eye, Heart, MapPin } from "lucide-react";
 import type { Listing } from "@/lib/types";
-import { formatPrice, formatNumber, isListingFeatured } from "@/lib/utils";
+import { formatNumber, timeAgo } from "@/lib/utils";
+import { listingHeadline } from "@/lib/listing-display";
 import { FavoriteButton } from "./favorite-button";
-
-const FALLBACK = "/icons/car-card.svg";
+import { NoImage, PhotoCount, PriceLine, PromoBadges, SpecRow } from "./vehicle-card-parts";
 
 interface Props {
   listing: Listing;
-  /** يعرض إحصاءات الحفظ/المشاهدات بدل شارة التمييز (لقسم "الأكثر حفظاً"). */
+  /** يعرض إحصاءات الحفظ/المشاهدات (لقسم "الأكثر حفظاً"). */
   showStats?: boolean;
   priority?: boolean;
+  /** اسم القسم كشارة محايدة (صفوف «أحدث …» حسب القسم). */
+  categoryLabel?: string;
 }
 
 /**
- * بطاقة سيارة مضغوطة للصفوف الأفقية (سيارات مميزة قريبة منك / الأكثر حفظاً).
- *
- * - صورة كبيرة بنسبة 4:3.
- * - شارة (VIP / ممول / مميز / جديد) أعلى اليمين — أو إحصاء المشاهدات في وضع showStats.
- * - زر الحفظ أعلى اليسار (Glassmorphism).
- * - تحت الصورة: العنوان، السعر (أزرق)، المدينة + المسافة المقطوعة.
- * - في وضع showStats: سطر إحصاءات (مشاهدات + حفظ).
+ * بطاقة الصفوف الأفقية — Bratsho DS 1.0 (تخطيط «rail» لنفس مكوّن بطاقة الإعلان).
+ * عرض 236px على الجوال و 260px من 640px، صورة 4:3، نفس الشارات والسعر والمواصفات
+ * كبطاقة الشبكة؛ وفي وضع showStats يظهر سطر المشاهدات/الحفظ (ميزة الموقع الحالية).
  */
-function CompactListingCardImpl({ listing, showStats = false, priority = false }: Props) {
-  const img = listing.images?.[0] || FALLBACK;
+function CompactListingCardImpl({ listing, showStats = false, priority = false, categoryLabel }: Props) {
+  const img = listing.images?.[0] || "";
   const isFallback = !listing.images?.length;
   const href = `/listings/${listing.id}`;
-
-  const vipUntil = (listing as any).vipUntil?.toMillis?.() || 0;
-  const isVip = vipUntil > Date.now();
-  const boostedUntil = (listing as any).boostedUntil?.toMillis?.() || 0;
-  const isBoosted = boostedUntil > Date.now();
-  const featured = isListingFeatured(listing);
-  const isNew = (listing as any).vehicleCondition === "جديدة";
-  const urgentUntil = (listing as any).urgentUntil?.toMillis?.() || 0;
-  const isUrgent = urgentUntil > Date.now();
-
-  const badge = isVip
-    ? { label: "VIP", Icon: Crown, cls: "bg-amber-400 text-amber-950" }
-    : isBoosted
-    ? { label: "ممول", Icon: Rocket, cls: "bg-emerald-600 text-white" }
-    : featured
-    ? { label: "مميز", Icon: Star, cls: "bg-brand-700 text-white" }
-    : isNew
-    ? { label: "جديد", Icon: null, cls: "bg-white/95 text-slate-900" }
-    : null;
+  const headline = listingHeadline(listing);
 
   const views = (listing as any).views as number | undefined;
   const saves = (listing as any).favoritesCount as number | undefined;
-  const mileage = listing.mileage;
-  const year = (listing as any).year as number | string | undefined;
+  const posted = timeAgo((listing as any).createdAt);
 
   return (
     <article
       dir="rtl"
       className="
-        group w-[210px] shrink-0 overflow-hidden rounded-3xl border border-slate-200/70
-        bg-white shadow-[0_2px_16px_-6px_rgba(15,18,38,0.1)] transition
-        hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-10px_rgba(28,56,156,0.22)]
-        dark:border-slate-800 dark:bg-slate-900 sm:w-[230px]
+        group relative flex w-[236px] shrink-0 flex-col overflow-hidden rounded-3xl
+        border border-slate-200/80 bg-white shadow-card transition
+        hover:-translate-y-0.5 hover:border-brand-200
+        dark:border-slate-700/80 dark:bg-slate-900 sm:w-[260px]
       "
     >
-      <Link href={href} className="relative block aspect-[4/3] overflow-hidden">
-        <Image
-          src={img}
-          alt={listing.title || "إعلان"}
-          fill
-          sizes="230px"
-          priority={priority}
-          loading={priority ? undefined : "lazy"}
-          className={`object-cover transition-transform duration-500 group-hover:scale-105 ${
-            isFallback ? "object-contain p-6 opacity-60" : ""
-          }`}
-        />
-
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/45 to-transparent" />
-
-        {/* أعلى اليمين: شارة التمييز أو إحصاء المشاهدات + وسم عاجل */}
-        {showStats ? (
-          views != null && views > 0 ? (
-            <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-sm">
-              <Eye size={12} />
-              {formatNumber(views)}
-            </span>
-          ) : null
-        ) : badge || isUrgent ? (
-          <div className="absolute right-3 top-3 flex flex-col items-end gap-1">
-            {badge && (
-              <span
-                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-black shadow-sm backdrop-blur-sm ${badge.cls}`}
-              >
-                {badge.Icon && <badge.Icon size={11} strokeWidth={2.5} />}
-                {badge.label}
-              </span>
-            )}
-            {isUrgent && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-black text-white shadow-sm backdrop-blur-sm">
-                <Zap size={10} strokeWidth={2.5} />
-                عاجل
-              </span>
-            )}
-          </div>
-        ) : null}
-
-        {/* أعلى اليسار: زر الحفظ */}
-        <div className="absolute left-3 top-3">
-          <div className="grid h-8 w-8 place-items-center rounded-full bg-white/25 text-white ring-1 ring-white/30 backdrop-blur-md">
-            <FavoriteButton listing={listing} size={16} className="!text-white" />
-          </div>
-        </div>
+      <Link href={href} className="relative block aspect-[4/3] overflow-hidden bg-slate-200 dark:bg-slate-800" aria-label={headline}>
+        {isFallback ? (
+          <NoImage />
+        ) : (
+          <Image
+            src={img}
+            alt={headline}
+            fill
+            sizes="260px"
+            priority={priority}
+            loading={priority ? undefined : "lazy"}
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        )}
+        <PromoBadges listing={listing} category={categoryLabel} />
+        <PhotoCount count={listing.images?.length || 0} />
       </Link>
 
-      <div className="p-3">
+      {/* المفضلة (نهاية RTL = يسار) — خارج الرابط */}
+      <div className="absolute left-0.5 top-0.5">
+        <FavoriteButton listing={listing} size={18} />
+      </div>
+
+      <div className="flex flex-1 flex-col gap-1.5 p-3">
         <Link href={href}>
-          <h3 className="line-clamp-1 text-sm font-black text-slate-900 transition-colors group-hover:text-brand-700 dark:text-white">
-            {listing.title}
+          <h3
+            className="truncate text-[15px] font-bold leading-[22px] text-slate-950 transition-colors group-hover:text-brand-700 dark:text-white"
+            title={headline}
+          >
+            {headline}
           </h3>
         </Link>
 
-        {/* السعر (formatPrice يضيف "د.ل" تلقائياً) */}
-        <div className="mt-1 inline-flex items-baseline gap-1 font-black text-brand-700 dark:text-brand-300">
-          <span className="text-lg leading-none">{formatPrice(listing.price)}</span>
-        </div>
+        <PriceLine price={listing.price} />
+        <SpecRow listing={listing} />
 
-        {/* السنة + المدينة + المسافة المقطوعة */}
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
-          {year && (
-            <span className="inline-flex items-center gap-1">
-              <Calendar size={12} className="text-brand-600/70" />
-              {year}
-            </span>
-          )}
-          {listing.city && (
-            <span className="inline-flex items-center gap-1">
-              <MapPin size={12} className="text-brand-600/70" />
-              {listing.city}
-            </span>
-          )}
-          {mileage != null && mileage > 0 && (
-            <span className="inline-flex items-center gap-1">
-              <Gauge size={12} className="text-brand-600/70" />
-              {formatNumber(mileage)} كم
-            </span>
-          )}
-        </div>
-
-        {/* سطر إحصاءات في وضع "الأكثر حفظاً" */}
-        {showStats && (saves || views) ? (
-          <div className="mt-2.5 flex items-center gap-3 border-t border-slate-100 pt-2 text-[11px] font-bold text-slate-500 dark:border-slate-800 dark:text-slate-400">
+        {/* إحصاءات الحفظ/المشاهدة (صفّا «الأكثر حفظاً» و«الأكثر مشاهدة») — إضافة، لا بديل عن المدينة */}
+        {showStats && ((saves ?? 0) > 0 || (views ?? 0) > 0) && (
+          <div className="flex items-center gap-3 text-[11.5px] font-bold text-slate-500 dark:text-slate-400">
             {saves != null && saves > 0 && (
-              <span className="inline-flex items-center gap-1 text-brand-700 dark:text-brand-300">
-                <Bookmark size={12} className="fill-current" />
-                {formatNumber(saves)} حفظ
+              <span className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400">
+                <Heart size={12} className="fill-current" />
+                <span className="num">{formatNumber(saves)}</span> حفظ
               </span>
             )}
             {views != null && views > 0 && (
               <span className="inline-flex items-center gap-1">
                 <Eye size={12} />
-                {formatNumber(views)} مشاهدة
+                <span className="num">{formatNumber(views)}</span> مشاهدة
               </span>
             )}
           </div>
-        ) : null}
+        )}
+
+        {/* المدينة + وقت النشر — في كل الأوضاع كما في الإنتاج */}
+        <div className="mt-auto flex items-center justify-between gap-2 border-t border-slate-100 pt-2 text-[11.5px] font-medium text-slate-500 dark:border-slate-800 dark:text-slate-400">
+          {listing.city ? (
+            <span className="inline-flex min-w-0 items-center gap-1 truncate">
+              <MapPin size={12} className="shrink-0" />
+              {listing.city}
+            </span>
+          ) : (
+            <span />
+          )}
+          {posted && (
+            <span className="inline-flex shrink-0 items-center gap-1">
+              <Clock3 size={12} />
+              {posted}
+            </span>
+          )}
+        </div>
       </div>
     </article>
   );
@@ -182,7 +131,8 @@ export const CompactListingCard = memo(CompactListingCardImpl, (prev, next) => {
     (a as any).views === (b as any).views &&
     a.images?.[0] === b.images?.[0] &&
     prev.showStats === next.showStats &&
-    prev.priority === next.priority
+    prev.priority === next.priority &&
+    prev.categoryLabel === next.categoryLabel
   );
 });
 

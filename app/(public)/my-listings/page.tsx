@@ -179,7 +179,7 @@ export default function MyListingsPage() {
         <div className="flex flex-wrap items-center gap-2 self-start sm:self-end">
           <Link
             href="/ads-manager"
-            className="inline-flex items-center gap-1.5 rounded-2xl border border-amber-300 bg-amber-50 px-3.5 py-2.5 text-sm font-black text-amber-700 transition active:scale-95 hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-950/20 dark:text-amber-300"
+            className="inline-flex items-center gap-1.5 rounded-2xl border border-amber-300 bg-amber-50 px-3.5 py-2.5 text-sm font-extrabold text-amber-700 transition active:scale-95 hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-950/20 dark:text-amber-300"
           >
             📢 مدير الإعلانات
           </Link>
@@ -220,7 +220,7 @@ export default function MyListingsPage() {
               <Icon size={15} />
               <span>{t.label}</span>
               <span
-                className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-black ${
+                className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-extrabold ${
                   active
                     ? "bg-white/20 text-white"
                     : "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200"
@@ -310,8 +310,8 @@ function StatCard({ icon: Icon, label, value, color }: StatCardProps) {
         <p className="truncate text-[11px] text-slate-500 dark:text-slate-400 sm:text-xs">
           {label}
         </p>
-        <p className={`text-xl font-black sm:text-2xl ${c.valueText}`}>
-          {value.toLocaleString("ar-LY")}
+        <p className={`text-xl font-extrabold sm:text-2xl ${c.valueText}`}>
+          {value.toLocaleString("en-US")}
         </p>
       </div>
     </div>

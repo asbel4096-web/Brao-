@@ -34,11 +34,11 @@ export default function AdminReferralsPage() {
   return (
     <div className="space-y-4">
       <header className="flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
           <UsersIcon size={20} strokeWidth={2.2} />
         </div>
         <div>
-          <h1 className="text-lg font-black text-slate-900 dark:text-white sm:text-xl">
+          <h1 className="text-lg font-extrabold text-slate-900 dark:text-white sm:text-xl">
             نظام الإحالات
           </h1>
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
@@ -69,15 +69,15 @@ export default function AdminReferralsPage() {
         />
         <StatBox
           label="مكافآت صُرفت"
-          value={`${stats.rewardsPaid.toLocaleString("ar-LY")} BC`}
+          value={`${stats.rewardsPaid.toLocaleString("en-US")} BC`}
           icon={Coins}
           tone="action"
         />
       </div>
 
       {/* Explanation */}
-      <div className="rounded-2xl border border-purple-200 bg-purple-50/50 p-4 dark:border-purple-900/40 dark:bg-purple-900/10">
-        <p className="text-[12px] leading-6 text-purple-900 dark:text-purple-200">
+      <div className="rounded-2xl border border-brand-200 bg-brand-50/50 p-4 dark:border-brand-900/40 dark:bg-brand-900/10">
+        <p className="text-[12px] leading-6 text-brand-900 dark:text-brand-200">
           <strong>كيف يعمل النظام؟</strong> كل صديق يُكمل أول إعلان معتمد عبر دعوة،
           يحصل الطرفان على {REFERRAL_REWARD_BC} BC. الحد الأقصى 5 مكافآت يومياً
           للمُحيل الواحد (anti-abuse).
@@ -86,7 +86,7 @@ export default function AdminReferralsPage() {
 
       {/* List */}
       <div>
-        <h2 className="mb-3 text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+        <h2 className="mb-3 text-xs font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
           آخر الإحالات
         </h2>
         {loading ? (
@@ -101,7 +101,7 @@ export default function AdminReferralsPage() {
         ) : referrals.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center dark:border-slate-700 dark:bg-slate-900">
             <Gift size={36} className="mx-auto mb-2 text-slate-300 dark:text-slate-600" />
-            <p className="text-sm font-black text-slate-700 dark:text-slate-200">
+            <p className="text-sm font-extrabold text-slate-700 dark:text-slate-200">
               لا توجد إحالات بعد
             </p>
             <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
@@ -168,7 +168,7 @@ export default function AdminReferralsPage() {
 
                   <div className="text-end">
                     <span
-                      className={`rounded-full px-2 py-1 text-[9px] font-black ${
+                      className={`rounded-full px-2 py-1 text-[9px] font-extrabold ${
                         isCompleted
                           ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
                           : isPending
@@ -185,7 +185,7 @@ export default function AdminReferralsPage() {
                         : "محظورة"}
                     </span>
                     {isCompleted && (
-                      <p className="mt-1 text-[10px] font-black text-emerald-600 dark:text-emerald-400">
+                      <p className="mt-1 text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400">
                         +{REFERRAL_REWARD_BC * 2} BC
                       </p>
                     )}
@@ -212,7 +212,7 @@ function StatBox({
   tone: "purple" | "emerald" | "amber" | "action";
 }) {
   const tones: Record<string, string> = {
-    purple: "bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
+    purple: "bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300",
     emerald: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
     amber: "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
     action: "bg-action-50 text-action-700 dark:bg-action-900/30 dark:text-action-300",
@@ -224,10 +224,10 @@ function StatBox({
           <Icon size={15} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+          <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
             {label}
           </p>
-          <p className="mt-0.5 text-sm font-black tabular-nums text-slate-900 dark:text-white">
+          <p className="mt-0.5 text-sm font-extrabold tabular-nums text-slate-900 dark:text-white">
             {value}
           </p>
         </div>

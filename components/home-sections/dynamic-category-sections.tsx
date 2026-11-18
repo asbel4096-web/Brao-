@@ -229,13 +229,13 @@ function CategorySection({ group, eager }: { group: Group; eager: boolean }) {
     <section ref={ref} className="py-4 sm:py-5">
       <div className="container">
         <div className="mb-3 flex items-center justify-between gap-3 px-1">
-          <h2 className="text-base font-black text-slate-900 dark:text-white sm:text-lg">
+          <h2 className="text-xl font-extrabold leading-[30px] text-slate-950 dark:text-white">
             {title}
           </h2>
           <Link
             href={seeAll}
             prefetch={false}
-            className="inline-flex items-center gap-0.5 text-xs font-black text-brand-700 transition hover:text-brand-800 dark:text-brand-300"
+            className="inline-flex items-center gap-0.5 text-xs font-extrabold text-brand-700 transition hover:text-brand-800 dark:text-brand-300"
           >
             عرض الكل
             <ChevronLeft size={14} />
@@ -244,7 +244,7 @@ function CategorySection({ group, eager }: { group: Group; eager: boolean }) {
       </div>
 
       <div
-        className="flex gap-3 overflow-x-auto px-4 pb-2 no-scrollbar sm:px-6"
+        className="mx-auto flex max-w-7xl gap-3 overflow-x-auto px-4 pb-3 no-scrollbar sm:px-6 lg:px-8"
         style={{ scrollbarWidth: "none" }}
       >
         {visible

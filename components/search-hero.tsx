@@ -58,7 +58,7 @@ export function SearchHero() {
           <div className="pointer-events-none absolute -bottom-14 -left-8 h-48 w-48 rounded-full bg-brand-400/20 blur-3xl" />
 
           <div className="relative">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-black text-white/90 ring-1 ring-white/15 backdrop-blur">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-extrabold text-white/90 ring-1 ring-white/15 backdrop-blur">
               <Sparkles size={12} className="text-action-300" />
               براتشو كار
             </span>
@@ -74,14 +74,14 @@ export function SearchHero() {
             <div className="mt-4 flex flex-wrap gap-2.5">
               <Link
                 href="/listings"
-                className="inline-flex items-center gap-1.5 rounded-2xl bg-white px-5 py-2.5 text-sm font-black text-brand-800 shadow-sm transition active:scale-95 hover:bg-slate-100"
+                className="inline-flex items-center gap-1.5 rounded-2xl bg-white px-5 py-2.5 text-sm font-extrabold text-brand-800 shadow-sm transition active:scale-95 hover:bg-slate-100"
               >
                 <Car size={16} />
                 تصفّح السيارات
               </Link>
               <Link
                 href="/add-listing"
-                className="inline-flex items-center gap-1.5 rounded-2xl bg-action-500 px-5 py-2.5 text-sm font-black text-white shadow-action transition active:scale-95 hover:bg-action-600"
+                className="inline-flex items-center gap-1.5 rounded-2xl bg-action-500 px-5 py-2.5 text-sm font-extrabold text-white shadow-action transition active:scale-95 hover:bg-action-600"
               >
                 <Plus size={16} />
                 أضف إعلانك
@@ -136,7 +136,7 @@ export function SearchHero() {
               aria-label="بحث"
               className="
                 absolute left-2 top-1/2 hidden -translate-y-1/2 items-center justify-center
-                rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-black text-white
+                rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-extrabold text-white
                 transition hover:bg-brand-800 active:scale-95 sm:inline-flex
               "
             >
@@ -161,7 +161,7 @@ export function SearchHero() {
                 prefetch={false}
                 className={
                   c.primary
-                    ? "inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand-700 px-4 py-2 text-[13px] font-black text-white shadow-blue transition active:scale-95"
+                    ? "inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand-700 px-4 py-2 text-[13px] font-extrabold text-white shadow-blue transition active:scale-95"
                     : "inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-[13px] font-bold text-slate-700 transition hover:border-brand-300 hover:text-brand-700 active:scale-95 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                 }
               >

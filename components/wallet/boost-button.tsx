@@ -76,8 +76,8 @@ export function BoostButton({
             grid h-9 w-9 place-items-center rounded-full
             text-white shadow-sm transition active:scale-95
             ${hasActive
-              ? "bg-gradient-to-br from-amber-500 to-orange-600"
-              : "bg-gradient-to-br from-purple-600 to-pink-600 hover:brightness-110"
+              ? "bg-gradient-to-br from-amber-500 to-action-600"
+              : "bg-gradient-to-br from-action-500 to-action-600 hover:brightness-110"
             }
             ${className}
           `}
@@ -107,11 +107,11 @@ export function BoostButton({
         whileTap={{ scale: 0.96 }}
         className={`
           inline-flex items-center gap-1.5 rounded-full px-3 py-1.5
-          text-[11px] font-black text-white shadow-sm transition
+          text-[11px] font-extrabold text-white shadow-sm transition
           hover:brightness-110
           ${hasActive
-            ? "bg-gradient-to-br from-amber-500 to-orange-600"
-            : "bg-gradient-to-br from-purple-600 to-pink-600"
+            ? "bg-gradient-to-br from-amber-500 to-action-600"
+            : "bg-gradient-to-br from-action-500 to-action-600"
           }
           ${className}
         `}

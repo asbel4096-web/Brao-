@@ -77,7 +77,7 @@ export default function AdminAnalyticsPage() {
           <BarChart3 size={20} strokeWidth={2.2} />
         </div>
         <div>
-          <h1 className="text-lg font-black text-slate-900 dark:text-white sm:text-xl">
+          <h1 className="text-lg font-extrabold text-slate-900 dark:text-white sm:text-xl">
             التحليلات
           </h1>
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
@@ -95,7 +95,7 @@ export default function AdminAnalyticsPage() {
 
       {/* KPIs row */}
       <section>
-        <h2 className="mb-3 text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+        <h2 className="mb-3 text-xs font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
           أرقام الأسبوع
         </h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -152,7 +152,7 @@ export default function AdminAnalyticsPage() {
 
       {/* Top items */}
       <section>
-        <h2 className="mb-3 text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+        <h2 className="mb-3 text-xs font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
           الأعلى انتشاراً
         </h2>
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">

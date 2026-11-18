@@ -128,7 +128,7 @@ export default function VehicleReportPage() {
         {/* رأس الصفحة */}
         <div className="text-center">
           <span className="badge">
-            <FileText size={12} className="ml-1" /> تقرير المركبة
+            <FileText size={12} className="ml-1" /> تقرير السيارة
           </span>
           <h1 className="mt-3 section-title">
             تحقّق من تاريخ السيارة قبل الشراء
@@ -144,7 +144,7 @@ export default function VehicleReportPage() {
           <div className="relative">
             <input
               id="vin"
-              className="input pr-10 font-mono tracking-wider"
+              className="input pr-10 num tracking-wider"
               dir="ltr"
               value={vin}
               onChange={(e) => setVin(e.target.value.toUpperCase())}
@@ -170,7 +170,7 @@ export default function VehicleReportPage() {
               17 خانة، حروف وأرقام إنجليزية فقط (بدون I, O, Q).
             </span>
             <span
-              className={`font-mono font-bold ${
+              className={`num font-bold ${
                 inputLength === 17
                   ? "text-emerald-600 dark:text-emerald-400"
                   : "text-slate-400"
@@ -271,13 +271,13 @@ function SourcesGrid() {
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-700 text-white shadow-blue">
             <s.icon size={20} />
           </div>
-          <h3 className="mt-3 text-sm font-black text-slate-900 dark:text-white">
+          <h3 className="mt-3 text-sm font-extrabold text-slate-900 dark:text-white">
             {s.title}
           </h3>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             {s.desc}
           </p>
-          <span className="mt-2 inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+          <span className="mt-2 inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-extrabold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
             {s.status}
           </span>
         </div>
@@ -293,7 +293,7 @@ function LoadingState() {
         <div className="flex items-center gap-3">
           <Loader2 size={24} className="animate-spin text-brand-700 dark:text-brand-300" />
           <div>
-            <p className="text-base font-black text-slate-900 dark:text-white">
+            <p className="text-base font-extrabold text-slate-900 dark:text-white">
               جارٍ جلب بيانات المركبة...
             </p>
             <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -316,7 +316,7 @@ function InvalidVinState({
       <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">
         <AlertTriangle size={28} />
       </div>
-      <h3 className="mt-4 text-base font-black text-rose-900 dark:text-rose-200">
+      <h3 className="mt-4 text-base font-extrabold text-rose-900 dark:text-rose-200">
         رقم الهيكل غير صالح
       </h3>
       <p className="mt-2 text-sm text-rose-700 dark:text-rose-300">{message}</p>
@@ -335,12 +335,12 @@ function NotFoundState({
       <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
         <AlertTriangle size={32} />
       </div>
-      <h3 className="mt-4 text-lg font-black text-slate-900 dark:text-white">
+      <h3 className="mt-4 text-lg font-extrabold text-slate-900 dark:text-white">
         لم يتم العثور على تقرير
       </h3>
       <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{message}</p>
       {vin && (
-        <p className="mt-3 inline-block rounded-2xl border border-slate-200 bg-slate-50 px-3 py-1.5 font-mono text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+        <p className="mt-3 inline-block rounded-2xl border border-slate-200 bg-slate-50 px-3 py-1.5 num text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
           VIN: <span dir="ltr">{vin}</span>
         </p>
       )}
@@ -367,7 +367,7 @@ function ProviderErrorState({
       <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">
         <AlertTriangle size={28} />
       </div>
-      <h3 className="mt-4 text-base font-black text-rose-900 dark:text-rose-200">
+      <h3 className="mt-4 text-base font-extrabold text-rose-900 dark:text-rose-200">
         خطأ من مزوّد البيانات
       </h3>
       <p className="mt-2 text-sm text-rose-700 dark:text-rose-300">{message}</p>

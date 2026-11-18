@@ -1,0 +1,27 @@
+# Bratsho Car — ملفات يجب ألا تُرفع أبداً إلى هذا المستودع العام.
+# المفاتيح الحقيقية مكانها: Vercel → Project Settings → Environment Variables.
+
+# ملفات البيئة والأسرار
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+serviceAccount*.json
+*service-account*.json
+*firebase-adminsdk*.json
+
+# الاعتماديات ومخرجات البناء
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+
+# أدوات محلية
+.vercel
+*.log
+.DS_Store

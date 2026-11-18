@@ -175,11 +175,12 @@ export function StoryViewer({
             )}
           </div>
 
-          {/* Tap zones */}
+          {/* Tap zones — Bratsho DS: نفس عارض الرئيسية وتطبيق Flutter (RTL: يمين = السابق، يسار = التالي).
+              كانت معكوسة هنا، وكانت تسميات قارئ الشاشة معكوسة أيضاً. */}
           <div className="absolute inset-0 z-10 grid grid-cols-3">
             <button
               type="button"
-              onClick={handleNext}
+              onClick={handlePrev}
               aria-label="السابق"
               className="cursor-default"
             />
@@ -191,7 +192,7 @@ export function StoryViewer({
             />
             <button
               type="button"
-              onClick={handlePrev}
+              onClick={handleNext}
               aria-label="التالي"
               className="cursor-default"
             />
@@ -204,7 +205,7 @@ export function StoryViewer({
               {stories.map((_, i) => (
                 <div
                   key={i}
-                  className="h-0.5 flex-1 overflow-hidden rounded-full bg-white/30"
+                  className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/20"
                 >
                   <div
                     className="h-full bg-white transition-all duration-100 ease-linear"
@@ -233,13 +234,13 @@ export function StoryViewer({
                     sizes="36px"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-blue-600 text-sm font-black text-white">
+                  <div className="flex h-full w-full items-center justify-center bg-brand-600 text-sm font-extrabold text-white">
                     {dealerName?.charAt(0).toUpperCase() || "M"}
                   </div>
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-black text-white">
+                <p className="truncate text-sm font-extrabold text-white">
                   {dealerName}
                 </p>
                 <p className="text-[11px] text-white/80">
@@ -249,7 +250,7 @@ export function StoryViewer({
               <button
                 type="button"
                 onClick={() => setPaused((p) => !p)}
-                className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-white backdrop-blur transition active:scale-95"
+                className="grid h-11 w-11 place-items-center rounded-full bg-white/15 text-white backdrop-blur transition active:scale-95"
                 aria-label="إيقاف/تشغيل"
               >
                 {paused ? <Play size={14} /> : <Pause size={14} />}
@@ -257,7 +258,7 @@ export function StoryViewer({
               <button
                 type="button"
                 onClick={onClose}
-                className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-white backdrop-blur transition active:scale-95"
+                className="grid h-11 w-11 place-items-center rounded-full bg-white/15 text-white backdrop-blur transition active:scale-95"
                 aria-label="إغلاق"
               >
                 <X size={16} />

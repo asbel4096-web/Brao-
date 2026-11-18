@@ -113,7 +113,7 @@ export function LikeButton({
       )}
     >
       {showCount && (
-        <span className="tabular-nums">{count.toLocaleString("ar-LY")}</span>
+        <span className="tabular-nums">{count.toLocaleString("en-US")}</span>
       )}
       <ThumbsUp
         size={18}

@@ -125,7 +125,7 @@ export default function AdminCategoryImagesPage() {
           <ArrowRight size={20} />
         </Link>
         <div>
-          <h1 className="flex items-center gap-2 text-xl font-black text-slate-900 dark:text-white sm:text-2xl">
+          <h1 className="flex items-center gap-2 text-xl font-extrabold text-slate-900 dark:text-white sm:text-2xl">
             <LayoutGrid size={20} className="text-brand-600 dark:text-brand-300" />
             صور الأقسام
           </h1>
@@ -170,7 +170,7 @@ export default function AdminCategoryImagesPage() {
                   )}
                 </div>
                 <div className="p-2.5">
-                  <p className="mb-2 truncate text-center text-[12px] font-black text-slate-900 dark:text-white">
+                  <p className="mb-2 truncate text-center text-[12px] font-extrabold text-slate-900 dark:text-white">
                     {cat.name}
                   </p>
                   <input
@@ -191,7 +191,7 @@ export default function AdminCategoryImagesPage() {
                       type="button"
                       disabled={isBusy}
                       onClick={() => fileRefs.current[cat.slug]?.click()}
-                      className="inline-flex flex-1 items-center justify-center gap-1 rounded-xl bg-brand-600 py-2 text-[11px] font-black text-white transition hover:bg-brand-700 disabled:opacity-50"
+                      className="inline-flex flex-1 items-center justify-center gap-1 rounded-xl bg-brand-600 py-2 text-[11px] font-extrabold text-white transition hover:bg-brand-700 disabled:opacity-50"
                     >
                       <ImagePlus size={13} />
                       {url ? "تغيير" : "رفع صورة"}

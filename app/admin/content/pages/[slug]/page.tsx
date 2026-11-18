@@ -92,12 +92,12 @@ export default function CmsPageEditorPage() {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center dark:border-slate-800 dark:bg-slate-900">
         <FileText size={36} className="mx-auto mb-2 text-slate-300 dark:text-slate-600" />
-        <p className="text-sm font-black text-slate-700 dark:text-slate-200">
+        <p className="text-sm font-extrabold text-slate-700 dark:text-slate-200">
           الصفحة غير موجودة
         </p>
         <Link
           href="/admin/content/pages"
-          className="mt-3 inline-flex items-center gap-1 text-xs font-black text-brand-700 hover:underline dark:text-brand-300"
+          className="mt-3 inline-flex items-center gap-1 text-xs font-extrabold text-brand-700 hover:underline dark:text-brand-300"
         >
           العودة للقائمة
           <ArrowRight size={14} />
@@ -152,7 +152,7 @@ export default function CmsPageEditorPage() {
           <button
             type="button"
             onClick={() => setPublished((p) => !p)}
-            className={`inline-flex h-9 items-center gap-1 rounded-xl px-3 text-[11px] font-black transition ${
+            className={`inline-flex h-9 items-center gap-1 rounded-xl px-3 text-[11px] font-extrabold transition ${
               published
                 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
                 : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
@@ -165,7 +165,7 @@ export default function CmsPageEditorPage() {
             type="button"
             onClick={handleSave}
             disabled={!isDirty || saving}
-            className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-action-500 px-4 text-xs font-black text-white shadow-sm transition hover:bg-action-600 active:scale-95 disabled:opacity-50"
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-action-500 px-4 text-xs font-extrabold text-white shadow-sm transition hover:bg-action-600 active:scale-95 disabled:opacity-50"
           >
             {saving ? (
               <>
@@ -190,7 +190,7 @@ export default function CmsPageEditorPage() {
         onChange={(e) => setTitle(e.target.value)}
         placeholder="عنوان الصفحة"
         maxLength={100}
-        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base font-black text-slate-900 outline-none focus:border-brand-400 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base font-extrabold text-slate-900 outline-none focus:border-brand-400 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
       />
 
       <p className="px-1 text-[10px] text-slate-400 dark:text-slate-500">
@@ -210,7 +210,7 @@ export default function CmsPageEditorPage() {
       <div className="grid gap-3 sm:grid-cols-2">
         {/* Editor */}
         <div className="rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-          <div className="border-b border-slate-100 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:text-slate-400">
+          <div className="border-b border-slate-100 px-3 py-2 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:text-slate-400">
             Markdown
           </div>
           <textarea
@@ -224,12 +224,12 @@ export default function CmsPageEditorPage() {
 
         {/* Preview */}
         <div className={`rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 ${showPreview ? "block" : "hidden sm:block"}`}>
-          <div className="border-b border-slate-100 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:text-slate-400">
+          <div className="border-b border-slate-100 px-3 py-2 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:text-slate-400">
             معاينة
           </div>
           <div className="p-4 sm:p-5">
             {title && (
-              <h1 className="mb-3 text-2xl font-black text-slate-900 dark:text-white">
+              <h1 className="mb-3 text-2xl font-extrabold text-slate-900 dark:text-white">
                 {title}
               </h1>
             )}
@@ -244,7 +244,7 @@ export default function CmsPageEditorPage() {
 
       {/* Markdown cheatsheet */}
       <details className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-[11px] dark:border-slate-800 dark:bg-slate-900/50">
-        <summary className="cursor-pointer font-black text-slate-700 dark:text-slate-300">
+        <summary className="cursor-pointer font-extrabold text-slate-700 dark:text-slate-300">
           الـMarkdown المدعوم
         </summary>
         <ul className="mt-2 space-y-1 ps-4 text-slate-600 dark:text-slate-400">

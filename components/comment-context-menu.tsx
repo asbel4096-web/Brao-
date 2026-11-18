@@ -163,7 +163,7 @@ export function CommentContextMenu({
         className={`
           flex w-full items-center justify-between gap-3
           px-4 py-3.5
-          text-right text-[15px] font-semibold
+          text-right text-[15px] font-bold
           transition-colors
           ${item.danger
             ? "text-rose-300 hover:bg-rose-500/15 active:bg-rose-500/20"
@@ -226,7 +226,7 @@ export function CommentContextMenu({
                 flex w-full items-center justify-between gap-3
                 border-t border-white/10
                 px-4 py-3
-                text-right text-[14px] font-semibold
+                text-right text-[14px] font-bold
                 text-slate-300
                 transition-colors hover:bg-white/5
               "

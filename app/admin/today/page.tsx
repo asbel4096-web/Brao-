@@ -17,7 +17,7 @@ import {
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 
-const arNum = (v: number) => (Number(v) || 0).toLocaleString("ar-LY");
+const arNum = (v: number) => (Number(v) || 0).toLocaleString("en-US");
 
 export default function AdminTodayPage() {
   const { profile, loading: authLoading } = useAuth();
@@ -83,7 +83,7 @@ export default function AdminTodayPage() {
           <ArrowRight size={20} />
         </Link>
         <div className="flex-1">
-          <h1 className="text-xl font-black text-slate-900 dark:text-white sm:text-2xl">
+          <h1 className="text-xl font-extrabold text-slate-900 dark:text-white sm:text-2xl">
             اليوم
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -94,7 +94,7 @@ export default function AdminTodayPage() {
           type="button"
           onClick={() => void load()}
           disabled={loading}
-          className="rounded-2xl bg-brand-600 px-4 py-2 text-xs font-black text-white transition hover:bg-brand-700 disabled:opacity-50"
+          className="rounded-2xl bg-brand-600 px-4 py-2 text-xs font-extrabold text-white transition hover:bg-brand-700 disabled:opacity-50"
         >
           تحديث
         </button>
@@ -146,7 +146,7 @@ function TodayCard({
       <div className={`mb-3 flex h-9 w-9 items-center justify-center rounded-2xl ${chip[tone]}`}>
         <Icon size={18} />
       </div>
-      <div className="text-2xl font-black tabular-nums text-slate-900 dark:text-white">
+      <div className="text-2xl font-extrabold tabular-nums text-slate-900 dark:text-white">
         {value}
       </div>
       <div className="mt-0.5 text-[11px] font-bold text-slate-500 dark:text-slate-400">

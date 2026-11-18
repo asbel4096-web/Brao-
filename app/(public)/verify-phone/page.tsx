@@ -306,7 +306,7 @@ function VerifyPhoneClient() {
               <CheckCircle2 size={20} />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-black text-slate-900 dark:text-white">
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
                 تم التوثيق
               </h3>
               <p
@@ -323,7 +323,7 @@ function VerifyPhoneClient() {
             href={redirectTo}
             className="
               flex w-full items-center justify-center
-              rounded-2xl bg-brand-700 py-4 text-base font-black
+              rounded-2xl bg-brand-700 py-4 text-base font-extrabold
               text-white shadow-blue transition active:scale-[0.99]
               hover:bg-brand-800
             "
@@ -335,7 +335,7 @@ function VerifyPhoneClient() {
             href="/add-listing"
             className="
               flex w-full items-center justify-center gap-2
-              rounded-2xl bg-action-500 py-3.5 text-sm font-black
+              rounded-2xl bg-action-500 py-3.5 text-sm font-extrabold
               text-white shadow-action transition active:scale-[0.99]
               hover:bg-action-600
             "
@@ -365,7 +365,7 @@ function VerifyPhoneClient() {
           {error && <ErrorMessage message={error} />}
 
           <div>
-            <label className="mb-2 block text-sm font-black text-slate-900 dark:text-white">
+            <label className="mb-2 block text-sm font-extrabold text-slate-900 dark:text-white">
               رمز التحقق
             </label>
             <input
@@ -382,7 +382,7 @@ function VerifyPhoneClient() {
               autoFocus
               className="
                 w-full rounded-2xl border-2 border-slate-200 bg-white
-                py-4 text-center font-mono text-3xl font-black
+                py-4 text-center num text-3xl font-extrabold
                 tracking-[0.6em] outline-none transition
                 focus:border-brand-400 focus:ring-4 focus:ring-brand-100
                 dark:border-slate-700 dark:bg-slate-900 dark:text-white
@@ -401,7 +401,7 @@ function VerifyPhoneClient() {
             onClick={handleVerify}
             disabled={verifying || code.length < 6}
             className="
-              w-full rounded-2xl bg-brand-700 py-4 text-base font-black
+              w-full rounded-2xl bg-brand-700 py-4 text-base font-extrabold
               text-white shadow-blue transition active:scale-[0.99]
               hover:bg-brand-800 disabled:cursor-not-allowed
               disabled:bg-slate-300 disabled:text-slate-500
@@ -450,7 +450,7 @@ function VerifyPhoneClient() {
             <ShieldCheck size={18} />
           </div>
           <div>
-            <h3 className="text-sm font-black text-slate-900 dark:text-white">
+            <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
               لماذا توثيق الرقم؟
             </h3>
             <p className="mt-0.5 text-xs leading-relaxed text-slate-700 dark:text-slate-300">
@@ -461,7 +461,7 @@ function VerifyPhoneClient() {
 
         {/* حقل الهاتف */}
         <div>
-          <label className="mb-2 block text-sm font-black text-slate-900 dark:text-white">
+          <label className="mb-2 block text-sm font-extrabold text-slate-900 dark:text-white">
             رقم الموبايل
           </label>
           <div
@@ -476,7 +476,7 @@ function VerifyPhoneClient() {
             <div
               className="
                 flex shrink-0 items-center gap-2 rounded-xl bg-slate-50 px-3
-                text-sm font-black text-slate-700
+                text-sm font-extrabold text-slate-700
                 dark:bg-slate-800 dark:text-slate-200
               "
             >
@@ -516,7 +516,7 @@ function VerifyPhoneClient() {
           disabled={sendingCode || phoneDigits.length < 9}
           className="
             flex w-full items-center justify-center gap-2 rounded-2xl
-            bg-brand-700 py-4 text-base font-black text-white shadow-blue
+            bg-brand-700 py-4 text-base font-extrabold text-white shadow-blue
             transition active:scale-[0.99] hover:bg-brand-800
             disabled:cursor-not-allowed disabled:bg-slate-300
             disabled:text-slate-500 disabled:shadow-none
@@ -588,7 +588,7 @@ function ResendBlock({
           onClick={onResend}
           disabled={sending}
           className="
-            mt-1 inline-flex items-center gap-1.5 font-black
+            mt-1 inline-flex items-center gap-1.5 font-extrabold
             text-brand-700 hover:underline disabled:opacity-60
             dark:text-brand-300
           "

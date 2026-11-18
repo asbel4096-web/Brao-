@@ -43,7 +43,7 @@ const TowTrucksMiniMap = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex h-64 items-center justify-center rounded-3xl bg-slate-100 dark:bg-slate-800">
-        <Loader2 size={24} className="animate-spin text-blue-500" />
+        <Loader2 size={24} className="animate-spin text-brand-500" />
       </div>
     ),
   }
@@ -228,7 +228,7 @@ export default function TowTrucksPage() {
           <Truck size={24} strokeWidth={2.2} />
         </div>
         <div>
-          <h1 className="text-lg font-black text-slate-900 dark:text-white sm:text-xl">
+          <h1 className="text-lg font-extrabold text-slate-900 dark:text-white sm:text-xl">
             ساحبة قريبة منك
           </h1>
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
@@ -249,7 +249,7 @@ export default function TowTrucksPage() {
         {location ? (
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <p className="inline-flex items-center gap-1.5 text-xs font-black text-brand-700 dark:text-brand-300 sm:text-sm">
+              <p className="inline-flex items-center gap-1.5 text-xs font-extrabold text-brand-700 dark:text-brand-300 sm:text-sm">
                 <MapPin size={14} />
                 تم تحديد موقعك
               </p>
@@ -262,7 +262,7 @@ export default function TowTrucksPage() {
               onClick={clearLocation}
               className="
                 inline-flex h-9 shrink-0 items-center gap-1 rounded-2xl
-                border border-slate-200 bg-white px-3 text-xs font-black
+                border border-slate-200 bg-white px-3 text-xs font-extrabold
                 text-slate-700 transition hover:bg-slate-50
                 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200
                 dark:hover:bg-slate-800
@@ -284,7 +284,7 @@ export default function TowTrucksPage() {
               disabled={isLocationLoading}
               className="
                 inline-flex h-11 w-full items-center justify-center gap-1.5
-                rounded-2xl bg-action-500 text-sm font-black text-white shadow-action
+                rounded-2xl bg-action-500 text-sm font-extrabold text-white shadow-action
                 transition active:scale-95 hover:bg-action-600
                 disabled:opacity-60
               "
@@ -338,7 +338,7 @@ export default function TowTrucksPage() {
         <button
           type="button"
           onClick={() => setOnlyAvailable((v) => !v)}
-          className={`inline-flex h-10 items-center gap-1.5 rounded-2xl px-3 text-xs font-black transition ${
+          className={`inline-flex h-10 items-center gap-1.5 rounded-2xl px-3 text-xs font-extrabold transition ${
             onlyAvailable
               ? "bg-emerald-500 text-white shadow-md"
               : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
@@ -379,7 +379,7 @@ export default function TowTrucksPage() {
             size={40}
             className="mx-auto mb-2 text-slate-300 dark:text-slate-600"
           />
-          <p className="text-sm font-black text-slate-700 dark:text-slate-200">
+          <p className="text-sm font-extrabold text-slate-700 dark:text-slate-200">
             {items.length === 0
               ? "لا توجد ساحبات مسجّلة حالياً."
               : "لا توجد ساحبات بهذه المعايير."}
@@ -391,7 +391,7 @@ export default function TowTrucksPage() {
                 setCityFilter("");
                 setOnlyAvailable(false);
               }}
-              className="mt-3 text-xs font-black text-brand-700 hover:underline dark:text-brand-300"
+              className="mt-3 text-xs font-extrabold text-brand-700 hover:underline dark:text-brand-300"
             >
               مسح الفلاتر
             </button>
@@ -403,7 +403,7 @@ export default function TowTrucksPage() {
           {top3.length > 0 && (
             <div className="mb-5">
               <h2 className="mb-2.5 flex items-center justify-between gap-2 px-1">
-                <span className="text-sm font-black text-slate-900 dark:text-white">
+                <span className="text-sm font-extrabold text-slate-900 dark:text-white">
                   أقرب الساحبات إليك
                 </span>
                 <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
@@ -429,7 +429,7 @@ export default function TowTrucksPage() {
           {rest.length > 0 && (
             <div>
               {top3.length > 0 && (
-                <h2 className="mb-2.5 px-1 text-sm font-black text-slate-900 dark:text-white">
+                <h2 className="mb-2.5 px-1 text-sm font-extrabold text-slate-900 dark:text-white">
                   كل الساحبات
                 </h2>
               )}

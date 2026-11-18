@@ -132,7 +132,7 @@ export function ChatMessageBubble({
             <span>{timeAgo(message.createdAt)}</span>
             {mine &&
               (seen ? (
-                <CheckCheck size={13} className="text-sky-300" />
+                <CheckCheck size={13} className="text-brand-300" />
               ) : (
                 <Check size={13} className="text-white/55" />
               ))}

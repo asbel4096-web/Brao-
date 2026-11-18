@@ -135,11 +135,11 @@ export function TopupSheet({ open, onClose }: Props) {
             onDragEnd={(_, info) => {
               if (info.offset.y > 100) onClose();
             }}
-            className="fixed inset-x-0 bottom-0 z-[60] max-h-[92vh] overflow-hidden rounded-t-[28px] bg-slate-950 shadow-2xl"
+            className="fixed inset-x-0 bottom-0 z-[60] max-h-[92vh] overflow-hidden rounded-t-3xl bg-white dark:bg-slate-950 shadow-2xl"
             dir="rtl"
           >
             <div className="flex justify-center pt-2.5 pb-1">
-              <div className="h-1 w-10 rounded-full bg-slate-700" />
+              <div className="h-1 w-10 rounded-full bg-slate-200 dark:bg-slate-700" />
             </div>
 
             <div className="relative flex items-center justify-between px-5 pb-2 pt-2">
@@ -148,19 +148,19 @@ export function TopupSheet({ open, onClose }: Props) {
                   type="button"
                   onClick={() => setView("form")}
                   aria-label="رجوع"
-                  className="grid h-9 w-9 place-items-center rounded-full bg-slate-800 text-slate-300 transition hover:bg-slate-700"
+                  className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 transition hover:bg-slate-200 dark:hover:bg-slate-700"
                 >
                   <ChevronLeft size={16} />
                 </button>
               )}
-              <h2 className="absolute left-1/2 -translate-x-1/2 text-base font-black text-white">
+              <h2 className="absolute left-1/2 -translate-x-1/2 text-base font-extrabold text-slate-950 dark:text-white">
                 {view === "form" ? "شحن رصيد" : "طلباتي السابقة"}
               </h2>
               <button
                 type="button"
                 onClick={onClose}
                 aria-label="إغلاق"
-                className="grid h-9 w-9 place-items-center rounded-full bg-slate-800 text-slate-300 transition hover:bg-slate-700"
+                className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 transition hover:bg-slate-200 dark:hover:bg-slate-700"
               >
                 <X size={16} />
               </button>
@@ -178,14 +178,14 @@ export function TopupSheet({ open, onClose }: Props) {
                     className="mt-2 space-y-4"
                   >
                     {/* Info */}
-                    <div className="rounded-2xl bg-gradient-to-br from-indigo-600 to-blue-600 p-4">
+                    <div className="rounded-2xl bg-gradient-to-br from-brand-600 to-brand-600 p-4">
                       <div className="flex items-start gap-3">
                         <Sparkles size={20} className="shrink-0 text-white" />
                         <div>
-                          <p className="text-sm font-black text-white">
+                          <p className="text-sm font-extrabold text-white">
                             كيف يعمل الشحن؟
                           </p>
-                          <p className="mt-1 text-[11px] leading-5 text-blue-100">
+                          <p className="mt-1 text-[11px] leading-5 text-brand-100">
                             اختر طريقة الدفع وأدخل رقم تواصلك. ستراجع الإدارة
                             طلبك وتتواصل معك لإتمام العملية. بعد التأكيد،
                             يُضاف الرصيد فوراً لمحفظتك.
@@ -202,18 +202,18 @@ export function TopupSheet({ open, onClose }: Props) {
                         className="flex w-full items-center justify-between gap-2 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3 text-right transition hover:bg-amber-500/15"
                       >
                         <div className="flex items-center gap-2">
-                          <Clock size={16} className="text-amber-400" />
-                          <p className="text-[12px] font-black text-amber-200">
+                          <Clock size={16} className="text-amber-600 dark:text-amber-400" />
+                          <p className="text-[12px] font-extrabold text-amber-800 dark:text-amber-200">
                             لديك {pendingCount} طلب قيد المراجعة
                           </p>
                         </div>
-                        <span className="text-[11px] text-amber-300">عرض</span>
+                        <span className="text-[11px] text-amber-700 dark:text-amber-300">عرض</span>
                       </button>
                     )}
 
                     {/* Amount */}
                     <div>
-                      <label className="block text-xs font-black text-slate-300">
+                      <label className="block text-xs font-extrabold text-slate-600 dark:text-slate-300">
                         المبلغ (BC) *
                       </label>
                       <input
@@ -226,7 +226,7 @@ export function TopupSheet({ open, onClose }: Props) {
                         disabled={submitting}
                         placeholder={`من ${TOPUP_MIN_AMOUNT} إلى ${TOPUP_MAX_AMOUNT}`}
                         dir="ltr"
-                        className="mt-1.5 w-full rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-center text-xl font-black tabular-nums text-white outline-none focus:border-blue-400"
+                        className="mt-1.5 w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-4 py-3 text-center text-xl font-extrabold tabular-nums text-slate-950 dark:text-white outline-none focus:border-brand-400"
                       />
                       {/* Quick amounts */}
                       <div className="mt-2 grid grid-cols-4 gap-1.5">
@@ -236,7 +236,7 @@ export function TopupSheet({ open, onClose }: Props) {
                             type="button"
                             onClick={() => setAmount(String(v))}
                             disabled={submitting}
-                            className="rounded-xl border border-slate-700 bg-slate-900 py-2 text-[11px] font-black text-slate-300 transition hover:border-blue-500/50 hover:text-blue-300"
+                            className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 py-2 text-[11px] font-extrabold text-slate-600 dark:text-slate-300 transition hover:border-brand-500/50 hover:text-brand-300"
                           >
                             {v}
                           </button>
@@ -246,7 +246,7 @@ export function TopupSheet({ open, onClose }: Props) {
 
                     {/* Payment method */}
                     <div>
-                      <label className="block text-xs font-black text-slate-300">
+                      <label className="block text-xs font-extrabold text-slate-600 dark:text-slate-300">
                         طريقة الدفع *
                       </label>
                       <div className="mt-1.5 space-y-1.5">
@@ -259,22 +259,22 @@ export function TopupSheet({ open, onClose }: Props) {
                             className={`
                               flex w-full items-center gap-3 rounded-2xl border p-3 text-right transition
                               ${method === m.key
-                                ? "border-blue-500 bg-blue-500/15"
-                                : "border-slate-800 bg-slate-900 hover:border-slate-700"
+                                ? "border-brand-500 bg-brand-500/15"
+                                : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-slate-200 dark:hover:border-slate-700"
                               }
                             `}
                           >
                             <span className="text-xl">{m.icon}</span>
                             <div className="min-w-0 flex-1">
-                              <p className="text-[13px] font-black text-white">
+                              <p className="text-[13px] font-extrabold text-slate-950 dark:text-white">
                                 {m.label}
                               </p>
-                              <p className="mt-0.5 text-[10px] text-slate-400">
+                              <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400">
                                 {m.description}
                               </p>
                             </div>
                             {method === m.key && (
-                              <CheckCircle2 size={16} className="shrink-0 text-blue-400" />
+                              <CheckCircle2 size={16} className="shrink-0 text-brand-400" />
                             )}
                           </button>
                         ))}
@@ -283,7 +283,7 @@ export function TopupSheet({ open, onClose }: Props) {
 
                     {/* Contact */}
                     <div>
-                      <label className="block text-xs font-black text-slate-300">
+                      <label className="block text-xs font-extrabold text-slate-600 dark:text-slate-300">
                         <Phone size={11} className="inline" /> رقم التواصل *
                       </label>
                       <input
@@ -293,7 +293,7 @@ export function TopupSheet({ open, onClose }: Props) {
                         disabled={submitting}
                         placeholder="091XXXXXXX"
                         dir="ltr"
-                        className="mt-1.5 w-full rounded-2xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm font-mono text-white outline-none focus:border-blue-400"
+                        className="mt-1.5 w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 py-2.5 text-sm font-mono text-slate-950 dark:text-white outline-none focus:border-brand-400"
                       />
                       <p className="mt-1 text-[10px] text-slate-500">
                         سنتواصل معك على هذا الرقم لإتمام عملية الدفع
@@ -302,7 +302,7 @@ export function TopupSheet({ open, onClose }: Props) {
 
                     {/* Note */}
                     <div>
-                      <label className="block text-xs font-black text-slate-300">
+                      <label className="block text-xs font-extrabold text-slate-600 dark:text-slate-300">
                         <FileText size={11} className="inline" /> ملاحظات (اختياري)
                       </label>
                       <textarea
@@ -312,7 +312,7 @@ export function TopupSheet({ open, onClose }: Props) {
                         onChange={(e) => setNote(e.target.value)}
                         disabled={submitting}
                         placeholder="أي تفاصيل إضافية تريد إخبارنا بها..."
-                        className="mt-1.5 w-full resize-none rounded-2xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white outline-none focus:border-blue-400"
+                        className="mt-1.5 w-full resize-none rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 py-2.5 text-sm text-slate-950 dark:text-white outline-none focus:border-brand-400"
                       />
                     </div>
 
@@ -323,8 +323,8 @@ export function TopupSheet({ open, onClose }: Props) {
                       disabled={submitting || !amount || !contactNumber}
                       className="
                         mt-2 inline-flex w-full items-center justify-center gap-2
-                        rounded-2xl bg-gradient-to-br from-indigo-600 to-blue-600
-                        py-3.5 text-sm font-black text-white shadow-lg transition
+                        rounded-2xl bg-gradient-to-br from-brand-600 to-brand-600
+                        py-3.5 text-sm font-extrabold text-white shadow-lg transition
                         hover:brightness-110 active:scale-[0.98] disabled:opacity-50
                       "
                     >
@@ -346,7 +346,7 @@ export function TopupSheet({ open, onClose }: Props) {
                       <button
                         type="button"
                         onClick={() => setView("history")}
-                        className="w-full text-center text-[11px] font-black text-blue-400 transition hover:text-blue-300"
+                        className="w-full text-center text-[11px] font-extrabold text-brand-700 transition hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-300"
                       >
                         عرض طلباتي السابقة ({requests.length})
                       </button>
@@ -366,17 +366,17 @@ export function TopupSheet({ open, onClose }: Props) {
                         {[...Array(3)].map((_, i) => (
                           <div
                             key={i}
-                            className="h-20 animate-pulse rounded-2xl bg-slate-800/50"
+                            className="h-20 animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800/50"
                           />
                         ))}
                       </>
                     ) : requests.length === 0 ? (
-                      <div className="rounded-3xl bg-slate-900 p-10 text-center">
+                      <div className="rounded-3xl bg-slate-50 dark:bg-slate-900 p-10 text-center">
                         <CreditCard
                           size={36}
                           className="mx-auto mb-2 text-slate-600"
                         />
-                        <p className="text-sm font-black text-white">
+                        <p className="text-sm font-extrabold text-slate-950 dark:text-white">
                           لا توجد طلبات سابقة
                         </p>
                       </div>
@@ -413,37 +413,37 @@ function RequestRow({ req }: { req: TopupRequest }) {
       : Clock;
 
   return (
-    <div className="rounded-2xl bg-slate-800/40 p-3">
+    <div className="rounded-2xl bg-slate-100 dark:bg-slate-800/40 p-3">
       <div className="flex items-center gap-3">
         <div
           className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${
             req.status === "approved"
-              ? "bg-emerald-900/40 text-emerald-400"
+              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
               : req.status === "rejected"
-              ? "bg-rose-900/40 text-rose-400"
-              : "bg-amber-900/40 text-amber-400"
+              ? "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400"
+              : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
           }`}
         >
           <Icon size={16} />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <p className="text-base font-black text-white">
+            <p className="text-base font-extrabold text-slate-950 dark:text-white">
               {formatBC(req.amount)}
             </p>
             <span
-              className={`rounded-full px-2 py-0.5 text-[9px] font-black ${
+              className={`rounded-full px-2 py-0.5 text-[9px] font-extrabold ${
                 req.status === "approved"
-                  ? "bg-emerald-500/20 text-emerald-300"
+                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300"
                   : req.status === "rejected"
-                  ? "bg-rose-500/20 text-rose-300"
-                  : "bg-amber-500/20 text-amber-300"
+                  ? "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300"
+                  : "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300"
               }`}
             >
               {meta.label}
             </span>
           </div>
-          <p className="mt-0.5 text-[11px] text-slate-400">
+          <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
             {req.paymentMethodLabel || req.paymentMethod} · {date}
           </p>
         </div>
@@ -452,11 +452,11 @@ function RequestRow({ req }: { req: TopupRequest }) {
         <div
           className={`mt-2 rounded-xl p-2 text-[11px] leading-5 ${
             req.status === "rejected"
-              ? "bg-rose-900/20 text-rose-200"
-              : "bg-slate-900/60 text-slate-300"
+              ? "bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-200"
+              : "bg-slate-100 text-slate-700 dark:bg-slate-900/60 dark:text-slate-300"
           }`}
         >
-          <span className="font-black">
+          <span className="font-extrabold">
             {req.status === "rejected" ? "سبب الرفض: " : "ملاحظة: "}
           </span>
           {req.reviewNote}

@@ -111,7 +111,7 @@ export function timeAgo(ms: number, nowMs = Date.now()): string {
 }
 
 export function formatStoryCount(count: number): string {
-  return new Intl.NumberFormat("ar-LY").format(count);
+  return new Intl.NumberFormat("en-US").format(count);
 }
 
 export function getSeenStoryIdsLocal(): string[] {

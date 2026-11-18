@@ -73,13 +73,13 @@ export function ActiveVerificationCard({ onRenew }: ActiveCardProps) {
       dir="rtl"
     >
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-black text-slate-900 dark:text-white">
+        <h2 className="text-sm font-extrabold text-slate-900 dark:text-white">
           توثيق المعرض النشط
         </h2>
         <span
           className="
             inline-flex items-center gap-1 rounded-full
-            bg-emerald-50 px-2.5 py-0.5 text-[10px] font-black text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300
+            bg-emerald-50 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300
           "
         >
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -100,7 +100,7 @@ export function ActiveVerificationCard({ onRenew }: ActiveCardProps) {
                 sizes="48px"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#0a1d55] to-[#1c389c] text-sm font-black text-white">
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#0a1d55] to-[#1c389c] text-sm font-extrabold text-white">
                 {dealerName.charAt(0).toUpperCase()}
               </div>
             )}
@@ -109,7 +109,7 @@ export function ActiveVerificationCard({ onRenew }: ActiveCardProps) {
           {/* Info */}
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1">
-              <p className="truncate text-[13px] font-black text-slate-900 dark:text-white">
+              <p className="truncate text-[13px] font-extrabold text-slate-900 dark:text-white">
                 {dealerName}
               </p>
               <BadgeCheck
@@ -119,9 +119,9 @@ export function ActiveVerificationCard({ onRenew }: ActiveCardProps) {
               />
             </div>
             <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-              الخطة: <span className="font-black text-brand-600 dark:text-brand-300">{planLabel[plan] || plan}</span>
+              الخطة: <span className="font-extrabold text-brand-600 dark:text-brand-300">{planLabel[plan] || plan}</span>
             </p>
-            <p className="mt-0.5 text-[11px] font-black text-emerald-600 dark:text-emerald-400">
+            <p className="mt-0.5 text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400">
               ينتهي في {daysRemaining} يوم
             </p>
           </div>
@@ -151,7 +151,7 @@ export function ActiveVerificationCard({ onRenew }: ActiveCardProps) {
           className="
             mt-3 inline-flex w-full items-center justify-center gap-1.5
             rounded-2xl border border-brand-200 bg-brand-50 py-2.5
-            text-[12px] font-black text-brand-700
+            text-[12px] font-extrabold text-brand-700
             transition hover:bg-brand-100 dark:border-brand-800 dark:bg-brand-500/15 dark:text-brand-300 dark:hover:bg-brand-500/25
           "
         >
@@ -202,7 +202,7 @@ export function VerificationBanner({ onStart }: BannerProps) {
 
         {/* Content */}
         <div className="min-w-0 flex-1">
-          <h3 className="text-base font-black text-white">
+          <h3 className="text-base font-extrabold text-white">
             وثّق معرضك الآن
           </h3>
           <p className="mt-0.5 text-[11px] leading-5 text-white/70">
@@ -217,7 +217,7 @@ export function VerificationBanner({ onStart }: BannerProps) {
         whileTap={{ scale: 0.97 }}
         className="
           mt-4 inline-flex w-full items-center justify-center gap-1.5
-          rounded-2xl bg-action-500 py-3 text-sm font-black text-white
+          rounded-2xl bg-action-500 py-3 text-sm font-extrabold text-white
           shadow-action transition hover:bg-action-600
         "
       >

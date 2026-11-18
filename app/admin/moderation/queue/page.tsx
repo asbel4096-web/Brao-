@@ -38,7 +38,7 @@ const REJECT_REASONS = [
   "رقم تواصل غير صحيح",
 ];
 
-const arNum = (v: number) => (Number(v) || 0).toLocaleString("ar-LY");
+const arNum = (v: number) => (Number(v) || 0).toLocaleString("en-US");
 
 export default function ModerationQueuePage() {
   const { loading: authLoading } = useAuth();
@@ -195,7 +195,7 @@ export default function ModerationQueuePage() {
           <ArrowRight size={20} />
         </Link>
         <div className="flex-1">
-          <h1 className="flex items-center gap-2 text-xl font-black text-slate-900 dark:text-white sm:text-2xl">
+          <h1 className="flex items-center gap-2 text-xl font-extrabold text-slate-900 dark:text-white sm:text-2xl">
             <ShieldCheck size={22} className="text-brand-600 dark:text-brand-300" />
             مركز الإشراف
           </h1>
@@ -208,7 +208,7 @@ export default function ModerationQueuePage() {
       {items.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-slate-200 bg-white p-12 text-center dark:border-slate-700 dark:bg-slate-900">
           <CheckCheck size={40} className="mx-auto mb-2 text-emerald-400" />
-          <p className="text-base font-black text-slate-900 dark:text-white">
+          <p className="text-base font-extrabold text-slate-900 dark:text-white">
             لا يوجد إعلانات معلّقة 🎉
           </p>
           <p className="mt-1 text-sm text-slate-400">كل شيء تمت مراجعته.</p>
@@ -220,7 +220,7 @@ export default function ModerationQueuePage() {
             <button
               type="button"
               onClick={toggleAll}
-              className="inline-flex items-center gap-2 text-sm font-black text-slate-700 dark:text-slate-200"
+              className="inline-flex items-center gap-2 text-sm font-extrabold text-slate-700 dark:text-slate-200"
             >
               {allSelected ? (
                 <CheckSquare size={18} className="text-brand-600" />
@@ -277,7 +277,7 @@ export default function ModerationQueuePage() {
                   <div className="min-w-0 flex-1">
                     <Link
                       href={`/listings/${it.id}`}
-                      className="line-clamp-1 text-sm font-black text-slate-900 hover:text-brand-700 dark:text-white"
+                      className="line-clamp-1 text-sm font-extrabold text-slate-900 hover:text-brand-700 dark:text-white"
                     >
                       {it.title || "إعلان"}
                     </Link>
@@ -289,7 +289,7 @@ export default function ModerationQueuePage() {
                         type="button"
                         disabled={busy}
                         onClick={() => runApprove([it])}
-                        className="inline-flex items-center gap-1 rounded-xl bg-emerald-50 px-3 py-1.5 text-[11px] font-black text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-50 dark:bg-emerald-500/15 dark:text-emerald-300"
+                        className="inline-flex items-center gap-1 rounded-xl bg-emerald-50 px-3 py-1.5 text-[11px] font-extrabold text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-50 dark:bg-emerald-500/15 dark:text-emerald-300"
                       >
                         <Check size={13} /> اعتماد
                       </button>
@@ -300,7 +300,7 @@ export default function ModerationQueuePage() {
                           setReason("");
                           setRejectFor([it]);
                         }}
-                        className="inline-flex items-center gap-1 rounded-xl bg-rose-50 px-3 py-1.5 text-[11px] font-black text-rose-700 transition hover:bg-rose-100 disabled:opacity-50 dark:bg-rose-500/15 dark:text-rose-300"
+                        className="inline-flex items-center gap-1 rounded-xl bg-rose-50 px-3 py-1.5 text-[11px] font-extrabold text-rose-700 transition hover:bg-rose-100 disabled:opacity-50 dark:bg-rose-500/15 dark:text-rose-300"
                       >
                         <X size={13} /> رفض
                       </button>
@@ -317,7 +317,7 @@ export default function ModerationQueuePage() {
       {selected.size > 0 && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 p-3 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
           <div className="mx-auto flex max-w-3xl items-center gap-2">
-            <span className="text-xs font-black text-slate-600 dark:text-slate-300">
+            <span className="text-xs font-extrabold text-slate-600 dark:text-slate-300">
               {arNum(selected.size)} محدّد
             </span>
             <div className="flex-1" />
@@ -325,7 +325,7 @@ export default function ModerationQueuePage() {
               type="button"
               disabled={busy}
               onClick={() => runApprove(selectedItems)}
-              className="inline-flex items-center gap-1.5 rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-emerald-600 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-extrabold text-white shadow-sm transition hover:bg-emerald-600 disabled:opacity-50"
             >
               {busy ? <Loader2 size={15} className="animate-spin" /> : <CheckCheck size={15} />}
               اعتماد الكل
@@ -337,7 +337,7 @@ export default function ModerationQueuePage() {
                 setReason("");
                 setRejectFor(selectedItems);
               }}
-              className="inline-flex items-center gap-1.5 rounded-2xl bg-rose-500 px-5 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-rose-600 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-2xl bg-rose-500 px-5 py-2.5 text-sm font-extrabold text-white shadow-sm transition hover:bg-rose-600 disabled:opacity-50"
             >
               <X size={15} /> رفض الكل
             </button>
@@ -357,7 +357,7 @@ export default function ModerationQueuePage() {
             onClick={(e) => e.stopPropagation()}
             style={{ paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))" }}
           >
-            <h3 className="text-lg font-black text-slate-900 dark:text-white">
+            <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">
               سبب الرفض
             </h3>
             <p className="mt-1 text-xs text-slate-500">
@@ -391,7 +391,7 @@ export default function ModerationQueuePage() {
                 type="button"
                 disabled={busy}
                 onClick={() => runReject(rejectFor, reason)}
-                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-rose-500 py-3 text-sm font-black text-white transition hover:bg-rose-600 disabled:opacity-50"
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-rose-500 py-3 text-sm font-extrabold text-white transition hover:bg-rose-600 disabled:opacity-50"
               >
                 {busy ? <Loader2 size={15} className="animate-spin" /> : <X size={15} />}
                 تأكيد الرفض
@@ -400,7 +400,7 @@ export default function ModerationQueuePage() {
                 type="button"
                 disabled={busy}
                 onClick={() => setRejectFor(null)}
-                className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-black text-slate-600 dark:border-slate-700 dark:text-slate-300"
+                className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-extrabold text-slate-600 dark:border-slate-700 dark:text-slate-300"
               >
                 إلغاء
               </button>

@@ -132,7 +132,7 @@ export default function AdminPricingPage() {
           <ArrowRight size={20} />
         </Link>
         <div>
-          <h1 className="text-xl font-black text-slate-900 dark:text-white sm:text-2xl">
+          <h1 className="text-xl font-extrabold text-slate-900 dark:text-white sm:text-2xl">
             أسعار الباقات
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -159,7 +159,7 @@ export default function AdminPricingPage() {
                   {meta.emoji}
                 </span>
                 <div>
-                  <h3 className="text-sm font-black text-slate-900 dark:text-white">
+                  <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
                     {meta.label}
                   </h3>
                   <p className="text-[11px] text-slate-400">{meta.hint}</p>
@@ -176,9 +176,9 @@ export default function AdminPricingPage() {
                   onChange={(e) =>
                     setValues((v) => ({ ...v, [k]: e.target.value }))
                   }
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pl-14 text-lg font-black tabular-nums text-slate-900 outline-none transition focus:border-brand-400 focus:bg-white disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pl-14 text-lg font-extrabold tabular-nums text-slate-900 outline-none transition focus:border-brand-400 focus:bg-white disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 />
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">
+                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xs font-extrabold text-slate-400">
                   BC
                 </span>
               </label>
@@ -192,7 +192,7 @@ export default function AdminPricingPage() {
           type="button"
           onClick={save}
           disabled={loading || saving}
-          className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-action-500 py-3.5 text-sm font-black text-white shadow-action transition hover:bg-action-600 active:scale-[0.99] disabled:opacity-60 sm:flex-none sm:px-8"
+          className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-action-500 py-3.5 text-sm font-extrabold text-white shadow-action transition hover:bg-action-600 active:scale-[0.99] disabled:opacity-60 sm:flex-none sm:px-8"
         >
           {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
           حفظ الأسعار
@@ -201,7 +201,7 @@ export default function AdminPricingPage() {
           type="button"
           onClick={resetDefaults}
           disabled={loading || saving}
-          className="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-slate-200 px-4 py-3.5 text-xs font-black text-slate-600 transition hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+          className="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-slate-200 px-4 py-3.5 text-xs font-extrabold text-slate-600 transition hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
         >
           <RotateCcw size={14} />
           القيم الافتراضية

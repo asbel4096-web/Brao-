@@ -55,7 +55,7 @@ export function GrowthChart({
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-sm font-black text-slate-900 dark:text-white">
+          <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
             {title}
           </h3>
           {description && (
@@ -66,8 +66,8 @@ export function GrowthChart({
         </div>
         {typeof total === "number" && (
           <div className="text-end">
-            <p className="text-2xl font-black tabular-nums text-slate-900 dark:text-white">
-              {total.toLocaleString("ar-LY")}
+            <p className="text-2xl font-extrabold tabular-nums text-slate-900 dark:text-white">
+              {total.toLocaleString("en-US")}
             </p>
             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               30 يوم
@@ -130,7 +130,7 @@ export function GrowthChart({
                 }}
                 labelStyle={{ color: "rgb(100, 116, 139)" }}
                 formatter={(value: any) => [
-                  `${Number(value).toLocaleString("ar-LY")}`,
+                  `${Number(value).toLocaleString("en-US")}`,
                   "العدد",
                 ]}
               />

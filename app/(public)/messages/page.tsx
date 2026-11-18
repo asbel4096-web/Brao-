@@ -16,6 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { timeAgo, truncate } from "@/lib/utils";
 import { SponsoredSpotlight } from "@/components/sponsored-spotlight";
 import type { ChatThread } from "@/lib/types";
+import { EmptyState as SharedEmpty } from "@/components/ui/empty-state";
 
 /**
  * صفحة الرسائل - أُعيد تنظيمها:
@@ -108,7 +109,7 @@ export default function MessagesPage() {
             <span
               className="
                 inline-flex h-6 min-w-[24px] items-center justify-center
-                rounded-full bg-action-500 px-2 text-xs font-black text-white
+                rounded-full bg-action-500 px-2 text-xs font-extrabold text-white
                 shadow-action
               "
             >
@@ -206,7 +207,7 @@ function ChatRow({
           className="
             flex h-12 w-12 shrink-0 items-center justify-center
             rounded-full bg-gradient-to-br from-brand-700 to-brand-500
-            text-base font-black text-white
+            text-base font-extrabold text-white
           "
         >
           {(other?.name || "م").charAt(0).toUpperCase()}
@@ -220,7 +221,7 @@ function ChatRow({
           <span
             className={`truncate text-sm sm:text-base ${
               hasUnread
-                ? "font-black text-slate-900 dark:text-white"
+                ? "font-extrabold text-slate-900 dark:text-white"
                 : "font-bold text-slate-800 dark:text-slate-100"
             }`}
           >
@@ -262,7 +263,7 @@ function ChatRow({
               className="
                 flex h-5 min-w-[20px] shrink-0 items-center justify-center
                 rounded-full bg-action-500 px-1.5
-                text-[10px] font-black text-white shadow-action
+                text-[10px] font-extrabold text-white shadow-action
               "
             >
               {unread > 99 ? "99+" : unread}
@@ -306,27 +307,17 @@ function ChatListSkeleton() {
 
 function EmptyState() {
   return (
-    <div className="card p-10 text-center">
-      <div
-        className="
-          mx-auto flex h-16 w-16 items-center justify-center rounded-2xl
-          bg-brand-50 text-brand-700
-          dark:bg-brand-900/40 dark:text-brand-300
-        "
-      >
-        <Inbox size={32} aria-hidden="true" />
-      </div>
-      <p className="mt-4 text-base font-black text-slate-900 dark:text-white">
-        لا توجد محادثات بعد
-      </p>
-      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-        ابدأ محادثة من صفحة أي إعلان لتظهر هنا.
-      </p>
-      <Link href="/listings" className="btn-primary mt-5 inline-flex">
-        <MessageCircle size={16} />
-        تصفّح الإعلانات
-      </Link>
-    </div>
+    <SharedEmpty
+      icon={Inbox}
+      title="لا توجد محادثات بعد"
+      body="ابدأ محادثة من صفحة أي إعلان لتظهر هنا."
+      action={
+        <Link href="/listings" className="btn-primary">
+          <MessageCircle size={16} />
+          تصفّح الإعلانات
+        </Link>
+      }
+    />
   );
 }
 

@@ -22,7 +22,7 @@ export function StoryTypePicker({ onSelect, onClose }: Props) {
     <div className="flex flex-col">
       <div className="flex items-center justify-between border-b border-slate-100 p-4 dark:border-slate-800">
         <div>
-          <h3 className="text-lg font-black text-slate-900 dark:text-white">
+          <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">
             ما نوع قصتك؟
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -63,7 +63,7 @@ export function StoryTypePicker({ onSelect, onClose }: Props) {
                 <Icon size={28} className={meta.iconClass} />
               </div>
               <div>
-                <p className="text-base font-black text-slate-900 dark:text-white">
+                <p className="text-base font-extrabold text-slate-900 dark:text-white">
                   {meta.label}
                 </p>
                 <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">

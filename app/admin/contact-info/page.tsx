@@ -118,7 +118,7 @@ export default function AdminContactInfoPage() {
           <Headphones size={20} strokeWidth={2.5} />
         </div>
         <div>
-          <h1 className="text-lg font-black text-slate-900 dark:text-white sm:text-xl">
+          <h1 className="text-lg font-extrabold text-slate-900 dark:text-white sm:text-xl">
             معلومات التواصل
           </h1>
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
@@ -192,7 +192,7 @@ export default function AdminContactInfoPage() {
           disabled={saving}
           className="
             inline-flex h-12 w-full items-center justify-center gap-2
-            rounded-2xl bg-brand-700 text-sm font-black text-white shadow-blue
+            rounded-2xl bg-brand-700 text-sm font-extrabold text-white shadow-blue
             transition active:scale-95 hover:bg-brand-600
             disabled:opacity-60
           "
@@ -233,7 +233,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-1.5 flex items-center gap-1.5 text-xs font-black text-slate-700 dark:text-slate-200">
+      <label className="mb-1.5 flex items-center gap-1.5 text-xs font-extrabold text-slate-700 dark:text-slate-200">
         <span className="text-action-600 dark:text-action-300">{icon}</span>
         {label}
       </label>

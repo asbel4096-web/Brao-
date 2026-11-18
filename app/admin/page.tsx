@@ -86,7 +86,7 @@ export default function AdminDashboardPage() {
         <div className="pointer-events-none absolute -bottom-14 -right-6 h-44 w-44 rounded-full bg-brand-400/20 blur-3xl" />
         <div className="relative flex flex-wrap items-start justify-between gap-3">
           <div>
-            <div className="mb-1 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-white/55">
+            <div className="mb-1 flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-white/55">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
@@ -99,7 +99,7 @@ export default function AdminDashboardPage() {
             </p>
           </div>
           {role && (
-            <span className="shrink-0 rounded-full bg-white/12 px-3.5 py-1.5 text-xs font-black backdrop-blur">
+            <span className="shrink-0 rounded-full bg-white/12 px-3.5 py-1.5 text-xs font-extrabold backdrop-blur">
               {role}
             </span>
           )}
@@ -113,7 +113,7 @@ export default function AdminDashboardPage() {
             <AlertTriangle size={16} />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-sm font-black text-amber-900 dark:text-amber-100">
+            <h2 className="text-sm font-extrabold text-amber-900 dark:text-amber-100">
               يوجد {stats.alertsCount} عنصراً يحتاج المراجعة
             </h2>
             <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px] font-bold">
@@ -198,7 +198,7 @@ export default function AdminDashboardPage() {
             <Link
               href="/admin/analytics"
               prefetch={false}
-              className="inline-flex items-center gap-1 text-[11px] font-black text-brand-700 hover:underline dark:text-brand-300"
+              className="inline-flex items-center gap-1 text-[11px] font-extrabold text-brand-700 hover:underline dark:text-brand-300"
             >
               <BarChart3 size={12} />
               التحليلات الكاملة
@@ -283,7 +283,7 @@ function FeatureControl() {
                         enabled ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"
                       }`}
                     />
-                    <h3 className="truncate text-sm font-black text-slate-900 dark:text-white">
+                    <h3 className="truncate text-sm font-extrabold text-slate-900 dark:text-white">
                       {meta.label}
                     </h3>
                   </div>
@@ -323,7 +323,7 @@ function FeatureControl() {
         <Link
           href="/admin/settings/features"
           prefetch={false}
-          className="mt-3 inline-flex items-center gap-1 px-1 text-[11px] font-black text-brand-700 hover:underline dark:text-brand-300"
+          className="mt-3 inline-flex items-center gap-1 px-1 text-[11px] font-extrabold text-brand-700 hover:underline dark:text-brand-300"
         >
           إدارة المزايا بالتفصيل
           <ArrowLeft size={12} />
@@ -411,7 +411,7 @@ function ControlCenter({
         if (visible.length === 0) return null;
         return (
           <div key={g.title}>
-            <h3 className="mb-2 px-1 text-[11px] font-black text-slate-400 dark:text-slate-500">
+            <h3 className="mb-2 px-1 text-[11px] font-extrabold text-slate-400 dark:text-slate-500">
               {g.title}
             </h3>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -462,11 +462,11 @@ function ControlCard({
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <h4 className="flex-1 truncate text-sm font-black text-slate-900 dark:text-white">
+          <h4 className="flex-1 truncate text-sm font-extrabold text-slate-900 dark:text-white">
             {label}
           </h4>
           {typeof badge === "number" && badge > 0 && (
-            <span className="shrink-0 rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-black text-white">
+            <span className="shrink-0 rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-extrabold text-white">
               {badge}
             </span>
           )}
@@ -493,7 +493,7 @@ function SectionTitle({
 }) {
   return (
     <h2
-      className={`mb-3 text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 ${className}`}
+      className={`mb-3 text-xs font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 ${className}`}
     >
       {children}
     </h2>

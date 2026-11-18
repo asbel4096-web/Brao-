@@ -56,7 +56,7 @@ export function BrandLogo({ brand, size = 64, className = "", overrideUrl }: Pro
         />
       ) : (
         <span
-          className="select-none font-black leading-none text-white"
+          className="select-none font-extrabold leading-none text-white"
           style={{ fontSize: Math.round(size * 0.42) }}
         >
           {initial}

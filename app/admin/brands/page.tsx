@@ -135,7 +135,7 @@ export default function AdminBrandsPage() {
               <BrandLogo brand={brand} size={64} overrideUrl={currentLogo} />
 
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-black text-slate-900 dark:text-white">
+                <div className="text-sm font-extrabold text-slate-900 dark:text-white">
                   {brand.nameAr}
                 </div>
                 <div className="truncate text-[11px] text-slate-500 dark:text-slate-400">
@@ -157,7 +157,7 @@ export default function AdminBrandsPage() {
                   className={`
                     inline-flex h-9 cursor-pointer items-center justify-center
                     gap-1 rounded-xl border border-brand-200 bg-brand-50 px-3
-                    text-[11px] font-black text-brand-700 transition
+                    text-[11px] font-extrabold text-brand-700 transition
                     hover:bg-brand-100 dark:border-brand-700 dark:bg-brand-900/30
                     dark:text-brand-300 dark:hover:bg-brand-900/50
                     ${isBusy ? "pointer-events-none opacity-60" : ""}

@@ -9,7 +9,7 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import { BadgeCheck, MapPin, Star, Users } from "lucide-react";
+import { BadgeCheck, ChevronLeft, MapPin, Star, Users } from "lucide-react";
 import { db } from "@/lib/firebase";
 import type { UserProfile } from "@/lib/types";
 import { getTraderDisplayName, formatNumber } from "@/lib/utils";
@@ -140,7 +140,7 @@ export default function VerifiedDealersIndexPage() {
               <BadgeCheck size={22} strokeWidth={2.5} />
             </div>
             <div className="min-w-0 flex-1">
-              <h1 className="text-xl font-black sm:text-2xl">
+              <h1 className="text-xl font-extrabold sm:text-2xl">
                 معارض السيارات الموثقة
               </h1>
               <p className="mt-1 text-xs leading-6 text-white/85 sm:text-sm">
@@ -168,7 +168,7 @@ export default function VerifiedDealersIndexPage() {
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
               <BadgeCheck size={28} />
             </div>
-            <h2 className="mt-4 text-base font-black text-slate-900 dark:text-white">
+            <h2 className="mt-4 text-base font-extrabold text-slate-900 dark:text-white">
               لا توجد معارض موثقة بعد
             </h2>
             <p className="mt-1 text-xs leading-6 text-slate-500 dark:text-slate-400">
@@ -198,8 +198,8 @@ function DealerRow({ dealer }: { dealer: UserProfile }) {
     <Link
       href={`/traders/${dealer.uid}`}
       className="
-        group flex items-center gap-3 rounded-3xl border border-slate-200/70
-        bg-white p-3 transition active:scale-[0.99]
+        group flex items-center gap-3 rounded-3xl border border-slate-200/80
+        bg-white p-3 shadow-sm transition active:scale-[0.99]
         hover:border-brand-300 hover:shadow-card
         dark:border-slate-700/70 dark:bg-slate-900
         dark:hover:border-brand-700
@@ -207,7 +207,7 @@ function DealerRow({ dealer }: { dealer: UserProfile }) {
     >
       {/* الصورة + شارة التوثيق */}
       <div className="relative shrink-0">
-        <div className="relative h-16 w-16 overflow-hidden rounded-2xl ring-2 ring-slate-200 group-hover:ring-brand-300 dark:ring-slate-700 dark:group-hover:ring-brand-600">
+        <div className="relative h-14 w-14 overflow-hidden rounded-2xl ring-1 ring-slate-200 group-hover:ring-brand-300 dark:ring-slate-700 dark:group-hover:ring-brand-600">
           {photo ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -218,14 +218,14 @@ function DealerRow({ dealer }: { dealer: UserProfile }) {
               className="h-full w-full object-cover"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand-700 to-brand-500 text-2xl font-black text-white">
+            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand-700 to-brand-500 text-2xl font-extrabold text-white">
               {initial}
             </div>
           )}
         </div>
         <span
           aria-label="موثَّق"
-          className="absolute -bottom-1 -left-1 inline-flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-brand-700 text-white shadow-md dark:border-slate-900"
+          className="absolute -bottom-1 -left-1 inline-flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-brand-500 text-white shadow-sm dark:border-slate-900"
         >
           <BadgeCheck size={12} strokeWidth={2.5} />
         </span>
@@ -234,16 +234,16 @@ function DealerRow({ dealer }: { dealer: UserProfile }) {
       {/* المعلومات */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-          <h3 className="truncate text-sm font-black text-slate-900 dark:text-white">
+          <h3 className="truncate text-[15px] font-extrabold text-slate-950 dark:text-white">
             {name}
           </h3>
           <BadgeCheck
             size={13}
             strokeWidth={2.5}
-            className="shrink-0 text-brand-700 dark:text-brand-300"
+            className="shrink-0 text-brand-500 dark:text-brand-300"
           />
         </div>
-        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-xs text-slate-500 dark:text-slate-400">
           {dealer.city ? (
             <span className="inline-flex items-center gap-0.5">
               <MapPin size={10} />
@@ -259,16 +259,17 @@ function DealerRow({ dealer }: { dealer: UserProfile }) {
           {dealer.followersCount ? (
             <span className="inline-flex items-center gap-0.5">
               <Users size={10} />
-              {formatNumber(dealer.followersCount)}
+              <span className="num">{formatNumber(dealer.followersCount)}</span>
             </span>
           ) : null}
         </div>
         {dealer.listingsCount ? (
-          <div className="mt-0.5 text-[10px] font-bold text-slate-400 dark:text-slate-500">
-            {formatNumber(dealer.listingsCount)} إعلان
+          <div className="mt-0.5 text-[11px] font-bold text-slate-500 dark:text-slate-400">
+            <span className="num">{formatNumber(dealer.listingsCount)}</span> إعلان
           </div>
         ) : null}
       </div>
+      <ChevronLeft size={16} className="shrink-0 text-slate-400" aria-hidden="true" />
     </Link>
   );
 }

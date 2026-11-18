@@ -152,7 +152,7 @@ export function TransferSheet({
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
             className="
               fixed inset-x-0 bottom-0 z-[60] mx-auto max-w-lg
-              rounded-t-[28px] bg-white p-5 pb-8 shadow-2xl
+              rounded-t-3xl bg-white p-5 pb-8 shadow-2xl
             "
             dir="rtl"
           >
@@ -165,7 +165,7 @@ export function TransferSheet({
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50">
                   <ArrowLeftRight size={16} className="text-emerald-600" />
                 </div>
-                <h2 className="text-base font-black text-slate-900">
+                <h2 className="text-base font-extrabold text-slate-900">
                   تحويل رصيد
                 </h2>
               </div>
@@ -246,16 +246,16 @@ function FormStep({
   return (
     <div className="space-y-4">
       {/* Balance reminder */}
-      <div className="rounded-2xl bg-blue-50 px-4 py-3 text-center">
-        <p className="text-[11px] text-blue-600">رصيدك الحالي</p>
-        <p className="text-xl font-black text-blue-700 tabular-nums">
+      <div className="rounded-2xl bg-brand-50 px-4 py-3 text-center">
+        <p className="text-[11px] text-brand-600">رصيدك الحالي</p>
+        <p className="text-xl font-extrabold text-brand-700 tabular-nums">
           {currentBalance.toLocaleString("en-US")} BC
         </p>
       </div>
 
       {/* Phone */}
       <div>
-        <label className="flex items-center gap-1.5 text-xs font-black text-slate-700">
+        <label className="flex items-center gap-1.5 text-xs font-extrabold text-slate-700">
           <Phone size={12} />
           رقم هاتف المستلم
         </label>
@@ -268,14 +268,14 @@ function FormStep({
           className="
             mt-1.5 w-full rounded-2xl border border-slate-200 bg-white
             px-3 py-3 text-center text-base font-bold tracking-wider
-            outline-none focus:border-blue-500
+            outline-none focus:border-brand-500
           "
         />
       </div>
 
       {/* Amount */}
       <div>
-        <label className="text-xs font-black text-slate-700">
+        <label className="text-xs font-extrabold text-slate-700">
           المبلغ (BC)
         </label>
         <input
@@ -288,8 +288,8 @@ function FormStep({
           max={TRANSFER_MAX_BC}
           className="
             mt-1.5 w-full rounded-2xl border border-slate-200 bg-white
-            px-3 py-3 text-center text-2xl font-black tabular-nums
-            outline-none focus:border-blue-500
+            px-3 py-3 text-center text-2xl font-extrabold tabular-nums
+            outline-none focus:border-brand-500
           "
         />
         {/* Quick amounts */}
@@ -302,8 +302,8 @@ function FormStep({
               disabled={q > currentBalance}
               className="
                 flex-1 rounded-xl border border-slate-200 bg-slate-50 py-2
-                text-[12px] font-black text-slate-700 transition
-                hover:border-blue-300 hover:bg-blue-50
+                text-[12px] font-extrabold text-slate-700 transition
+                hover:border-brand-300 hover:bg-brand-50
                 disabled:opacity-40
               "
             >
@@ -318,7 +318,7 @@ function FormStep({
 
       {/* Note */}
       <div>
-        <label className="text-xs font-black text-slate-700">
+        <label className="text-xs font-extrabold text-slate-700">
           ملاحظة (اختياري)
         </label>
         <input
@@ -329,7 +329,7 @@ function FormStep({
           placeholder="سبب التحويل..."
           className="
             mt-1.5 w-full rounded-2xl border border-slate-200 bg-white
-            px-3 py-2.5 text-sm outline-none focus:border-blue-500
+            px-3 py-2.5 text-sm outline-none focus:border-brand-500
           "
         />
       </div>
@@ -341,8 +341,8 @@ function FormStep({
         whileTap={{ scale: 0.97 }}
         className="
           inline-flex w-full items-center justify-center gap-1.5
-          rounded-2xl bg-blue-600 py-3.5 text-sm font-black text-white
-          shadow-lg shadow-blue-500/30 transition hover:bg-blue-700
+          rounded-2xl bg-brand-600 py-3.5 text-sm font-extrabold text-white
+          shadow-lg shadow-brand-500/30 transition hover:bg-brand-700
         "
       >
         متابعة
@@ -373,8 +373,8 @@ function ConfirmStep({
   return (
     <div className="space-y-4">
       {/* Amount display */}
-      <div className="rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-700 p-6 text-center">
-        <p className="text-[12px] text-blue-100">المبلغ المُحوَّل</p>
+      <div className="rounded-3xl bg-gradient-to-br from-brand-600 to-brand-700 p-6 text-center">
+        <p className="text-[12px] text-brand-100">المبلغ المُحوَّل</p>
         <p className="mt-1 text-4xl font-black text-white tabular-nums">
           {amount} <span className="text-lg">BC</span>
         </p>
@@ -399,7 +399,7 @@ function ConfirmStep({
           disabled={submitting}
           className="
             rounded-2xl border border-slate-200 py-3.5 text-sm
-            font-black text-slate-700 transition hover:bg-slate-50
+            font-extrabold text-slate-700 transition hover:bg-slate-50
             disabled:opacity-60
           "
         >
@@ -412,7 +412,7 @@ function ConfirmStep({
           whileTap={{ scale: 0.97 }}
           className="
             inline-flex items-center justify-center gap-1.5
-            rounded-2xl bg-emerald-600 py-3.5 text-sm font-black text-white
+            rounded-2xl bg-emerald-600 py-3.5 text-sm font-extrabold text-white
             shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-700
             disabled:opacity-60
           "
@@ -452,7 +452,7 @@ function DetailRow({
         {label}
       </span>
       <span
-        className="text-[13px] font-black text-slate-900"
+        className="text-[13px] font-extrabold text-slate-900"
         dir={ltr ? "ltr" : undefined}
       >
         {value}
@@ -484,11 +484,11 @@ function SuccessStep({
         <Check size={40} className="text-emerald-600" strokeWidth={3} />
       </motion.div>
 
-      <h3 className="text-lg font-black text-slate-900">تم التحويل بنجاح!</h3>
+      <h3 className="text-lg font-extrabold text-slate-900">تم التحويل بنجاح!</h3>
       <p className="mt-1 text-sm text-slate-500">
         أرسلت{" "}
-        <span className="font-black text-emerald-600">{amount} BC</span> إلى{" "}
-        <span className="font-black text-slate-900">{recipientName}</span>
+        <span className="font-extrabold text-emerald-600">{amount} BC</span> إلى{" "}
+        <span className="font-extrabold text-slate-900">{recipientName}</span>
       </p>
 
       <motion.button
@@ -497,8 +497,8 @@ function SuccessStep({
         whileTap={{ scale: 0.97 }}
         className="
           mt-6 inline-flex w-full items-center justify-center
-          rounded-2xl bg-blue-600 py-3.5 text-sm font-black text-white
-          shadow-lg shadow-blue-500/30 transition hover:bg-blue-700
+          rounded-2xl bg-brand-600 py-3.5 text-sm font-extrabold text-white
+          shadow-lg shadow-brand-500/30 transition hover:bg-brand-700
         "
       >
         تم

@@ -5,11 +5,13 @@ import Image from "next/image";
 import { WalletTrigger } from "@/components/wallet/wallet-trigger";
 import { usePathname, useRouter } from "next/navigation";
 import { FormEvent, memo, useEffect, useState } from "react";
-import { Bell, Plus, Search, Shield, User as UserIcon } from "lucide-react";
+import { Bell, Heart, Plus, Search, Shield, User as UserIcon } from "lucide-react";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { ThemeToggle } from "./theme-toggle";
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
+import { useFeatureFlag } from "@/hooks/features/use-feature-flag";
+import type { FeatureFlagKey } from "@/lib/features/types";
 
 /**
  * Header (إعادة بناء Mobile-First — بلا تموضع absolute).
@@ -33,11 +35,20 @@ import { db } from "@/lib/firebase";
  *   كل العناصر `shrink-0` ما عدا منطقة الروابط `min-w-0` لتتقلّص أولاً.
  */
 
-const NAV_LINKS = [
+// Bratsho DS 1.0: روابط سطح المكتب بمصطلحات التطبيق («تقرير السيارة» بدل «فحص VIN»).
+// الروابط المرتبطة بميزة تحترم مفتاح تفعيلها من لوحة الإدارة، مثل مداخل الصفحة الرئيسية.
+const NAV_LINKS: { href: string; label: string; flag?: FeatureFlagKey }[] = [
   { href: "/listings", label: "الإعلانات" },
   { href: "/categories", label: "الأقسام" },
-  { href: "/vehicle-report", label: "فحص VIN" },
+  { href: "/friday-market", label: "سوق الجمعة", flag: "friday_market" },
+  { href: "/tow-trucks", label: "الساحبات", flag: "tow_service" },
+  { href: "/traders", label: "التجار", flag: "dealers" },
+  { href: "/vehicle-report", label: "تقرير السيارة" },
 ];
+
+/** زر زجاجي موحّد في الترويسة: 40×40، حواف 16 (Bratsho DS). */
+const GLASS_BTN =
+  "relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.07] text-white/90 transition hover:bg-white/15 active:scale-95";
 
 function SiteHeaderImpl() {
   const router = useRouter();
@@ -46,6 +57,49 @@ function SiteHeaderImpl() {
   const { user, profile, isAdmin } = useAuth();
   const [search, setSearch] = useState("");
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [favCount, setFavCount] = useState(0);
+  // مفاتيح التفعيل: اشتراك مشترك واحد موجود أصلاً في كل الصفحات (MaintenanceGate) — لا قراءات إضافية
+  const fridayOn = useFeatureFlag("friday_market");
+  const towOn = useFeatureFlag("tow_service");
+  const dealersOn = useFeatureFlag("dealers");
+  const flagOn: Partial<Record<FeatureFlagKey, boolean>> = {
+    friday_market: fridayOn,
+    tow_service: towOn,
+    dealers: dealersOn,
+  };
+  const navLinks = NAV_LINKS.filter((l) => !l.flag || flagOn[l.flag] !== false);
+
+  // عدّاد المفضلة (انتقل من الشريط السفلي مع أيقونة القلب — نفس الاشتراك، لا قراءات إضافية)
+  useEffect(() => {
+    if (!user) {
+      setFavCount(0);
+      return;
+    }
+    let unsub: (() => void) | null = null;
+    let cancelled = false;
+    const startSubscription = () => {
+      if (cancelled) return;
+      unsub = onSnapshot(
+        collection(db, "users", user.uid, "favorites"),
+        (snap) => setFavCount(snap.size),
+        () => setFavCount(0)
+      );
+    };
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      const id = (window as any).requestIdleCallback(startSubscription, { timeout: 2000 });
+      return () => {
+        cancelled = true;
+        (window as any).cancelIdleCallback?.(id);
+        unsub?.();
+      };
+    }
+    const t = setTimeout(startSubscription, 800);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+      unsub?.();
+    };
+  }, [user]);
 
   useEffect(() => {
     if (!user) {
@@ -100,6 +154,10 @@ function SiteHeaderImpl() {
     user?.phoneNumber?.charAt(0) ||
     "U";
 
+  // لوحة الإدارة لها ترويسة وشريط جانبي خاصّان (AdminTopbar/AdminSidebar):
+  // كانت الترويسة العامة تظهر فوقهما فتتكدّس ترويستان.
+  if (pathname?.startsWith("/admin")) return null;
+
   return (
     <header
       dir="rtl"
@@ -111,7 +169,7 @@ function SiteHeaderImpl() {
       }}
       className="
         sticky top-0 z-40 border-b border-white/10
-        bg-gradient-to-b from-[#0c1a3a] to-[#0a1330]
+        bg-gradient-to-b from-header-from to-header-to
         backdrop-blur-xl
       "
     >
@@ -140,16 +198,20 @@ function SiteHeaderImpl() {
             className="hidden min-w-0 items-center gap-5 lg:flex"
             aria-label="القائمة الرئيسية"
           >
-            {NAV_LINKS.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                prefetch={false}
-                className="whitespace-nowrap text-sm font-bold text-white/80 transition-colors hover:text-white"
-              >
-                {l.label}
-              </Link>
-            ))}
+            {navLinks.map((l) => {
+              const active = pathname === l.href || pathname?.startsWith(l.href + "/");
+              return (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  prefetch={false}
+                  aria-current={active ? "page" : undefined}
+                  className={`whitespace-nowrap text-sm font-bold transition-colors hover:text-white ${active ? "text-white" : "text-white/75"}`}
+                >
+                  {l.label}
+                </Link>
+              );
+            })}
             {isAdmin && (
               <Link
                 href="/admin"
@@ -164,6 +226,24 @@ function SiteHeaderImpl() {
 
           {/* الإجراءات (نهاية RTL = يسار) */}
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            <WalletTrigger variant="compact" className="shrink-0" />
+
+            {user && (
+              <Link
+                href="/favorites"
+                prefetch={false}
+                aria-label={favCount > 0 ? `المفضلة (${favCount})` : "المفضلة"}
+                className={GLASS_BTN}
+              >
+                <Heart size={17} />
+                {favCount > 0 && (
+                  <span className="num absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-header-to bg-action-500 px-1 text-[10px] font-extrabold leading-none text-white">
+                    {favCount > 99 ? "+99" : favCount}
+                  </span>
+                )}
+              </Link>
+            )}
+
             {user && (
               <Link
                 href="/notifications"
@@ -173,38 +253,29 @@ function SiteHeaderImpl() {
                     ? `الإشعارات (${unreadNotifications} غير مقروء)`
                     : "الإشعارات"
                 }
-                className="
-                  relative inline-flex h-9 w-9 shrink-0 items-center justify-center
-                  rounded-2xl border border-white/15 bg-white/5 text-white/90
-                  transition hover:bg-white/15 active:scale-95 sm:h-10 sm:w-10
-                "
+                className={GLASS_BTN}
               >
                 <Bell size={17} />
                 {unreadNotifications > 0 && (
-                  <span
-                    className="
-                      absolute -top-1 -right-1 flex h-4 min-w-[16px]
-                      items-center justify-center rounded-full
-                      border-2 border-[#0a1330] bg-action-500 px-1
-                      text-[9px] font-black leading-none text-white
-                    "
-                  >
+                  <span className="num absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-header-to bg-action-500 px-1 text-[10px] font-extrabold leading-none text-white">
                     {unreadNotifications > 99 ? "+99" : unreadNotifications}
                   </span>
                 )}
               </Link>
             )}
 
-            <WalletTrigger variant="compact" className="shrink-0" />
-
-            <ThemeToggle className="!h-9 !w-9 shrink-0 !border-white/15 !bg-white/10 !text-white hover:!bg-white/20 sm:!h-10 sm:!w-10" />
+            {/* تبديل الوضع الداكن: للمسجّل في الترويسة من 640px وعلى الجوال من صفحة الإعدادات؛
+                للزائر (لا يصل إلى الإعدادات) يبقى في الترويسة على كل المقاسات كما كان. */}
+            <span className={user ? "hidden sm:inline-flex" : "inline-flex"}>
+              <ThemeToggle className="!h-10 !w-10 shrink-0 !rounded-2xl !border-white/15 !bg-white/[0.07] !text-white hover:!bg-white/15" />
+            </span>
 
             <Link
               href="/add-listing"
               prefetch={false}
               className="
                 hidden shrink-0 items-center gap-1.5 rounded-2xl bg-action-500 px-3 py-2
-                text-xs font-black text-white shadow-action transition
+                text-xs font-extrabold text-white shadow-action transition
                 hover:bg-action-600 active:scale-[0.97]
                 sm:inline-flex sm:px-4 sm:py-2.5 sm:text-sm
               "
@@ -219,11 +290,10 @@ function SiteHeaderImpl() {
                 prefetch={false}
                 aria-label="حسابي"
                 className="
-                  inline-flex h-9 w-9 shrink-0 items-center justify-center
-                  overflow-hidden rounded-2xl border border-white/15
+                  inline-flex h-10 w-10 shrink-0 items-center justify-center
+                  overflow-hidden rounded-2xl border border-white/20
                   bg-gradient-to-br from-brand-600 to-brand-500
-                  text-sm font-black text-white transition active:scale-95
-                  sm:h-10 sm:w-10
+                  text-sm font-extrabold text-white transition active:scale-95
                 "
               >
                 {profile?.photoURL ? (
@@ -243,11 +313,7 @@ function SiteHeaderImpl() {
                 href="/login"
                 prefetch={false}
                 aria-label="تسجيل الدخول"
-                className="
-                  inline-flex h-9 w-9 shrink-0 items-center justify-center
-                  rounded-2xl border border-white/15 bg-white/5 text-white
-                  transition hover:bg-white/15 active:scale-95 sm:h-10 sm:w-10
-                "
+                className={GLASS_BTN}
               >
                 <UserIcon size={18} />
               </Link>

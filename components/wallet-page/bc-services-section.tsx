@@ -63,7 +63,7 @@ export function BCServicesSection({ onChoose }: Props) {
     >
       {/* Header */}
       <div className="flex items-center justify-between px-1">
-        <h2 className="text-sm font-black text-slate-900 dark:text-white">
+        <h2 className="text-sm font-extrabold text-slate-900 dark:text-white">
           باقات الترقية
         </h2>
         <span className="text-[11px] font-bold text-slate-400">
@@ -114,7 +114,7 @@ function BCServiceCard({
     >
       {/* شارة تسويقية */}
       {style.badge && (
-        <span className="absolute -top-2 left-3 rounded-full bg-gradient-to-l from-action-500 to-action-600 px-2.5 py-0.5 text-[9px] font-black text-white shadow-sm">
+        <span className="absolute -top-2 left-3 rounded-full bg-gradient-to-l from-action-500 to-action-600 px-2.5 py-0.5 text-[9px] font-extrabold text-white shadow-sm">
           {style.badge}
         </span>
       )}
@@ -131,7 +131,7 @@ function BCServiceCard({
       {/* المحتوى */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-          <h3 className="text-sm font-black text-slate-900 dark:text-white">
+          <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
             {meta.label}
           </h3>
           <span className="text-sm">{meta.emoji}</span>
@@ -140,7 +140,7 @@ function BCServiceCard({
           {meta.hint}
         </p>
         <div className="mt-1.5 flex items-center gap-2">
-          <span className={`text-[14px] font-black tabular-nums ${style.priceColor}`}>
+          <span className={`text-[14px] font-extrabold tabular-nums ${style.priceColor}`}>
             {price.toLocaleString("en-US")} BC
           </span>
           <span className="text-slate-300 dark:text-slate-600">/</span>

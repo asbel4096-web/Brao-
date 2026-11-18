@@ -171,7 +171,7 @@ export default function AdminListingsPage() {
           >
             {t.label}
             <span
-              className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-black ${
+              className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-extrabold ${
                 filter === t.key
                   ? "bg-white/20 text-white"
                   : "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200"
@@ -203,7 +203,7 @@ export default function AdminListingsPage() {
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-base font-black dark:text-white">{it.title}</h3>
+                    <h3 className="text-base font-extrabold dark:text-white">{it.title}</h3>
                     <span className={
                       it.status === "approved" ? "badge-status-approved" :
                       it.status === "rejected" ? "badge-status-rejected" :
@@ -215,7 +215,7 @@ export default function AdminListingsPage() {
                   <p className="mt-1 text-sm text-slate-500">
                     {it.city} • {it.category} • {it.sellerName} • {timeAgo(it.createdAt)}
                   </p>
-                  <p className="mt-1 text-sm font-black text-brand-700 dark:text-brand-300">
+                  <p className="mt-1 text-sm font-extrabold text-brand-700 dark:text-brand-300">
                     {formatPrice(it.price)}
                   </p>
                   <div className="mt-1.5 flex flex-wrap gap-3 text-xs text-slate-500 dark:text-slate-400">
@@ -330,7 +330,7 @@ function RejectDialog({
       >
         <div className="flex items-start justify-between gap-4 border-b border-slate-100 p-5 dark:border-slate-800">
           <div>
-            <h3 className="text-lg font-black text-slate-900 dark:text-white">
+            <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">
               رفض الإعلان
             </h3>
             <p className="mt-1 text-sm text-slate-500">

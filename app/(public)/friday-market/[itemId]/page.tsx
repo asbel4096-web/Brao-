@@ -168,7 +168,7 @@ export default function FridayItemPage() {
     return (
       <div className="container py-16 text-center" dir="rtl">
         <div className="text-4xl">🛒</div>
-        <p className="mt-3 text-lg font-black text-slate-800 dark:text-slate-100">
+        <p className="mt-3 text-lg font-extrabold text-slate-800 dark:text-slate-100">
           الإعلان غير موجود
         </p>
         <Link
@@ -218,7 +218,7 @@ export default function FridayItemPage() {
         >
           <ArrowRight size={22} />
         </button>
-        <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-l from-orange-500 to-red-600 px-2.5 py-1 text-[11px] font-black text-white">
+        <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-l from-action-500 to-red-600 px-2.5 py-1 text-[11px] font-extrabold text-white">
           <Flame size={12} /> عرض الجمعة
         </span>
 
@@ -304,10 +304,10 @@ export default function FridayItemPage() {
         <p className="text-3xl font-black text-action-600 tabular-nums dark:text-action-400">
           {formatPrice(item.price)}
         </p>
-        <h1 className="mt-1 text-lg font-black leading-snug text-slate-900 dark:text-white">
+        <h1 className="mt-1 text-lg font-extrabold leading-snug text-slate-900 dark:text-white">
           {item.title}
         </h1>
-        <p className="mt-1.5 text-sm font-semibold text-slate-400">
+        <p className="mt-1.5 text-sm font-bold text-slate-400">
           {fridayCategoryLabel(item.category)}
           {item.city ? ` · ${item.city}` : ""} · {item.ownerName}
         </p>
@@ -316,7 +316,7 @@ export default function FridayItemPage() {
       {/* إعلانات مشابهة */}
       {similar.length > 0 && (
         <div className="mt-7">
-          <h2 className="container mb-2 text-base font-black text-slate-900 dark:text-white">
+          <h2 className="container mb-2 text-base font-extrabold text-slate-900 dark:text-white">
             عروض مشابهة
           </h2>
           <div className="flex gap-3 overflow-x-auto px-4 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -339,7 +339,7 @@ export default function FridayItemPage() {
             href={`https://wa.me/${wa}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-emerald-500 py-3 text-sm font-black text-white active:scale-95"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-emerald-500 py-3 text-sm font-extrabold text-white active:scale-95"
           >
             <MessageCircle size={18} /> واتساب
           </a>
@@ -347,13 +347,13 @@ export default function FridayItemPage() {
             whileTap={{ scale: 0.95 }}
             onClick={startChat}
             disabled={chatLoading}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-slate-900 py-3 text-sm font-black text-white active:scale-95 disabled:opacity-60 dark:bg-white dark:text-slate-900"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-slate-900 py-3 text-sm font-extrabold text-white active:scale-95 disabled:opacity-60 dark:bg-white dark:text-slate-900"
           >
             <MessageCircle size={18} /> {chatLoading ? "..." : "مراسلة"}
           </motion.button>
           <a
             href={item.phone ? `tel:${item.phone}` : "#"}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-action-500 py-3 text-sm font-black text-white active:scale-95"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-action-500 py-3 text-sm font-extrabold text-white active:scale-95"
           >
             <Phone size={18} /> اتصال
           </a>

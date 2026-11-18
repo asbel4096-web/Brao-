@@ -189,7 +189,7 @@ export function CredentialsManager() {
             <KeyRound size={18} />
           </div>
           <div className="min-w-0">
-            <div className="text-sm font-black dark:text-white">
+            <div className="text-sm font-extrabold dark:text-white">
               اسم المستخدم وكلمة المرور
             </div>
             <div className="truncate text-xs text-slate-500">
@@ -221,7 +221,7 @@ export function CredentialsManager() {
             "
           >
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-black text-slate-900 dark:text-white">
+              <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">
                 {hasCreds ? "تغيير بيانات الدخول" : "إنشاء بيانات الدخول"}
               </h3>
               <button
@@ -237,7 +237,7 @@ export function CredentialsManager() {
               {/* تأكيد الهوية: كلمة المرور الحالية (للمستخدم الذي أنشأ بيانات دخول) */}
               {hasCreds && (
                 <div className="rounded-2xl bg-amber-50 p-3 dark:bg-amber-950/20">
-                  <label className="mb-1.5 block text-sm font-black text-amber-800 dark:text-amber-300">
+                  <label className="mb-1.5 block text-sm font-extrabold text-amber-800 dark:text-amber-300">
                     كلمة المرور الحالية
                   </label>
                   <div className="relative">
@@ -263,7 +263,7 @@ export function CredentialsManager() {
 
               {/* اسم المستخدم */}
               <div>
-                <label className="mb-1.5 block text-sm font-black text-slate-900 dark:text-white">
+                <label className="mb-1.5 block text-sm font-extrabold text-slate-900 dark:text-white">
                   اسم المستخدم
                 </label>
                 <div className="relative">
@@ -298,7 +298,7 @@ export function CredentialsManager() {
 
               {/* كلمة المرور */}
               <div>
-                <label className="mb-1.5 block text-sm font-black text-slate-900 dark:text-white">
+                <label className="mb-1.5 block text-sm font-extrabold text-slate-900 dark:text-white">
                   كلمة المرور{" "}
                   {hasCreds && (
                     <span className="text-xs font-normal text-slate-400">
@@ -334,7 +334,7 @@ export function CredentialsManager() {
               {/* تأكيد كلمة المرور (يظهر فقط عند كتابة كلمة مرور) */}
               {password.length > 0 && (
                 <div>
-                  <label className="mb-1.5 block text-sm font-black text-slate-900 dark:text-white">
+                  <label className="mb-1.5 block text-sm font-extrabold text-slate-900 dark:text-white">
                     تأكيد كلمة المرور
                   </label>
                   <div className="relative">
@@ -359,7 +359,7 @@ export function CredentialsManager() {
                 <button
                   type="button"
                   onClick={() => !saving && setOpen(false)}
-                  className="flex-1 rounded-2xl border-2 border-slate-200 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                  className="flex-1 rounded-2xl border-2 border-slate-200 py-3 text-sm font-extrabold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
                 >
                   إلغاء
                 </button>
@@ -367,7 +367,7 @@ export function CredentialsManager() {
                   type="button"
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex-1 rounded-2xl bg-brand-700 py-3 text-sm font-black text-white shadow-blue transition hover:bg-brand-800 active:scale-[0.99] disabled:opacity-60"
+                  className="flex-1 rounded-2xl bg-brand-700 py-3 text-sm font-extrabold text-white shadow-blue transition hover:bg-brand-800 active:scale-[0.99] disabled:opacity-60"
                 >
                   {saving ? "جارٍ الحفظ..." : "حفظ"}
                 </button>

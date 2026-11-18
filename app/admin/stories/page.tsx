@@ -161,7 +161,7 @@ export default function AdminStoriesPage() {
             <Clapperboard size={22} />
           </div>
           <div>
-            <h1 className="text-xl font-black text-slate-900 dark:text-white">
+            <h1 className="text-xl font-extrabold text-slate-900 dark:text-white">
               إدارة القصص
             </h1>
             <p className="text-xs text-slate-500">
@@ -236,7 +236,7 @@ export default function AdminStoriesPage() {
 
               {/* المعلومات */}
               <div className="p-2.5">
-                <p className="truncate text-sm font-black text-slate-900 dark:text-white">
+                <p className="truncate text-sm font-extrabold text-slate-900 dark:text-white">
                   {s.ownerName}
                 </p>
                 <p className="mt-0.5 text-[11px] text-slate-500">

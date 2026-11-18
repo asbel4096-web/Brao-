@@ -218,7 +218,7 @@ export default function AdminBroadcastPage() {
             <Megaphone size={24} strokeWidth={2.2} />
           </div>
           <div>
-            <h1 className="text-lg font-black text-slate-900 dark:text-white sm:text-xl">
+            <h1 className="text-lg font-extrabold text-slate-900 dark:text-white sm:text-xl">
               إرسال إشعار لكل المستخدمين
             </h1>
             <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
@@ -230,7 +230,7 @@ export default function AdminBroadcastPage() {
           href="/admin/broadcast/history"
           className="
             inline-flex h-10 shrink-0 items-center gap-1.5 rounded-2xl
-            border border-slate-200 bg-white px-4 text-xs font-black
+            border border-slate-200 bg-white px-4 text-xs font-extrabold
             text-slate-700 transition hover:bg-slate-50
             dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200
             dark:hover:bg-slate-800
@@ -256,7 +256,7 @@ export default function AdminBroadcastPage() {
 
         {/* نوع الـbroadcast */}
         <div className="card p-4 sm:p-5">
-          <label className="mb-3 block text-sm font-black text-slate-900 dark:text-white">
+          <label className="mb-3 block text-sm font-extrabold text-slate-900 dark:text-white">
             نوع الإشعار
           </label>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -283,7 +283,7 @@ export default function AdminBroadcastPage() {
                     <Icon size={16} />
                   </div>
                   <span
-                    className={`text-[11px] font-black ${
+                    className={`text-[11px] font-extrabold ${
                       active ? TEXT_FOR[t.key] : "text-slate-700 dark:text-slate-300"
                     }`}
                   >
@@ -304,7 +304,7 @@ export default function AdminBroadcastPage() {
           <div className="mb-4">
             <label
               htmlFor="bc-title"
-              className="mb-1.5 block text-sm font-black text-slate-900 dark:text-white"
+              className="mb-1.5 block text-sm font-extrabold text-slate-900 dark:text-white"
             >
               العنوان
               <span className="ms-1 text-rose-500">*</span>
@@ -334,7 +334,7 @@ export default function AdminBroadcastPage() {
           <div className="mb-4">
             <label
               htmlFor="bc-body"
-              className="mb-1.5 block text-sm font-black text-slate-900 dark:text-white"
+              className="mb-1.5 block text-sm font-extrabold text-slate-900 dark:text-white"
             >
               النص
               <span className="ms-1 text-rose-500">*</span>
@@ -364,7 +364,7 @@ export default function AdminBroadcastPage() {
           <div>
             <label
               htmlFor="bc-link"
-              className="mb-1.5 block text-sm font-black text-slate-900 dark:text-white"
+              className="mb-1.5 block text-sm font-extrabold text-slate-900 dark:text-white"
             >
               <LinkIcon size={12} className="me-1 inline" />
               رابط عند الضغط (اختياري)
@@ -392,7 +392,7 @@ export default function AdminBroadcastPage() {
 
           {/* الشريحة المستهدفة */}
           <div>
-            <label className="mb-1.5 block text-sm font-black text-slate-900 dark:text-white">
+            <label className="mb-1.5 block text-sm font-extrabold text-slate-900 dark:text-white">
               الشريحة المستهدفة
             </label>
             <select
@@ -417,7 +417,7 @@ export default function AdminBroadcastPage() {
             <div>
               <label
                 htmlFor="bc-target"
-                className="mb-1.5 block text-sm font-black text-slate-900 dark:text-white"
+                className="mb-1.5 block text-sm font-extrabold text-slate-900 dark:text-white"
               >
                 معرّف المستخدم (UID)
               </label>
@@ -442,7 +442,7 @@ export default function AdminBroadcastPage() {
           <div>
             <label
               htmlFor="bc-image"
-              className="mb-1.5 block text-sm font-black text-slate-900 dark:text-white"
+              className="mb-1.5 block text-sm font-extrabold text-slate-900 dark:text-white"
             >
               صورة الإشعار (اختياري)
             </label>
@@ -518,7 +518,7 @@ export default function AdminBroadcastPage() {
         {/* معاينة */}
         {(trimmedTitle || trimmedBody) && (
           <div className="card p-4 sm:p-5">
-            <h3 className="mb-2 text-xs font-black uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            <h3 className="mb-2 text-xs font-extrabold uppercase tracking-wide text-slate-500 dark:text-slate-400">
               معاينة الإشعار
             </h3>
             <div className="flex items-start gap-3 rounded-2xl bg-slate-50 p-3 dark:bg-slate-900/50">
@@ -528,7 +528,7 @@ export default function AdminBroadcastPage() {
                 <PreviewIcon size={18} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="line-clamp-1 text-sm font-black text-slate-900 dark:text-white">
+                <p className="line-clamp-1 text-sm font-extrabold text-slate-900 dark:text-white">
                   {trimmedTitle || "العنوان..."}
                 </p>
                 <p className="mt-0.5 line-clamp-3 text-[13px] leading-6 text-slate-600 dark:text-slate-300">
@@ -546,7 +546,7 @@ export default function AdminBroadcastPage() {
           disabled={!canSubmit}
           className="
             flex w-full items-center justify-center gap-2 rounded-2xl
-            bg-action-500 px-6 py-4 text-base font-black text-white
+            bg-action-500 px-6 py-4 text-base font-extrabold text-white
             shadow-action transition
             hover:bg-action-600 active:scale-[0.98]
             disabled:cursor-not-allowed disabled:opacity-50
@@ -573,7 +573,7 @@ export default function AdminBroadcastPage() {
                 size={20}
                 className="text-emerald-600 dark:text-emerald-400"
               />
-              <h3 className="text-sm font-black text-emerald-900 dark:text-emerald-100">
+              <h3 className="text-sm font-extrabold text-emerald-900 dark:text-emerald-100">
                 تم الإرسال بنجاح
               </h3>
             </div>
@@ -622,8 +622,8 @@ function Stat({
       <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
         {label}
       </p>
-      <p className={`mt-1 text-2xl font-black tabular-nums ${color}`}>
-        {value.toLocaleString("ar-LY")}
+      <p className={`mt-1 text-2xl font-extrabold tabular-nums ${color}`}>
+        {value.toLocaleString("en-US")}
       </p>
     </div>
   );

@@ -109,7 +109,7 @@ export default function WalletSettingsPage() {
           <ChevronRight size={16} />
         </button>
         <div>
-          <h1 className="text-lg font-black text-slate-900 dark:text-white">
+          <h1 className="text-lg font-extrabold text-slate-900 dark:text-white">
             إعدادات المحفظة
           </h1>
           <p className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -126,7 +126,7 @@ export default function WalletSettingsPage() {
               flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl
               transition-colors
               ${localEnabled
-                ? "bg-blue-50 text-blue-600 dark:bg-blue-900/30"
+                ? "bg-brand-50 text-brand-600 dark:bg-brand-900/30"
                 : "bg-slate-100 text-slate-400 dark:bg-slate-800"
               }
             `}
@@ -135,7 +135,7 @@ export default function WalletSettingsPage() {
           </div>
 
           <div className="min-w-0 flex-1">
-            <h2 className="text-base font-black text-slate-900 dark:text-white">
+            <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
               نظام المحفظة (BC)
             </h2>
             <p className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-400">
@@ -153,7 +153,7 @@ export default function WalletSettingsPage() {
             className={`
               relative h-8 w-14 shrink-0 rounded-full transition-colors
               disabled:opacity-60
-              ${localEnabled ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-700"}
+              ${localEnabled ? "bg-brand-600" : "bg-slate-300 dark:bg-slate-700"}
             `}
             aria-label="تبديل المحفظة"
           >
@@ -167,9 +167,9 @@ export default function WalletSettingsPage() {
               `}
             >
               {saving ? (
-                <Loader2 size={12} className="animate-spin text-blue-600" />
+                <Loader2 size={12} className="animate-spin text-brand-600" />
               ) : localEnabled ? (
-                <Check size={12} className="text-blue-600" />
+                <Check size={12} className="text-brand-600" />
               ) : null}
             </motion.span>
           </button>
@@ -194,7 +194,7 @@ export default function WalletSettingsPage() {
 
       {/* What gets hidden */}
       <div className="mt-4 rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/40">
-        <p className="text-[12px] font-black text-slate-700 dark:text-slate-200">
+        <p className="text-[12px] font-extrabold text-slate-700 dark:text-slate-200">
           عند الإخفاء، يختفي:
         </p>
         <ul className="mt-2 space-y-1.5 text-[11px] text-slate-600 dark:text-slate-400">

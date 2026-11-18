@@ -203,7 +203,7 @@ export function TraderProfileHeader({
           >
             <Bell size={16} strokeWidth={2.2} />
             {unreadNotifications > 0 && (
-              <span className="absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full bg-blue-600 px-1 text-[10px] font-black text-white ring-2 ring-white">
+              <span className="absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full bg-brand-600 px-1 text-[10px] font-extrabold text-white ring-2 ring-white">
                 {unreadNotifications > 9 ? "9+" : unreadNotifications}
               </span>
             )}
@@ -223,7 +223,7 @@ export function TraderProfileHeader({
       {/* ============================================================
           Content (sits on white background)
          ============================================================ */}
-      <div className="relative -mt-6 rounded-t-[28px] bg-white px-4 pb-2 pt-4 dark:bg-slate-950 sm:px-5">
+      <div className="relative -mt-6 rounded-t-3xl bg-white px-4 pb-2 pt-4 dark:bg-slate-950 sm:px-5">
         {/* Identity row */}
         <div className="flex items-start gap-3">
           {/* Logo */}
@@ -237,7 +237,7 @@ export function TraderProfileHeader({
                 sizes="112px"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-600 to-blue-800 text-3xl font-black text-white">
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand-600 to-brand-800 text-3xl font-black text-white">
                 {displayName.charAt(0).toUpperCase()}
               </div>
             )}
@@ -246,13 +246,13 @@ export function TraderProfileHeader({
           {/* Name + info column */}
           <div className="min-w-0 flex-1 pt-2">
             <div className="flex items-center gap-1.5">
-              <h1 className="truncate text-lg font-black text-slate-950 dark:text-white sm:text-xl">
+              <h1 className="truncate text-lg font-extrabold text-slate-950 dark:text-white sm:text-xl">
                 {displayName}
               </h1>
               {isVerified && (
                 <BadgeCheck
                   size={18}
-                  className="shrink-0 text-blue-600 dark:text-blue-400"
+                  className="shrink-0 text-brand-600 dark:text-brand-400"
                   strokeWidth={2.5}
                   aria-label="موثق"
                 />
@@ -275,7 +275,7 @@ export function TraderProfileHeader({
               {reviewsCount > 0 && (
                 <div className="flex items-center gap-1 text-[12px]">
                   <Star size={12} className="fill-amber-400 text-amber-400" />
-                  <span className="font-black text-slate-900 dark:text-white">
+                  <span className="font-extrabold text-slate-900 dark:text-white">
                     {ratingText}
                   </span>
                   <span className="text-slate-500 dark:text-slate-400">
@@ -286,7 +286,7 @@ export function TraderProfileHeader({
               {followersN > 0 && (
                 <div className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
                   <FollowersStack count={Math.min(4, followersN)} />
-                  <span className="font-black text-slate-700 dark:text-slate-200">
+                  <span className="font-extrabold text-slate-700 dark:text-slate-200">
                     +{formatNumber(followersN)}
                   </span>
                 </div>
@@ -309,11 +309,11 @@ export function TraderProfileHeader({
               whileTap={{ scale: 0.97 }}
               className={`
                 inline-flex items-center justify-center gap-1.5
-                rounded-2xl py-3 text-sm font-black shadow-lg transition
+                rounded-2xl py-3 text-sm font-extrabold shadow-lg transition
                 disabled:opacity-60
                 ${isFollowing
                   ? "bg-slate-100 text-slate-900 ring-1 ring-slate-200 hover:bg-slate-200 dark:bg-slate-800 dark:text-white dark:ring-slate-700"
-                  : "bg-blue-600 text-white shadow-blue-500/30 hover:bg-blue-700"
+                  : "bg-brand-600 text-white shadow-brand-500/30 hover:bg-brand-700"
                 }
               `}
             >
@@ -336,7 +336,7 @@ export function TraderProfileHeader({
               className="
                 inline-flex items-center justify-center gap-1.5
                 rounded-2xl border border-slate-200 bg-white py-3
-                text-sm font-black text-slate-900 shadow-sm transition
+                text-sm font-extrabold text-slate-900 shadow-sm transition
                 hover:bg-slate-50
                 dark:border-slate-700 dark:bg-slate-900 dark:text-white
                 dark:hover:bg-slate-800
@@ -355,7 +355,7 @@ export function TraderProfileHeader({
                 whileTap={{ scale: 0.97 }}
                 className="
                   inline-flex items-center justify-center gap-1.5
-                  rounded-2xl bg-emerald-500 py-3 text-sm font-black
+                  rounded-2xl bg-emerald-500 py-3 text-sm font-extrabold
                   text-white shadow-lg shadow-emerald-500/30 transition
                   hover:bg-emerald-600
                 "
@@ -372,9 +372,9 @@ export function TraderProfileHeader({
               href="/profile/edit"
               className="
                 inline-flex items-center justify-center gap-1.5
-                rounded-2xl bg-blue-600 py-3 text-sm font-black
-                text-white shadow-lg shadow-blue-500/30 transition
-                hover:bg-blue-700 active:scale-[0.97]
+                rounded-2xl bg-brand-600 py-3 text-sm font-extrabold
+                text-white shadow-lg shadow-brand-500/30 transition
+                hover:bg-brand-700 active:scale-[0.97]
               "
             >
               <Pencil size={13} />
@@ -385,7 +385,7 @@ export function TraderProfileHeader({
               className="
                 inline-flex items-center justify-center gap-1.5
                 rounded-2xl border border-slate-200 bg-white py-3
-                text-sm font-black text-slate-900 transition
+                text-sm font-extrabold text-slate-900 transition
                 hover:bg-slate-50 active:scale-[0.97]
                 dark:border-slate-700 dark:bg-slate-900 dark:text-white
                 dark:hover:bg-slate-800
@@ -479,8 +479,8 @@ function StatItem({
 }) {
   return (
     <div className="flex flex-col items-center gap-1.5 px-1 text-center">
-      <Icon size={18} className="text-blue-600 dark:text-blue-400" strokeWidth={2} />
-      <span className="text-base font-black tabular-nums text-slate-950 dark:text-white">
+      <Icon size={18} className="text-brand-600 dark:text-brand-400" strokeWidth={2} />
+      <span className="text-base font-extrabold tabular-nums text-slate-950 dark:text-white">
         {value}
       </span>
       <span className="text-[10px] leading-tight text-slate-500 dark:text-slate-400">
@@ -499,10 +499,10 @@ function FollowersStack({ count }: { count: number }) {
           className={`
             h-5 w-5 rounded-full ring-2 ring-white dark:ring-slate-900
             bg-gradient-to-br
-            ${i === 0 ? "from-blue-500 to-indigo-600" : ""}
-            ${i === 1 ? "from-purple-500 to-pink-600" : ""}
-            ${i === 2 ? "from-emerald-500 to-teal-600" : ""}
-            ${i === 3 ? "from-amber-500 to-orange-600" : ""}
+            ${i === 0 ? "from-brand-500 to-brand-600" : ""}
+            ${i === 1 ? "from-brand-500 to-action-500" : ""}
+            ${i === 2 ? "from-emerald-500 to-emerald-700" : ""}
+            ${i === 3 ? "from-amber-500 to-action-600" : ""}
           `}
         />
       ))}
@@ -540,14 +540,14 @@ function StoriesRings({
         <button
           type="button"
           className="
-            inline-flex items-center gap-0.5 text-[12px] font-black
-            text-blue-600 dark:text-blue-400
+            inline-flex items-center gap-0.5 text-[12px] font-extrabold
+            text-brand-600 dark:text-brand-400
           "
         >
           <ChevronLeft size={12} />
           عرض الكل
         </button>
-        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+        <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
           القصص
         </span>
       </div>
@@ -571,14 +571,14 @@ function StoriesRings({
             >
               <div className="
                 flex h-16 w-16 items-center justify-center
-                rounded-full border-2 border-dashed border-blue-400
-                bg-blue-50 text-blue-600 transition
-                active:scale-95 hover:border-blue-500
-                dark:border-blue-500/60 dark:bg-blue-950/40 dark:text-blue-300
+                rounded-full border-2 border-dashed border-brand-400
+                bg-brand-50 text-brand-600 transition
+                active:scale-95 hover:border-brand-500
+                dark:border-brand-500/60 dark:bg-brand-950/40 dark:text-brand-300
               ">
                 <Plus size={24} strokeWidth={2.5} />
               </div>
-              <span className="text-[10px] font-black text-blue-600 dark:text-blue-300">
+              <span className="text-[10px] font-extrabold text-brand-600 dark:text-brand-300">
                 إضافة قصة
               </span>
             </button>
@@ -633,7 +633,7 @@ function StoryRing({
         className={`
           relative h-16 w-16 rounded-full p-[2.5px]
           ${hasContent
-            ? "bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700"
+            ? "bg-gradient-to-br from-brand-500 via-brand-600 to-brand-700"
             : "bg-slate-200 dark:bg-slate-800"
           }
         `}
@@ -654,13 +654,13 @@ function StoryRing({
           )}
         </div>
         {ring.count > 1 && (
-          <div className="absolute -bottom-0.5 -right-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-blue-600 px-1 text-[10px] font-black text-white ring-2 ring-white dark:ring-slate-950">
+          <div className="absolute -bottom-0.5 -right-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-brand-600 px-1 text-[10px] font-extrabold text-white ring-2 ring-white dark:ring-slate-950">
             {ring.count}
           </div>
         )}
       </div>
       <span className="
-        max-w-[68px] truncate text-[10px] font-black
+        max-w-[68px] truncate text-[10px] font-extrabold
         text-slate-700 dark:text-slate-300
       ">
         {ring.shortLabel}

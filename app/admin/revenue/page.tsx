@@ -93,7 +93,7 @@ export default function AdminRevenuePage() {
           <ArrowRight size={20} />
         </Link>
         <div>
-          <h1 className="text-xl font-black text-slate-900 dark:text-white sm:text-2xl">
+          <h1 className="text-xl font-extrabold text-slate-900 dark:text-white sm:text-2xl">
             الإيرادات واقتصاد BC
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -127,7 +127,7 @@ export default function AdminRevenuePage() {
                 <span className="text-4xl font-black tabular-nums sm:text-5xl">
                   {arNum(data.totalRevenue)}
                 </span>
-                <span className="rounded-lg bg-emerald-500/20 px-2 py-1 text-sm font-black text-emerald-300">
+                <span className="rounded-lg bg-emerald-500/20 px-2 py-1 text-sm font-extrabold text-emerald-300">
                   BC
                 </span>
               </div>
@@ -159,7 +159,7 @@ export default function AdminRevenuePage() {
 
           {/* تفصيل حسب الخدمة */}
           <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <h2 className="mb-3 text-sm font-black text-slate-900 dark:text-white">
+            <h2 className="mb-3 text-sm font-extrabold text-slate-900 dark:text-white">
               الإيراد حسب الخدمة
             </h2>
             {data.byService.length === 0 ? (
@@ -172,7 +172,7 @@ export default function AdminRevenuePage() {
                       <span className="font-bold text-slate-600 dark:text-slate-300">
                         {s.label}
                       </span>
-                      <span className="font-black tabular-nums text-slate-900 dark:text-white">
+                      <span className="font-extrabold tabular-nums text-slate-900 dark:text-white">
                         {arNum(s.amount)} BC
                       </span>
                     </div>
@@ -219,7 +219,7 @@ function MiniStat({
       <div className={`mb-2 flex h-9 w-9 items-center justify-center rounded-2xl ${chip[tone]}`}>
         <Icon size={18} />
       </div>
-      <div className="text-lg font-black tabular-nums text-slate-900 dark:text-white">
+      <div className="text-lg font-extrabold tabular-nums text-slate-900 dark:text-white">
         {value}
       </div>
       <div className="mt-0.5 text-[11px] font-bold text-slate-500 dark:text-slate-400">

@@ -53,7 +53,7 @@ export function SafetyTipsCard() {
         <div className="min-w-0">
           <h2
             id="safety-tips-title"
-            className="text-base font-black text-white sm:text-lg"
+            className="text-base font-extrabold text-white sm:text-lg"
           >
             نصائح للسلامة
           </h2>

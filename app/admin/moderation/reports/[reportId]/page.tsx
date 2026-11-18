@@ -111,12 +111,12 @@ export default function ReportDetailPage() {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center dark:border-slate-800 dark:bg-slate-900">
         <Flag size={36} className="mx-auto mb-2 text-slate-300 dark:text-slate-600" />
-        <p className="text-sm font-black text-slate-700 dark:text-slate-200">
+        <p className="text-sm font-extrabold text-slate-700 dark:text-slate-200">
           البلاغ غير موجود
         </p>
         <Link
           href="/admin/moderation/reports"
-          className="mt-3 inline-flex items-center gap-1 text-xs font-black text-brand-700 hover:underline dark:text-brand-300"
+          className="mt-3 inline-flex items-center gap-1 text-xs font-extrabold text-brand-700 hover:underline dark:text-brand-300"
         >
           العودة للقائمة
           <ArrowRight size={14} />
@@ -236,11 +236,11 @@ export default function ReportDetailPage() {
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[11px] font-black text-slate-500 dark:text-slate-400">
+              <span className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400">
                 بلاغ على {TARGET_TYPE_LABELS[report.targetType]}
               </span>
               <span
-                className={`rounded-full px-2 py-0.5 text-[10px] font-black ${
+                className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
                   report.status === "pending"
                     ? "bg-amber-500 text-white"
                     : report.status === "resolved"
@@ -253,7 +253,7 @@ export default function ReportDetailPage() {
                 {STATUS_LABELS[report.status]}
               </span>
             </div>
-            <h1 className="mt-1 text-lg font-black text-slate-900 dark:text-white">
+            <h1 className="mt-1 text-lg font-extrabold text-slate-900 dark:text-white">
               {getReasonLabel(report.targetType, report.reason)}
             </h1>
             {report.targetMeta?.title && (
@@ -267,7 +267,7 @@ export default function ReportDetailPage() {
         {/* Description */}
         {report.description && (
           <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
-            <p className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               تفاصيل المُبلِّغ
             </p>
             <p className="mt-1 text-sm text-slate-700 dark:text-slate-200">
@@ -279,7 +279,7 @@ export default function ReportDetailPage() {
         {/* Snapshot (comment text لو وُجد) */}
         {report.targetMeta?.snapshot && (
           <div className="mt-3 rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
-            <p className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               نص التعليق
             </p>
             <p className="mt-1 text-sm italic text-slate-700 dark:text-slate-200">
@@ -300,10 +300,10 @@ export default function ReportDetailPage() {
         {/* Resolution info (لو معالَج) */}
         {!isPending && report.resolution && (
           <div className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-900/40 dark:bg-emerald-900/20">
-            <p className="text-[11px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+            <p className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
               الإجراء المتخذ
             </p>
-            <p className="mt-1 text-sm font-black text-emerald-900 dark:text-emerald-100">
+            <p className="mt-1 text-sm font-extrabold text-emerald-900 dark:text-emerald-100">
               {RESOLUTIONS.find((r) => r.key === report.resolution)?.label || report.resolution}
             </p>
             <div className="mt-1 flex flex-wrap gap-x-3 text-[10px] text-emerald-700 dark:text-emerald-300">
@@ -318,7 +318,7 @@ export default function ReportDetailPage() {
       {targetLink && (
         <Link
           href={targetLink}
-          className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white p-3 text-sm font-black text-brand-700 transition hover:border-brand-300 dark:border-slate-800 dark:bg-slate-900 dark:text-brand-300"
+          className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white p-3 text-sm font-extrabold text-brand-700 transition hover:border-brand-300 dark:border-slate-800 dark:bg-slate-900 dark:text-brand-300"
         >
           <ExternalLink size={14} />
           {targetLinkLabel}
@@ -328,7 +328,7 @@ export default function ReportDetailPage() {
       {/* Actions */}
       {isPending && can("reports.handle") && (
         <section>
-          <h2 className="mb-2 px-1 text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+          <h2 className="mb-2 px-1 text-xs font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
             الإجراءات
           </h2>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -383,7 +383,7 @@ export default function ReportDetailPage() {
 
       {/* Meta */}
       <div className="rounded-2xl border border-slate-200 bg-white p-4 text-[11px] dark:border-slate-800 dark:bg-slate-900">
-        <h3 className="mb-2 font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+        <h3 className="mb-2 font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
           معلومات تقنية
         </h3>
         <dl className="space-y-1.5 text-slate-600 dark:text-slate-300">
@@ -444,7 +444,7 @@ function ActionBtn({
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-black text-slate-900 dark:text-white">{label}</p>
+        <p className="text-sm font-extrabold text-slate-900 dark:text-white">{label}</p>
         <p className="mt-0.5 text-[11px] leading-5 text-slate-500 dark:text-slate-400">
           {description}
         </p>

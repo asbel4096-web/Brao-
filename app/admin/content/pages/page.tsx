@@ -88,7 +88,7 @@ export default function CmsPagesListPage() {
             <FileText size={20} strokeWidth={2.2} />
           </div>
           <div>
-            <h1 className="text-lg font-black text-slate-900 dark:text-white sm:text-xl">
+            <h1 className="text-lg font-extrabold text-slate-900 dark:text-white sm:text-xl">
               صفحات الموقع
             </h1>
             <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
@@ -99,7 +99,7 @@ export default function CmsPagesListPage() {
         <button
           type="button"
           onClick={() => setNewSlugDialog(true)}
-          className="inline-flex h-10 items-center gap-1.5 rounded-2xl bg-action-500 px-3 text-xs font-black text-white shadow-sm transition hover:bg-action-600 active:scale-95"
+          className="inline-flex h-10 items-center gap-1.5 rounded-2xl bg-action-500 px-3 text-xs font-extrabold text-white shadow-sm transition hover:bg-action-600 active:scale-95"
         >
           <Plus size={14} />
           صفحة جديدة
@@ -109,7 +109,7 @@ export default function CmsPagesListPage() {
       {/* Suggested templates */}
       {suggestedToCreate.length > 0 && (
         <section className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/50">
-          <h2 className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          <h2 className="mb-2 text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
             قوالب مقترحة (لم تُنشأ بعد)
           </h2>
           <div className="flex flex-wrap gap-2">
@@ -118,7 +118,7 @@ export default function CmsPagesListPage() {
                 key={s.slug}
                 type="button"
                 onClick={() => handleCreate(s.slug, s.title)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-black text-slate-700 transition hover:border-brand-300 hover:text-brand-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-extrabold text-slate-700 transition hover:border-brand-300 hover:text-brand-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
               >
                 <Plus size={11} />
                 {s.title}
@@ -144,7 +144,7 @@ export default function CmsPagesListPage() {
             size={36}
             className="mx-auto mb-2 text-slate-300 dark:text-slate-600"
           />
-          <p className="text-sm font-black text-slate-700 dark:text-slate-200">
+          <p className="text-sm font-extrabold text-slate-700 dark:text-slate-200">
             لا توجد صفحات بعد
           </p>
           <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
@@ -172,7 +172,7 @@ export default function CmsPagesListPage() {
                   {p.published ? <Eye size={16} /> : <EyeOff size={16} />}
                 </div>
                 <div className="min-w-0">
-                  <h3 className="truncate text-sm font-black text-slate-900 dark:text-white">
+                  <h3 className="truncate text-sm font-extrabold text-slate-900 dark:text-white">
                     {p.title}
                   </h3>
                   <div className="mt-0.5 flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
@@ -180,7 +180,7 @@ export default function CmsPagesListPage() {
                       /{p.slug}
                     </span>
                     {!p.published && (
-                      <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-black text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                      <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-extrabold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
                         مسوّدة
                       </span>
                     )}
@@ -254,7 +254,7 @@ function NewSlugDialog({
       >
         <div className="mb-4 flex items-start justify-between">
           <div>
-            <h2 className="text-base font-black text-slate-900 dark:text-white">
+            <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
               صفحة جديدة
             </h2>
             <p className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-400">
@@ -273,7 +273,7 @@ function NewSlugDialog({
 
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-black text-slate-700 dark:text-slate-300">
+            <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
               عنوان الصفحة
             </label>
             <input
@@ -286,7 +286,7 @@ function NewSlugDialog({
             />
           </div>
           <div>
-            <label className="block text-xs font-black text-slate-700 dark:text-slate-300">
+            <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
               Slug (في الرابط)
             </label>
             <input
@@ -308,7 +308,7 @@ function NewSlugDialog({
           <button
             type="button"
             onClick={onClose}
-            className="h-10 rounded-2xl border border-slate-200 px-4 text-xs font-black text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+            className="h-10 rounded-2xl border border-slate-200 px-4 text-xs font-extrabold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             إلغاء
           </button>
@@ -316,7 +316,7 @@ function NewSlugDialog({
             type="button"
             onClick={() => onCreate(slug, title)}
             disabled={!slug || !title}
-            className="inline-flex h-10 items-center gap-1.5 rounded-2xl bg-action-500 px-4 text-xs font-black text-white shadow-sm transition hover:bg-action-600 active:scale-95 disabled:opacity-50"
+            className="inline-flex h-10 items-center gap-1.5 rounded-2xl bg-action-500 px-4 text-xs font-extrabold text-white shadow-sm transition hover:bg-action-600 active:scale-95 disabled:opacity-50"
           >
             <Plus size={14} />
             إنشاء

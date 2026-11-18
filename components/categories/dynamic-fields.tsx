@@ -84,7 +84,7 @@ function FieldRenderer({
   const strValue = typeof value === "string" || typeof value === "number" ? String(value) : "";
 
   const label = (
-    <span className="mb-1.5 block text-[13px] font-black text-slate-700 dark:text-slate-200">
+    <span className="mb-1.5 block text-[13px] font-extrabold text-slate-700 dark:text-slate-200">
       {field.label}
       {field.required && <span className="text-rose-500"> *</span>}
     </span>
@@ -95,7 +95,7 @@ function FieldRenderer({
     const on = value === true || value === "true";
     return (
       <label className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 dark:border-slate-700 dark:bg-slate-900">
-        <span className="text-[13px] font-black text-slate-700 dark:text-slate-200">
+        <span className="text-[13px] font-extrabold text-slate-700 dark:text-slate-200">
           {field.label}
         </span>
         <button

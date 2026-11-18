@@ -57,11 +57,11 @@ export default function AdminTopupRequestsPage() {
   return (
     <div className="space-y-4">
       <header className="flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
           <CreditCard size={20} strokeWidth={2.2} />
         </div>
         <div>
-          <h1 className="text-lg font-black text-slate-900 dark:text-white sm:text-xl">
+          <h1 className="text-lg font-extrabold text-slate-900 dark:text-white sm:text-xl">
             طلبات الشحن
           </h1>
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
@@ -110,10 +110,10 @@ export default function AdminTopupRequestsPage() {
               type="button"
               onClick={() => setTab(t.key)}
               className={`
-                shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-black transition
+                shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-extrabold transition
                 ${active
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "border border-slate-200 bg-white text-slate-600 hover:border-indigo-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                  ? "bg-brand-600 text-white shadow-sm"
+                  : "border border-slate-200 bg-white text-slate-600 hover:border-brand-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                 }
               `}
             >
@@ -140,7 +140,7 @@ export default function AdminTopupRequestsPage() {
             size={36}
             className="mx-auto mb-2 text-slate-300 dark:text-slate-600"
           />
-          <p className="text-sm font-black text-slate-700 dark:text-slate-200">
+          <p className="text-sm font-extrabold text-slate-700 dark:text-slate-200">
             {tab === "pending"
               ? "لا توجد طلبات قيد المراجعة"
               : "لا توجد طلبات في هذه الفئة"}
@@ -258,11 +258,11 @@ function RequestCard({
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline gap-2">
-            <p className="text-xl font-black tabular-nums text-slate-900 dark:text-white">
+            <p className="text-xl font-extrabold tabular-nums text-slate-900 dark:text-white">
               {formatBC(req.amount)}
             </p>
             <span
-              className={`rounded-full px-2 py-0.5 text-[9px] font-black ${
+              className={`rounded-full px-2 py-0.5 text-[9px] font-extrabold ${
                 req.status === "approved"
                   ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
                   : req.status === "rejected"
@@ -275,7 +275,7 @@ function RequestCard({
           </div>
           <Link
             href={`/admin/wallet/${req.userId}`}
-            className="mt-0.5 inline-flex items-center gap-1 truncate text-[12px] font-black text-brand-700 hover:underline dark:text-brand-300"
+            className="mt-0.5 inline-flex items-center gap-1 truncate text-[12px] font-extrabold text-brand-700 hover:underline dark:text-brand-300"
           >
             {req.userName || req.userEmail || req.userId.slice(0, 10)}
             <ArrowUpRight size={11} />
@@ -289,20 +289,20 @@ function RequestCard({
       {/* Details grid */}
       <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl bg-slate-50 p-3 dark:bg-slate-800/50">
         <div>
-          <p className="text-[10px] font-black uppercase text-slate-400">
+          <p className="text-[10px] font-extrabold uppercase text-slate-400">
             طريقة الدفع
           </p>
-          <p className="mt-0.5 text-[12px] font-black text-slate-700 dark:text-slate-200">
+          <p className="mt-0.5 text-[12px] font-extrabold text-slate-700 dark:text-slate-200">
             {req.paymentMethodLabel || req.paymentMethod}
           </p>
         </div>
         <div>
-          <p className="text-[10px] font-black uppercase text-slate-400">
+          <p className="text-[10px] font-extrabold uppercase text-slate-400">
             رقم التواصل
           </p>
           <a
             href={`tel:${req.contactNumber}`}
-            className="mt-0.5 inline-flex items-center gap-1 font-mono text-[12px] font-black text-brand-700 hover:underline dark:text-brand-300"
+            className="mt-0.5 inline-flex items-center gap-1 font-mono text-[12px] font-extrabold text-brand-700 hover:underline dark:text-brand-300"
             dir="ltr"
           >
             <Phone size={10} />
@@ -314,7 +314,7 @@ function RequestCard({
       {/* User note */}
       {req.note && (
         <div className="mt-2 rounded-xl bg-slate-50 p-3 dark:bg-slate-800/50">
-          <p className="text-[10px] font-black uppercase text-slate-400">
+          <p className="text-[10px] font-extrabold uppercase text-slate-400">
             ملاحظة المستخدم
           </p>
           <p className="mt-0.5 text-[12px] leading-5 text-slate-700 dark:text-slate-200">
@@ -345,7 +345,7 @@ function RequestCard({
             disabled={approving}
             className="
               inline-flex items-center justify-center gap-1.5 rounded-2xl
-              border border-rose-300 bg-rose-50 px-4 py-2.5 text-xs font-black
+              border border-rose-300 bg-rose-50 px-4 py-2.5 text-xs font-extrabold
               text-rose-700 transition hover:bg-rose-100 active:scale-95
               disabled:opacity-50
               dark:bg-rose-900/20 dark:text-rose-300
@@ -360,7 +360,7 @@ function RequestCard({
             disabled={approving}
             className="
               inline-flex items-center justify-center gap-1.5 rounded-2xl
-              bg-emerald-600 px-4 py-2.5 text-xs font-black text-white
+              bg-emerald-600 px-4 py-2.5 text-xs font-extrabold text-white
               shadow-sm transition hover:bg-emerald-700 active:scale-95
               disabled:opacity-50
             "
@@ -436,7 +436,7 @@ function RejectDialog({
       <div className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-md -translate-y-1/2 rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-800 dark:bg-slate-950">
         <div className="mb-4 flex items-start justify-between">
           <div>
-            <h2 className="text-base font-black text-slate-900 dark:text-white">
+            <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
               رفض طلب الشحن؟
             </h2>
             <p className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-400">
@@ -456,7 +456,7 @@ function RejectDialog({
         </div>
 
         <div>
-          <label className="block text-xs font-black text-slate-700 dark:text-slate-300">
+          <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
             سبب الرفض (يُرسَل للمستخدم)
           </label>
           <textarea
@@ -475,7 +475,7 @@ function RejectDialog({
             type="button"
             onClick={onClose}
             disabled={busy}
-            className="h-10 rounded-2xl border border-slate-200 px-4 text-xs font-black text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+            className="h-10 rounded-2xl border border-slate-200 px-4 text-xs font-extrabold text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             تراجع
           </button>
@@ -483,7 +483,7 @@ function RejectDialog({
             type="button"
             onClick={handleSubmit}
             disabled={busy || !reason.trim()}
-            className="inline-flex h-10 items-center gap-1.5 rounded-2xl bg-rose-600 px-4 text-xs font-black text-white shadow-sm transition hover:bg-rose-700 active:scale-95 disabled:opacity-60"
+            className="inline-flex h-10 items-center gap-1.5 rounded-2xl bg-rose-600 px-4 text-xs font-extrabold text-white shadow-sm transition hover:bg-rose-700 active:scale-95 disabled:opacity-60"
           >
             {busy ? (
               <>
@@ -538,10 +538,10 @@ function StatBox({
           <Icon size={15} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+          <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
             {label}
           </p>
-          <p className="mt-0.5 text-sm font-black tabular-nums text-slate-900 dark:text-white">
+          <p className="mt-0.5 text-sm font-extrabold tabular-nums text-slate-900 dark:text-white">
             {value}
           </p>
         </div>

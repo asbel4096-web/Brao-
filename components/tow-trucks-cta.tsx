@@ -26,7 +26,7 @@ export function TowTrucksCTA() {
           <Truck size={22} strokeWidth={2.2} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-black leading-tight text-slate-900 dark:text-white">
+          <p className="text-sm font-extrabold leading-tight text-slate-900 dark:text-white">
             تعطّلت سيارتك؟
           </p>
           <p className="text-[11px] text-slate-600 dark:text-slate-300 sm:text-xs">

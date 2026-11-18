@@ -82,7 +82,7 @@ function NearestTowCardImpl({
           className="
             absolute right-0 top-0 z-10
             rounded-bl-2xl bg-action-500 px-3 py-1
-            text-[10px] font-black text-white shadow-action
+            text-[10px] font-extrabold text-white shadow-action
           "
         >
           الأقرب إليك
@@ -128,7 +128,7 @@ function NearestTowCardImpl({
           <div className="flex items-start justify-between gap-1.5">
             <Link
               href={`/tow-trucks/${listing.id}`}
-              className="line-clamp-1 flex-1 text-sm font-black text-slate-900 hover:text-brand-700 dark:text-white dark:hover:text-brand-300 sm:text-[15px]"
+              className="line-clamp-1 flex-1 text-sm font-extrabold text-slate-900 hover:text-brand-700 dark:text-white dark:hover:text-brand-300 sm:text-[15px]"
             >
               {listing.title || "ساحبة سيارات"}
             </Link>
@@ -136,7 +136,7 @@ function NearestTowCardImpl({
 
           {/* حالة "متاح الآن" */}
           {available ? (
-            <p className="mt-0.5 inline-flex items-center gap-1.5 text-[11px] font-black text-emerald-600 dark:text-emerald-400">
+            <p className="mt-0.5 inline-flex items-center gap-1.5 text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400">
               <span className="relative flex h-1.5 w-1.5">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -204,7 +204,7 @@ function NearestTowCardImpl({
               href={`/tow-trucks/${listing.id}`}
               className="
                 ms-auto inline-flex h-9 items-center justify-center gap-1
-                rounded-2xl bg-action-500 px-4 text-[12px] font-black text-white
+                rounded-2xl bg-action-500 px-4 text-[12px] font-extrabold text-white
                 shadow-action transition active:scale-95 hover:bg-action-600
                 sm:px-5 sm:text-[13px]
               "

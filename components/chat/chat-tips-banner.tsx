@@ -24,7 +24,7 @@ export function ChatTipsBanner() {
           <Info size={15} />
         </div>
         <div className="min-w-0 flex-1">
-          <h4 className="text-sm font-black text-slate-900 dark:text-white">
+          <h4 className="text-sm font-extrabold text-slate-900 dark:text-white">
             نصائح عامة
           </h4>
           <ul className="mt-1.5 space-y-1 text-xs leading-relaxed text-slate-700 dark:text-slate-200">

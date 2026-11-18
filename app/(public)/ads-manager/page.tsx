@@ -69,7 +69,7 @@ async function callApi(path: string, body: Record<string, unknown>) {
 }
 
 const num = (v: any) => Number(v) || 0;
-const arNum = (v: number) => v.toLocaleString("ar-LY");
+const arNum = (v: number) => v.toLocaleString("en-US");
 
 export default function AdsManagerPage() {
   const router = useRouter();
@@ -217,11 +217,11 @@ export default function AdsManagerPage() {
 
         {/* ===== قائمة الحملات ===== */}
         <div className="mt-6 mb-3 flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-base font-black text-slate-900 dark:text-white">
+          <h2 className="flex items-center gap-2 text-base font-extrabold text-slate-900 dark:text-white">
             <BarChart3 size={18} className="text-brand-600 dark:text-brand-300" />
             حملاتي
             {ads.length > 0 && (
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-black text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-extrabold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
                 {arNum(ads.length)}
               </span>
             )}
@@ -230,7 +230,7 @@ export default function AdsManagerPage() {
             <Link
               href="/my-listings"
               onClick={() => haptic()}
-              className="inline-flex items-center gap-1 rounded-full bg-action-50 px-3 py-1.5 text-xs font-black text-action-600 transition hover:bg-action-100 dark:bg-action-500/15 dark:text-action-300"
+              className="inline-flex items-center gap-1 rounded-full bg-action-50 px-3 py-1.5 text-xs font-extrabold text-action-600 transition hover:bg-action-100 dark:bg-action-500/15 dark:text-action-300"
             >
               <Plus size={14} /> حملة جديدة
             </Link>
@@ -268,7 +268,7 @@ export default function AdsManagerPage() {
         onClick={() => haptic()}
         className="
           fixed bottom-24 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2
-          rounded-full bg-action-500 px-6 py-3.5 text-sm font-black text-white
+          rounded-full bg-action-500 px-6 py-3.5 text-sm font-extrabold text-white
           shadow-action ring-4 ring-action-500/15 transition active:scale-95 hover:bg-action-600
         "
       >
@@ -315,7 +315,7 @@ function Hero({
 
       <div className="relative flex items-start justify-between gap-3">
         <div>
-          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-white/60">
+          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-white/60">
             <Sparkles size={13} className="text-action-400" />
             لوحة الأداء
           </div>
@@ -337,7 +337,7 @@ function Hero({
           <div className="text-3xl font-black leading-none tabular-nums">
             {arNum(activeCount)}
           </div>
-          <div className="mt-1 text-[10px] font-black text-white/60">نشطة</div>
+          <div className="mt-1 text-[10px] font-extrabold text-white/60">نشطة</div>
         </div>
       </div>
 
@@ -347,14 +347,14 @@ function Hero({
           <TrendingUp size={16} className="text-emerald-300" />
           <div className="min-w-0">
             <div className="text-[10px] font-bold text-white/55">نسبة النقر CTR</div>
-            <div className="text-sm font-black tabular-nums">{ctr.toFixed(1)}%</div>
+            <div className="text-sm font-extrabold tabular-nums">{ctr.toFixed(1)}%</div>
           </div>
         </div>
         <div className="flex flex-1 items-center gap-2 rounded-2xl bg-white/10 px-3 py-2.5 backdrop-blur">
           <Wallet size={16} className="text-action-300" />
           <div className="min-w-0">
             <div className="text-[10px] font-bold text-white/55">إجمالي الإنفاق</div>
-            <div className="text-sm font-black tabular-nums">
+            <div className="text-sm font-extrabold tabular-nums">
               {arNum(spend)} <span className="text-[10px] text-white/50">BC</span>
             </div>
           </div>
@@ -392,7 +392,7 @@ function StatCard({
       >
         {icon}
       </div>
-      <div className="text-2xl font-black tabular-nums text-slate-900 dark:text-white">
+      <div className="text-2xl font-extrabold tabular-nums text-slate-900 dark:text-white">
         {value}
         {suffix && (
           <span className="mr-1 text-xs font-bold text-slate-400">{suffix}</span>
@@ -465,12 +465,12 @@ function CampaignCard({
           <div className="flex items-start justify-between gap-2">
             <Link
               href={`/listings/${ad.id}`}
-              className="line-clamp-1 text-sm font-black text-slate-900 hover:text-brand-700 dark:text-white"
+              className="line-clamp-1 text-sm font-extrabold text-slate-900 hover:text-brand-700 dark:text-white"
             >
               {ad.title || "إعلان"}
             </Link>
             <span
-              className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-black ${pill[status]}`}
+              className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold ${pill[status]}`}
             >
               <span className={`h-1.5 w-1.5 rounded-full ${dotCls[status]}`} />
               {STATUS_LABEL[status]}
@@ -522,13 +522,13 @@ function CampaignCard({
             type="button"
             onClick={isActive ? onPause : onResume}
             disabled={busy}
-            className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-slate-50 py-2.5 text-xs font-black text-slate-700 transition active:scale-[0.98] disabled:opacity-50 dark:bg-slate-800 dark:text-slate-200"
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-slate-50 py-2.5 text-xs font-extrabold text-slate-700 transition active:scale-[0.98] disabled:opacity-50 dark:bg-slate-800 dark:text-slate-200"
           >
             <ToggleSwitch on={isActive} />
             {isActive ? "نشطة" : "متوقفة"}
           </button>
         ) : (
-          <span className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-rose-50 py-2.5 text-xs font-black text-rose-600 dark:bg-rose-500/10 dark:text-rose-300">
+          <span className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-rose-50 py-2.5 text-xs font-extrabold text-rose-600 dark:bg-rose-500/10 dark:text-rose-300">
             منتهية
           </span>
         )}
@@ -537,7 +537,7 @@ function CampaignCard({
           type="button"
           onClick={onExtend}
           disabled={busy}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-action-50 py-2.5 text-xs font-black text-action-600 transition active:scale-[0.98] disabled:opacity-50 dark:bg-action-500/15 dark:text-action-300"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-action-50 py-2.5 text-xs font-extrabold text-action-600 transition active:scale-[0.98] disabled:opacity-50 dark:bg-action-500/15 dark:text-action-300"
         >
           <CalendarPlus size={15} />
           {isExpired ? "إعادة تفعيل" : "تمديد"}
@@ -547,7 +547,7 @@ function CampaignCard({
           type="button"
           onClick={onStats}
           disabled={busy}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-brand-50 py-2.5 text-xs font-black text-brand-700 transition active:scale-[0.98] disabled:opacity-50 dark:bg-brand-500/15 dark:text-brand-300"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-brand-50 py-2.5 text-xs font-extrabold text-brand-700 transition active:scale-[0.98] disabled:opacity-50 dark:bg-brand-500/15 dark:text-brand-300"
         >
           <BarChart3 size={15} />
           إحصائيات
@@ -607,7 +607,7 @@ function ExtendSheet({
             onClick={() => onPick(ext.days)}
             className="flex flex-col items-center rounded-2xl border border-slate-200 bg-slate-50 py-3 transition hover:border-brand-400 hover:bg-brand-50 active:scale-95 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800"
           >
-            <span className="text-base font-black text-slate-900 dark:text-white">
+            <span className="text-base font-extrabold text-slate-900 dark:text-white">
               {ext.label}
             </span>
             <span className="text-xs font-bold text-brand-700 dark:text-brand-300">
@@ -638,7 +638,7 @@ function StatsSheet({ ad, onClose }: { ad: Ad; onClose: () => void }) {
     <Sheet title="إحصائيات الحملة" subtitle={ad.title} onClose={onClose}>
       <div className="mb-4 rounded-2xl bg-gradient-to-br from-[#071133] via-[#0a1d55] to-[#1c389c] px-4 py-3 text-center text-white">
         <span className="text-xs font-bold text-white/60">نسبة النقر للظهور CTR</span>
-        <div className="text-2xl font-black tabular-nums">{ctr.toFixed(1)}%</div>
+        <div className="text-2xl font-extrabold tabular-nums">{ctr.toFixed(1)}%</div>
       </div>
       <div className="space-y-2.5">
         {rows.map((r) => (
@@ -647,7 +647,7 @@ function StatsSheet({ ad, onClose }: { ad: Ad; onClose: () => void }) {
               <span className="inline-flex items-center gap-1 font-bold text-slate-600 dark:text-slate-300">
                 {r.icon} {r.label}
               </span>
-              <span className="font-black tabular-nums text-slate-900 dark:text-white">
+              <span className="font-extrabold tabular-nums text-slate-900 dark:text-white">
                 {arNum(r.value)}
               </span>
             </div>
@@ -696,7 +696,7 @@ function Sheet({
         <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-slate-300 dark:bg-slate-600" />
         <div className="mb-4 flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <h3 className="text-lg font-black text-slate-900 dark:text-white">{title}</h3>
+            <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">{title}</h3>
             {subtitle && (
               <p className="line-clamp-1 text-xs font-bold text-slate-500">{subtitle}</p>
             )}
@@ -723,7 +723,7 @@ function EmptyState() {
       <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-action-50 text-action-500 dark:bg-action-500/15">
         <Megaphone size={30} />
       </div>
-      <p className="mt-4 text-base font-black text-slate-900 dark:text-white">
+      <p className="mt-4 text-base font-extrabold text-slate-900 dark:text-white">
         لا توجد حملات ممولة بعد
       </p>
       <p className="mt-1 text-sm text-slate-500">
@@ -731,7 +731,7 @@ function EmptyState() {
       </p>
       <Link
         href="/my-listings"
-        className="mt-5 inline-flex items-center gap-1.5 rounded-2xl bg-action-500 px-5 py-3 text-sm font-black text-white shadow-action active:scale-95"
+        className="mt-5 inline-flex items-center gap-1.5 rounded-2xl bg-action-500 px-5 py-3 text-sm font-extrabold text-white shadow-action active:scale-95"
       >
         <Megaphone size={16} /> إنشاء حملة ممولة
       </Link>

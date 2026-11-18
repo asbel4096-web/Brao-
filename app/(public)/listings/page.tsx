@@ -45,6 +45,7 @@ import { getBrandById, inferBrandId } from "@/lib/car-brands";
 import type { Listing } from "@/lib/types";
 import { isListingFeatured } from "@/lib/utils";
 import { getPromotionTier } from "@/lib/wallet/boost";
+import { EmptyState as SharedEmpty, ErrorState } from "@/components/ui/empty-state";
 
 const MAX_LISTINGS = 200;
 
@@ -359,7 +360,7 @@ function ListingsContent() {
       {/* ============== العنوان + شريط النتائج ============== */}
       <div className="mb-4 flex items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-black text-slate-950 dark:text-white sm:text-3xl">
+          <h1 className="text-[22px] font-extrabold leading-8 text-slate-950 dark:text-white sm:text-[28px] sm:leading-[38px]">
             الإعلانات
           </h1>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
@@ -367,8 +368,8 @@ function ListingsContent() {
               "جارٍ التحميل..."
             ) : (
               <>
-                <span className="font-bold text-brand-700 dark:text-brand-300">
-                  {filtered.length.toLocaleString("ar-LY")}
+                <span className="num font-bold text-brand-700 dark:text-brand-300">
+                  {filtered.length.toLocaleString("en-US")}
                 </span>{" "}
                 نتيجة
                 {category && ` في ${category}`}
@@ -396,25 +397,13 @@ function ListingsContent() {
         <button
           type="button"
           onClick={() => setShowFilters(true)}
-          className="
-            relative inline-flex shrink-0 items-center gap-1.5
-            rounded-full border border-slate-200 bg-white px-3 py-2
-            text-xs font-bold text-slate-700 transition
-            hover:border-brand-300 hover:text-brand-700
-            active:scale-95
-            dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200
-            dark:hover:border-brand-700 dark:hover:text-brand-300
-          "
+          className={`chip relative active:scale-95 ${activeFilters.length > 0 ? "chip-on" : ""}`}
         >
-          <SlidersHorizontal size={13} />
+          <SlidersHorizontal size={15} />
           فلاتر
           {activeFilters.length > 0 && (
             <span
-              className="
-                inline-flex h-4 min-w-[16px] items-center justify-center
-                rounded-full bg-action-500 px-1
-                text-[9px] font-black text-white
-              "
+              className="num inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-action-500 px-1 text-[10.5px] font-extrabold text-white"
             >
               {activeFilters.length}
             </span>
@@ -473,14 +462,7 @@ function ListingsContent() {
                 key={f.key}
                 type="button"
                 onClick={f.clear}
-                className="
-                  inline-flex shrink-0 items-center gap-1
-                  rounded-full bg-brand-100 px-3 py-1.5
-                  text-xs font-bold text-brand-800 transition
-                  hover:bg-brand-200
-                  dark:bg-brand-900/40 dark:text-brand-200
-                  dark:hover:bg-brand-900/60
-                "
+                className="chip border-transparent bg-brand-50 text-brand-700 hover:bg-brand-100 dark:border-transparent dark:bg-brand-900/40 dark:text-brand-200"
               >
                 {f.label}
                 <X size={11} />
@@ -542,15 +524,12 @@ function ListingsContent() {
           {loading ? (
             <ListingsSkeleton />
           ) : error ? (
-            <div
-              className="
-                card border-rose-200 bg-rose-50 p-5 text-sm font-bold
-                text-rose-700 dark:border-rose-800 dark:bg-rose-950/30
-                dark:text-rose-300
-              "
-            >
-              {error}
-            </div>
+            // Bratsho DS: عنوان واضح + سبب الخطأ الفعلي (كما كان يظهر) + إعادة محاولة فعلية
+            <ErrorState
+              title="تعذّر تحميل الإعلانات"
+              body={error && error !== "تعذّر تحميل الإعلانات." ? error : undefined}
+              onRetry={() => window.location.reload()}
+            />
           ) : filtered.length === 0 ? (
             <EmptyState onClear={clearAll} />
           ) : (
@@ -609,15 +588,7 @@ function QuickCategoryChip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`
-        inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-2
-        text-xs font-bold transition active:scale-95
-        ${
-          active
-            ? "bg-brand-700 text-white shadow-blue"
-            : "border border-slate-200 bg-white text-slate-700 hover:border-brand-300 hover:text-brand-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-brand-700 dark:hover:text-brand-300"
-        }
-      `}
+      className={`chip active:scale-95 ${active ? "chip-on" : ""}`}
     >
       {label}
     </button>
@@ -641,8 +612,8 @@ function SortDropdown({
         onChange={(e) => onChange(e.target.value as SortKey)}
         aria-label="ترتيب النتائج"
         className="
-          appearance-none rounded-2xl border border-slate-200 bg-white
-          py-2 pr-3 pl-8 text-xs font-bold text-slate-700 outline-none
+          appearance-none h-9 rounded-2xl border border-slate-200 bg-white
+          pr-3.5 pl-8 text-[13px] font-bold text-slate-700 outline-none
           transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100
           dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200
           sm:text-sm
@@ -707,7 +678,7 @@ function FilterSidebar({
       className={`card sticky top-24 self-start space-y-4 p-5 ${className}`}
     >
       <div className="flex items-center justify-between">
-        <h2 className="inline-flex items-center gap-2 text-base font-black text-slate-950 dark:text-white">
+        <h2 className="inline-flex items-center gap-2 text-base font-extrabold text-slate-950 dark:text-white">
           <Filter size={16} className="text-brand-700 dark:text-brand-300" />
           تصفية
         </h2>
@@ -868,7 +839,7 @@ function FilterSheet({
         <div className="sticky top-0 bg-white pb-3 pt-2 dark:bg-slate-900">
           <div className="mx-auto h-1 w-10 rounded-full bg-slate-300 dark:bg-slate-700" />
           <div className="mt-3 flex items-center justify-between px-5">
-            <h3 className="text-base font-black text-slate-950 dark:text-white">
+            <h3 className="text-base font-extrabold text-slate-950 dark:text-white">
               تصفية الإعلانات
             </h3>
             <button
@@ -1013,22 +984,16 @@ function ListingsSkeleton() {
 
 function EmptyState({ onClear }: { onClear: () => void }) {
   return (
-    <div className="card flex flex-col items-center justify-center gap-3 p-10 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
-        <Filter size={26} />
-      </div>
-      <div>
-        <p className="text-base font-black text-slate-950 dark:text-white">
-          لا توجد نتائج مطابقة
-        </p>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          جرّب تعديل أو مسح الفلاتر للحصول على نتائج أوسع.
-        </p>
-      </div>
-      <button onClick={onClear} className="btn-secondary mt-2">
-        مسح الفلاتر
-      </button>
-    </div>
+    <SharedEmpty
+      icon={Filter}
+      title="لا توجد نتائج مطابقة"
+      body="جرّب تعديل أو مسح الفلاتر للحصول على نتائج أوسع."
+      action={
+        <button onClick={onClear} className="btn-secondary">
+          مسح الفلاتر
+        </button>
+      }
+    />
   );
 }
 

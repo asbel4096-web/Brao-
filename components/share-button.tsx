@@ -123,7 +123,7 @@ export function ShareButton({
             onClick={() => openWindow("facebook")}
             className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-right text-sm font-bold text-slate-700 transition hover:bg-slate-50 dark:text-slate-100 dark:hover:bg-slate-800"
           >
-            <Facebook size={16} className="text-blue-600" />
+            <Facebook size={16} className="text-brand-600" />
             مشاركة عبر فيسبوك
           </button>
           <button

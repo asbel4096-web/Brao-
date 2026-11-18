@@ -129,7 +129,7 @@ export function ReportDialog({
             <Flag size={20} strokeWidth={2.2} />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-base font-black text-slate-900 dark:text-white">
+            <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
               الإبلاغ عن {targetLabel}
             </h2>
             <p className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-400">
@@ -154,7 +154,7 @@ export function ReportDialog({
 
         {/* Reasons */}
         <div className="space-y-1.5">
-          <p className="text-xs font-black text-slate-700 dark:text-slate-300">
+          <p className="text-xs font-extrabold text-slate-700 dark:text-slate-300">
             سبب الإبلاغ
           </p>
           {reasons.map((r) => (
@@ -178,7 +178,7 @@ export function ReportDialog({
                 className="mt-1 h-3.5 w-3.5 accent-rose-600"
               />
               <div className="min-w-0 flex-1">
-                <span className="text-sm font-black text-slate-900 dark:text-white">
+                <span className="text-sm font-extrabold text-slate-900 dark:text-white">
                   {r.label}
                 </span>
                 {r.description && (
@@ -193,7 +193,7 @@ export function ReportDialog({
 
         {/* Description */}
         <div className="mt-4">
-          <label htmlFor="report-desc" className="block text-xs font-black text-slate-700 dark:text-slate-300">
+          <label htmlFor="report-desc" className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
             تفاصيل إضافية (اختياري)
           </label>
           <textarea
@@ -223,7 +223,7 @@ export function ReportDialog({
             onClick={onClose}
             disabled={submitting}
             className="
-              h-10 rounded-2xl border border-slate-200 px-4 text-xs font-black
+              h-10 rounded-2xl border border-slate-200 px-4 text-xs font-extrabold
               text-slate-700 transition hover:bg-slate-50
               dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800
               disabled:opacity-60
@@ -237,7 +237,7 @@ export function ReportDialog({
             disabled={submitting || !reason}
             className="
               inline-flex h-10 items-center gap-1.5 rounded-2xl bg-rose-600 px-4
-              text-xs font-black text-white shadow-sm transition
+              text-xs font-extrabold text-white shadow-sm transition
               hover:bg-rose-700 active:scale-95
               disabled:opacity-60
             "

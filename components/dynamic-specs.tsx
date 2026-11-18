@@ -178,10 +178,10 @@ export function DynamicSpecs({ listing }: { listing: Listing }) {
         >
           <s.icon
             size={20}
-            className="mx-auto text-[#2563EB]"
+            className="mx-auto text-brand-600 dark:text-brand-300"
             strokeWidth={1.8}
           />
-          <div className="mt-1.5 truncate text-sm font-black text-slate-900 dark:text-white">
+          <div className="mt-1.5 truncate text-sm font-extrabold text-slate-900 dark:text-white">
             {s.value}
           </div>
           <div className="text-[11px] font-bold text-slate-400">{s.label}</div>

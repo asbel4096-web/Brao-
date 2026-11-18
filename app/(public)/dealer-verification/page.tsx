@@ -211,7 +211,7 @@ export default function DealerVerificationPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
             <BadgeCheck size={20} strokeWidth={2.5} />
           </div>
-          <h1 className="text-lg font-black text-slate-900 dark:text-white sm:text-xl">
+          <h1 className="text-lg font-extrabold text-slate-900 dark:text-white sm:text-xl">
             وثّق معرضك في براتشو كار
           </h1>
         </div>
@@ -226,7 +226,7 @@ export default function DealerVerificationPage() {
             <Sparkles size={20} className="mt-0.5 shrink-0 text-action-400" />
             <p className="text-sm leading-7 text-white/90 sm:text-base sm:leading-8">
               ارفع ثقة العملاء بمعرضك واظهر ضمن{" "}
-              <span className="font-black text-white">معارض السيارات الموثقة</span>{" "}
+              <span className="font-extrabold text-white">معارض السيارات الموثقة</span>{" "}
               في الصفحة الرئيسية مع شارة توثيق زرقاء بجانب اسمك.
             </p>
           </div>
@@ -330,7 +330,7 @@ export default function DealerVerificationPage() {
         <div className="flex gap-2">
           <Link
             href="/"
-            className="inline-flex h-11 flex-1 items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm font-black text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            className="inline-flex h-11 flex-1 items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm font-extrabold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
           >
             إلغاء
           </Link>
@@ -338,7 +338,7 @@ export default function DealerVerificationPage() {
             type="button"
             onClick={handleSubmit}
             disabled={submitting}
-            className="inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-2xl bg-brand-700 text-sm font-black text-white shadow-blue transition active:scale-95 hover:bg-brand-600 disabled:opacity-60"
+            className="inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-2xl bg-brand-700 text-sm font-extrabold text-white shadow-blue transition active:scale-95 hover:bg-brand-600 disabled:opacity-60"
           >
             {submitting ? (
               <Loader2 size={16} className="animate-spin" />
@@ -359,7 +359,7 @@ function Label({
   required?: boolean;
 }) {
   return (
-    <label className="mb-1 block text-xs font-black text-slate-700 dark:text-slate-200">
+    <label className="mb-1 block text-xs font-extrabold text-slate-700 dark:text-slate-200">
       {children}
       {required ? <span className="mr-1 text-rose-600">*</span> : null}
     </label>
@@ -391,7 +391,7 @@ function StatusCard({
             <CheckCircle2 size={32} strokeWidth={2.5} />
           )}
         </div>
-        <h1 className="mt-4 text-lg font-black text-slate-900 dark:text-white">
+        <h1 className="mt-4 text-lg font-extrabold text-slate-900 dark:text-white">
           {title}
         </h1>
         <p className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
@@ -399,7 +399,7 @@ function StatusCard({
         </p>
         <Link
           href="/"
-          className="mt-5 inline-flex h-11 items-center justify-center gap-1.5 rounded-2xl bg-brand-700 px-6 text-sm font-black text-white shadow-blue transition hover:bg-brand-600"
+          className="mt-5 inline-flex h-11 items-center justify-center gap-1.5 rounded-2xl bg-brand-700 px-6 text-sm font-extrabold text-white shadow-blue transition hover:bg-brand-600"
         >
           العودة للرئيسية
         </Link>

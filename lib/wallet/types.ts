@@ -170,11 +170,11 @@ export type VerificationPlanKey = (typeof VERIFICATION_PLANS)[number]["key"];
 
 /** صياغة رقم العملة بالدينار الليبي (الاسم `formatBC` محفوظ للتوافق). */
 export function formatBC(amount: number): string {
-  return `${amount.toLocaleString("ar-LY")} د.ل`;
+  return `${amount.toLocaleString("en-US")} د.ل`;
 }
 
 /** صياغة مع علامة + أو - حسب الاتجاه. */
 export function formatBCSigned(amount: number): string {
   const sign = amount > 0 ? "+" : "";
-  return `${sign}${amount.toLocaleString("ar-LY")} د.ل`;
+  return `${sign}${amount.toLocaleString("en-US")} د.ل`;
 }

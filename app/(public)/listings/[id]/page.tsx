@@ -26,7 +26,7 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import {
-  formatPrice,
+  formatAmount,
   normalizeLibyanPhone,
   buildChatId,
   getTraderDisplayName,
@@ -41,6 +41,8 @@ import { FavoriteButton } from "@/components/favorite-button";
 import { ShareButton } from "@/components/share-button";
 import { ReportButton } from "@/components/report/report-button";
 import { OwnerStatsBar } from "@/components/owner-stats-bar";
+import { VerificationBadge } from "@/components/verification/verification-badge";
+import { isUserVerified } from "@/lib/verification-type";
 
 const SafetyTipsCard = dynamic(
   () => import("@/components/safety-tips-card").then((m) => m.SafetyTipsCard),
@@ -188,11 +190,11 @@ export default function ListingDetailsPage() {
   if (missing || !listing) {
     return (
       <div className="mx-auto max-w-md px-4 py-16 text-center">
-        <h1 className="text-xl font-black text-slate-900">الإعلان غير موجود</h1>
+        <h1 className="text-xl font-extrabold text-slate-900">الإعلان غير موجود</h1>
         <p className="mt-2 text-slate-500">ربما حُذف أو انتهت صلاحيته.</p>
         <Link
           href="/listings"
-          className="mt-6 inline-block rounded-2xl bg-brand-700 px-6 py-3 font-black text-white"
+          className="mt-6 inline-block rounded-2xl bg-brand-700 px-6 py-3 font-extrabold text-white"
         >
           تصفّح الإعلانات
         </Link>
@@ -225,19 +227,15 @@ export default function ListingDetailsPage() {
 
           {/* شارات فوق الصورة */}
           <div className="pointer-events-none absolute right-3 top-3 z-10 flex flex-col gap-2">
+            {/* Bratsho DS: نفس شارات البطاقة (مميز brand-700، عاجل rose-600) */}
             {isSponsored && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-[#F59E0B] px-3 py-1 text-[11px] font-black text-white shadow-lg">
-                <Star size={12} className="fill-current" /> إعلان مميز
+              <span className="badge-featured">
+                <Star size={12} strokeWidth={2.4} /> مميز
               </span>
             )}
             {isUrgentListing && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-rose-600 px-3 py-1 text-[11px] font-black text-white shadow-lg">
-                <Zap size={12} /> عاجل
-              </span>
-            )}
-            {isApproved && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-[#2563EB] px-3 py-1 text-[11px] font-black text-white shadow">
-                <BadgeCheck size={12} /> معتمد
+              <span className="badge-urgent">
+                <Zap size={12} strokeWidth={2.4} /> عاجل
               </span>
             )}
           </div>
@@ -253,7 +251,7 @@ export default function ListingDetailsPage() {
         <Section className="mt-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h1 className="text-xl font-black text-slate-900">{listing.title}</h1>
+              <h1 className="text-xl font-extrabold text-slate-900">{listing.title}</h1>
               <div className="mt-1.5 flex items-center gap-1 text-sm text-slate-500">
                 <MapPin size={14} />
                 {listing.city}
@@ -261,25 +259,32 @@ export default function ListingDetailsPage() {
               </div>
             </div>
             <div className="shrink-0 text-left">
-              <div className="text-2xl font-black text-[#2563EB]">
-                {formatPrice(listing.price)}
-              </div>
-              <div className="text-[11px] font-bold text-slate-400">قابل للتفاوض</div>
+              {/* السعر بخط Inter وبعزل اتجاه + «د.ل» منفصلة؛ كان بأزرق ثانٍ #2563EB */}
+              {formatAmount(listing.price) ? (
+                <div className="flex items-baseline gap-1.5">
+                  <span className="num text-[28px] font-extrabold leading-9 text-price">
+                    {formatAmount(listing.price)}
+                  </span>
+                  <span className="text-sm font-bold text-slate-500">د.ل</span>
+                </div>
+              ) : (
+                <div className="text-lg font-extrabold text-price">السعر عند الطلب</div>
+              )}
+              {/* كان «قابل للتفاوض» نصاً ثابتاً لكل الإعلانات — الآن من بيانات الإعلان فقط */}
+              {(listing as any).negotiable === true && (
+                <div className="text-[11px] font-bold text-emerald-600">قابل للتفاوض</div>
+              )}
             </div>
           </div>
 
-          <div className="mt-3 flex flex-wrap gap-2">
-            {isApproved && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
-                <BadgeCheck size={13} /> إعلان موثّق
-              </span>
-            )}
-            {isApproved && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">
+          {/* حالة الإعلان (كانت شارتين لنفس المعنى، إحداهما «إعلان موثّق» وهي ليست توثيقاً) */}
+          {isApproved && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
                 <BadgeCheck size={13} /> معتمد
               </span>
-            )}
-          </div>
+            </div>
+          )}
         </Section>
 
         {/* ============ 4. المواصفات حسب القسم (ديناميكية، لا حقل فارغ) ============ */}
@@ -289,7 +294,7 @@ export default function ListingDetailsPage() {
 
         {/* ============ 5. الوصف ============ */}
         <Section className="mt-3">
-          <h3 className="mb-2 text-base font-black text-slate-900">الوصف</h3>
+          <h3 className="mb-2 text-base font-extrabold text-slate-900">الوصف</h3>
           <p
             className={
               "whitespace-pre-line text-[14px] leading-7 text-slate-600 " +
@@ -302,7 +307,7 @@ export default function ListingDetailsPage() {
             <button
               type="button"
               onClick={() => setDescExpanded((v) => !v)}
-              className="mt-2 inline-flex items-center gap-1 text-sm font-black text-[#2563EB]"
+              className="mt-2 inline-flex items-center gap-1 text-sm font-extrabold text-brand-700 dark:text-brand-300"
             >
               {descExpanded ? "عرض أقل" : "عرض المزيد"}
               <ChevronDown
@@ -317,7 +322,7 @@ export default function ListingDetailsPage() {
             <div className="mt-4 grid gap-4 border-t border-slate-100 pt-4 sm:grid-cols-2">
               {listing.features?.length ? (
                 <div>
-                  <h4 className="mb-2 text-sm font-black text-emerald-700">المميزات</h4>
+                  <h4 className="mb-2 text-sm font-extrabold text-emerald-700">المميزات</h4>
                   <ul className="space-y-1.5 text-sm text-slate-600">
                     {listing.features.map((f) => (
                       <li key={f} className="flex items-center gap-2">
@@ -330,7 +335,7 @@ export default function ListingDetailsPage() {
               ) : null}
               {listing.defects?.length ? (
                 <div>
-                  <h4 className="mb-2 text-sm font-black text-rose-700">عيوب وملاحظات</h4>
+                  <h4 className="mb-2 text-sm font-extrabold text-rose-700">عيوب وملاحظات</h4>
                   <ul className="space-y-1.5 text-sm text-slate-600">
                     {listing.defects.map((d) => (
                       <li key={d} className="flex items-center gap-2">
@@ -348,10 +353,10 @@ export default function ListingDetailsPage() {
         {/* ============ 6. معلومات التاجر ============ */}
         <Section className="mt-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-base font-black text-slate-900">معلومات التاجر</h3>
+            <h3 className="text-base font-extrabold text-slate-900">معلومات التاجر</h3>
             <Link
               href={`/traders/${listing.ownerId}`}
-              className="rounded-xl bg-blue-50 px-3 py-1.5 text-xs font-black text-[#2563EB]"
+              className="rounded-xl bg-brand-50 px-3 py-1.5 text-xs font-extrabold text-brand-700 dark:bg-brand-900/40 dark:text-brand-200"
             >
               عرض المعرض
             </Link>
@@ -370,41 +375,41 @@ export default function ListingDetailsPage() {
                 referrerPolicy="no-referrer"
               />
             ) : (
-              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-brand-700 text-lg font-black text-white">
+              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-brand-700 text-lg font-extrabold text-white">
                 {sellerName.charAt(0)}
               </div>
             )}
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                <span className="truncate text-base font-black text-slate-900">
+                <span className="truncate text-base font-extrabold text-slate-900">
                   {sellerName}
                 </span>
-                {(seller as any)?.isVerifiedDealer && (
-                  <BadgeCheck size={16} className="shrink-0 text-[#2563EB]" />
+                {isUserVerified(seller as any) && (
+                  <BadgeCheck size={16} className="shrink-0 text-brand-500" />
                 )}
               </div>
-              <div className="mt-0.5 flex items-center gap-1 text-xs text-emerald-600">
-                <BadgeCheck size={12} /> تاجر موثّق
-              </div>
+              {/* كان «تاجر موثّق» يظهر لكل البائعين — الآن فقط عند التوثيق الفعلي (يشمل التوثيق المدفوع)،
+                  وبالنوع الصحيح (حساب/تاجر/معرض موثّق) بنفس منطق صفحة التاجر والملف الشخصي. */}
+              <VerificationBadge user={seller as any} size="sm" className="mt-1" />
             </div>
           </Link>
 
           {/* صف معلومات */}
-          <div className="mt-4 grid grid-cols-3 gap-2 border-t border-slate-100 pt-3 text-center">
+          {/* «متوسط الرد: خلال ساعة» كان نصاً ثابتاً بلا بيانات — حُذف؛ والتقييم «—» إن لم يوجد */}
+          <div className="mt-4 grid grid-cols-2 gap-2 border-t border-slate-100 pt-3 text-center">
             <MiniStat
               icon={MapPin}
               label="الموقع"
               value={seller?.city || listing.city || "-"}
             />
             <MiniStat
-              icon={Clock}
-              label="متوسط الرد"
-              value="خلال ساعة"
-            />
-            <MiniStat
               icon={Star}
               label="التقييم"
-              value={`${Number(seller?.averageRating || 0).toFixed(1)} ★`}
+              value={
+                Number(seller?.averageRating) > 0
+                  ? `${Number(seller?.averageRating).toFixed(1)} ★`
+                  : "—"
+              }
             />
           </div>
         </Section>
@@ -423,8 +428,8 @@ export default function ListingDetailsPage() {
         {listing.mapLink ? (
           <Section className="mt-3">
             <div className="flex items-center gap-2">
-              <MapPin size={18} className="text-[#2563EB]" />
-              <h3 className="text-base font-black text-slate-900">الموقع</h3>
+              <MapPin size={18} className="text-brand-600 dark:text-brand-300" />
+              <h3 className="text-base font-extrabold text-slate-900">الموقع</h3>
             </div>
             <p className="mt-2 text-sm text-slate-500">
               {listing.city}
@@ -434,7 +439,7 @@ export default function ListingDetailsPage() {
               href={listing.mapLink}
               target="_blank"
               rel="noreferrer"
-              className="mt-3 inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-black text-slate-700"
+              className="mt-3 inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-extrabold text-slate-700"
             >
               <MapPin size={16} /> فتح الخريطة
             </a>
@@ -488,7 +493,7 @@ export default function ListingDetailsPage() {
               href={`https://wa.me/${wa}`}
               target="_blank"
               rel="noreferrer"
-              className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#22C55E] px-4 py-3.5 text-sm font-black text-white shadow-sm transition active:scale-95"
+              className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#22C55E] px-4 py-3.5 text-sm font-extrabold text-white shadow-sm transition active:scale-95"
             >
               <MessageCircle size={18} /> واتساب
             </a>
@@ -497,7 +502,7 @@ export default function ListingDetailsPage() {
               type="button"
               onClick={() => void startChat()}
               disabled={chatLoading}
-              className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#22C55E] px-4 py-3.5 text-sm font-black text-white shadow-sm transition active:scale-95 disabled:opacity-60"
+              className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#22C55E] px-4 py-3.5 text-sm font-extrabold text-white shadow-sm transition active:scale-95 disabled:opacity-60"
             >
               <MessageCircle size={18} /> {chatLoading ? "..." : "مراسلة"}
             </button>
@@ -505,7 +510,7 @@ export default function ListingDetailsPage() {
 
           <a
             href={listing.phone ? `tel:${listing.phone}` : "#"}
-            className="flex flex-[1.4] items-center justify-center gap-2 rounded-2xl bg-[#2563EB] px-4 py-3.5 text-sm font-black text-white shadow-sm transition active:scale-95"
+            className="flex flex-[1.4] items-center justify-center gap-2 rounded-2xl bg-brand-700 px-4 py-3.5 text-sm font-extrabold text-white shadow-primary transition hover:bg-brand-800 active:scale-95"
           >
             <Phone size={18} /> اتصال
           </a>
@@ -551,7 +556,7 @@ function MiniStat({
   return (
     <div>
       <Icon size={16} className="mx-auto text-slate-400" />
-      <div className="mt-1 truncate text-xs font-black text-slate-900">{value}</div>
+      <div className="mt-1 truncate text-xs font-extrabold text-slate-900">{value}</div>
       <div className="text-[10px] text-slate-400">{label}</div>
     </div>
   );

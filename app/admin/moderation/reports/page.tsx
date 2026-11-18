@@ -111,7 +111,7 @@ export default function ReportsListPage() {
             <Flag size={20} strokeWidth={2.2} />
           </div>
           <div>
-            <h1 className="text-lg font-black text-slate-900 dark:text-white sm:text-xl">
+            <h1 className="text-lg font-extrabold text-slate-900 dark:text-white sm:text-xl">
               البلاغات
             </h1>
             <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
@@ -139,7 +139,7 @@ export default function ReportsListPage() {
               key={f.key}
               type="button"
               onClick={() => setStatusFilter(f.key)}
-              className={`shrink-0 rounded-full px-3.5 py-1.5 text-[12px] font-black transition ${
+              className={`shrink-0 rounded-full px-3.5 py-1.5 text-[12px] font-extrabold transition ${
                 active
                   ? "bg-brand-700 text-white shadow-sm dark:bg-brand-600"
                   : "border border-slate-200 bg-white text-slate-600 hover:border-brand-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-brand-700"
@@ -192,7 +192,7 @@ export default function ReportsListPage() {
             size={36}
             className="mx-auto mb-2 text-slate-300 dark:text-slate-600"
           />
-          <p className="text-sm font-black text-slate-700 dark:text-slate-200">
+          <p className="text-sm font-extrabold text-slate-700 dark:text-slate-200">
             لا توجد بلاغات تطابق التصفية
           </p>
         </div>
@@ -212,7 +212,7 @@ export default function ReportsListPage() {
               type="button"
               onClick={loadMore}
               disabled={loadingMore}
-              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-2 text-xs font-black text-slate-700 transition hover:border-brand-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-2 text-xs font-extrabold text-slate-700 transition hover:border-brand-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 disabled:opacity-60"
             >
               {loadingMore ? (
                 <>
@@ -255,13 +255,13 @@ function ReportRow({ report }: { report: ReportDoc }) {
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[11px] font-black text-slate-500 dark:text-slate-400">
+          <span className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400">
             {TARGET_TYPE_LABELS[report.targetType]}
           </span>
           <StatusBadge status={report.status} />
         </div>
 
-        <h3 className="mt-0.5 text-sm font-black text-slate-900 dark:text-white">
+        <h3 className="mt-0.5 text-sm font-extrabold text-slate-900 dark:text-white">
           {getReasonLabel(report.targetType, report.reason)}
         </h3>
 
@@ -301,7 +301,7 @@ function StatusBadge({ status }: { status: ReportStatus }) {
   const Icon = t.icon;
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-black ${t.bg}`}
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-extrabold ${t.bg}`}
     >
       <Icon size={9} />
       {STATUS_LABELS[status]}

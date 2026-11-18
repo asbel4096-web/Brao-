@@ -242,7 +242,7 @@ export function SponsoredSpotlight({
             <div className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full bg-action-500/30 blur-3xl" />
 
             {/* شارة "ممول" — حبّة نابضة + تدرّج برتقالي */}
-            <span className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-l from-action-600 to-action-400 px-3 py-1.5 text-[12px] font-black text-white shadow-lg shadow-action-500/40">
+            <span className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-l from-action-600 to-action-400 px-3 py-1.5 text-[12px] font-extrabold text-white shadow-lg shadow-action-500/40">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
@@ -252,11 +252,11 @@ export function SponsoredSpotlight({
 
             {/* النص أسفل الصورة */}
             <div className="absolute inset-x-0 bottom-0 p-4 text-white">
-              <h3 className="line-clamp-1 text-lg font-black drop-shadow-md sm:text-2xl">
+              <h3 className="line-clamp-1 text-lg font-extrabold drop-shadow-md sm:text-2xl">
                 {ad.title}
               </h3>
               <div className="mt-2 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-baseline rounded-xl bg-action-500 px-3 py-1 text-lg font-black text-white shadow-md shadow-action-500/30 sm:text-xl">
+                <span className="inline-flex items-baseline rounded-xl bg-brand-700 px-3 py-1 text-lg font-extrabold text-white shadow-md shadow-brand-900/30 sm:text-xl">
                   {formatPrice(ad.price)}
                 </span>
                 {ad.city && (
@@ -265,7 +265,7 @@ export function SponsoredSpotlight({
                     {ad.city}
                   </span>
                 )}
-                <span className="ms-auto hidden items-center gap-0.5 text-xs font-black text-white/80 transition group-hover:text-white sm:inline-flex">
+                <span className="ms-auto hidden items-center gap-0.5 text-xs font-extrabold text-white/80 transition group-hover:text-white sm:inline-flex">
                   التفاصيل
                   <ChevronLeft size={14} />
                 </span>
@@ -286,7 +286,7 @@ export function SponsoredSpotlight({
               void trackEvent(ad.id, "sponsoredClick");
               void trackEvent(ad.id, "phone");
             }}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-white py-2.5 text-sm font-black text-slate-900 transition hover:bg-slate-100 active:scale-95"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-white py-2.5 text-sm font-extrabold text-slate-900 transition hover:bg-slate-100 active:scale-95"
           >
             <Phone size={16} />
             اتصال
@@ -300,7 +300,7 @@ export function SponsoredSpotlight({
                 void trackEvent(ad.id, "sponsoredClick");
                 void trackEvent(ad.id, "whatsapp");
               }}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-emerald-500 py-2.5 text-sm font-black text-white transition hover:bg-emerald-600 active:scale-95"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-emerald-500 py-2.5 text-sm font-extrabold text-white transition hover:bg-emerald-600 active:scale-95"
             >
               <MessageCircle size={16} />
               واتساب

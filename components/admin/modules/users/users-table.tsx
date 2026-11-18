@@ -63,7 +63,7 @@ export function UsersTable({ items, loading }: Props) {
           size={36}
           className="mx-auto mb-2 text-slate-300 dark:text-slate-600"
         />
-        <p className="text-sm font-black text-slate-700 dark:text-slate-200">
+        <p className="text-sm font-extrabold text-slate-700 dark:text-slate-200">
           لا يوجد مستخدمون يطابقون البحث
         </p>
       </div>
@@ -105,7 +105,7 @@ function UserRow({ user }: { user: AdminUser }) {
             className="object-cover"
           />
         ) : (
-          <div className="grid h-full w-full place-items-center text-sm font-black text-white">
+          <div className="grid h-full w-full place-items-center text-sm font-extrabold text-white">
             {initials}
           </div>
         )}
@@ -120,7 +120,7 @@ function UserRow({ user }: { user: AdminUser }) {
       {/* المعلومات */}
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="truncate text-sm font-black text-slate-900 dark:text-white">
+          <span className="truncate text-sm font-extrabold text-slate-900 dark:text-white">
             {displayName}
           </span>
           {user.isVerifiedDealer && (
@@ -131,12 +131,12 @@ function UserRow({ user }: { user: AdminUser }) {
           )}
           <RoleBadge role={role} />
           {user.deleted && (
-            <span className="rounded-full bg-slate-200 px-1.5 py-0.5 text-[9px] font-black text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+            <span className="rounded-full bg-slate-200 px-1.5 py-0.5 text-[9px] font-extrabold text-slate-700 dark:bg-slate-700 dark:text-slate-300">
               محذوف
             </span>
           )}
           {user.banned && !user.deleted && (
-            <span className="rounded-full bg-rose-500 px-1.5 py-0.5 text-[9px] font-black text-white">
+            <span className="rounded-full bg-rose-500 px-1.5 py-0.5 text-[9px] font-extrabold text-white">
               محظور
             </span>
           )}

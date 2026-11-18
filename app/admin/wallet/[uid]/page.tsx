@@ -87,10 +87,10 @@ export default function AdminUserWalletPage() {
   if (!user) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center dark:border-slate-800 dark:bg-slate-900">
-        <p className="text-sm font-black text-slate-700">المستخدم غير موجود</p>
+        <p className="text-sm font-extrabold text-slate-700">المستخدم غير موجود</p>
         <Link
           href="/admin/wallet"
-          className="mt-3 inline-flex items-center gap-1 text-xs font-black text-brand-700 hover:underline"
+          className="mt-3 inline-flex items-center gap-1 text-xs font-extrabold text-brand-700 hover:underline"
         >
           العودة <ArrowRight size={14} />
         </Link>
@@ -113,11 +113,11 @@ export default function AdminUserWalletPage() {
       {/* User info */}
       <div className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-start gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 text-base font-black text-white">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-600 text-base font-extrabold text-white">
             {(user.name || user.email || "?").charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-lg font-black text-slate-900 dark:text-white">
+            <h1 className="truncate text-lg font-extrabold text-slate-900 dark:text-white">
               {user.name || user.email || user.id}
             </h1>
             {user.email && (
@@ -133,23 +133,23 @@ export default function AdminUserWalletPage() {
       </div>
 
       {/* Balance card */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-blue-600 to-indigo-700 p-5 shadow-xl">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-600 via-brand-600 to-brand-700 p-5 shadow-xl">
         <div className="absolute -right-4 -top-4 opacity-20">
           <Coins size={120} className="text-white" />
         </div>
-        <p className="text-[11px] font-bold text-blue-100">الرصيد الحالي</p>
+        <p className="text-[11px] font-bold text-brand-100">الرصيد الحالي</p>
         <div className="mt-2 flex items-baseline gap-2">
           <span className="text-4xl font-black tabular-nums text-white">
-            {balance.toLocaleString("ar-LY")}
+            {balance.toLocaleString("en-US")}
           </span>
-          <span className="text-sm font-black text-blue-200">BC</span>
+          <span className="text-sm font-extrabold text-brand-200">BC</span>
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-2">
           <button
             type="button"
             onClick={() => setAdjustDialog("credit")}
-            className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-emerald-500/90 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-emerald-500 active:scale-95"
+            className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-emerald-500/90 py-2.5 text-sm font-extrabold text-white shadow-sm transition hover:bg-emerald-500 active:scale-95"
           >
             <Plus size={14} />
             إضافة رصيد
@@ -157,7 +157,7 @@ export default function AdminUserWalletPage() {
           <button
             type="button"
             onClick={() => setAdjustDialog("debit")}
-            className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-rose-500/90 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-rose-500 active:scale-95"
+            className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-rose-500/90 py-2.5 text-sm font-extrabold text-white shadow-sm transition hover:bg-rose-500 active:scale-95"
           >
             <Minus size={14} />
             خصم رصيد
@@ -167,7 +167,7 @@ export default function AdminUserWalletPage() {
 
       {/* Transactions */}
       <section>
-        <h2 className="mb-3 text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+        <h2 className="mb-3 text-xs font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
           سجلّ المعاملات
         </h2>
         {loadingTx ? (
@@ -185,7 +185,7 @@ export default function AdminUserWalletPage() {
               size={36}
               className="mx-auto mb-2 text-slate-300 dark:text-slate-600"
             />
-            <p className="text-sm font-black text-slate-700 dark:text-slate-200">
+            <p className="text-sm font-extrabold text-slate-700 dark:text-slate-200">
               لا توجد معاملات بعد
             </p>
           </div>
@@ -216,7 +216,7 @@ export default function AdminUserWalletPage() {
                     {credit ? <Plus size={16} /> : <Minus size={16} />}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-black text-slate-900 dark:text-white">
+                    <p className="text-sm font-extrabold text-slate-900 dark:text-white">
                       {tx.reason || TRANSACTION_TYPE_LABELS[tx.type]}
                     </p>
                     <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400">
@@ -233,7 +233,7 @@ export default function AdminUserWalletPage() {
                   </div>
                   <div className="text-end">
                     <p
-                      className={`text-sm font-black tabular-nums ${
+                      className={`text-sm font-extrabold tabular-nums ${
                         credit
                           ? "text-emerald-600 dark:text-emerald-400"
                           : "text-rose-600 dark:text-rose-400"
@@ -338,7 +338,7 @@ function AdjustDialog({
       <div className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-md -translate-y-1/2 rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-800 dark:bg-slate-950">
         <div className="mb-4 flex items-start justify-between">
           <div>
-            <h2 className="text-base font-black text-slate-900 dark:text-white">
+            <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
               {mode === "credit" ? "إضافة رصيد" : "خصم رصيد"}
             </h2>
             <p className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-400">
@@ -358,7 +358,7 @@ function AdjustDialog({
 
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-black text-slate-700 dark:text-slate-300">
+            <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
               المبلغ (BC)
             </label>
             <input
@@ -369,13 +369,13 @@ function AdjustDialog({
               onChange={(e) => setAmount(e.target.value)}
               disabled={busy}
               placeholder="مثلاً: 100"
-              className="mt-1.5 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-base font-black tabular-nums outline-none focus:border-brand-400 dark:border-slate-700 dark:bg-slate-900"
+              className="mt-1.5 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-base font-extrabold tabular-nums outline-none focus:border-brand-400 dark:border-slate-700 dark:bg-slate-900"
               dir="ltr"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-black text-slate-700 dark:text-slate-300">
+            <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
               نوع العملية
             </label>
             <select
@@ -402,7 +402,7 @@ function AdjustDialog({
           </div>
 
           <div>
-            <label className="block text-xs font-black text-slate-700 dark:text-slate-300">
+            <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
               السبب
             </label>
             <textarea
@@ -422,7 +422,7 @@ function AdjustDialog({
             type="button"
             onClick={onClose}
             disabled={busy}
-            className="h-10 rounded-2xl border border-slate-200 px-4 text-xs font-black text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+            className="h-10 rounded-2xl border border-slate-200 px-4 text-xs font-extrabold text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             إلغاء
           </button>
@@ -431,7 +431,7 @@ function AdjustDialog({
             onClick={handleSubmit}
             disabled={busy || !amount || !reason.trim()}
             className={`
-              inline-flex h-10 items-center gap-1.5 rounded-2xl px-4 text-xs font-black text-white shadow-sm transition active:scale-95 disabled:opacity-60
+              inline-flex h-10 items-center gap-1.5 rounded-2xl px-4 text-xs font-extrabold text-white shadow-sm transition active:scale-95 disabled:opacity-60
               ${mode === "credit" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"}
             `}
           >

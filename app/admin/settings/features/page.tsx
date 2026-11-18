@@ -127,7 +127,7 @@ export default function FeatureFlagsPage() {
         </div>
 
         <div>
-          <h1 className="text-lg font-black text-slate-900 dark:text-white sm:text-xl">
+          <h1 className="text-lg font-extrabold text-slate-900 dark:text-white sm:text-xl">
             Feature Flags
           </h1>
 
@@ -183,16 +183,16 @@ export default function FeatureFlagsPage() {
 
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-sm font-black text-slate-900 dark:text-white">
+                    <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
                       {meta.label}
                     </h3>
 
                     {enabled ? (
-                      <span className="rounded-full bg-emerald-500 px-2 py-0.5 text-[9px] font-black text-white">
+                      <span className="rounded-full bg-emerald-500 px-2 py-0.5 text-[9px] font-extrabold text-white">
                         نشط
                       </span>
                     ) : (
-                      <span className="rounded-full bg-slate-400 px-2 py-0.5 text-[9px] font-black text-white">
+                      <span className="rounded-full bg-slate-400 px-2 py-0.5 text-[9px] font-extrabold text-white">
                         موقوف
                       </span>
                     )}

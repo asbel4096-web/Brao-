@@ -170,7 +170,7 @@ export function DynamicFilters({ category, values, onChange }: Props) {
         if (f.type === "select") {
           return (
             <label key={f.key} className="block">
-              <span className="mb-1 block text-xs font-black text-slate-700 dark:text-slate-300">
+              <span className="mb-1 block text-xs font-extrabold text-slate-700 dark:text-slate-300">
                 {f.label}
               </span>
               <select
@@ -191,7 +191,7 @@ export function DynamicFilters({ category, values, onChange }: Props) {
         // number
         return (
           <label key={f.key} className="block">
-            <span className="mb-1 block text-xs font-black text-slate-700 dark:text-slate-300">
+            <span className="mb-1 block text-xs font-extrabold text-slate-700 dark:text-slate-300">
               {f.label}
             </span>
             <input

@@ -152,7 +152,7 @@ function ConfirmDialog({
             <div className="min-w-0 flex-1">
               <h3
                 id="confirm-title"
-                className="text-lg font-black text-slate-900 dark:text-white"
+                className="text-lg font-extrabold text-slate-900 dark:text-white"
               >
                 {options.title}
               </h3>

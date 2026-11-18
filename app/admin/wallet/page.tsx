@@ -108,7 +108,7 @@ export default function AdminWalletPage() {
           <WalletIcon size={20} strokeWidth={2.2} />
         </div>
         <div>
-          <h1 className="text-lg font-black text-slate-900 dark:text-white sm:text-xl">
+          <h1 className="text-lg font-extrabold text-slate-900 dark:text-white sm:text-xl">
             إدارة المحافظ
           </h1>
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
@@ -167,7 +167,7 @@ export default function AdminWalletPage() {
       ) : filtered.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center dark:border-slate-700 dark:bg-slate-900">
           <WalletIcon size={36} className="mx-auto mb-2 text-slate-300 dark:text-slate-600" />
-          <p className="text-sm font-black text-slate-700 dark:text-slate-200">
+          <p className="text-sm font-extrabold text-slate-700 dark:text-slate-200">
             {search ? "لا نتائج للبحث" : "لا يوجد مستخدمون برصيد بعد"}
           </p>
         </div>
@@ -179,11 +179,11 @@ export default function AdminWalletPage() {
               href={`/admin/wallet/${u.id}`}
               className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 transition hover:border-action-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-action-700"
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 text-sm font-black text-white">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 text-sm font-extrabold text-white">
                 {(u.name || u.email || "?").charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-black text-slate-900 dark:text-white">
+                <p className="truncate text-sm font-extrabold text-slate-900 dark:text-white">
                   {u.name || u.email || u.id}
                 </p>
                 {u.email && (
@@ -193,8 +193,8 @@ export default function AdminWalletPage() {
                 )}
               </div>
               <div className="text-end">
-                <p className="text-base font-black tabular-nums text-action-600 dark:text-action-400">
-                  {(u.balance || 0).toLocaleString("ar-LY")}
+                <p className="text-base font-extrabold tabular-nums text-action-600 dark:text-action-400">
+                  {(u.balance || 0).toLocaleString("en-US")}
                 </p>
                 <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
                   BC
@@ -231,10 +231,10 @@ function StatBox({
           <Icon size={15} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+          <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
             {label}
           </p>
-          <p className="mt-0.5 text-sm font-black tabular-nums text-slate-900 dark:text-white">
+          <p className="mt-0.5 text-sm font-extrabold tabular-nums text-slate-900 dark:text-white">
             {value}
           </p>
         </div>

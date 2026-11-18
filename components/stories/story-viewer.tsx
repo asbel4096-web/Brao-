@@ -473,7 +473,7 @@ export function StoryViewer({
             {videoStatus === "error" && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60 px-6 text-center text-white">
                 <X size={32} className="opacity-80" />
-                <p className="text-sm font-black">تعذّر تشغيل الفيديو</p>
+                <p className="text-sm font-extrabold">تعذّر تشغيل الفيديو</p>
                 <p className="text-xs text-white/70">
                   قد تكون شبكتك بطيئة، أو الصيغة غير مدعومة.
                 </p>
@@ -635,7 +635,7 @@ export function StoryViewer({
               <span>{timeAgo(currentStory.createdAtMs)}</span>
               <span className="text-white/40">•</span>
               <span>
-                {currentPage.mediaIndex + 1}/{currentPage.totalMedia}
+                <span className="num">{currentPage.mediaIndex + 1}/{currentPage.totalMedia}</span>
               </span>
             </div>
 
@@ -650,7 +650,7 @@ export function StoryViewer({
                 backdrop-blur-md transition active:scale-[0.97]
               "
             >
-              <span className="truncate text-[11px] font-black text-white">
+              <span className="truncate text-[11px] font-extrabold text-white">
                 {currentStory.ownerName}
               </span>
               {currentStory.ownerPhotoURL ? (
@@ -662,7 +662,7 @@ export function StoryViewer({
                   className="h-6 w-6 shrink-0 rounded-full object-cover ring-1 ring-action-500"
                 />
               ) : (
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-700 to-brand-500 text-[9px] font-black text-white ring-1 ring-action-500">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-700 to-brand-500 text-[9px] font-extrabold text-white ring-1 ring-action-500">
                   {(currentStory.ownerName || "م").charAt(0).toUpperCase()}
                 </span>
               )}
@@ -824,7 +824,7 @@ function RailButton({
       >
         {children}
       </span>
-      <span className="text-[10px] font-black text-white drop-shadow-md">
+      <span className="text-[10px] font-extrabold text-white drop-shadow-md">
         {label}
       </span>
     </button>
@@ -853,7 +853,7 @@ function RailLink({
       <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white shadow-lg backdrop-blur-md transition active:scale-90 hover:bg-white/25">
         {children}
       </span>
-      <span className="text-[10px] font-black text-white drop-shadow-md">
+      <span className="text-[10px] font-extrabold text-white drop-shadow-md">
         {label}
       </span>
     </Link>
@@ -955,7 +955,7 @@ function StoryInfoCard({ story }: { story: StoryDisplayItem }) {
         title={payload.title}
         price={
           typeof payload.price === "number" && payload.price > 0
-            ? `${payload.price.toLocaleString("ar-LY")} د.ل`
+            ? `${payload.price.toLocaleString("en-US")} د.ل`
             : undefined
         }
         city={payload.city}
@@ -1033,7 +1033,7 @@ function InfoCardShell({
           <span
             className={`
               inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5
-              text-[10px] font-black text-white
+              text-[10px] font-extrabold text-white
               ${badge.bg}
             `}
           >
@@ -1052,7 +1052,7 @@ function InfoCardShell({
           <span
             className="
               inline-flex shrink-0 items-center rounded-full bg-gradient-to-r
-              from-action-500 to-action-600 px-2.5 py-0.5 text-[12px] font-black
+              from-action-500 to-action-600 px-2.5 py-0.5 text-[12px] font-extrabold
               text-white shadow-action
             "
           >
@@ -1062,7 +1062,7 @@ function InfoCardShell({
       </div>
 
       {/* العنوان - سطر واحد فقط */}
-      <h3 className="mt-1 line-clamp-1 text-[13px] font-black leading-snug text-white">
+      <h3 className="mt-1 line-clamp-1 text-[13px] font-extrabold leading-snug text-white">
         {title}
       </h3>
 
@@ -1074,7 +1074,7 @@ function InfoCardShell({
               href={listingHref}
               className="
                 inline-flex h-9 flex-1 items-center justify-center gap-1
-                rounded-xl bg-white px-2 text-[11px] font-black text-brand-800
+                rounded-xl bg-white px-2 text-[11px] font-extrabold text-brand-800
                 shadow-md transition active:scale-[0.97]
               "
             >
@@ -1087,7 +1087,7 @@ function InfoCardShell({
               className="
                 inline-flex h-9 flex-1 items-center justify-center gap-1
                 rounded-xl border border-white/15 bg-white/10 px-2 text-[11px]
-                font-black text-white backdrop-blur transition
+                font-extrabold text-white backdrop-blur transition
                 active:scale-[0.97] hover:bg-white/20
               "
             >
@@ -1102,7 +1102,7 @@ function InfoCardShell({
               rel="noreferrer"
               className="
                 inline-flex h-9 flex-1 items-center justify-center gap-1
-                rounded-xl bg-emerald-500 px-2 text-[11px] font-black text-white
+                rounded-xl bg-emerald-500 px-2 text-[11px] font-extrabold text-white
                 shadow-md transition active:scale-[0.97] hover:bg-emerald-600
               "
             >

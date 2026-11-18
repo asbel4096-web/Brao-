@@ -37,7 +37,7 @@ export default function CategoriesPage() {
             <div
               className={`mb-4 rounded-3xl bg-gradient-to-l ${section.accent} p-5 text-white shadow-card`}
             >
-              <h2 className="text-xl font-black sm:text-2xl">{section.title}</h2>
+              <h2 className="text-xl font-extrabold sm:text-2xl">{section.title}</h2>
               <p className="mt-1 text-sm text-white/80">
                 {section.items.length} قسم متاح
               </p>
@@ -75,7 +75,7 @@ export default function CategoriesPage() {
 
                     {/* النص */}
                     <div className="min-w-0 flex-1">
-                      <h3 className="truncate text-base font-black text-slate-900 dark:text-white sm:text-lg">
+                      <h3 className="truncate text-base font-extrabold text-slate-900 dark:text-white sm:text-lg">
                         {item.name}
                       </h3>
                       <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
@@ -104,7 +104,7 @@ export default function CategoriesPage() {
 
       {/* CTA في الأسفل */}
       <div className="mt-10 rounded-3xl border border-brand-200 bg-brand-50 p-6 text-center dark:border-brand-800 dark:bg-brand-900/30 sm:p-8">
-        <h3 className="text-xl font-black text-brand-900 dark:text-brand-100 sm:text-2xl">
+        <h3 className="text-xl font-extrabold text-brand-900 dark:text-brand-100 sm:text-2xl">
           لم تجد القسم المناسب؟
         </h3>
         <p className="mt-2 text-sm text-brand-800/80 dark:text-brand-200/80">

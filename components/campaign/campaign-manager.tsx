@@ -100,11 +100,11 @@ export function CampaignManager({ listing }: Props) {
     >
       {/* رأس */}
       <div className="mb-3 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 text-sm font-black text-amber-900 dark:text-amber-200">
+        <div className="flex items-center gap-1.5 text-sm font-extrabold text-amber-900 dark:text-amber-200">
           <Megaphone size={16} />
           الحملة الممولة
         </div>
-        <span className={`rounded-full px-2.5 py-0.5 text-xs font-black ${statusCls}`}>
+        <span className={`rounded-full px-2.5 py-0.5 text-xs font-extrabold ${statusCls}`}>
           {STATUS_LABEL[status]}
         </span>
       </div>
@@ -116,7 +116,7 @@ export function CampaignManager({ listing }: Props) {
           {status === "expired" ? (
             <span className="font-bold text-slate-500">انتهت الحملة</span>
           ) : (
-            <span className="font-black text-slate-900 dark:text-white">
+            <span className="font-extrabold text-slate-900 dark:text-white">
               متبقٍ {remaining} {remaining === 1 ? "يوم" : "يوماً"}
               {status === "paused" && (
                 <span className="mr-1 text-xs font-bold text-amber-600">
@@ -151,7 +151,7 @@ export function CampaignManager({ listing }: Props) {
           <button
             onClick={() => action("/api/wallet/boost/pause", "تم إيقاف الحملة مؤقتاً")}
             disabled={!!busy}
-            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-2xl border border-amber-300 bg-white py-2 text-sm font-black text-amber-700 transition hover:bg-amber-50 active:scale-95 disabled:opacity-50 dark:bg-slate-900 dark:text-amber-300"
+            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-2xl border border-amber-300 bg-white py-2 text-sm font-extrabold text-amber-700 transition hover:bg-amber-50 active:scale-95 disabled:opacity-50 dark:bg-slate-900 dark:text-amber-300"
           >
             <Pause size={15} /> إيقاف
           </button>
@@ -160,7 +160,7 @@ export function CampaignManager({ listing }: Props) {
           <button
             onClick={() => action("/api/wallet/boost/resume", "تم استئناف الحملة")}
             disabled={!!busy}
-            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-emerald-600 py-2 text-sm font-black text-white transition hover:bg-emerald-700 active:scale-95 disabled:opacity-50"
+            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-emerald-600 py-2 text-sm font-extrabold text-white transition hover:bg-emerald-700 active:scale-95 disabled:opacity-50"
           >
             <Play size={15} /> استئناف
           </button>
@@ -168,7 +168,7 @@ export function CampaignManager({ listing }: Props) {
         <button
           onClick={() => setShowExtend((s) => !s)}
           disabled={!!busy}
-          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-brand-700 py-2 text-sm font-black text-white transition hover:bg-brand-800 active:scale-95 disabled:opacity-50"
+          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-brand-700 py-2 text-sm font-extrabold text-white transition hover:bg-brand-800 active:scale-95 disabled:opacity-50"
         >
           {status === "expired" ? (
             <>
@@ -202,7 +202,7 @@ export function CampaignManager({ listing }: Props) {
                 disabled={!!busy}
                 className="flex flex-col items-center rounded-2xl border border-slate-200 bg-slate-50 py-2 transition hover:border-brand-400 hover:bg-brand-50 active:scale-95 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800"
               >
-                <span className="text-sm font-black text-slate-900 dark:text-white">
+                <span className="text-sm font-extrabold text-slate-900 dark:text-white">
                   {ext.label}
                 </span>
                 <span className="text-[11px] font-bold text-brand-700 dark:text-brand-300">
@@ -232,8 +232,8 @@ function Stat({
         {icon}
         {label}
       </div>
-      <div className="text-base font-black tabular-nums text-slate-900 dark:text-white">
-        {typeof value === "number" ? value.toLocaleString("ar-LY") : value}
+      <div className="text-base font-extrabold tabular-nums text-slate-900 dark:text-white">
+        {typeof value === "number" ? value.toLocaleString("en-US") : value}
       </div>
     </div>
   );

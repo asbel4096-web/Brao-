@@ -89,7 +89,7 @@ export function StatCard({
           {label}
         </p>
         <p className="mt-1.5 text-2xl font-black tabular-nums text-slate-900 dark:text-white sm:text-3xl">
-          {typeof value === "number" ? value.toLocaleString("ar-LY") : value}
+          {typeof value === "number" ? value.toLocaleString("en-US") : value}
         </p>
 
         {/* تغيُّر النسبة */}
@@ -128,7 +128,7 @@ export function StatCard({
         <span
           className="
             absolute -top-1 -right-1 flex h-5 min-w-[20px] items-center justify-center
-            rounded-full bg-rose-500 px-1.5 text-[10px] font-black text-white
+            rounded-full bg-rose-500 px-1.5 text-[10px] font-extrabold text-white
             shadow-sm ring-2 ring-white dark:ring-slate-900
           "
         >

@@ -63,10 +63,10 @@ const GROUP_STYLE: Record<
   CategoryDef["group"],
   { iconWrap: string }
 > = {
-  vehicles: { iconWrap: "bg-blue-600 text-white" },
-  parts: { iconWrap: "bg-amber-500 text-white" },
-  services: { iconWrap: "bg-emerald-600 text-white" },
-  special: { iconWrap: "bg-rose-600 text-white" },
+  vehicles: { iconWrap: "bg-brand-50 text-brand-700 dark:bg-brand-900/40 dark:text-brand-200" },
+  parts: { iconWrap: "bg-brand-50 text-brand-700 dark:bg-brand-900/40 dark:text-brand-200" },
+  services: { iconWrap: "bg-brand-50 text-brand-700 dark:bg-brand-900/40 dark:text-brand-200" },
+  special: { iconWrap: "bg-brand-50 text-brand-700 dark:bg-brand-900/40 dark:text-brand-200" },
 };
 
 export function ExploreCategories() {
@@ -86,7 +86,7 @@ export function ExploreCategories() {
               <LayoutGrid size={15} />
             </span>
             <div>
-              <h2 className="text-sm font-black text-slate-900 dark:text-white sm:text-base">
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-white sm:text-base">
                 استكشف جميع الأقسام
               </h2>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -97,7 +97,7 @@ export function ExploreCategories() {
           <Link
             href="/categories"
             prefetch={false}
-            className="inline-flex shrink-0 items-center gap-0.5 text-[12px] font-black text-brand-700 dark:text-brand-300"
+            className="inline-flex shrink-0 items-center gap-0.5 text-[12px] font-extrabold text-brand-700 dark:text-brand-300"
           >
             عرض الكل
             <ChevronLeft size={14} />
@@ -163,7 +163,7 @@ function CategoryCard({
         </span>
       )}
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[13px] font-black leading-tight text-slate-900 dark:text-white">
+        <span className="block truncate text-[13px] font-extrabold leading-tight text-slate-900 dark:text-white">
           {cat.name}
         </span>
         <span className="mt-0.5 block text-[10px] font-bold text-slate-400">

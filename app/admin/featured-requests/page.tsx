@@ -165,7 +165,7 @@ export default function AdminFeaturedRequestsPage() {
           <Sparkles size={20} strokeWidth={2.5} />
         </div>
         <div>
-          <h1 className="text-lg font-black text-slate-900 dark:text-white sm:text-xl">
+          <h1 className="text-lg font-extrabold text-slate-900 dark:text-white sm:text-xl">
             طلبات تمييز الإعلانات
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -262,7 +262,7 @@ function FilterChip({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-1.5 rounded-2xl px-3 py-2 text-xs font-black transition ${
+      className={`inline-flex items-center gap-1.5 rounded-2xl px-3 py-2 text-xs font-extrabold transition ${
         active
           ? "bg-brand-700 text-white shadow-blue"
           : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
@@ -270,7 +270,7 @@ function FilterChip({
     >
       {label}
       <span
-        className={`inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-black ${
+        className={`inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-extrabold ${
           active
             ? "bg-white/20 text-white"
             : "bg-white text-slate-600 dark:bg-slate-900 dark:text-slate-300"
@@ -309,7 +309,7 @@ function RequestRow({
             rel="noreferrer"
             className="group flex min-w-0 items-center gap-1.5"
           >
-            <h3 className="truncate text-sm font-black text-slate-900 group-hover:text-brand-700 dark:text-white dark:group-hover:text-brand-300">
+            <h3 className="truncate text-sm font-extrabold text-slate-900 group-hover:text-brand-700 dark:text-white dark:group-hover:text-brand-300">
               {request.listingTitle || "إعلان بدون عنوان"}
             </h3>
             <ExternalLink
@@ -336,7 +336,7 @@ function RequestRow({
           {isApproved && request.durationDays && (
             <>
               <span aria-hidden="true">·</span>
-              <span className="font-black text-action-700 dark:text-action-300">
+              <span className="font-extrabold text-action-700 dark:text-action-300">
                 {request.durationDays} أيام
               </span>
             </>
@@ -352,7 +352,7 @@ function RequestRow({
             onClick={onApprove}
             className="
               inline-flex h-9 flex-1 items-center justify-center gap-1
-              rounded-2xl bg-emerald-600 px-3 text-xs font-black text-white
+              rounded-2xl bg-emerald-600 px-3 text-xs font-extrabold text-white
               transition hover:bg-emerald-700 active:scale-95 sm:flex-none
             "
           >
@@ -365,7 +365,7 @@ function RequestRow({
             className="
               inline-flex h-9 flex-1 items-center justify-center gap-1
               rounded-2xl border border-rose-200 bg-white px-3 text-xs
-              font-black text-rose-600 transition hover:bg-rose-50
+              font-extrabold text-rose-600 transition hover:bg-rose-50
               active:scale-95
               dark:border-rose-900/40 dark:bg-slate-900 dark:hover:bg-rose-900/20
               sm:flex-none
@@ -386,7 +386,7 @@ function RequestRow({
 function StatusBadge({ status }: { status: FeaturedRequest["status"] }) {
   if (status === "pending") {
     return (
-      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-black text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-extrabold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
         <Clock size={10} />
         قيد المراجعة
       </span>
@@ -394,14 +394,14 @@ function StatusBadge({ status }: { status: FeaturedRequest["status"] }) {
   }
   if (status === "approved") {
     return (
-      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-black text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-extrabold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
         <CheckCircle2 size={10} />
         مقبول
       </span>
     );
   }
   return (
-    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-black text-rose-700 dark:bg-rose-900/30 dark:text-rose-300">
+    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-extrabold text-rose-700 dark:bg-rose-900/30 dark:text-rose-300">
       <XCircle size={10} />
       مرفوض
     </span>
@@ -441,7 +441,7 @@ function ApproveModal({
       >
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-base font-black text-slate-900 dark:text-white">
+            <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
               الموافقة على التمييز
             </h2>
             <p className="mt-0.5 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">
@@ -459,7 +459,7 @@ function ApproveModal({
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-black text-slate-700 dark:text-slate-200">
+          <label className="text-xs font-extrabold text-slate-700 dark:text-slate-200">
             اختر مدة التمييز
           </label>
           <div className="grid grid-cols-3 gap-2">
@@ -468,7 +468,7 @@ function ApproveModal({
                 key={opt}
                 type="button"
                 onClick={() => onDurationChange(opt)}
-                className={`rounded-2xl border p-3 text-center text-sm font-black transition ${
+                className={`rounded-2xl border p-3 text-center text-sm font-extrabold transition ${
                   duration === opt
                     ? "border-brand-700 bg-brand-50 text-brand-700 dark:border-brand-300 dark:bg-brand-900/30 dark:text-brand-300"
                     : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
@@ -485,7 +485,7 @@ function ApproveModal({
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="inline-flex h-11 flex-1 items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm font-black text-slate-700 transition hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            className="inline-flex h-11 flex-1 items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm font-extrabold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
           >
             إلغاء
           </button>
@@ -493,7 +493,7 @@ function ApproveModal({
             type="button"
             onClick={onConfirm}
             disabled={submitting}
-            className="inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-2xl bg-brand-700 text-sm font-black text-white shadow-blue transition active:scale-95 hover:bg-brand-600 disabled:opacity-60"
+            className="inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-2xl bg-brand-700 text-sm font-extrabold text-white shadow-blue transition active:scale-95 hover:bg-brand-600 disabled:opacity-60"
           >
             {submitting && <Loader2 size={16} className="animate-spin" />}
             تأكيد التمييز

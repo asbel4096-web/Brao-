@@ -80,7 +80,7 @@ export default function AdminUsersPage() {
             <UsersIcon size={20} strokeWidth={2.2} />
           </div>
           <div>
-            <h1 className="text-lg font-black text-slate-900 dark:text-white sm:text-xl">
+            <h1 className="text-lg font-extrabold text-slate-900 dark:text-white sm:text-xl">
               المستخدمون
             </h1>
             <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
@@ -116,7 +116,7 @@ export default function AdminUsersPage() {
               type="button"
               onClick={() => setFilter(f.key)}
               className={`
-                shrink-0 rounded-full px-3.5 py-1.5 text-[12px] font-black transition
+                shrink-0 rounded-full px-3.5 py-1.5 text-[12px] font-extrabold transition
                 ${active
                   ? "bg-brand-700 text-white shadow-sm dark:bg-brand-600"
                   : "border border-slate-200 bg-white text-slate-600 hover:border-brand-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-brand-700"
@@ -172,7 +172,7 @@ export default function AdminUsersPage() {
               disabled={loadingMore}
               className="
                 inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white
-                px-5 py-2 text-xs font-black text-slate-700 transition
+                px-5 py-2 text-xs font-extrabold text-slate-700 transition
                 hover:border-brand-300
                 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300
                 disabled:opacity-60

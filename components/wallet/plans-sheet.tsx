@@ -46,19 +46,19 @@ const PLAN_COLORS: Record<
   { gradient: string; ring: string; text: string }
 > = {
   basic: {
-    gradient: "from-blue-500 to-blue-600",
-    ring: "ring-blue-500/30",
-    text: "text-blue-400",
+    gradient: "from-brand-500 to-brand-600",
+    ring: "ring-brand-500/30",
+    text: "text-brand-400",
   },
   gold: {
-    gradient: "from-amber-500 to-yellow-600",
+    gradient: "from-amber-500 to-amber-700",
     ring: "ring-amber-500/30",
     text: "text-amber-400",
   },
   vip: {
-    gradient: "from-purple-500 to-purple-700",
-    ring: "ring-purple-500/30",
-    text: "text-purple-400",
+    gradient: "from-brand-800 to-ink",
+    ring: "ring-brand-800/30",
+    text: "text-brand-300",
   },
   business: {
     gradient: "from-emerald-500 to-emerald-700",
@@ -163,22 +163,22 @@ export function PlansSheet({ open, onClose }: Props) {
             onDragEnd={(_, info) => {
               if (info.offset.y > 100) onClose();
             }}
-            className="fixed inset-x-0 bottom-0 z-[60] max-h-[92vh] overflow-hidden rounded-t-[28px] bg-slate-950 shadow-2xl"
+            className="fixed inset-x-0 bottom-0 z-[60] max-h-[92vh] overflow-hidden rounded-t-3xl bg-white dark:bg-slate-950 shadow-2xl"
             dir="rtl"
           >
             <div className="flex justify-center pt-2.5 pb-1">
-              <div className="h-1 w-10 rounded-full bg-slate-700" />
+              <div className="h-1 w-10 rounded-full bg-slate-200 dark:bg-slate-700" />
             </div>
 
             <div className="relative flex items-center justify-between px-5 pb-2 pt-2">
-              <h2 className="absolute left-1/2 -translate-x-1/2 text-base font-black text-white">
+              <h2 className="absolute left-1/2 -translate-x-1/2 text-base font-extrabold text-slate-950 dark:text-white">
                 خطط التوثيق
               </h2>
               <button
                 type="button"
                 onClick={onClose}
                 aria-label="إغلاق"
-                className="grid h-9 w-9 place-items-center rounded-full bg-slate-800 text-slate-300 transition hover:bg-slate-700"
+                className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 transition hover:bg-slate-200 dark:hover:bg-slate-700"
               >
                 <X size={16} />
               </button>
@@ -186,15 +186,15 @@ export function PlansSheet({ open, onClose }: Props) {
 
             <div className="max-h-[calc(92vh-60px)] overflow-y-auto px-4 pb-6">
               {!enabled ? (
-                <div className="rounded-3xl bg-slate-900 p-8 text-center">
+                <div className="rounded-3xl bg-slate-50 dark:bg-slate-900 p-8 text-center">
                   <Sparkles
                     size={36}
                     className="mx-auto mb-3 text-slate-600"
                   />
-                  <p className="text-base font-black text-white">
+                  <p className="text-base font-extrabold text-slate-950 dark:text-white">
                     نظام التوثيق المدفوع غير مفعَّل حالياً
                   </p>
-                  <p className="mt-1 text-[12px] text-slate-400">
+                  <p className="mt-1 text-[12px] text-slate-500 dark:text-slate-400">
                     سيُتاح قريباً مع إطلاق المرحلة الجديدة
                   </p>
                 </div>
@@ -205,22 +205,22 @@ export function PlansSheet({ open, onClose }: Props) {
                     <div className="mt-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3">
                       <div className="flex items-center gap-2">
                         <BadgeCheck size={16} className="text-emerald-400" />
-                        <p className="text-sm font-black text-emerald-300">
+                        <p className="text-sm font-extrabold text-emerald-700 dark:text-emerald-300">
                           توثيق نشط: {currentPlan.label}
                         </p>
                       </div>
-                      <p className="mt-1 text-[11px] text-emerald-200/80">
+                      <p className="mt-1 text-[11px] text-emerald-600 dark:text-emerald-200/80">
                         متبقي: {formatRemainingDays(daysRemaining)}
                       </p>
                     </div>
                   )}
 
                   {/* Balance reminder */}
-                  <div className="mt-3 flex items-center justify-between rounded-2xl bg-slate-900 p-3">
-                    <span className="text-[12px] font-bold text-slate-400">
+                  <div className="mt-3 flex items-center justify-between rounded-2xl bg-slate-50 dark:bg-slate-900 p-3">
+                    <span className="text-[12px] font-bold text-slate-500 dark:text-slate-400">
                       رصيدك الحالي
                     </span>
-                    <span className="text-base font-black tabular-nums text-white">
+                    <span className="text-base font-extrabold tabular-nums text-slate-950 dark:text-white">
                       {formatBC(balance)}
                     </span>
                   </div>
@@ -239,10 +239,10 @@ export function PlansSheet({ open, onClose }: Props) {
                           key={plan.key}
                           whileTap={canAfford && !busy ? { scale: 0.98 } : {}}
                           className={`
-                            relative overflow-hidden rounded-2xl border bg-slate-900 p-3
+                            relative overflow-hidden rounded-2xl border bg-slate-50 dark:bg-slate-900 p-3
                             ${isCurrent
                               ? `border-transparent ring-2 ${colors.ring}`
-                              : "border-slate-800"
+                              : "border-slate-200 dark:border-slate-800"
                             }
                           `}
                         >
@@ -254,24 +254,24 @@ export function PlansSheet({ open, onClose }: Props) {
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2">
-                                <h3 className="text-sm font-black text-white">
+                                <h3 className="text-sm font-extrabold text-slate-950 dark:text-white">
                                   {plan.label}
                                 </h3>
                                 {isCurrent && (
-                                  <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[9px] font-black text-emerald-300">
+                                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-extrabold text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">
                                     الحالي
                                   </span>
                                 )}
                               </div>
-                              <p className="mt-0.5 text-[11px] text-slate-400">
+                              <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
                                 {plan.durationDays === 365
                                   ? "سنوياً"
                                   : `${plan.durationDays} يوماً`}
                               </p>
                             </div>
                             <div className="text-end">
-                              <p className="text-base font-black tabular-nums text-white">
-                                {plan.price.toLocaleString("ar-LY")}
+                              <p className="text-base font-extrabold tabular-nums text-slate-950 dark:text-white">
+                                {plan.price.toLocaleString("en-US")}
                               </p>
                               <p className="text-[9px] font-bold text-slate-500">BC</p>
                             </div>
@@ -284,7 +284,7 @@ export function PlansSheet({ open, onClose }: Props) {
                             className={`
                               mt-3 inline-flex w-full items-center justify-center gap-1.5
                               rounded-2xl bg-gradient-to-br ${colors.gradient} py-2.5
-                              text-xs font-black text-white shadow-sm transition
+                              text-xs font-extrabold text-white shadow-sm transition
                               hover:brightness-110 active:scale-[0.98]
                               disabled:cursor-not-allowed disabled:opacity-50
                             `}

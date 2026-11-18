@@ -73,12 +73,12 @@ export function SimilarListings({ listing }: Props) {
   return (
     <section dir="rtl">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-base font-black text-slate-900 dark:text-white">
+        <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
           إعلانات مشابهة
         </h3>
         <Link
           href={`/listings?category=${encodeURIComponent(listing.category)}`}
-          className="inline-flex items-center gap-0.5 text-[12px] font-black text-brand-700 dark:text-brand-300"
+          className="inline-flex items-center gap-0.5 text-[12px] font-extrabold text-brand-700 dark:text-brand-300"
         >
           عرض الكل
           <ChevronLeft size={13} />
@@ -126,11 +126,11 @@ function SimilarCard({ item }: { item: Listing }) {
         />
       </div>
       <div className="p-2.5">
-        <h4 className="line-clamp-1 text-[12px] font-black text-slate-900 dark:text-white">
+        <h4 className="line-clamp-1 text-[12px] font-extrabold text-slate-900 dark:text-white">
           {item.title}
         </h4>
-        <p className="mt-1 text-[13px] font-black text-brand-700 dark:text-brand-300">
-          {formatPrice(item.price)} د.ل
+        <p className="mt-1 text-[13px] font-extrabold text-brand-700 dark:text-brand-300">
+          {formatPrice(item.price)}
         </p>
         {item.city && (
           <p className="mt-0.5 text-[10px] text-slate-400">{item.city}</p>

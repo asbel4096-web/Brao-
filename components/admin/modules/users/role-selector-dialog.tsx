@@ -49,7 +49,7 @@ export function RoleSelectorDialog({
             <Settings size={20} strokeWidth={2.2} />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-base font-black text-slate-900 dark:text-white">
+            <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
               تعيين دور الأدمن
             </h2>
             <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
@@ -97,11 +97,11 @@ export function RoleSelectorDialog({
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-black text-slate-900 dark:text-white">
+                    <span className="text-sm font-extrabold text-slate-900 dark:text-white">
                       {meta.label}
                     </span>
                     {isCurrent && (
-                      <span className="rounded-full bg-brand-700 px-2 py-0.5 text-[9px] font-black text-white">
+                      <span className="rounded-full bg-brand-700 px-2 py-0.5 text-[9px] font-extrabold text-white">
                         الحالي
                       </span>
                     )}
@@ -131,7 +131,7 @@ export function RoleSelectorDialog({
           >
             <span className="mt-0.5 inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-slate-400" />
             <div className="min-w-0 flex-1">
-              <span className="text-sm font-black text-slate-700 dark:text-slate-300">
+              <span className="text-sm font-extrabold text-slate-700 dark:text-slate-300">
                 إزالة دور الأدمن
               </span>
               <p className="mt-0.5 text-[12px] leading-5 text-slate-500 dark:text-slate-400">

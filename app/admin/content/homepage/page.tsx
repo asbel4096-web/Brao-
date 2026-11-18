@@ -76,7 +76,7 @@ export default function HomepageEditorPage() {
           <Home size={20} strokeWidth={2.2} />
         </div>
         <div>
-          <h1 className="text-lg font-black text-slate-900 dark:text-white sm:text-xl">
+          <h1 className="text-lg font-extrabold text-slate-900 dark:text-white sm:text-xl">
             الصفحة الرئيسية
           </h1>
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
@@ -95,7 +95,7 @@ export default function HomepageEditorPage() {
               key={t.key}
               type="button"
               onClick={() => setTab(t.key)}
-              className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-black transition ${
+              className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-extrabold transition ${
                 active
                   ? "bg-action-500 text-white shadow-sm"
                   : "border border-slate-200 bg-white text-slate-600 hover:border-action-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
@@ -392,7 +392,7 @@ function BannersTab() {
         <button
           type="button"
           onClick={() => setAdding(true)}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 bg-white p-6 text-sm font-black text-slate-600 transition hover:border-action-400 hover:text-action-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 bg-white p-6 text-sm font-extrabold text-slate-600 transition hover:border-action-400 hover:text-action-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
         >
           <Plus size={16} />
           إضافة بنر جديد
@@ -400,7 +400,7 @@ function BannersTab() {
       ) : (
         <div className="rounded-2xl border border-action-200 bg-action-50/30 p-4 dark:border-action-900/40 dark:bg-action-900/10">
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-black text-slate-900 dark:text-white">
+            <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
               بنر جديد
             </h3>
             <button
@@ -537,7 +537,7 @@ function BannersTab() {
               type="button"
               onClick={handleAdd}
               disabled={uploading || !draft.file}
-              className="inline-flex h-10 items-center gap-1.5 rounded-2xl bg-action-500 px-4 text-xs font-black text-white shadow-sm transition hover:bg-action-600 disabled:opacity-50"
+              className="inline-flex h-10 items-center gap-1.5 rounded-2xl bg-action-500 px-4 text-xs font-extrabold text-white shadow-sm transition hover:bg-action-600 disabled:opacity-50"
             >
               {uploading ? (
                 <>
@@ -591,7 +591,7 @@ function BannersTab() {
               </div>
               <div className="min-w-0 flex-1">
                 {b.title && (
-                  <p className="truncate text-sm font-black text-slate-900 dark:text-white">
+                  <p className="truncate text-sm font-extrabold text-slate-900 dark:text-white">
                     {b.title}
                   </p>
                 )}
@@ -670,7 +670,7 @@ function BannersTab() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-base font-black text-slate-900 dark:text-white">
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
                 تعديل البنر
               </h3>
               <button
@@ -771,7 +771,7 @@ function BannersTab() {
               <button
                 type="button"
                 onClick={() => setEditId(null)}
-                className="rounded-2xl border border-slate-200 px-4 py-2 text-xs font-black text-slate-600 dark:border-slate-700 dark:text-slate-300"
+                className="rounded-2xl border border-slate-200 px-4 py-2 text-xs font-extrabold text-slate-600 dark:border-slate-700 dark:text-slate-300"
               >
                 إلغاء
               </button>
@@ -779,7 +779,7 @@ function BannersTab() {
                 type="button"
                 onClick={handleSaveEdit}
                 disabled={savingEdit}
-                className="inline-flex items-center gap-1.5 rounded-2xl bg-action-500 px-4 py-2 text-xs font-black text-white transition hover:bg-action-600 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-2xl bg-action-500 px-4 py-2 text-xs font-extrabold text-white transition hover:bg-action-600 disabled:opacity-50"
               >
                 {savingEdit ? (
                   <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -844,10 +844,10 @@ function SectionsTab() {
               !enabled ? "opacity-60" : ""
             }`}
           >
-            <span className="grid h-7 w-7 place-items-center rounded-lg bg-slate-100 text-[11px] font-black text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+            <span className="grid h-7 w-7 place-items-center rounded-lg bg-slate-100 text-[11px] font-extrabold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
               {idx + 1}
             </span>
-            <p className="flex-1 text-sm font-black text-slate-900 dark:text-white">
+            <p className="flex-1 text-sm font-extrabold text-slate-900 dark:text-white">
               {meta?.label || key}
             </p>
             <button
@@ -933,7 +933,7 @@ function FeaturedTab() {
   return (
     <div className="space-y-3">
       <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-        <p className="text-xs font-black text-slate-700 dark:text-slate-300">
+        <p className="text-xs font-extrabold text-slate-700 dark:text-slate-300">
           أضيفي إعلاناً
         </p>
         <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">
@@ -953,7 +953,7 @@ function FeaturedTab() {
             type="button"
             onClick={addId}
             disabled={saving || !newId.trim()}
-            className="inline-flex h-10 items-center gap-1.5 rounded-2xl bg-action-500 px-4 text-xs font-black text-white shadow-sm transition hover:bg-action-600 disabled:opacity-50"
+            className="inline-flex h-10 items-center gap-1.5 rounded-2xl bg-action-500 px-4 text-xs font-extrabold text-white shadow-sm transition hover:bg-action-600 disabled:opacity-50"
           >
             <Plus size={14} />
             إضافة
@@ -972,7 +972,7 @@ function FeaturedTab() {
               key={id}
               className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900"
             >
-              <span className="grid h-7 w-7 place-items-center rounded-lg bg-action-100 text-[11px] font-black text-action-700 dark:bg-action-900/30 dark:text-action-300">
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-action-100 text-[11px] font-extrabold text-action-700 dark:bg-action-900/30 dark:text-action-300">
                 {idx + 1}
               </span>
               <Link

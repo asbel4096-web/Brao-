@@ -119,7 +119,7 @@ export default function TraderPage() {
     return (
       <section className="container py-16 sm:py-24">
         <div className="mx-auto flex max-w-md flex-col items-center text-center">
-          <h1 className="text-xl font-black text-slate-900 dark:text-white sm:text-2xl">
+          <h1 className="text-xl font-extrabold text-slate-900 dark:text-white sm:text-2xl">
             لم يتم العثور على التاجر
           </h1>
           <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">

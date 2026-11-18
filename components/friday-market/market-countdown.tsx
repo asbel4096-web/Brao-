@@ -22,7 +22,7 @@ function Box({ value, label, onDark }: { value: number; label: string; onDark?: 
       <div
         className={cn(
           "min-w-[44px] rounded-2xl px-2.5 py-2 text-center tabular-nums",
-          "text-xl font-black leading-none",
+          "text-xl font-extrabold leading-none",
           onDark
             ? "bg-white/15 text-white ring-1 ring-white/20 backdrop-blur"
             : "bg-action-50 text-action-700 ring-1 ring-action-100 dark:bg-action-500/10 dark:text-action-300"

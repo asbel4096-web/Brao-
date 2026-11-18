@@ -74,10 +74,10 @@ export default function FridayMarketPage() {
     return (
       <div className="container flex min-h-[70vh] flex-col items-center justify-center text-center" dir="rtl">
         <div className="text-5xl">🛒</div>
-        <h1 className="mt-4 text-lg font-black text-slate-800 dark:text-slate-100">
+        <h1 className="mt-4 text-lg font-extrabold text-slate-800 dark:text-slate-100">
           سوق الجمعة غير متاح حالياً
         </h1>
-        <p className="mt-1 text-sm font-semibold text-slate-500">
+        <p className="mt-1 text-sm font-bold text-slate-500">
           تابعنا — سيعود قريباً
         </p>
         <Link
@@ -104,10 +104,10 @@ export default function FridayMarketPage() {
                 <ShoppingCart size={24} strokeWidth={2.4} />
               </div>
               <div>
-                <h1 className="text-xl font-black leading-tight text-slate-900 dark:text-white">
+                <h1 className="text-xl font-extrabold leading-tight text-slate-900 dark:text-white">
                   {settings.bannerTitle || "🛒 سوق الجمعة"}
                 </h1>
-                <p className="text-[12px] font-semibold text-slate-500 dark:text-slate-400">
+                <p className="text-[12px] font-bold text-slate-500 dark:text-slate-400">
                   {weekLabel}
                 </p>
               </div>
@@ -154,7 +154,7 @@ export default function FridayMarketPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="ابحث في عروض الجمعة..."
-            className="w-full rounded-2xl border border-slate-200 bg-white py-3 pr-11 pl-4 text-[15px] font-semibold text-slate-800 outline-none focus:border-action-400 focus:ring-2 focus:ring-action-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            className="w-full rounded-2xl border border-slate-200 bg-white py-3 pr-11 pl-4 text-[15px] font-bold text-slate-800 outline-none focus:border-action-400 focus:ring-2 focus:ring-action-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
           />
         </div>
         <CategoryChips value={category} onChange={setCategory} />
@@ -164,7 +164,7 @@ export default function FridayMarketPage() {
       {featured.length > 0 && (
         <section className="mt-5">
           <div className="container mb-2 flex items-center gap-2">
-            <span className="text-base font-black text-slate-900 dark:text-white">
+            <span className="text-base font-extrabold text-slate-900 dark:text-white">
               ⭐ عروض مميّزة
             </span>
           </div>
@@ -181,7 +181,7 @@ export default function FridayMarketPage() {
       {/* ===== الشبكة ===== */}
       <section className="container mt-5">
         <div className="mb-3 flex items-center justify-between gap-2">
-          <h2 className="text-base font-black text-slate-900 dark:text-white">
+          <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
             {sort === "popular" ? "🔥 الأكثر رواجاً" : "أحدث العروض"}
           </h2>
           <div className="flex rounded-full bg-slate-100 p-0.5 dark:bg-slate-800">
@@ -237,7 +237,7 @@ export default function FridayMarketPage() {
             }
             setPostOpen(true);
           }}
-          className="fixed bottom-24 left-1/2 z-[55] flex -translate-x-1/2 items-center gap-2 rounded-full bg-gradient-to-l from-orange-500 to-red-600 px-5 py-3.5 text-[15px] font-black text-white shadow-[0_12px_30px_-6px_rgba(234,88,12,0.6)]"
+          className="fixed bottom-24 left-1/2 z-[55] flex -translate-x-1/2 items-center gap-2 rounded-full bg-gradient-to-l from-action-500 to-red-600 px-5 py-3.5 text-[15px] font-extrabold text-white shadow-[0_12px_30px_-6px_rgba(234,88,12,0.6)]"
         >
           <Plus size={20} strokeWidth={2.8} /> نشر سريع
         </motion.button>
@@ -256,12 +256,12 @@ export default function FridayMarketPage() {
 
 function ClosedNotice({ msUntilOpen }: { msUntilOpen: number }) {
   return (
-    <div className="rounded-3xl border border-dashed border-orange-200 bg-orange-50 py-12 text-center dark:border-orange-900/40 dark:bg-orange-950/20">
+    <div className="rounded-3xl border border-dashed border-action-200 bg-action-50 py-12 text-center dark:border-action-900/40 dark:bg-action-950/20">
       <div className="text-4xl">🛒</div>
-      <p className="mt-3 text-base font-black text-slate-800 dark:text-slate-100">
+      <p className="mt-3 text-base font-extrabold text-slate-800 dark:text-slate-100">
         السوق مغلق حالياً
       </p>
-      <p className="mt-1 text-sm font-semibold text-slate-500">
+      <p className="mt-1 text-sm font-bold text-slate-500">
         سوق الجمعة يفتح يوم الجمعة فقط
       </p>
       <div className="mt-3">

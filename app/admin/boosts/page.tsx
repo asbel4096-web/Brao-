@@ -80,11 +80,11 @@ export default function AdminBoostsPage() {
   return (
     <div className="space-y-4">
       <header className="flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
           <Rocket size={20} strokeWidth={2.2} />
         </div>
         <div>
-          <h1 className="text-lg font-black text-slate-900 dark:text-white sm:text-xl">
+          <h1 className="text-lg font-extrabold text-slate-900 dark:text-white sm:text-xl">
             تعزيز الإعلانات
           </h1>
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
@@ -137,10 +137,10 @@ export default function AdminBoostsPage() {
               type="button"
               onClick={() => setTab(t.key)}
               className={`
-                shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-black transition
+                shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-extrabold transition
                 ${active
-                  ? "bg-purple-600 text-white shadow-sm"
-                  : "border border-slate-200 bg-white text-slate-600 hover:border-purple-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                  ? "bg-brand-600 text-white shadow-sm"
+                  : "border border-slate-200 bg-white text-slate-600 hover:border-brand-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                 }
               `}
             >
@@ -172,7 +172,7 @@ export default function AdminBoostsPage() {
             size={36}
             className="mx-auto mb-2 text-slate-300 dark:text-slate-600"
           />
-          <p className="text-sm font-black text-slate-700 dark:text-slate-200">
+          <p className="text-sm font-extrabold text-slate-700 dark:text-slate-200">
             لا توجد إعلانات في هذه الفئة
           </p>
         </div>
@@ -191,7 +191,7 @@ export default function AdminBoostsPage() {
                 key={l.id}
                 href={`/listings/${l.id}`}
                 target="_blank"
-                className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 transition hover:border-purple-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-purple-700"
+                className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 transition hover:border-brand-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-brand-700"
               >
                 {l.images?.[0] ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -205,30 +205,30 @@ export default function AdminBoostsPage() {
                 )}
 
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-black text-slate-900 dark:text-white">
+                  <p className="truncate text-sm font-extrabold text-slate-900 dark:text-white">
                     {l.title || l.id.slice(0, 10)}
                   </p>
                   <div className="mt-1 flex flex-wrap items-center gap-1.5">
                     {isFeatured && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-black text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-extrabold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
                         <Flame size={9} />
                         مميَّز · {formatRemainingDays(fDays)}
                       </span>
                     )}
                     {isBoosted && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-[9px] font-black text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-brand-100 px-2 py-0.5 text-[9px] font-extrabold text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
                         <Rocket size={9} />
                         Boost · {formatRemainingDays(bDays)}
                       </span>
                     )}
                     {isUrgent && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[9px] font-black text-rose-700 dark:bg-rose-900/30 dark:text-rose-300">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[9px] font-extrabold text-rose-700 dark:bg-rose-900/30 dark:text-rose-300">
                         <Zap size={9} />
                         عاجل · {formatRemainingDays(uDays)}
                       </span>
                     )}
                     {l.featuredBy === "admin_grant" && (
-                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-black text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-extrabold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
                         مجاني
                       </span>
                     )}
@@ -258,7 +258,7 @@ function StatBox({
 }) {
   const tones: Record<string, string> = {
     amber: "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
-    purple: "bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
+    purple: "bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300",
     emerald: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
     rose: "bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300",
   };
@@ -269,10 +269,10 @@ function StatBox({
           <Icon size={15} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+          <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
             {label}
           </p>
-          <p className="mt-0.5 text-sm font-black tabular-nums text-slate-900 dark:text-white">
+          <p className="mt-0.5 text-sm font-extrabold tabular-nums text-slate-900 dark:text-white">
             {value}
           </p>
         </div>

@@ -112,7 +112,7 @@ export function useSearchAlertMatcher(uid: string | null | undefined) {
               userId: uid,
               type: "search_alert_match",
               title: "وصل إعلان مطابق لبحثك",
-              body: `${listing.title} بسعر ${listing.price.toLocaleString("ar-LY")} د.ل في ${listing.city}`,
+              body: `${listing.title} بسعر ${listing.price.toLocaleString("en-US")} د.ل في ${listing.city}`,
               link: `/listings/${listing.id}`,
               meta: {
                 listingId: listing.id,

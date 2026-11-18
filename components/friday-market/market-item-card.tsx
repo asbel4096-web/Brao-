@@ -49,13 +49,13 @@ export function MarketItemCard({
           )}
 
           {showBadge && (
-            <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-gradient-to-l from-orange-500 to-red-600 px-2 py-0.5 text-[10px] font-black text-white shadow">
+            <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-gradient-to-l from-action-500 to-red-600 px-2 py-0.5 text-[10px] font-extrabold text-white shadow">
               <Flame size={11} strokeWidth={2.6} /> عرض الجمعة
             </span>
           )}
 
           {item.featured && (
-            <span className="absolute left-2 top-2 rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-black text-amber-950 shadow">
+            <span className="absolute left-2 top-2 rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-extrabold text-amber-950 shadow">
               ⭐ مميّز
             </span>
           )}
@@ -63,13 +63,13 @@ export function MarketItemCard({
 
         {/* التفاصيل */}
         <div className="p-2.5">
-          <p className="text-[15px] font-black text-action-600 tabular-nums dark:text-action-400">
+          <p className="text-[15px] font-extrabold text-brand-700 tabular-nums dark:text-brand-300">
             {formatPrice(item.price)}
           </p>
           <h3 className="mt-0.5 line-clamp-2 min-h-[2.4em] text-[13px] font-bold leading-tight text-slate-800 dark:text-slate-100">
             {item.title}
           </h3>
-          <p className="mt-1 flex items-center gap-1.5 text-[11px] font-semibold text-slate-400">
+          <p className="mt-1 flex items-center gap-1.5 text-[11px] font-bold text-slate-400">
             <span>
               {fridayCategoryLabel(item.category)}
               {item.city ? ` · ${item.city}` : ""}

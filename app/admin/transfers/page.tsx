@@ -99,7 +99,7 @@ export default function AdminTransfersPage() {
           <ArrowLeftRight size={20} strokeWidth={2.2} />
         </div>
         <div>
-          <h1 className="text-lg font-black text-slate-900 dark:text-white sm:text-xl">
+          <h1 className="text-lg font-extrabold text-slate-900 dark:text-white sm:text-xl">
             تحويلات الرصيد
           </h1>
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
@@ -141,7 +141,7 @@ export default function AdminTransfersPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="ابحث بالاسم أو الهاتف..."
-          className="h-11 w-full rounded-2xl border border-slate-200 bg-white pe-9 ps-3 text-sm outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          className="h-11 w-full rounded-2xl border border-slate-200 bg-white pe-9 ps-3 text-sm outline-none focus:border-brand-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
         />
       </div>
 
@@ -179,16 +179,16 @@ function StatCard({
   tone: "blue" | "emerald" | "purple";
 }) {
   const tones: Record<string, string> = {
-    blue: "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+    blue: "bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300",
     emerald: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
-    purple: "bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
+    purple: "bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300",
   };
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
       <div className={`mb-2 inline-flex h-8 w-8 items-center justify-center rounded-lg ${tones[tone]}`}>
         <Icon size={15} />
       </div>
-      <p className="text-base font-black tabular-nums text-slate-900 dark:text-white">
+      <p className="text-base font-extrabold tabular-nums text-slate-900 dark:text-white">
         {value}
       </p>
       <p className="text-[10px] text-slate-500 dark:text-slate-400">{label}</p>
@@ -212,7 +212,7 @@ function TransferRowItem({ transfer: t }: { transfer: TransferRow }) {
         <ArrowLeftRight size={15} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-black text-slate-900 dark:text-white">
+        <p className="truncate text-[13px] font-extrabold text-slate-900 dark:text-white">
           {t.senderName || "?"} ← {t.recipientName || "?"}
         </p>
         <p className="mt-0.5 truncate text-[10px] text-slate-500 dark:text-slate-400" dir="ltr">
@@ -226,7 +226,7 @@ function TransferRowItem({ transfer: t }: { transfer: TransferRow }) {
         <p className="mt-0.5 text-[9px] text-slate-400">{dateText}</p>
       </div>
       <div className="shrink-0 text-start">
-        <p className="text-[14px] font-black tabular-nums text-emerald-600">
+        <p className="text-[14px] font-extrabold tabular-nums text-emerald-600">
           {t.amount} BC
         </p>
       </div>

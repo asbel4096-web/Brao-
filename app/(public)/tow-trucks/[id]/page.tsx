@@ -98,7 +98,7 @@ export default function TowTruckDetailPage() {
         <button
           type="button"
           onClick={() => router.push("/tow-trucks")}
-          className="mt-3 inline-flex items-center gap-1 text-sm font-black text-brand-700 hover:underline dark:text-brand-300"
+          className="mt-3 inline-flex items-center gap-1 text-sm font-extrabold text-brand-700 hover:underline dark:text-brand-300"
         >
           <ArrowRight size={14} />
           الرجوع للساحبات
@@ -132,7 +132,7 @@ export default function TowTruckDetailPage() {
       <button
         type="button"
         onClick={() => router.back()}
-        className="mb-3 inline-flex items-center gap-1 text-sm font-black text-slate-600 hover:text-brand-700 dark:text-slate-300 dark:hover:text-brand-300"
+        className="mb-3 inline-flex items-center gap-1 text-sm font-extrabold text-slate-600 hover:text-brand-700 dark:text-slate-300 dark:hover:text-brand-300"
       >
         <ArrowRight size={14} />
         رجوع
@@ -168,8 +168,8 @@ export default function TowTruckDetailPage() {
                 >
                   <ChevronLeft size={18} />
                 </button>
-                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-black/50 px-2.5 py-1 text-[11px] font-black text-white backdrop-blur-sm">
-                  {photoIdx + 1} / {images.length}
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-black/50 px-2.5 py-1 text-[11px] font-extrabold text-white backdrop-blur-sm">
+                  <span className="num">{photoIdx + 1} / {images.length}</span>
                 </div>
               </>
             )}
@@ -182,7 +182,7 @@ export default function TowTruckDetailPage() {
 
         {/* البادجات */}
         {available && (
-          <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-emerald-500 px-3 py-1.5 text-xs font-black text-white shadow-md">
+          <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-emerald-500 px-3 py-1.5 text-xs font-extrabold text-white shadow-md">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
@@ -194,7 +194,7 @@ export default function TowTruckDetailPage() {
 
       {/* الاسم والمعلومات */}
       <div className="card p-4">
-        <h1 className="text-lg font-black text-slate-900 dark:text-white sm:text-xl">
+        <h1 className="text-lg font-extrabold text-slate-900 dark:text-white sm:text-xl">
           {listing.title || "ساحبة سيارات"}
         </h1>
 
@@ -207,7 +207,7 @@ export default function TowTruckDetailPage() {
             </span>
           )}
           {distanceText && (
-            <span className="inline-flex items-center gap-1 font-black text-brand-700 dark:text-brand-300">
+            <span className="inline-flex items-center gap-1 font-extrabold text-brand-700 dark:text-brand-300">
               <Navigation size={12} />
               يبعد عنك {distanceText}
             </span>
@@ -220,8 +220,8 @@ export default function TowTruckDetailPage() {
             <span className="text-[11px] text-slate-500 dark:text-slate-400">
               السعر التقريبي:
             </span>
-            <span className="text-sm font-black text-action-700 dark:text-action-300">
-              {formatPrice(listing.price)} د.ل
+            <span className="text-sm font-extrabold text-action-700 dark:text-action-300">
+              {formatPrice(listing.price)}
             </span>
           </div>
         )}
@@ -229,7 +229,7 @@ export default function TowTruckDetailPage() {
         {/* المناطق المغطاة */}
         {listing.coverageAreas && (
           <div className="mt-4">
-            <h3 className="mb-1.5 text-xs font-black text-slate-700 dark:text-slate-200">
+            <h3 className="mb-1.5 text-xs font-extrabold text-slate-700 dark:text-slate-200">
               المناطق التي تغطيها
             </h3>
             <p className="text-xs leading-6 text-slate-600 dark:text-slate-300">
@@ -241,7 +241,7 @@ export default function TowTruckDetailPage() {
         {/* الوصف */}
         {listing.description && (
           <div className="mt-4">
-            <h3 className="mb-1.5 text-xs font-black text-slate-700 dark:text-slate-200">
+            <h3 className="mb-1.5 text-xs font-extrabold text-slate-700 dark:text-slate-200">
               وصف الخدمة
             </h3>
             <p className="whitespace-pre-wrap text-xs leading-6 text-slate-600 dark:text-slate-300">
@@ -255,7 +255,7 @@ export default function TowTruckDetailPage() {
           {phone && (
             <a
               href={`tel:${phone}`}
-              className="inline-flex h-11 items-center justify-center gap-1.5 rounded-2xl bg-brand-700 text-sm font-black text-white shadow-blue transition active:scale-95 hover:bg-brand-600"
+              className="inline-flex h-11 items-center justify-center gap-1.5 rounded-2xl bg-brand-700 text-sm font-extrabold text-white shadow-blue transition active:scale-95 hover:bg-brand-600"
             >
               <Phone size={16} />
               اتصال
@@ -266,7 +266,7 @@ export default function TowTruckDetailPage() {
               href={`https://wa.me/${wa}`}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex h-11 items-center justify-center gap-1.5 rounded-2xl bg-emerald-500 text-sm font-black text-white transition active:scale-95 hover:bg-emerald-600"
+              className="inline-flex h-11 items-center justify-center gap-1.5 rounded-2xl bg-emerald-500 text-sm font-extrabold text-white transition active:scale-95 hover:bg-emerald-600"
             >
               <MessageCircle size={16} />
               واتساب
@@ -280,7 +280,7 @@ export default function TowTruckDetailPage() {
             href={listing.locationUrl}
             target="_blank"
             rel="noreferrer"
-            className="mt-2 inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-2xl border border-slate-200 bg-white text-sm font-black text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            className="mt-2 inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-2xl border border-slate-200 bg-white text-sm font-extrabold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
           >
             <ExternalLink size={14} />
             افتح الموقع على الخريطة
@@ -292,7 +292,7 @@ export default function TowTruckDetailPage() {
           <button
             type="button"
             onClick={requestLocation}
-            className="mt-2 inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-2xl border border-action-200 bg-action-50 text-sm font-black text-action-700 transition hover:bg-action-100 dark:border-action-800/40 dark:bg-action-900/20 dark:text-action-300 dark:hover:bg-action-900/30"
+            className="mt-2 inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-2xl border border-action-200 bg-action-50 text-sm font-extrabold text-action-700 transition hover:bg-action-100 dark:border-action-800/40 dark:bg-action-900/20 dark:text-action-300 dark:hover:bg-action-900/30"
           >
             <MapPin size={14} />
             استخدم موقعي لمعرفة المسافة
@@ -310,7 +310,7 @@ export default function TowTruckDetailPage() {
       {listing.ownerId && (
         <Link
           href={`/traders/${listing.ownerId}`}
-          className="mt-3 inline-flex items-center gap-1 text-xs font-black text-brand-700 hover:underline dark:text-brand-300"
+          className="mt-3 inline-flex items-center gap-1 text-xs font-extrabold text-brand-700 hover:underline dark:text-brand-300"
         >
           عرض ملف صاحب الخدمة
           <ArrowRight size={12} />

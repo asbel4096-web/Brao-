@@ -118,13 +118,13 @@ export function MostViewedSection() {
     <section className="py-4 sm:py-5">
       <div className="container">
         <div className="mb-3 flex items-center justify-between gap-3 px-1">
-          <h2 className="inline-flex items-center gap-1.5 text-base font-black text-slate-900 dark:text-white sm:text-lg">
+          <h2 className="inline-flex items-center gap-1.5 text-xl font-extrabold leading-[30px] text-slate-950 dark:text-white">
             <Eye size={18} className="text-brand-700 dark:text-brand-300" />
             السيارات الأكثر مشاهدة
           </h2>
           <Link
             href="/listings?sort=views"
-            className="inline-flex items-center gap-0.5 text-xs font-black text-brand-700 transition hover:text-brand-800 dark:text-brand-300 dark:hover:text-brand-200"
+            className="inline-flex items-center gap-0.5 text-xs font-extrabold text-brand-700 transition hover:text-brand-800 dark:text-brand-300 dark:hover:text-brand-200"
           >
             عرض الكل
             <ChevronLeft size={14} />
@@ -133,7 +133,7 @@ export function MostViewedSection() {
       </div>
 
       <div
-        className="flex gap-3 overflow-x-auto px-4 pb-2 no-scrollbar sm:px-6"
+        className="mx-auto flex max-w-7xl gap-3 overflow-x-auto px-4 pb-3 no-scrollbar sm:px-6 lg:px-8"
         style={{ scrollbarWidth: "none" }}
       >
         {items.map((it, idx) => (

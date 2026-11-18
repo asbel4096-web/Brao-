@@ -7,7 +7,7 @@ import { ArrowRight, SearchX, TrendingUp, MapPin } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 
-const arNum = (v: number) => (Number(v) || 0).toLocaleString("ar-LY");
+const arNum = (v: number) => (Number(v) || 0).toLocaleString("en-US");
 
 interface Insight {
   query: string;
@@ -79,7 +79,7 @@ export default function SearchInsightsPage() {
           <ArrowRight size={20} />
         </Link>
         <div>
-          <h1 className="flex items-center gap-2 text-xl font-black text-slate-900 dark:text-white sm:text-2xl">
+          <h1 className="flex items-center gap-2 text-xl font-extrabold text-slate-900 dark:text-white sm:text-2xl">
             <SearchX size={22} className="text-action-500" />
             بحث بلا نتائج
           </h1>
@@ -107,7 +107,7 @@ export default function SearchInsightsPage() {
       ) : items.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-slate-200 bg-white p-12 text-center dark:border-slate-700 dark:bg-slate-900">
           <SearchX size={40} className="mx-auto mb-2 text-slate-300 dark:text-slate-600" />
-          <p className="text-base font-black text-slate-900 dark:text-white">
+          <p className="text-base font-extrabold text-slate-900 dark:text-white">
             لا توجد بيانات بعد
           </p>
           <p className="mt-1 text-sm text-slate-400">
@@ -121,7 +121,7 @@ export default function SearchInsightsPage() {
               <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300">
                 <SearchX size={18} />
               </div>
-              <div className="text-2xl font-black tabular-nums text-slate-900 dark:text-white">
+              <div className="text-2xl font-extrabold tabular-nums text-slate-900 dark:text-white">
                 {arNum(meta.total)}
               </div>
               <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
@@ -132,7 +132,7 @@ export default function SearchInsightsPage() {
               <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-2xl bg-action-50 text-action-600 dark:bg-action-500/15 dark:text-action-300">
                 <TrendingUp size={18} />
               </div>
-              <div className="text-2xl font-black tabular-nums text-slate-900 dark:text-white">
+              <div className="text-2xl font-extrabold tabular-nums text-slate-900 dark:text-white">
                 {arNum(meta.unique)}
               </div>
               <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
@@ -147,11 +147,11 @@ export default function SearchInsightsPage() {
                 key={it.query + idx}
                 className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-3 dark:border-slate-800 dark:bg-slate-900"
               >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs font-black text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs font-extrabold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                   {idx + 1}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-black text-slate-900 dark:text-white">
+                  <p className="truncate text-sm font-extrabold text-slate-900 dark:text-white">
                     {it.query}
                   </p>
                   <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
@@ -167,7 +167,7 @@ export default function SearchInsightsPage() {
                     </p>
                   )}
                 </div>
-                <span className="shrink-0 rounded-full bg-rose-50 px-2.5 py-1 text-xs font-black tabular-nums text-rose-600 dark:bg-rose-500/15 dark:text-rose-300">
+                <span className="shrink-0 rounded-full bg-rose-50 px-2.5 py-1 text-xs font-extrabold tabular-nums text-rose-600 dark:bg-rose-500/15 dark:text-rose-300">
                   {arNum(it.count)}×
                 </span>
               </div>

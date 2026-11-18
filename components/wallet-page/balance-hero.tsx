@@ -19,7 +19,8 @@ interface Props {
 
 export function BalanceHero({ onTopup, onUse }: Props) {
   const { balance } = useWallet();
-  const lyd = balance.toLocaleString("ar-LY", {
+  // Bratsho DS (ق٧): أرقام en-US — كان ar-LY يكتب «50,00» فتُقرأ الفاصلة فاصل آلاف
+  const lyd = balance.toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
@@ -37,7 +38,7 @@ export function BalanceHero({ onTopup, onUse }: Props) {
       <div className="pointer-events-none absolute -bottom-14 -right-8 h-44 w-44 rounded-full bg-brand-400/20 blur-3xl" />
 
       {/* علامة BC مائية */}
-      <span className="pointer-events-none absolute -bottom-6 left-3 select-none text-[7rem] font-black leading-none text-white/[0.05]">
+      <span className="pointer-events-none absolute -bottom-6 left-3 select-none text-[7rem] font-extrabold leading-none text-white/[0.05]">
         BC
       </span>
 
@@ -66,7 +67,7 @@ export function BalanceHero({ onTopup, onUse }: Props) {
             />
           </div>
           <div className="text-end leading-none">
-            <p className="text-[13px] font-black tracking-wide text-white">
+            <p className="text-[13px] font-extrabold tracking-wide text-white">
               BRATSHO CAR
             </p>
             <p className="mt-0.5 text-[9px] font-bold tracking-[0.2em] text-action-300">
@@ -82,12 +83,12 @@ export function BalanceHero({ onTopup, onUse }: Props) {
             <span className="text-[2.7rem] font-black leading-none tracking-tight text-white sm:text-5xl">
               {balance.toLocaleString("en-US")}
             </span>
-            <span className="rounded-lg bg-action-500/20 px-2 py-1 text-sm font-black text-action-300">
+            <span className="rounded-lg bg-action-500/20 px-2 py-1 text-sm font-extrabold text-action-300">
               BC
             </span>
           </div>
           <p className="mt-2 text-[11px] text-white/45">
-            ≈ <span className="font-mono tabular-nums">{lyd}</span> د.ل
+            ≈ <span className="num">{lyd}</span> د.ل
           </p>
         </div>
 
@@ -97,7 +98,7 @@ export function BalanceHero({ onTopup, onUse }: Props) {
             type="button"
             onClick={onTopup}
             whileTap={{ scale: 0.97 }}
-            className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-action-500 py-3.5 text-sm font-black text-white shadow-action transition hover:bg-action-600"
+            className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-action-500 py-3.5 text-sm font-extrabold text-white shadow-action transition hover:bg-action-600"
           >
             <Plus size={15} strokeWidth={2.8} />
             شحن رصيد
@@ -106,7 +107,7 @@ export function BalanceHero({ onTopup, onUse }: Props) {
             type="button"
             onClick={onUse}
             whileTap={{ scale: 0.97 }}
-            className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-white/10 py-3.5 text-sm font-black text-white ring-1 ring-white/15 backdrop-blur-sm transition hover:bg-white/15"
+            className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-white/10 py-3.5 text-sm font-extrabold text-white ring-1 ring-white/15 backdrop-blur-sm transition hover:bg-white/15"
           >
             استخدام الرصيد
             <ArrowLeft size={15} />

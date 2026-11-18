@@ -17,6 +17,7 @@ import { timeAgo } from "@/lib/utils";
 import type { AppNotification } from "@/lib/types";
 import { PushPermissionBanner } from "@/components/push-permission-banner";
 import { SponsoredSpotlight } from "@/components/sponsored-spotlight";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export default function NotificationsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -97,7 +98,7 @@ export default function NotificationsPage() {
             </h1>
             <p className="section-subtitle">
               {unreadCount > 0
-                ? `${unreadCount.toLocaleString("ar-LY")} غير مقروء`
+                ? `${unreadCount.toLocaleString("en-US")} غير مقروء`
                 : "كل الإشعارات مقروءة"}
             </p>
           </div>
@@ -124,17 +125,7 @@ export default function NotificationsPage() {
             {[...Array(3)].map((_, i) => <div key={i} className="skeleton h-20" />)}
           </div>
         ) : items.length === 0 ? (
-          <div className="card p-10 text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
-              <Bell size={32} />
-            </div>
-            <p className="mt-4 text-base font-black text-slate-900 dark:text-white">
-              لا توجد إشعارات بعد
-            </p>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              ستظهر هنا التحديثات عن إعلاناتك ورسائلك.
-            </p>
-          </div>
+          <EmptyState icon={Bell} title="لا توجد إشعارات بعد" body="ستظهر هنا التحديثات عن إعلاناتك ورسائلك." />
         ) : (
           <div className="space-y-2">
             {items.map((n) => {
@@ -194,7 +185,7 @@ export default function NotificationsPage() {
                       <div className="flex items-start justify-between gap-2">
                         <h3
                           className={`text-sm dark:text-white ${
-                            !n.read ? "font-black" : "font-bold"
+                            !n.read ? "font-extrabold" : "font-bold"
                           }`}
                         >
                           {n.title}

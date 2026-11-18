@@ -8,7 +8,7 @@ import { ArrowRight, Copy, Phone, AlertTriangle } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 
-const arNum = (v: number) => (Number(v) || 0).toLocaleString("ar-LY");
+const arNum = (v: number) => (Number(v) || 0).toLocaleString("en-US");
 
 const STATUS_AR: Record<string, string> = {
   approved: "معتمد",
@@ -65,7 +65,7 @@ export default function DuplicatesPage() {
           <ArrowRight size={20} />
         </Link>
         <div>
-          <h1 className="flex items-center gap-2 text-xl font-black text-slate-900 dark:text-white sm:text-2xl">
+          <h1 className="flex items-center gap-2 text-xl font-extrabold text-slate-900 dark:text-white sm:text-2xl">
             <Copy size={20} className="text-amber-500" />
             كشف التكرار
           </h1>
@@ -94,7 +94,7 @@ export default function DuplicatesPage() {
           {/* أرقام عالية النشاط */}
           {data.highVolume?.length > 0 && (
             <div className="rounded-3xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900/40 dark:bg-amber-900/15">
-              <h2 className="mb-2 flex items-center gap-1.5 text-sm font-black text-amber-800 dark:text-amber-200">
+              <h2 className="mb-2 flex items-center gap-1.5 text-sm font-extrabold text-amber-800 dark:text-amber-200">
                 <AlertTriangle size={15} />
                 أرقام عالية النشاط
               </h2>
@@ -102,7 +102,7 @@ export default function DuplicatesPage() {
                 {data.highVolume.map((h: any) => (
                   <span
                     key={h.phone}
-                    className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-[11px] font-black text-amber-700 ring-1 ring-amber-200 dark:bg-slate-900 dark:text-amber-300 dark:ring-amber-900/40"
+                    className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-[11px] font-extrabold text-amber-700 ring-1 ring-amber-200 dark:bg-slate-900 dark:text-amber-300 dark:ring-amber-900/40"
                   >
                     <Phone size={11} />
                     …{h.phone.slice(-6)} · {arNum(h.count)} إعلان
@@ -117,13 +117,13 @@ export default function DuplicatesPage() {
 
           {/* مجموعات التكرار */}
           <div>
-            <h2 className="mb-2 text-sm font-black text-slate-900 dark:text-white">
+            <h2 className="mb-2 text-sm font-extrabold text-slate-900 dark:text-white">
               إعلانات مكرّرة ({arNum(data.duplicateGroups?.length || 0)})
             </h2>
             {!data.duplicateGroups || data.duplicateGroups.length === 0 ? (
               <div className="rounded-3xl border border-dashed border-slate-200 bg-white p-10 text-center dark:border-slate-700 dark:bg-slate-900">
                 <Copy size={36} className="mx-auto mb-2 text-slate-300 dark:text-slate-600" />
-                <p className="text-sm font-black text-slate-900 dark:text-white">
+                <p className="text-sm font-extrabold text-slate-900 dark:text-white">
                   لا تكرار واضح 🎉
                 </p>
               </div>
@@ -135,10 +135,10 @@ export default function DuplicatesPage() {
                     className="rounded-3xl border border-slate-100 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900"
                   >
                     <div className="mb-2 flex items-center justify-between gap-2">
-                      <p className="line-clamp-1 text-sm font-black text-slate-900 dark:text-white">
+                      <p className="line-clamp-1 text-sm font-extrabold text-slate-900 dark:text-white">
                         {g.title}
                       </p>
-                      <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-black text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
+                      <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-extrabold text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
                         {arNum(g.count)} نسخة
                       </span>
                     </div>

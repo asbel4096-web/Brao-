@@ -77,7 +77,7 @@ function ProfileEditContent() {
   if (loading || !user || !profile) {
     return (
       <div className="flex h-[60vh] items-center justify-center" dir="rtl">
-        <Loader2 size={28} className="animate-spin text-blue-500" />
+        <Loader2 size={28} className="animate-spin text-brand-500" />
       </div>
     );
   }
@@ -127,7 +127,7 @@ function ProfileEditContent() {
           <ChevronRight size={16} />
         </button>
         <div>
-          <h1 className="text-lg font-black text-slate-900 dark:text-white">
+          <h1 className="text-lg font-extrabold text-slate-900 dark:text-white">
             تحرير المعرض
           </h1>
           <p className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -149,10 +149,10 @@ function ProfileEditContent() {
               whileTap={{ scale: 0.95 }}
               className={`
                 shrink-0 inline-flex items-center gap-1.5 rounded-full
-                px-4 py-2 text-[12px] font-black transition
+                px-4 py-2 text-[12px] font-extrabold transition
                 ${isActive
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/30"
-                  : "border border-slate-200 bg-white text-slate-600 hover:border-blue-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                  ? "bg-brand-600 text-white shadow-md shadow-brand-500/30"
+                  : "border border-slate-200 bg-white text-slate-600 hover:border-brand-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                 }
               `}
             >
@@ -187,7 +187,7 @@ function VerifiedOnlyMessage({ feature }: { feature: string }) {
       <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
         <Sparkles size={20} />
       </div>
-      <p className="text-sm font-black text-amber-900 dark:text-amber-200">
+      <p className="text-sm font-extrabold text-amber-900 dark:text-amber-200">
         {feature} متاحة للمعارض الموثقة فقط
       </p>
       <p className="mt-1 text-[11px] text-amber-700 dark:text-amber-300">
@@ -203,7 +203,7 @@ function VerifiedOnlyMessage({ feature }: { feature: string }) {
 function LoadingFallback() {
   return (
     <div className="flex h-[60vh] items-center justify-center" dir="rtl">
-      <Loader2 size={28} className="animate-spin text-blue-500" />
+      <Loader2 size={28} className="animate-spin text-brand-500" />
     </div>
   );
 }

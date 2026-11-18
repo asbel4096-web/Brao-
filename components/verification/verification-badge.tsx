@@ -73,7 +73,7 @@ export function VerificationBadge({
 
   return (
     <span
-      className={`inline-flex items-center rounded-full font-black ${sizeCls} ${style.cls} ${className}`}
+      className={`inline-flex items-center rounded-full font-extrabold ${sizeCls} ${style.cls} ${className}`}
       title={style.label}
     >
       <Icon size={iconSize} strokeWidth={2.5} />

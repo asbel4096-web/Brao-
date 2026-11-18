@@ -73,7 +73,7 @@ export function StoriesEditTab() {
     <div className="space-y-4">
       {/* Counter */}
       <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-2 dark:bg-slate-900">
-        <div className="flex items-center gap-2 text-[12px] font-black text-slate-700 dark:text-slate-300">
+        <div className="flex items-center gap-2 text-[12px] font-extrabold text-slate-700 dark:text-slate-300">
           <Clock size={13} />
           {totalCount} قصة نشطة
         </div>
@@ -135,7 +135,7 @@ function CategorySection({
             {category.fallbackIcon}
           </div>
           <div>
-            <h3 className="text-sm font-black text-slate-900 dark:text-white">
+            <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
               {category.label}
             </h3>
             <p className="text-[10px] text-slate-500 dark:text-slate-400">
@@ -150,8 +150,8 @@ function CategorySection({
             whileTap={{ scale: 0.95 }}
             className="
               inline-flex items-center gap-1 rounded-full
-              bg-blue-600 px-3 py-1.5 text-[11px] font-black text-white
-              shadow-sm transition hover:bg-blue-700
+              bg-brand-600 px-3 py-1.5 text-[11px] font-extrabold text-white
+              shadow-sm transition hover:bg-brand-700
             "
           >
             <Plus size={11} />
@@ -231,7 +231,7 @@ function StoryThumb({ story }: { story: DealerStory }) {
       )}
 
       {/* Days remaining */}
-      <div className="absolute bottom-1 right-1 rounded-full bg-black/70 px-1.5 py-0.5 text-[9px] font-black text-white">
+      <div className="absolute bottom-1 right-1 rounded-full bg-black/70 px-1.5 py-0.5 text-[9px] font-extrabold text-white">
         {remainingDays}ي
       </div>
 
@@ -353,7 +353,7 @@ function CreateStoryModal({
         animate={{ opacity: 1, y: 0 }}
         className="
           fixed inset-x-0 bottom-0 z-[60] mx-auto w-full max-w-md
-          max-h-[92vh] overflow-hidden rounded-t-[28px]
+          max-h-[92vh] overflow-hidden rounded-t-3xl
           border border-slate-200 bg-white shadow-2xl
           dark:border-slate-800 dark:bg-slate-950
           sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2
@@ -363,7 +363,7 @@ function CreateStoryModal({
       >
         {/* رأس ثابت */}
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3.5 dark:border-slate-800">
-          <h2 className="text-base font-black text-slate-900 dark:text-white">
+          <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
             إضافة قصة جديدة
           </h2>
           {!submitting && (
@@ -388,7 +388,7 @@ function CreateStoryModal({
         >
           {/* Category selector */}
           <div>
-            <label className="block text-xs font-black text-slate-700 dark:text-slate-300">
+            <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
               التصنيف
             </label>
             <div className="mt-1.5 grid grid-cols-2 gap-1.5">
@@ -400,9 +400,9 @@ function CreateStoryModal({
                     type="button"
                     onClick={() => setCategory(cat.key)}
                     className={`
-                      flex items-center gap-1.5 rounded-xl border px-3 py-2.5 text-[12px] font-black transition
+                      flex items-center gap-1.5 rounded-xl border px-3 py-2.5 text-[12px] font-extrabold transition
                       ${isActive
-                        ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                        ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300"
                         : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
                       }
                     `}
@@ -417,7 +417,7 @@ function CreateStoryModal({
 
           {/* Image picker — مساحة كبيرة وواضحة (≥ 200px) */}
           <div className="mt-4">
-            <label className="block text-xs font-black text-slate-700 dark:text-slate-300">
+            <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
               الصورة
             </label>
             {preview ? (
@@ -449,12 +449,12 @@ function CreateStoryModal({
                   mt-1.5 flex min-h-[200px] w-full flex-col items-center
                   justify-center gap-2.5 rounded-2xl border-2 border-dashed
                   border-slate-300 bg-slate-50 text-slate-400 transition
-                  hover:border-blue-500 hover:bg-blue-50/50 hover:text-blue-500
+                  hover:border-brand-500 hover:bg-brand-50/50 hover:text-brand-500
                   dark:border-slate-700 dark:bg-slate-900
                 "
               >
                 <ImagePlus size={40} strokeWidth={1.75} />
-                <span className="text-sm font-black">اختاري صورة</span>
+                <span className="text-sm font-extrabold">اختاري صورة</span>
                 <span className="text-[11px] font-bold text-slate-400">
                   JPG · PNG · WEBP — حتى 5MB
                 </span>
@@ -471,7 +471,7 @@ function CreateStoryModal({
 
           {/* Caption */}
           <div className="mt-4">
-            <label className="block text-xs font-black text-slate-700 dark:text-slate-300">
+            <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
               وصف (اختياري)
             </label>
             <textarea
@@ -483,7 +483,7 @@ function CreateStoryModal({
               className="
                 mt-1.5 w-full resize-none rounded-2xl border border-slate-200
                 bg-white px-3 py-2 text-sm outline-none
-                focus:border-blue-500
+                focus:border-brand-500
                 dark:border-slate-700 dark:bg-slate-900 dark:text-white
               "
             />
@@ -497,7 +497,7 @@ function CreateStoryModal({
               disabled={submitting}
               className="
                 h-11 rounded-2xl border border-slate-200 px-4 text-xs
-                font-black text-slate-700 hover:bg-slate-50
+                font-extrabold text-slate-700 hover:bg-slate-50
                 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800
                 disabled:opacity-60
               "
@@ -511,8 +511,8 @@ function CreateStoryModal({
               whileTap={{ scale: 0.97 }}
               className="
                 inline-flex h-11 items-center gap-1.5 rounded-2xl
-                bg-blue-600 px-6 text-xs font-black text-white shadow-md
-                transition hover:bg-blue-700 disabled:opacity-60
+                bg-brand-600 px-6 text-xs font-extrabold text-white shadow-md
+                transition hover:bg-brand-700 disabled:opacity-60
               "
             >
               {submitting ? (

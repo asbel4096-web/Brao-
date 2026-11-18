@@ -28,7 +28,7 @@ export function MaintenanceGate({ children }: { children: React.ReactNode }) {
     return (
       <>
         {maintenance && isAdmin && (
-          <div className="sticky top-0 z-[60] flex items-center justify-center gap-2 bg-amber-500 px-3 py-1.5 text-center text-xs font-black text-amber-950">
+          <div className="sticky top-0 z-[60] flex items-center justify-center gap-2 bg-amber-500 px-3 py-1.5 text-center text-xs font-extrabold text-amber-950">
             <Wrench size={13} />
             وضع الصيانة مُفعّل — الزوّار يرون شاشة الصيانة. أنت أدمن فتتجاوزها.
           </div>
@@ -53,7 +53,7 @@ export function MaintenanceGate({ children }: { children: React.ReactNode }) {
           نُجري بعض التحسينات على براتشو كار لنُقدّم لك تجربة أفضل. نعتذر عن
           الانقطاع المؤقت، وسنعود قريباً.
         </p>
-        <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-black backdrop-blur">
+        <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-extrabold backdrop-blur">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-action-400 opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-action-400" />

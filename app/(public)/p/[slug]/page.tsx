@@ -68,7 +68,7 @@ export default function PublicCmsPage() {
           size={48}
           className="mx-auto mb-3 text-slate-300 dark:text-slate-600"
         />
-        <h1 className="text-xl font-black text-slate-900 dark:text-white">
+        <h1 className="text-xl font-extrabold text-slate-900 dark:text-white">
           الصفحة غير موجودة
         </h1>
         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">

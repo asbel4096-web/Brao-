@@ -78,7 +78,7 @@ export default function WalletPage() {
     return (
       <section className="container py-6" dir="rtl">
         <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center dark:border-slate-800 dark:bg-slate-900">
-          <p className="text-base font-black text-slate-700 dark:text-white">
+          <p className="text-base font-extrabold text-slate-700 dark:text-white">
             نظام المحفظة غير مفعَّل حالياً
           </p>
           <p className="mt-1 text-[12px] text-slate-500">
@@ -181,21 +181,21 @@ function PageHeader() {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={avatar} alt="" className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-sm font-black text-white">
+            <div className="flex h-full w-full items-center justify-center text-sm font-extrabold text-white">
               BC
             </div>
           )}
           {/* Online indicator */}
           <span className="
             absolute bottom-0 left-0 h-3 w-3 rounded-full
-            border-2 border-white bg-orange-500
+            border-2 border-white bg-action-500
           " />
         </Link>
         <div>
-          <h1 className="text-sm font-black text-slate-900 dark:text-white">
+          <h1 className="text-sm font-extrabold text-slate-900 dark:text-white">
             {businessName}
           </h1>
-          <p className="text-[10px] font-bold text-orange-600">
+          <p className="text-[10px] font-bold text-action-600">
             BRATSHO CAR
           </p>
         </div>

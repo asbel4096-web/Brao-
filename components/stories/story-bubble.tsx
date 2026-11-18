@@ -78,7 +78,7 @@ function StoryBubbleImpl({ stories, seen = false, onClick }: Props) {
         </div>
 
         {stories.length > 1 ? (
-          <span className="absolute -bottom-0.5 -right-0.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-action-500 px-1 text-[10px] font-black text-white dark:border-slate-950">
+          <span className="absolute -bottom-0.5 -right-0.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-action-500 px-1 text-[10px] font-extrabold text-white dark:border-slate-950">
             {stories.length}
           </span>
         ) : null}

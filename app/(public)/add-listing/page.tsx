@@ -641,14 +641,14 @@ export default function AddListingPage() {
     return (
       <div className="mx-auto max-w-2xl px-4 py-10">
         <div className="rounded-3xl bg-white p-8 text-center shadow-sm">
-          <h1 className="text-xl font-black text-slate-900">إضافة إعلان</h1>
+          <h1 className="text-xl font-extrabold text-slate-900">إضافة إعلان</h1>
           <p className="mt-3 text-slate-600">
             يجب تسجيل الدخول حتى تتمكن من إضافة إعلان جديد.
           </p>
           <button
             type="button"
             onClick={() => router.push("/login?redirect=/add-listing")}
-            className="mt-6 rounded-2xl bg-brand-700 px-6 py-3 font-black text-white"
+            className="mt-6 rounded-2xl bg-brand-700 px-6 py-3 font-extrabold text-white"
           >
             تسجيل الدخول
           </button>
@@ -675,7 +675,7 @@ export default function AddListingPage() {
       <div className="mx-auto max-w-2xl px-3 py-4 sm:px-4 sm:py-6">
         {/* العنوان */}
         <header className="mb-4">
-          <h1 className="text-2xl font-black text-slate-900">أضف سيارة جديدة</h1>
+          <h1 className="text-2xl font-extrabold text-slate-900">أضف سيارة جديدة</h1>
           <p className="mt-1 text-sm text-slate-500">
             أكمل الخطوات لنشر إعلانك باحترافية
           </p>
@@ -718,7 +718,7 @@ export default function AddListingPage() {
             <button
               type="button"
               onClick={startFresh}
-              className="shrink-0 rounded-xl bg-white px-3 py-1.5 text-[11px] font-black text-brand-700 ring-1 ring-brand-200 transition hover:bg-brand-50 dark:bg-slate-800 dark:text-brand-300 dark:ring-brand-800"
+              className="shrink-0 rounded-xl bg-white px-3 py-1.5 text-[11px] font-extrabold text-brand-700 ring-1 ring-brand-200 transition hover:bg-brand-50 dark:bg-slate-800 dark:text-brand-300 dark:ring-brand-800"
             >
               ابدأ من جديد
             </button>
@@ -772,7 +772,7 @@ export default function AddListingPage() {
                       <div className="grid h-16 w-16 place-items-center rounded-2xl bg-brand-600 text-white shadow-lg">
                         <ImagePlus size={28} />
                       </div>
-                      <span className="text-base font-black text-slate-700">
+                      <span className="text-base font-extrabold text-slate-700">
                         اضغط لإضافة الصورة الرئيسية
                       </span>
                       <span className="text-xs text-slate-400">
@@ -795,7 +795,7 @@ export default function AddListingPage() {
                           alt="الصورة الرئيسية"
                           className="h-full w-full object-cover"
                         />
-                        <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-brand-600 px-3 py-1 text-[11px] font-black text-white shadow">
+                        <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-brand-600 px-3 py-1 text-[11px] font-extrabold text-white shadow">
                           <Star size={11} /> الصورة الرئيسية
                         </span>
                         <button
@@ -1142,11 +1142,11 @@ export default function AddListingPage() {
                         placeholder="0"
                         className="w-40 bg-transparent text-center text-4xl font-black text-slate-900 outline-none placeholder:text-slate-300"
                       />
-                      <span className="text-lg font-black text-slate-400">د.ل</span>
+                      <span className="text-lg font-extrabold text-slate-400">د.ل</span>
                     </div>
                     {Number(form.price) > 0 && (
                       <p className="mt-2 text-sm font-bold text-brand-700">
-                        {formatPrice(Number(form.price))} دينار ليبي
+                        {formatPrice(Number(form.price))}
                       </p>
                     )}
                   </div>
@@ -1201,7 +1201,7 @@ export default function AddListingPage() {
                   <div className="mt-2 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700">
                     <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-800/50">
                       <CheckCircle size={14} className="text-brand-600 dark:text-brand-300" />
-                      <span className="text-xs font-black text-slate-700 dark:text-slate-200">
+                      <span className="text-xs font-extrabold text-slate-700 dark:text-slate-200">
                         مراجعة الإعلان قبل النشر
                       </span>
                     </div>
@@ -1219,7 +1219,7 @@ export default function AddListingPage() {
                         </div>
                       )}
                       <div className="min-w-0 flex-1 space-y-1">
-                        <p className="line-clamp-1 text-sm font-black text-slate-900 dark:text-white">
+                        <p className="line-clamp-1 text-sm font-extrabold text-slate-900 dark:text-white">
                           {form.title || "بدون عنوان"}
                         </p>
                         <p className="line-clamp-1 text-[11px] text-slate-500 dark:text-slate-400">
@@ -1228,7 +1228,7 @@ export default function AddListingPage() {
                         </p>
                         <div className="flex flex-wrap gap-1.5 pt-0.5">
                           {form.price && (
-                            <span className="rounded-lg bg-emerald-50 px-2 py-0.5 text-[10px] font-black text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+                            <span className="rounded-lg bg-emerald-50 px-2 py-0.5 text-[10px] font-extrabold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
                               {form.price} د.ل
                             </span>
                           )}
@@ -1270,11 +1270,11 @@ export default function AddListingPage() {
         يجلس فوق شريط التنقّل السفلي (BottomNav) على الموبايل كي لا
         يتغطّى زر "التالي". BottomNav ارتفاعه ~64px + هامش 12px + المساحة
         الآمنة، فنرفع الشريط بمقدارها على الموبايل فقط (يختفي BottomNav
-        على md+ عبر md:hidden، فنُعيد الشريط لـbottom-0 على الشاشات الكبيرة).
+        على lg+ عبر lg:hidden، فنُعيد الشريط لـbottom-0 من 1024px فقط — على الجهاز اللوحي يبقى فوقه).
         z-40 ليبقى فوق المحتوى وتحت أي overlay، ومنفصل عن BottomNav (z-50).
       */}
       <div
-        className="fixed inset-x-0 z-40 border-t border-slate-200/70 bg-white/90 backdrop-blur-lg md:!bottom-0"
+        className="fixed inset-x-0 z-40 border-t border-slate-200/70 bg-white/90 backdrop-blur-lg lg:!bottom-0"
         style={{
           // فوق شريط التنقّل على الموبايل (ارتفاعه + هامشه + المساحة الآمنة)
           bottom: "calc(76px + env(safe-area-inset-bottom))",
@@ -1287,7 +1287,7 @@ export default function AddListingPage() {
             <button
               type="button"
               onClick={goPrev}
-              className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-600 transition hover:bg-slate-50"
+              className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-extrabold text-slate-600 transition hover:bg-slate-50"
             >
               السابق
             </button>
@@ -1299,7 +1299,7 @@ export default function AddListingPage() {
             <button
               type="button"
               onClick={goNext}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-brand-700 px-6 py-3 text-sm font-black text-white shadow-sm transition hover:bg-brand-800"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-brand-700 px-6 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-brand-800"
             >
               التالي
               <ChevronLeft size={18} />
@@ -1309,7 +1309,7 @@ export default function AddListingPage() {
               type="button"
               onClick={handleSubmit}
               disabled={submitting}
-              className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-brand-700 px-6 py-3 text-sm font-black text-white shadow-sm transition hover:bg-brand-800 disabled:opacity-60"
+              className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-brand-700 px-6 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-brand-800 disabled:opacity-60"
             >
               {submitting ? (
                 <>
@@ -1333,7 +1333,8 @@ export default function AddListingPage() {
 /* ================= مكوّنات مساعدة ================= */
 
 const inputCls =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-bold text-slate-900 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20";
+  // Bratsho DS 1.0 — نفس حقل .input: 48px، حواف 16، تركيز brand-400 + حلقة 4px (مطابق للتطبيق)
+  "w-full min-h-[48px] rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-brand-400 focus:ring-4 focus:ring-brand-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:ring-brand-900/40";
 
 function Card({
   title,
@@ -1347,7 +1348,7 @@ function Card({
   return (
     <div className="rounded-3xl bg-white p-5 shadow-[0_2px_16px_-6px_rgba(15,23,42,0.08)]">
       <div className="mb-4">
-        <h2 className="text-base font-black text-slate-900">{title}</h2>
+        <h2 className="text-base font-extrabold text-slate-900">{title}</h2>
         {subtitle && (
           <p className="mt-0.5 text-xs text-slate-400">{subtitle}</p>
         )}
@@ -1368,7 +1369,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-[13px] font-black text-slate-700">
+      <span className="mb-1.5 block text-[13px] font-extrabold text-slate-700">
         {label}
         {required && <span className="text-rose-500"> *</span>}
       </span>
@@ -1403,7 +1404,7 @@ function Stepper({
                     scale: active ? 1.1 : 1,
                   }}
                   className={cn(
-                    "grid h-9 w-9 place-items-center rounded-full text-sm font-black transition",
+                    "grid h-9 w-9 place-items-center rounded-full text-sm font-extrabold transition",
                     done
                       ? "bg-brand-600 text-white"
                       : active

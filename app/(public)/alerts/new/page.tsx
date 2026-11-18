@@ -237,7 +237,7 @@ function AlertFormInner() {
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
             <Bell size={18} />
           </div>
-          <h1 className="text-lg font-black text-slate-900 dark:text-white sm:text-xl">
+          <h1 className="text-lg font-extrabold text-slate-900 dark:text-white sm:text-xl">
             {editId ? "تعديل التنبيه" : "تنبيه جديد"}
           </h1>
         </div>
@@ -417,7 +417,7 @@ function AlertFormInner() {
           {/* تفعيل */}
           <label className="flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50 dark:hover:bg-slate-800">
             <div className="min-w-0">
-              <div className="text-sm font-black text-slate-900 dark:text-white">
+              <div className="text-sm font-extrabold text-slate-900 dark:text-white">
                 التنبيه مفعَّل
               </div>
               <div className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -437,7 +437,7 @@ function AlertFormInner() {
         <div className="flex gap-2">
           <Link
             href="/alerts"
-            className="inline-flex h-11 flex-1 items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm font-black text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            className="inline-flex h-11 flex-1 items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm font-extrabold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
           >
             إلغاء
           </Link>
@@ -445,7 +445,7 @@ function AlertFormInner() {
             type="button"
             onClick={handleSubmit}
             disabled={submitting}
-            className="inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-2xl bg-brand-700 text-sm font-black text-white shadow-blue transition active:scale-95 hover:bg-brand-600 disabled:opacity-60"
+            className="inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-2xl bg-brand-700 text-sm font-extrabold text-white shadow-blue transition active:scale-95 hover:bg-brand-600 disabled:opacity-60"
           >
             {submitting ? (
               <Loader2 size={16} className="animate-spin" />
@@ -460,7 +460,7 @@ function AlertFormInner() {
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
-    <label className="mb-1 block text-xs font-black text-slate-700 dark:text-slate-200">
+    <label className="mb-1 block text-xs font-extrabold text-slate-700 dark:text-slate-200">
       {children}
     </label>
   );

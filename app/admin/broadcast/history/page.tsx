@@ -123,7 +123,7 @@ export default function BroadcastHistoryPage() {
             <Megaphone size={24} strokeWidth={2.2} />
           </div>
           <div>
-            <h1 className="text-lg font-black text-slate-900 dark:text-white sm:text-xl">
+            <h1 className="text-lg font-extrabold text-slate-900 dark:text-white sm:text-xl">
               سجلّ الإشعارات الجماعية
             </h1>
             <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
@@ -135,7 +135,7 @@ export default function BroadcastHistoryPage() {
           href="/admin/broadcast"
           className="
             inline-flex h-10 shrink-0 items-center gap-1.5 rounded-2xl
-            bg-action-500 px-4 text-xs font-black text-white shadow-action
+            bg-action-500 px-4 text-xs font-extrabold text-white shadow-action
             transition hover:bg-action-600 active:scale-95
           "
         >
@@ -157,12 +157,12 @@ export default function BroadcastHistoryPage() {
             size={40}
             className="mx-auto mb-2 text-slate-300 dark:text-slate-600"
           />
-          <p className="text-sm font-black text-slate-700 dark:text-slate-200">
+          <p className="text-sm font-extrabold text-slate-700 dark:text-slate-200">
             لم تُرسل أي إشعارات جماعية بعد.
           </p>
           <Link
             href="/admin/broadcast"
-            className="mt-3 inline-flex items-center gap-1 text-xs font-black text-brand-700 hover:underline dark:text-brand-300"
+            className="mt-3 inline-flex items-center gap-1 text-xs font-extrabold text-brand-700 hover:underline dark:text-brand-300"
           >
             أرسل أول إشعار
             <ArrowRight size={14} />
@@ -188,11 +188,11 @@ export default function BroadcastHistoryPage() {
                   <div className="min-w-0 flex-1">
                     {/* النوع + التاريخ */}
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                      <span className="text-[11px] font-black text-slate-500 dark:text-slate-400">
+                      <span className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400">
                         {labelFor(b.type)}
                       </span>
                       {b.status === "processing" && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-extrabold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
                           <Clock size={10} />
                           قيد الإرسال
                         </span>
@@ -200,7 +200,7 @@ export default function BroadcastHistoryPage() {
                     </div>
 
                     {/* العنوان */}
-                    <h3 className="mt-0.5 text-sm font-black text-slate-900 dark:text-white sm:text-[15px]">
+                    <h3 className="mt-0.5 text-sm font-extrabold text-slate-900 dark:text-white sm:text-[15px]">
                       {b.title}
                     </h3>
 
@@ -281,7 +281,7 @@ function Stat({
   return (
     <div className={`inline-flex items-center gap-1.5 text-[12px] font-bold ${color}`}>
       {icon}
-      <span className="tabular-nums">{value.toLocaleString("ar-LY")}</span>
+      <span className="tabular-nums">{value.toLocaleString("en-US")}</span>
       <span className="text-slate-400 dark:text-slate-500">{label}</span>
     </div>
   );

@@ -188,7 +188,7 @@ export default function AlertsListPage() {
               <Bell size={22} />
             </div>
             <div className="min-w-0 flex-1">
-              <h1 className="text-xl font-black sm:text-2xl">تنبيهات سياراتي</h1>
+              <h1 className="text-xl font-extrabold sm:text-2xl">تنبيهات سياراتي</h1>
               <p className="mt-1 text-xs leading-6 text-white/85 sm:text-sm">
                 احصل على إشعار فوري عند إضافة سيارة تطابق بحثك.
               </p>
@@ -210,7 +210,7 @@ export default function AlertsListPage() {
               href="/alerts/new"
               className="
                 inline-flex h-10 items-center gap-1.5 rounded-2xl
-                bg-action-500 px-4 text-xs font-black text-white
+                bg-action-500 px-4 text-xs font-extrabold text-white
                 shadow-action transition active:scale-95 hover:bg-action-600
                 sm:text-sm
               "
@@ -227,7 +227,7 @@ export default function AlertsListPage() {
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
               <Bell size={28} />
             </div>
-            <h2 className="mt-4 text-base font-black text-slate-900 dark:text-white">
+            <h2 className="mt-4 text-base font-extrabold text-slate-900 dark:text-white">
               لا توجد تنبيهات
             </h2>
             <p className="mt-1 text-xs leading-6 text-slate-500 dark:text-slate-400">
@@ -235,7 +235,7 @@ export default function AlertsListPage() {
             </p>
             <Link
               href="/alerts/new"
-              className="mt-5 inline-flex h-10 items-center gap-1.5 rounded-2xl bg-brand-700 px-4 text-xs font-black text-white shadow-blue transition active:scale-95 hover:bg-brand-600"
+              className="mt-5 inline-flex h-10 items-center gap-1.5 rounded-2xl bg-brand-700 px-4 text-xs font-extrabold text-white shadow-blue transition active:scale-95 hover:bg-brand-600"
             >
               <Plus size={16} />
               إضافة تنبيه جديد
@@ -295,7 +295,7 @@ function AlertCard({
   if (alert.priceFrom != null || alert.priceTo != null) {
     chips.push({
       icon: <Tag size={11} />,
-      label: `${alert.priceFrom?.toLocaleString("ar-LY") ?? "0"} - ${alert.priceTo?.toLocaleString("ar-LY") ?? "∞"} د.ل`,
+      label: `${alert.priceFrom?.toLocaleString("en-US") ?? "0"} - ${alert.priceTo?.toLocaleString("en-US") ?? "∞"} د.ل`,
     });
   }
   if (alert.city) {
@@ -330,7 +330,7 @@ function AlertCard({
           {alert.isActive ? <Bell size={18} /> : <BellOff size={18} />}
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="text-sm font-black text-slate-900 dark:text-white">
+          <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
             {alert.label || describeAlert(alert)}
           </h3>
           {alert.label && (
@@ -341,7 +341,7 @@ function AlertCard({
         </div>
         {countReady && (
           <span
-            className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black ${
+            className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-extrabold ${
               matchCount > 0
                 ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
                 : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
@@ -368,7 +368,7 @@ function AlertCard({
 
       <Link
         href={buildMatchesHref(alert)}
-        className="mt-3 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-2xl bg-brand-700 text-xs font-black text-white shadow-blue transition active:scale-[0.98] hover:bg-brand-600"
+        className="mt-3 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-2xl bg-brand-700 text-xs font-extrabold text-white shadow-blue transition active:scale-[0.98] hover:bg-brand-600"
       >
         <Search size={14} />
         عرض السيارات المطابقة
@@ -386,7 +386,7 @@ function AlertCard({
           disabled={busy}
           className={`
             inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-xl
-            border text-[11px] font-black transition active:scale-95 disabled:opacity-60
+            border text-[11px] font-extrabold transition active:scale-95 disabled:opacity-60
             ${alert.isActive
               ? "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
               : "border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100 dark:border-brand-800 dark:bg-brand-900/30 dark:text-brand-300"}
@@ -397,7 +397,7 @@ function AlertCard({
         </button>
         <Link
           href={`/alerts/new?id=${alert.id}`}
-          className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 text-[11px] font-black text-slate-600 transition active:scale-95 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+          className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 text-[11px] font-extrabold text-slate-600 transition active:scale-95 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
         >
           <Pencil size={13} />
           تعديل
@@ -406,7 +406,7 @@ function AlertCard({
           type="button"
           onClick={onDelete}
           disabled={busy}
-          className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-xl border border-rose-200 text-[11px] font-black text-rose-600 transition active:scale-95 hover:bg-rose-50 disabled:opacity-60 dark:border-rose-900/50 dark:text-rose-400 dark:hover:bg-rose-900/20"
+          className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-xl border border-rose-200 text-[11px] font-extrabold text-rose-600 transition active:scale-95 hover:bg-rose-50 disabled:opacity-60 dark:border-rose-900/50 dark:text-rose-400 dark:hover:bg-rose-900/20"
         >
           <Trash2 size={13} />
           حذف

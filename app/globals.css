@@ -2,8 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
-:root { color-scheme: light; }
-html.dark { color-scheme: dark; }
+/* Bratsho DS 1.0 — الأدوار الدلالية (RGB لدعم الشفافية في Tailwind). نفس القيم في Flutter. */
+:root {
+  color-scheme: light;
+  --bc-canvas: 245 247 251;   /* #F5F7FB */
+  --bc-surface: 255 255 255;  /* #FFFFFF */
+  --bc-fill: 241 245 249;     /* #F1F5F9 */
+  --bc-line: 226 232 240;     /* #E2E8F0 */
+  --bc-heading: 2 6 23;       /* #020617 */
+  --bc-secondary: 71 85 105;  /* #475569 */
+  --bc-muted: 100 116 139;    /* #64748B */
+  --bc-price: 28 56 156;      /* brand-700 */
+}
+html.dark {
+  color-scheme: dark;
+  --bc-canvas: 11 16 32;      /* #0B1020 */
+  --bc-surface: 15 23 42;     /* #0F172A */
+  --bc-fill: 30 41 59;        /* #1E293B */
+  --bc-line: 30 41 59;        /* #1E293B */
+  --bc-heading: 248 250 252;  /* #F8FAFC */
+  --bc-secondary: 203 213 225;/* #CBD5E1 */
+  --bc-muted: 148 163 184;    /* #94A3B8 */
+  --bc-price: 142 174 253;    /* brand-300 */
+}
 
 * { box-sizing: border-box; }
 html {
@@ -16,7 +37,8 @@ body {
   margin: 0;
   background: #f5f7fb;
   color: #0b1020;
-  font-family: "Segoe UI", Tahoma, Arial, Helvetica, sans-serif;
+  /* Inter (لاتيني وأرقام) ثم Tajawal (عربي) — يُحمَّلان ذاتياً عبر next/font في app/layout.tsx */
+  font-family: var(--font-inter), var(--font-tajawal), system-ui, sans-serif;
   min-height: 100dvh;
   /* يمنع تجاوز أي عنصر عرض الشاشة (خاصة في RTL) */
   overflow-x: hidden;
@@ -63,7 +85,7 @@ img { max-width: 100%; height: auto; }
   }
 
   .section-title {
-    @apply text-2xl font-black text-slate-950 sm:text-3xl dark:text-white;
+    @apply text-[22px] font-extrabold leading-8 text-slate-950 sm:text-[28px] sm:leading-[38px] dark:text-white;
   }
   .section-subtitle {
     @apply mt-2 max-w-2xl text-sm text-slate-500 sm:text-base dark:text-slate-300;
@@ -94,6 +116,34 @@ img { max-width: 100%; height: auto; }
   .btn-success {
     @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-60;
   }
+
+  /* ---------- Bratsho DS 1.0 additions (same spec in Flutter) ---------- */
+  .btn-soft {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-50 px-5 py-3 text-sm font-bold text-brand-700 transition hover:bg-brand-100 active:scale-[0.98] disabled:opacity-60 dark:bg-brand-900/40 dark:text-brand-200;
+  }
+  /* مقاسات: صغير 36 / كبير 52 (المتوسط 44 هو الافتراضي) */
+  .btn-sm { @apply h-9 rounded-xl px-3.5 py-0 text-[13px]; }
+  .btn-lg { @apply h-[52px] px-6 py-0 text-base; }
+
+  .chip {
+    @apply inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-slate-200 bg-white px-3.5 text-[13px] font-bold text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300;
+  }
+  .chip-on {
+    @apply border-brand-700 bg-brand-700 text-white hover:bg-brand-800 dark:border-brand-700 dark:bg-brand-700 dark:text-white;
+  }
+
+  /* شارات الترويج على الصور (حد أقصى شارتان). ألوان الباقات المدفوعة كما تعد بها
+     (lib/wallet/boost.ts): VIP ذهبي · ممول أخضر · مميز أزرق · عاجل أحمر. */
+  .badge-promo { @apply inline-flex h-6 items-center gap-1 whitespace-nowrap rounded-full px-2.5 text-[11px] font-extrabold leading-none; }
+  .badge-vip { @apply badge-promo bg-amber-400 text-amber-950; }
+  .badge-featured { @apply badge-promo bg-brand-700 text-white; }
+  .badge-urgent { @apply badge-promo bg-rose-600 text-white; }
+  .badge-sponsored { @apply badge-promo bg-emerald-600 text-white; }
+  .badge-verified { @apply badge-promo bg-brand-500 text-white; }
+  .badge-cat { @apply badge-promo bg-white/90 text-slate-900; }
+
+  /* الأرقام والأسعار: Inter بأرقام جدولية ومعزولة الاتجاه حتى لا تتداخل «د.ل» */
+  .num { font-family: var(--font-inter), system-ui, sans-serif; font-feature-settings: "tnum" 1; unicode-bidi: isolate; direction: ltr; }
 
   .stat-card {
     @apply rounded-3xl border border-white/20 bg-white/10 p-5 text-white backdrop-blur;

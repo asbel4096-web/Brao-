@@ -53,8 +53,8 @@ const TYPE_META: Record<
   },
   verification: {
     icon: ShieldCheck,
-    bg: "bg-blue-50",
-    color: "text-blue-600",
+    bg: "bg-brand-50",
+    color: "text-brand-600",
     label: "توثيق معرض",
   },
   featured_listing: {
@@ -65,20 +65,20 @@ const TYPE_META: Record<
   },
   boost: {
     icon: Rocket,
-    bg: "bg-purple-50",
-    color: "text-purple-600",
+    bg: "bg-action-50",
+    color: "text-action-600",
     label: "رفع إعلان",
   },
   referral_bonus: {
     icon: Gift,
-    bg: "bg-pink-50",
-    color: "text-pink-600",
+    bg: "bg-brand-50",
+    color: "text-brand-700",
     label: "مكافأة إحالة",
   },
   refund: {
     icon: ArrowDownLeft,
-    bg: "bg-blue-50",
-    color: "text-blue-600",
+    bg: "bg-brand-50",
+    color: "text-brand-600",
     label: "استرداد",
   },
   transfer_out: {
@@ -155,7 +155,7 @@ export function TransactionsSection({ onViewAll }: Props) {
     >
       {/* Header */}
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-black text-slate-900 dark:text-white">
+        <h2 className="text-sm font-extrabold text-slate-900 dark:text-white">
           آخر العمليات
         </h2>
         {transactions.length > 0 && (
@@ -163,7 +163,7 @@ export function TransactionsSection({ onViewAll }: Props) {
             type="button"
             onClick={onViewAll}
             className="
-              inline-flex items-center gap-0.5 text-[12px] font-black
+              inline-flex items-center gap-0.5 text-[12px] font-extrabold
               text-brand-600 hover:text-brand-700 dark:text-brand-300
             "
           >
@@ -205,7 +205,7 @@ export function TransactionsSection({ onViewAll }: Props) {
           className="
             mt-3 inline-flex w-full items-center justify-center gap-1
             rounded-2xl border border-slate-200 bg-slate-50 py-2.5
-            text-[12px] font-black text-slate-600 transition
+            text-[12px] font-extrabold text-slate-600 transition
             hover:bg-slate-100
           "
         >
@@ -251,7 +251,7 @@ function TransactionRow({ tx }: { tx: any }) {
 
       {/* Title + meta */}
       <div className="min-w-0 flex-1 text-end">
-        <p className="truncate text-[13px] font-black text-slate-900 dark:text-white">
+        <p className="truncate text-[13px] font-extrabold text-slate-900 dark:text-white">
           {meta.label}
         </p>
         <p className="mt-0.5 truncate text-[10px] text-slate-500">
@@ -263,7 +263,7 @@ function TransactionRow({ tx }: { tx: any }) {
       {/* Amount + time */}
       <div className="shrink-0 text-start">
         <p
-          className={`text-[13px] font-black tabular-nums ${
+          className={`text-[13px] font-extrabold tabular-nums ${
             isCredit ? "text-emerald-600" : "text-rose-600"
           }`}
         >

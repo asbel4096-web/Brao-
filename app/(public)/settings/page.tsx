@@ -79,7 +79,7 @@ export default function SettingsPage() {
   return (
     <section className="container py-5 pb-28 sm:py-8" dir="rtl">
       <div className="mx-auto max-w-2xl space-y-5">
-        <h1 className="px-1 text-2xl font-black text-slate-900 dark:text-white">
+        <h1 className="px-1 text-2xl font-extrabold text-slate-900 dark:text-white">
           الإعدادات
         </h1>
 
@@ -92,13 +92,13 @@ export default function SettingsPage() {
             {photo ? (
               <Image src={photo} alt={name} fill sizes="56px" className="object-cover" />
             ) : (
-              <span className="flex h-full w-full items-center justify-center text-xl font-black text-white">
+              <span className="flex h-full w-full items-center justify-center text-xl font-extrabold text-white">
                 {name.charAt(0)}
               </span>
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-base font-black text-slate-900 dark:text-white">
+            <div className="truncate text-base font-extrabold text-slate-900 dark:text-white">
               {name}
             </div>
             <div className="truncate text-xs text-slate-500 dark:text-slate-400">
@@ -162,7 +162,7 @@ export default function SettingsPage() {
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                 <Info size={18} />
               </span>
-              <div className="text-sm font-black text-slate-900 dark:text-white">
+              <div className="text-sm font-extrabold text-slate-900 dark:text-white">
                 عن التطبيق
               </div>
             </div>
@@ -176,7 +176,7 @@ export default function SettingsPage() {
         <button
           type="button"
           onClick={handleLogout}
-          className="flex w-full items-center justify-center gap-2 rounded-3xl border border-slate-200 bg-white py-4 text-sm font-black text-rose-600 shadow-sm transition active:scale-[0.99] hover:bg-rose-50 dark:border-slate-800 dark:bg-slate-900 dark:text-rose-400 dark:hover:bg-rose-900/20"
+          className="flex w-full items-center justify-center gap-2 rounded-3xl border border-slate-200 bg-white py-4 text-sm font-extrabold text-rose-600 shadow-sm transition active:scale-[0.99] hover:bg-rose-50 dark:border-slate-800 dark:bg-slate-900 dark:text-rose-400 dark:hover:bg-rose-900/20"
         >
           <LogOut size={17} />
           تسجيل الخروج
@@ -187,7 +187,7 @@ export default function SettingsPage() {
           <div className="flex items-start gap-3">
             <Trash2 size={18} className="mt-0.5 shrink-0 text-rose-600 dark:text-rose-400" />
             <div>
-              <h3 className="text-sm font-black text-rose-700 dark:text-rose-300">
+              <h3 className="text-sm font-extrabold text-rose-700 dark:text-rose-300">
                 حذف الحساب
               </h3>
               <p className="mt-1 text-xs text-rose-600/90 dark:text-rose-200/80">
@@ -195,7 +195,7 @@ export default function SettingsPage() {
               </p>
               <Link
                 href="/contact"
-                className="mt-2 inline-block text-xs font-black text-rose-700 underline dark:text-rose-300"
+                className="mt-2 inline-block text-xs font-extrabold text-rose-700 underline dark:text-rose-300"
               >
                 تواصل مع الدعم
               </Link>
@@ -211,10 +211,11 @@ export default function SettingsPage() {
 function Group({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div>
-      <h2 className="mb-2 px-2 text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+      {/* Bratsho DS: عنوان المجموعة 12/700 بلا تباعد أحرف (التباعد يقطع اتصال الحروف العربية) */}
+      <h2 className="mb-1.5 px-1 text-xs font-bold text-slate-500 dark:text-slate-400">
         {title}
       </h2>
-      <div className="divide-y divide-slate-100 overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
+      <div className="divide-y divide-slate-100 overflow-hidden rounded-3xl border border-slate-200/80 bg-white dark:divide-slate-800 dark:border-slate-700/80 dark:bg-slate-900">
         {children}
       </div>
     </div>
@@ -235,19 +236,20 @@ function RowShell({
   accent?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 p-4">
+    <div className="flex min-h-[56px] items-center justify-between gap-3 px-4 py-2.5">
       <div className="flex min-w-0 items-center gap-3">
+        {/* Bratsho DS — نفس صف القائمة في صفحة الحساب: أيقونة 36 بحواف 12 */}
         <span
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
             accent
               ? "bg-action-50 text-action-600 dark:bg-action-500/15 dark:text-action-300"
               : "bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300"
           }`}
         >
-          <Icon size={18} />
+          <Icon size={16} />
         </span>
         <div className="min-w-0">
-          <div className="text-sm font-black text-slate-900 dark:text-white">{title}</div>
+          <div className="text-[15px] font-medium text-slate-900 dark:text-white">{title}</div>
           {desc && <div className="truncate text-xs text-slate-500 dark:text-slate-400">{desc}</div>}
         </div>
       </div>
@@ -273,8 +275,8 @@ function LinkRow({
     <Link href={href} className="group block transition hover:bg-slate-50 dark:hover:bg-slate-800/50">
       <RowShell icon={icon} title={title} desc={desc} accent={accent}>
         <ChevronLeft
-          size={18}
-          className="text-slate-300 transition group-hover:-translate-x-0.5 group-hover:text-brand-500 dark:text-slate-600"
+          size={16}
+          className="text-slate-400 transition group-hover:-translate-x-0.5 group-hover:text-brand-500 dark:text-slate-500"
         />
       </RowShell>
     </Link>

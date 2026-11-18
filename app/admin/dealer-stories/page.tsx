@@ -120,11 +120,11 @@ export default function AdminDealerStoriesPage() {
   return (
     <div className="space-y-4" dir="rtl">
       <header className="flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-pink-50 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-action-50 text-action-700 dark:bg-action-900/30 dark:text-action-300">
           <Sparkles size={20} strokeWidth={2.2} />
         </div>
         <div>
-          <h1 className="text-lg font-black text-slate-900 dark:text-white sm:text-xl">
+          <h1 className="text-lg font-extrabold text-slate-900 dark:text-white sm:text-xl">
             قصص المعارض
           </h1>
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
@@ -144,9 +144,9 @@ export default function AdminDealerStoriesPage() {
                 key={cat}
                 type="button"
                 onClick={() => setFilterCat(cat)}
-                className={`shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-[12px] font-black transition ${
+                className={`shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-[12px] font-extrabold transition ${
                   isActive
-                    ? "bg-blue-600 text-white"
+                    ? "bg-brand-600 text-white"
                     : "border border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                 }`}
               >
@@ -217,15 +217,15 @@ function StoryCard({
 
       {/* Top: category + expired badge */}
       <div className="absolute inset-x-2 top-2 flex items-start justify-between">
-        <span className="rounded-full bg-white/90 px-2 py-0.5 text-[9px] font-black text-slate-800">
+        <span className="rounded-full bg-white/90 px-2 py-0.5 text-[9px] font-extrabold text-slate-800">
           {CATEGORY_LABELS[story.category] || story.category}
         </span>
         {isExpired ? (
-          <span className="rounded-full bg-rose-500 px-1.5 py-0.5 text-[8px] font-black text-white">
+          <span className="rounded-full bg-rose-500 px-1.5 py-0.5 text-[8px] font-extrabold text-white">
             منتهية
           </span>
         ) : (
-          <span className="flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[8px] font-black text-white">
+          <span className="flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[8px] font-extrabold text-white">
             <Clock size={8} />
             {daysLeft}ي
           </span>
@@ -234,7 +234,7 @@ function StoryCard({
 
       {/* Bottom: dealer name + views */}
       <div className="absolute inset-x-2 bottom-2">
-        <p className="truncate text-[10px] font-black text-white">
+        <p className="truncate text-[10px] font-extrabold text-white">
           {story.dealerName || "معرض"}
         </p>
         {typeof story.viewCount === "number" && (

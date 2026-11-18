@@ -321,7 +321,7 @@ export default function LoginClient() {
         <div className="space-y-4">
           {/* اسم المستخدم */}
           <div>
-            <label className="mb-2 block text-sm font-black text-slate-900 dark:text-white">
+            <label className="mb-2 block text-sm font-extrabold text-slate-900 dark:text-white">
               اسم المستخدم
             </label>
             <div className="relative">
@@ -340,7 +340,7 @@ export default function LoginClient() {
                 spellCheck={false}
                 autoComplete="username"
                 className="
-                  w-full rounded-2xl border-2 border-slate-200 bg-white px-4 py-3.5
+                  w-full rounded-2xl border border-slate-200 bg-white px-4 py-3
                   pr-10 text-left text-base outline-none transition
                   focus:border-brand-400 focus:ring-4 focus:ring-brand-100
                   dark:border-slate-700 dark:bg-slate-900 dark:text-white
@@ -352,7 +352,7 @@ export default function LoginClient() {
 
           {/* كلمة المرور */}
           <div>
-            <label className="mb-2 block text-sm font-black text-slate-900 dark:text-white">
+            <label className="mb-2 block text-sm font-extrabold text-slate-900 dark:text-white">
               كلمة المرور
             </label>
             <div className="relative">
@@ -371,7 +371,7 @@ export default function LoginClient() {
                   if (e.key === "Enter") void handleUsernameLogin();
                 }}
                 className="
-                  w-full rounded-2xl border-2 border-slate-200 bg-white px-4 py-3.5
+                  w-full rounded-2xl border border-slate-200 bg-white px-4 py-3
                   pr-10 pl-10 text-left text-base outline-none transition
                   focus:border-brand-400 focus:ring-4 focus:ring-brand-100
                   dark:border-slate-700 dark:bg-slate-900 dark:text-white
@@ -400,7 +400,7 @@ export default function LoginClient() {
             onClick={handleUsernameLogin}
             disabled={usernameLoading}
             className="
-              w-full rounded-2xl bg-brand-700 py-4 text-base font-black text-white
+              w-full rounded-2xl bg-brand-700 py-4 text-base font-extrabold text-white
               shadow-blue transition active:scale-[0.99] hover:bg-brand-800
               disabled:cursor-not-allowed disabled:opacity-60
             "
@@ -440,7 +440,7 @@ export default function LoginClient() {
 
           {/* ============ حقل رقم الهاتف ============ */}
           <div>
-            <label className="mb-2 block text-sm font-black text-slate-900 dark:text-white">
+            <label className="mb-2 block text-sm font-extrabold text-slate-900 dark:text-white">
               رقم الموبايل
             </label>
             <div
@@ -456,7 +456,7 @@ export default function LoginClient() {
               <div
                 className="
                   flex shrink-0 items-center gap-2 rounded-xl bg-slate-50 px-3
-                  text-sm font-black text-slate-700
+                  text-sm font-extrabold text-slate-700
                   dark:bg-slate-800 dark:text-slate-200
                 "
               >
@@ -504,7 +504,7 @@ export default function LoginClient() {
               phoneAuthUnavailable
             }
             className="
-              w-full rounded-2xl bg-brand-700 py-4 text-base font-black
+              w-full rounded-2xl bg-brand-700 py-4 text-base font-extrabold
               text-white shadow-blue transition active:scale-[0.99]
               hover:bg-brand-800 disabled:cursor-not-allowed
               disabled:bg-slate-300 disabled:text-slate-500
@@ -549,8 +549,8 @@ export default function LoginClient() {
             disabled={googleLoading}
             className="
               flex w-full items-center justify-center gap-2 rounded-2xl
-              border-2 border-slate-200 bg-white py-3.5
-              text-sm font-black text-slate-800 transition
+              border border-slate-200 bg-white py-3.5
+              text-sm font-extrabold text-slate-800 transition
               hover:border-brand-300 active:scale-[0.99]
               disabled:opacity-60
               dark:border-slate-700 dark:bg-slate-900 dark:text-white
@@ -569,7 +569,7 @@ export default function LoginClient() {
             }}
             className="
               flex w-full items-center justify-center gap-2 rounded-2xl
-              border-2 border-slate-200 bg-white py-3.5 text-sm font-black
+              border border-slate-200 bg-white py-3.5 text-sm font-extrabold
               text-slate-700 transition hover:bg-slate-50 active:scale-[0.99]
               dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200
               dark:hover:bg-slate-800
@@ -616,7 +616,7 @@ export default function LoginClient() {
             <p className="text-xs text-slate-500 dark:text-slate-400">
               أفضل طريقة
             </p>
-            <h3 className="text-lg font-black leading-tight text-slate-950 dark:text-white">
+            <h3 className="text-lg font-extrabold leading-tight text-slate-950 dark:text-white">
               لبيع أو شراء أي سيارة
             </h3>
             <ul className="mt-3 space-y-1.5 text-xs text-slate-700 dark:text-slate-200">
@@ -653,7 +653,7 @@ export default function LoginClient() {
 
         {/* ============ حقل رمز التحقق ============ */}
         <div>
-          <label className="mb-2 block text-sm font-black text-slate-900 dark:text-white">
+          <label className="mb-2 block text-sm font-extrabold text-slate-900 dark:text-white">
             رمز التحقق
           </label>
           <input
@@ -670,8 +670,8 @@ export default function LoginClient() {
             aria-label="رمز التحقق"
             autoFocus
             className="
-              w-full rounded-2xl border-2 border-slate-200 bg-white
-              py-4 text-center font-mono text-3xl font-black
+              w-full rounded-2xl border border-slate-200 bg-white
+              py-4 text-center num text-3xl font-extrabold
               tracking-[0.6em] outline-none transition
               focus:border-brand-400 focus:ring-4 focus:ring-brand-100
               dark:border-slate-700 dark:bg-slate-900 dark:text-white
@@ -691,7 +691,7 @@ export default function LoginClient() {
           onClick={handleVerifyCode}
           disabled={verifying || code.length < 6}
           className="
-            w-full rounded-2xl bg-brand-700 py-4 text-base font-black
+            w-full rounded-2xl bg-brand-700 py-4 text-base font-extrabold
             text-white shadow-blue transition active:scale-[0.99]
             hover:bg-brand-800 disabled:cursor-not-allowed
             disabled:bg-slate-300 disabled:text-slate-500
@@ -780,7 +780,7 @@ function ResendBlock({
           onClick={onResend}
           disabled={sending}
           className="
-            mt-1 inline-flex items-center gap-1.5 font-black
+            mt-1 inline-flex items-center gap-1.5 font-extrabold
             text-brand-700 hover:underline disabled:opacity-60
             dark:text-brand-300
           "

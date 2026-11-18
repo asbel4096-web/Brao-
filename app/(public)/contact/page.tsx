@@ -109,7 +109,7 @@ export default function ContactPage() {
               aria-label="تعديل معلومات التواصل (للأدمن فقط)"
               className="
                 inline-flex h-9 shrink-0 items-center gap-1.5 rounded-2xl
-                border border-action-300 bg-action-50 px-3 text-xs font-black
+                border border-action-300 bg-action-50 px-3 text-xs font-extrabold
                 text-action-700 transition active:scale-95 hover:bg-action-100
                 dark:border-action-800/40 dark:bg-action-900/20 dark:text-action-300
                 dark:hover:bg-action-900/30
@@ -150,7 +150,7 @@ export default function ContactPage() {
               <MessageCircle size={22} />
             </div>
             <div>
-              <div className="text-sm font-black text-slate-950 dark:text-white">
+              <div className="text-sm font-extrabold text-slate-950 dark:text-white">
                 واتساب
               </div>
               <div className="mt-0.5 text-[11px] text-slate-600 dark:text-slate-300">
@@ -183,7 +183,7 @@ export default function ContactPage() {
               <Phone size={20} />
             </div>
             <div>
-              <div className="text-sm font-black text-slate-950 dark:text-white">
+              <div className="text-sm font-extrabold text-slate-950 dark:text-white">
                 اتصل بنا
               </div>
               <div
@@ -220,7 +220,7 @@ export default function ContactPage() {
               <Mail size={20} />
             </div>
             <div>
-              <div className="text-sm font-black text-slate-950 dark:text-white">
+              <div className="text-sm font-extrabold text-slate-950 dark:text-white">
                 بريد إلكتروني
               </div>
               <div className="mt-0.5 truncate text-[11px] text-slate-600 dark:text-slate-300">
@@ -237,7 +237,7 @@ export default function ContactPage() {
         <div className="card p-5 sm:p-6">
           <div className="mb-4 flex items-center gap-2">
             <Send size={16} className="text-brand-700 dark:text-brand-300" />
-            <h2 className="text-base font-black text-slate-950 dark:text-white sm:text-lg">
+            <h2 className="text-base font-extrabold text-slate-950 dark:text-white sm:text-lg">
               أرسل لنا رسالة
             </h2>
           </div>
@@ -248,7 +248,7 @@ export default function ContactPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* نوع الرسالة */}
               <div>
-                <label className="mb-2 block text-xs font-black text-slate-900 dark:text-white">
+                <label className="mb-2 block text-xs font-extrabold text-slate-900 dark:text-white">
                   نوع الرسالة
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -272,7 +272,7 @@ export default function ContactPage() {
 
               {/* الاسم */}
               <div>
-                <label className="mb-2 block text-xs font-black text-slate-900 dark:text-white">
+                <label className="mb-2 block text-xs font-extrabold text-slate-900 dark:text-white">
                   الاسم
                 </label>
                 <input
@@ -293,7 +293,7 @@ export default function ContactPage() {
 
               {/* طريقة التواصل */}
               <div>
-                <label className="mb-2 block text-xs font-black text-slate-900 dark:text-white">
+                <label className="mb-2 block text-xs font-extrabold text-slate-900 dark:text-white">
                   طريقة التواصل
                 </label>
                 <div className="relative">
@@ -322,7 +322,7 @@ export default function ContactPage() {
 
               {/* الرسالة */}
               <div>
-                <label className="mb-2 block text-xs font-black text-slate-900 dark:text-white">
+                <label className="mb-2 block text-xs font-extrabold text-slate-900 dark:text-white">
                   الرسالة
                 </label>
                 <textarea
@@ -349,7 +349,7 @@ export default function ContactPage() {
                 disabled={sending || !message.trim()}
                 className="
                   flex w-full items-center justify-center gap-2
-                  rounded-2xl bg-brand-700 py-3.5 text-sm font-black
+                  rounded-2xl bg-brand-700 py-3.5 text-sm font-extrabold
                   text-white shadow-blue transition active:scale-[0.99]
                   hover:bg-brand-800 disabled:cursor-not-allowed
                   disabled:bg-slate-300 disabled:text-slate-500
@@ -368,7 +368,7 @@ export default function ContactPage() {
             وسائل التواصل الاجتماعي - تظهر فقط لو الأدمن وضع رابطاً.
            ============================================================ */}
         <div className="card p-5 sm:p-6">
-          <h3 className="mb-3 text-sm font-black text-slate-900 dark:text-white">
+          <h3 className="mb-3 text-sm font-extrabold text-slate-900 dark:text-white">
             تابعنا على
           </h3>
           <div className="flex flex-wrap gap-2">
@@ -454,7 +454,7 @@ function TypeButton({
       onClick={onClick}
       aria-pressed={active}
       className={`
-        rounded-xl px-3 py-2 text-xs font-black transition active:scale-95
+        rounded-xl px-3 py-2 text-xs font-extrabold transition active:scale-95
         ${
           active
             ? "bg-brand-700 text-white shadow-blue"
@@ -485,7 +485,7 @@ function SocialChip({
       rel="noreferrer"
       className={`
         inline-flex items-center gap-2 rounded-2xl px-3 py-2 text-xs
-        font-black shadow-sm transition active:scale-95 hover:opacity-90
+        font-extrabold shadow-sm transition active:scale-95 hover:opacity-90
         ${color}
       `}
     >
@@ -513,7 +513,7 @@ function SuccessState({ onReset }: { onReset: () => void }) {
         <CheckCircle2 size={28} />
       </div>
       <div>
-        <p className="text-base font-black text-slate-900 dark:text-white">
+        <p className="text-base font-extrabold text-slate-900 dark:text-white">
           تم استلام رسالتك
         </p>
         <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
@@ -523,7 +523,7 @@ function SuccessState({ onReset }: { onReset: () => void }) {
       <button
         type="button"
         onClick={onReset}
-        className="text-xs font-black text-brand-700 hover:underline dark:text-brand-300"
+        className="text-xs font-extrabold text-brand-700 hover:underline dark:text-brand-300"
       >
         إرسال رسالة أخرى
       </button>

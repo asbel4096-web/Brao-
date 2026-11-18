@@ -53,11 +53,11 @@ export default function ArchivedWeekPage() {
           <ArrowRight size={22} />
         </button>
         <div>
-          <h1 className="text-lg font-black text-slate-900 dark:text-white">
+          <h1 className="text-lg font-extrabold text-slate-900 dark:text-white">
             🛒 {label || "أرشيف الجمعة"}
           </h1>
           {count !== null && (
-            <p className="text-xs font-semibold text-slate-400">
+            <p className="text-xs font-bold text-slate-400">
               {formatNumber(count)} إعلان
             </p>
           )}

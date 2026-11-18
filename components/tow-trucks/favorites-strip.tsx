@@ -30,7 +30,7 @@ export function FavoritesStrip({ items }: Props) {
   return (
     <section className="mb-4" aria-label="ساحباتي المفضلة">
       <div className="mb-2 flex items-center justify-between gap-2 px-1">
-        <h2 className="inline-flex items-center gap-1.5 text-sm font-black text-slate-900 dark:text-white">
+        <h2 className="inline-flex items-center gap-1.5 text-sm font-extrabold text-slate-900 dark:text-white">
           <Heart size={14} className="fill-rose-500 text-rose-500" />
           ساحباتي المفضلة
         </h2>
@@ -96,7 +96,7 @@ function FavoriteChip({ listing }: { listing: Listing }) {
         href={`/tow-trucks/${listing.id}`}
         className="min-w-0 flex-1"
       >
-        <div className="line-clamp-1 text-[13px] font-black text-slate-900 dark:text-white">
+        <div className="line-clamp-1 text-[13px] font-extrabold text-slate-900 dark:text-white">
           {listing.title || "ساحبة سيارات"}
         </div>
         {listing.availableNow ? (

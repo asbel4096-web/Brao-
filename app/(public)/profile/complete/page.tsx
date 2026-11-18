@@ -453,7 +453,7 @@ function CompleteProfilePageInner() {
               onClick={handleSave}
               disabled={saving}
               className="
-                w-full rounded-2xl bg-brand-700 py-4 text-base font-black
+                w-full rounded-2xl bg-brand-700 py-4 text-base font-extrabold
                 text-white shadow-blue transition active:scale-[0.99]
                 hover:bg-brand-800 disabled:cursor-not-allowed
                 disabled:opacity-60
@@ -466,7 +466,7 @@ function CompleteProfilePageInner() {
               type="button"
               onClick={goNext}
               className="
-                w-full rounded-2xl bg-brand-700 py-4 text-base font-black
+                w-full rounded-2xl bg-brand-700 py-4 text-base font-extrabold
                 text-white shadow-blue transition active:scale-[0.99]
                 hover:bg-brand-800
               "
@@ -507,7 +507,7 @@ function StepName({
 }) {
   return (
     <div>
-      <label className="mb-2 block text-sm font-black text-slate-900 dark:text-white">
+      <label className="mb-2 block text-sm font-extrabold text-slate-900 dark:text-white">
         الاسم الكامل
       </label>
       <input
@@ -563,7 +563,7 @@ function StepCredentials({
     <div className="space-y-4">
       {/* اسم المستخدم */}
       <div>
-        <label className="mb-2 block text-sm font-black text-slate-900 dark:text-white">
+        <label className="mb-2 block text-sm font-extrabold text-slate-900 dark:text-white">
           اسم المستخدم
         </label>
         <div className="relative">
@@ -616,7 +616,7 @@ function StepCredentials({
 
       {/* كلمة المرور */}
       <div>
-        <label className="mb-2 block text-sm font-black text-slate-900 dark:text-white">
+        <label className="mb-2 block text-sm font-extrabold text-slate-900 dark:text-white">
           كلمة المرور
         </label>
         <div className="relative">
@@ -649,7 +649,7 @@ function StepCredentials({
 
       {/* تأكيد كلمة المرور */}
       <div>
-        <label className="mb-2 block text-sm font-black text-slate-900 dark:text-white">
+        <label className="mb-2 block text-sm font-extrabold text-slate-900 dark:text-white">
           تأكيد كلمة المرور
         </label>
         <div className="relative">
@@ -756,7 +756,7 @@ function StepPhoto({
         className="
           mt-5 inline-flex items-center gap-2 rounded-2xl
           border-2 border-brand-200 bg-brand-50 px-4 py-2.5
-          text-sm font-black text-brand-700 transition
+          text-sm font-extrabold text-brand-700 transition
           hover:bg-brand-100 active:scale-95
           dark:border-brand-800 dark:bg-brand-950/40 dark:text-brand-300
         "
@@ -803,7 +803,7 @@ function StepContact({
   return (
     <div className="space-y-4">
       <div>
-        <label className="mb-2 block text-sm font-black text-slate-900 dark:text-white">
+        <label className="mb-2 block text-sm font-extrabold text-slate-900 dark:text-white">
           البريد الإلكتروني{" "}
           <span className="text-xs font-normal text-slate-400">(اختياري)</span>
         </label>
@@ -826,7 +826,7 @@ function StepContact({
       </div>
 
       <div>
-        <label className="mb-2 block text-sm font-black text-slate-900 dark:text-white">
+        <label className="mb-2 block text-sm font-extrabold text-slate-900 dark:text-white">
           رقم هاتف بديل{" "}
           <span className="text-xs font-normal text-slate-400">(اختياري)</span>
         </label>
@@ -849,7 +849,7 @@ function StepContact({
       </div>
 
       <div>
-        <label className="mb-2 block text-sm font-black text-slate-900 dark:text-white">
+        <label className="mb-2 block text-sm font-extrabold text-slate-900 dark:text-white">
           نبذة قصيرة{" "}
           <span className="text-xs font-normal text-slate-400">(اختياري)</span>
         </label>
@@ -910,14 +910,14 @@ function StepReview({
             className="
               flex h-14 w-14 items-center justify-center rounded-full
               bg-gradient-to-br from-brand-700 to-brand-500
-              text-xl font-black text-white
+              text-xl font-extrabold text-white
             "
           >
             {initial}
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-base font-black text-slate-950 dark:text-white">
+          <h3 className="truncate text-base font-extrabold text-slate-950 dark:text-white">
             {name || "—"}
           </h3>
         </div>
@@ -968,7 +968,7 @@ function StepProgress({ current, total }: { current: number; total: number }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between text-xs">
-        <span className="font-black text-brand-700 dark:text-brand-300">
+        <span className="font-extrabold text-brand-700 dark:text-brand-300">
           الخطوة {current} من {total}
         </span>
         <span className="text-slate-500 dark:text-slate-400">

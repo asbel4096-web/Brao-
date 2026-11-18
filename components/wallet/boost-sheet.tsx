@@ -193,22 +193,22 @@ export function BoostSheet({
             onDragEnd={(_, info) => {
               if (info.offset.y > 100) onClose();
             }}
-            className="fixed inset-x-0 bottom-0 z-[60] max-h-[92vh] overflow-hidden rounded-t-[28px] bg-slate-950 shadow-2xl"
+            className="fixed inset-x-0 bottom-0 z-[60] max-h-[92vh] overflow-hidden rounded-t-3xl bg-white dark:bg-slate-950 shadow-2xl"
             dir="rtl"
           >
             <div className="flex justify-center pt-2.5 pb-1">
-              <div className="h-1 w-10 rounded-full bg-slate-700" />
+              <div className="h-1 w-10 rounded-full bg-slate-200 dark:bg-slate-700" />
             </div>
 
             <div className="relative flex items-center justify-between px-5 pb-2 pt-2">
-              <h2 className="absolute left-1/2 -translate-x-1/2 text-base font-black text-white">
+              <h2 className="absolute left-1/2 -translate-x-1/2 text-base font-extrabold text-slate-950 dark:text-white">
                 تعزيز الإعلان
               </h2>
               <button
                 type="button"
                 onClick={onClose}
                 aria-label="إغلاق"
-                className="grid h-9 w-9 place-items-center rounded-full bg-slate-800 text-slate-300 transition hover:bg-slate-700"
+                className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 transition hover:bg-slate-200 dark:hover:bg-slate-700"
               >
                 <X size={16} />
               </button>
@@ -216,11 +216,11 @@ export function BoostSheet({
 
             <div className="max-h-[calc(92vh-60px)] overflow-y-auto px-5 pb-6">
               {/* Listing info */}
-              <div className="mt-2 rounded-2xl bg-slate-900 p-3">
-                <p className="text-[10px] font-black uppercase text-slate-500">
+              <div className="mt-2 rounded-2xl bg-slate-50 dark:bg-slate-900 p-3">
+                <p className="text-[10px] font-extrabold uppercase text-slate-500">
                   الإعلان
                 </p>
-                <p className="mt-1 truncate text-sm font-black text-white">
+                <p className="mt-1 truncate text-sm font-extrabold text-slate-950 dark:text-white">
                   {listingTitle}
                 </p>
 
@@ -228,25 +228,25 @@ export function BoostSheet({
                 {(isVip || isBoosted || isFeatured || isUrgent) && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {isVip && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] font-black text-amber-300">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-extrabold text-amber-800 dark:bg-amber-400/20 dark:text-amber-300">
                         <Crown size={10} />
                         VIP · {formatRemainingDays(vipDays)}
                       </span>
                     )}
                     {isFeatured && !isVip && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] font-black text-blue-300">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-extrabold text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">
                         <Star size={10} />
                         مميز · {formatRemainingDays(featuredDays)}
                       </span>
                     )}
                     {isBoosted && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-black text-emerald-300">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-extrabold text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">
                         <Rocket size={10} />
                         ممول · {formatRemainingDays(boostDays)}
                       </span>
                     )}
                     {isUrgent && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/20 px-2 py-0.5 text-[10px] font-black text-rose-300">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-extrabold text-rose-700 dark:bg-rose-500/20 dark:text-rose-300">
                         <Zap size={10} />
                         عاجل · {formatRemainingDays(urgentDays)}
                       </span>
@@ -256,18 +256,18 @@ export function BoostSheet({
               </div>
 
               {/* Balance */}
-              <div className="mt-3 flex items-center justify-between rounded-2xl bg-slate-900 p-3">
-                <span className="text-[12px] font-bold text-slate-400">
+              <div className="mt-3 flex items-center justify-between rounded-2xl bg-slate-50 dark:bg-slate-900 p-3">
+                <span className="text-[12px] font-bold text-slate-500 dark:text-slate-400">
                   رصيدك الحالي
                 </span>
                 <div className="flex items-center gap-2">
-                  <span className="text-base font-black tabular-nums text-white">
+                  <span className="text-base font-extrabold tabular-nums text-slate-950 dark:text-white">
                     {formatBC(balance)}
                   </span>
                   <button
                     type="button"
                     onClick={() => setTopupOpen(true)}
-                    className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-[11px] font-black text-white transition hover:bg-emerald-500 active:scale-95"
+                    className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-[11px] font-extrabold text-white transition hover:bg-emerald-500 active:scale-95"
                   >
                     <CreditCard size={12} />
                     شحن
@@ -292,7 +292,7 @@ export function BoostSheet({
                   return (
                     <div
                       key={service.key}
-                      className="rounded-2xl border border-slate-800 bg-slate-900 p-3"
+                      className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-3"
                     >
                       <div className="flex items-center gap-3">
                         <div
@@ -302,10 +302,10 @@ export function BoostSheet({
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <h3 className="text-sm font-black text-white">
+                          <h3 className="text-sm font-extrabold text-slate-950 dark:text-white">
                             {service.label}
                           </h3>
-                          <p className="mt-0.5 text-[11px] leading-4 text-slate-400">
+                          <p className="mt-0.5 text-[11px] leading-4 text-slate-500 dark:text-slate-400">
                             {service.description}
                           </p>
                           {service.durationDays && (
@@ -316,7 +316,7 @@ export function BoostSheet({
                         </div>
 
                         <div className="text-end">
-                          <p className="text-base font-black tabular-nums text-white">
+                          <p className="text-base font-extrabold tabular-nums text-slate-950 dark:text-white">
                             {priceOf(service)}
                           </p>
                           <p className="text-[9px] font-bold text-slate-500">BC</p>
@@ -334,7 +334,7 @@ export function BoostSheet({
                         className={`
                           mt-3 inline-flex w-full items-center justify-center gap-1.5
                           rounded-2xl bg-gradient-to-br ${service.gradient} py-2.5
-                          text-xs font-black text-white shadow-sm transition
+                          text-xs font-extrabold text-white shadow-sm transition
                           hover:brightness-110 active:scale-[0.98]
                           disabled:cursor-not-allowed disabled:opacity-50
                         `}

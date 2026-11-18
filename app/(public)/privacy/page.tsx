@@ -216,7 +216,7 @@ export default function PrivacyPage() {
               dark:border-slate-800 dark:bg-slate-950/40
             "
           >
-            <h2 className="mb-3 flex items-baseline gap-2 text-lg font-black text-brand-700 dark:text-brand-300">
+            <h2 className="mb-3 flex items-baseline gap-2 text-lg font-extrabold text-brand-700 dark:text-brand-300">
               <span className="text-sm tabular-nums text-slate-400 dark:text-slate-500">
                 {idx + 1}.
               </span>

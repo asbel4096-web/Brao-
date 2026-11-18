@@ -163,7 +163,7 @@ export function PostSheet({ open, onClose, onPosted, weekKey, isLive }: Props) {
             onClick={onClose}
           />
           <motion.div
-            className="fixed inset-x-0 bottom-0 z-[60] max-h-[92vh] overflow-y-auto rounded-t-[28px] bg-white p-5 dark:bg-slate-900"
+            className="fixed inset-x-0 bottom-0 z-[60] max-h-[92vh] overflow-y-auto rounded-t-3xl bg-white p-5 dark:bg-slate-900"
             style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
@@ -174,7 +174,7 @@ export function PostSheet({ open, onClose, onPosted, weekKey, isLive }: Props) {
             <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-slate-200 dark:bg-slate-700" />
 
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-black text-slate-900 dark:text-white">
+              <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
                 🛒 نشر سريع في سوق الجمعة
               </h2>
               <button
@@ -285,7 +285,7 @@ export function PostSheet({ open, onClose, onPosted, weekKey, isLive }: Props) {
             <button
               onClick={submit}
               disabled={submitting || !isLive}
-              className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-orange-500 to-red-600 py-3.5 text-[15px] font-black text-white shadow-lg transition active:scale-[0.98] disabled:opacity-60"
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-action-500 to-red-600 py-3.5 text-[15px] font-extrabold text-white shadow-lg transition active:scale-[0.98] disabled:opacity-60"
             >
               {submitting ? (
                 <>
@@ -297,7 +297,7 @@ export function PostSheet({ open, onClose, onPosted, weekKey, isLive }: Props) {
             </button>
 
             {!isLive && (
-              <p className="mt-2 text-center text-xs font-semibold text-rose-500">
+              <p className="mt-2 text-center text-xs font-bold text-rose-500">
                 السوق مغلق الآن — يفتح يوم الجمعة فقط
               </p>
             )}
@@ -309,7 +309,7 @@ export function PostSheet({ open, onClose, onPosted, weekKey, isLive }: Props) {
 }
 
 const inputCls =
-  "w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[15px] font-semibold text-slate-800 outline-none focus:border-action-400 focus:ring-2 focus:ring-action-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100";
+  "w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[15px] font-bold text-slate-800 outline-none focus:border-action-400 focus:ring-2 focus:ring-action-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100";
 
 function Field({
   label,

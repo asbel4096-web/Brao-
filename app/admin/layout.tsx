@@ -99,12 +99,16 @@ export default function AdminLayout({
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
           </div>
-          <h1 className="text-xl font-black text-slate-900 dark:text-white">
+          <h1 className="text-xl font-extrabold text-slate-900 dark:text-white">
             غير مخوَّل
           </h1>
           <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             لا تملك صلاحية الوصول إلى لوحة الإدارة.
           </p>
+          {/* الترويسة العامة والشريط السفلي مخفيّان داخل /admin — طريق عودة واضح */}
+          <a href="/" className="btn-primary btn-sm mt-5">
+            العودة إلى الرئيسية
+          </a>
         </div>
       </div>
     );

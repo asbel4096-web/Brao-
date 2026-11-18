@@ -119,7 +119,7 @@ export function QuickServicesGrid({
       {/* Header */}
       <div className="mb-4 flex items-center gap-2">
         <Zap size={16} className="text-action-500" />
-        <h2 className="text-sm font-black text-slate-900 dark:text-white">
+        <h2 className="text-sm font-extrabold text-slate-900 dark:text-white">
           الخدمات السريعة
         </h2>
       </div>
@@ -169,7 +169,7 @@ function ServiceButton({
         {service.badge && (
           <span className="
             absolute -top-1 -right-1 rounded-full
-            bg-amber-500 px-1.5 py-0.5 text-[8px] font-black text-white
+            bg-amber-500 px-1.5 py-0.5 text-[8px] font-extrabold text-white
             shadow ring-2 ring-white
           ">
             {service.badge}

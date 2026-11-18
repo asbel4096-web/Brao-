@@ -115,14 +115,14 @@ function StoryCardImpl({ stories, seen = false, onClick }: Props) {
 
       {/* شارة عدد القصص */}
       {stories.length > 1 && (
-        <span className="absolute left-2.5 bottom-2.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-action-500 px-1.5 text-[10px] font-black text-white shadow">
+        <span className="absolute left-2.5 bottom-2.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-action-500 px-1.5 text-[10px] font-extrabold text-white shadow">
           {stories.length}
         </span>
       )}
 
       {/* اسم المعرض */}
       <span className="absolute inset-x-0 bottom-0 p-2.5">
-        <span className="line-clamp-2 text-right text-[12px] font-black leading-tight text-white drop-shadow-md">
+        <span className="line-clamp-2 text-right text-[12px] font-extrabold leading-tight text-white drop-shadow-md">
           {owner}
         </span>
       </span>

@@ -420,14 +420,14 @@ export default function AdminFridayMarketPage() {
   return (
     <div className="space-y-6 p-4 md:p-6" dir="rtl">
       <header className="flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-100 text-orange-600 dark:bg-orange-950/40">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-action-100 text-action-600 dark:bg-action-950/40">
           <ShoppingCart size={22} />
         </div>
         <div>
-          <h1 className="text-xl font-black text-slate-900 dark:text-white">
+          <h1 className="text-xl font-extrabold text-slate-900 dark:text-white">
             سوق الجمعة
           </h1>
-          <p className="text-xs font-semibold text-slate-400">
+          <p className="text-xs font-bold text-slate-400">
             {weekLabel} ·{" "}
             <span className={isLive ? "text-emerald-600" : "text-rose-500"}>
               {isLive ? "مفتوح الآن" : "مغلق"}
@@ -475,7 +475,7 @@ export default function AdminFridayMarketPage() {
 
       {/* ===== الإعدادات ===== */}
       <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-100 dark:bg-slate-900 dark:ring-slate-800">
-        <h2 className="mb-4 text-base font-black text-slate-900 dark:text-white">
+        <h2 className="mb-4 text-base font-extrabold text-slate-900 dark:text-white">
           إعدادات السوق
         </h2>
         {loadingSettings ? (
@@ -564,7 +564,7 @@ export default function AdminFridayMarketPage() {
             <button
               onClick={saveSettings}
               disabled={saving}
-              className="flex items-center gap-2 rounded-2xl bg-action-500 px-5 py-2.5 text-sm font-black text-white active:scale-95 disabled:opacity-60"
+              className="flex items-center gap-2 rounded-2xl bg-action-500 px-5 py-2.5 text-sm font-extrabold text-white active:scale-95 disabled:opacity-60"
             >
               {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
               حفظ الإعدادات
@@ -577,11 +577,11 @@ export default function AdminFridayMarketPage() {
       <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-100 dark:bg-slate-900 dark:ring-slate-800">
         <div className="mb-1 flex items-center gap-2">
           <BellRing size={18} className="text-action-500" />
-          <h2 className="text-base font-black text-slate-900 dark:text-white">
+          <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
             إشعار فتح السوق
           </h2>
         </div>
-        <p className="mb-4 text-xs font-semibold text-slate-400">
+        <p className="mb-4 text-xs font-bold text-slate-400">
           يصل لكل المستخدمين (إشعار فوري + داخل التطبيق) ويفتح صفحة سوق الجمعة.
           يُرسَل تلقائياً صباح يوم فتح السوق، ويمكنك إرساله يدوياً الآن أيضاً.
         </p>
@@ -620,7 +620,7 @@ export default function AdminFridayMarketPage() {
           <button
             onClick={() => sendNotification(false)}
             disabled={sendingNotify}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-orange-500 to-red-600 py-3 text-sm font-black text-white shadow-md transition active:scale-[0.98] disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-action-500 to-red-600 py-3 text-sm font-extrabold text-white shadow-md transition active:scale-[0.98] disabled:opacity-60"
           >
             {sendingNotify ? (
               <>
@@ -638,7 +638,7 @@ export default function AdminFridayMarketPage() {
       {/* ===== إدارة الإعلانات ===== */}
       <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-100 dark:bg-slate-900 dark:ring-slate-800">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-base font-black text-slate-900 dark:text-white">
+          <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
             عروض المستخدمين
           </h2>
           <div className="flex gap-1.5">
@@ -711,7 +711,7 @@ export default function AdminFridayMarketPage() {
               <button
                 onClick={bulkDeleteSelected}
                 disabled={selected.size === 0 || bulkBusy}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-rose-500 px-3 py-1.5 text-xs font-black text-white active:scale-95 disabled:opacity-40"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-rose-500 px-3 py-1.5 text-xs font-extrabold text-white active:scale-95 disabled:opacity-40"
               >
                 {bulkBusy ? (
                   <Loader2 size={14} className="animate-spin" />
@@ -723,7 +723,7 @@ export default function AdminFridayMarketPage() {
               <button
                 onClick={deleteAllSession}
                 disabled={bulkBusy}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-rose-300 px-3 py-1.5 text-xs font-black text-rose-600 active:scale-95 disabled:opacity-40 dark:border-rose-900/50"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-rose-300 px-3 py-1.5 text-xs font-extrabold text-rose-600 active:scale-95 disabled:opacity-40 dark:border-rose-900/50"
               >
                 <Trash2 size={14} /> حذف الكل
               </button>
@@ -769,7 +769,7 @@ export default function AdminFridayMarketPage() {
                       className="flex flex-1 items-center gap-2 text-right"
                     >
                       <span className="text-base">{section.emoji}</span>
-                      <span className="text-sm font-black text-slate-800 dark:text-slate-100">
+                      <span className="text-sm font-extrabold text-slate-800 dark:text-slate-100">
                         {section.label}
                       </span>
                       <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-slate-500 dark:bg-slate-900">
@@ -852,12 +852,12 @@ function ItemRow({
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-black text-slate-800 dark:text-slate-100">
+        <p className="truncate text-sm font-extrabold text-slate-800 dark:text-slate-100">
           {item.featured && <Star size={11} className="inline text-amber-500" />}{" "}
           {item.title}
         </p>
         <p className="text-xs font-bold text-action-600">{formatPrice(item.price)}</p>
-        <p className="flex items-center gap-2 text-[11px] font-semibold text-slate-400">
+        <p className="flex items-center gap-2 text-[11px] font-bold text-slate-400">
           <span className="inline-flex items-center gap-0.5">
             <Eye size={11} /> {formatNumber(item.views || 0)}
           </span>
@@ -901,11 +901,11 @@ function ItemRow({
 
 /* ===================== عناصر مساعدة ===================== */
 const inputCls =
-  "rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-800 outline-none focus:border-action-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100";
+  "rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-800 outline-none focus:border-action-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100";
 
 const STAT_TONES: Record<string, string> = {
   action: "bg-action-50 text-action-600 dark:bg-action-500/10 dark:text-action-300",
-  blue: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-300",
+  blue: "bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-300",
   emerald: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300",
   rose: "bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-300",
 };
@@ -933,11 +933,11 @@ function StatCard({
       >
         {icon}
       </div>
-      <p className="truncate text-lg font-black text-slate-900 dark:text-white">
+      <p className="truncate text-lg font-extrabold text-slate-900 dark:text-white">
         {value}
       </p>
       <p className="text-[11px] font-bold text-slate-400">{label}</p>
-      {sub && <p className="mt-0.5 text-[11px] font-semibold text-slate-400">{sub}</p>}
+      {sub && <p className="mt-0.5 text-[11px] font-bold text-slate-400">{sub}</p>}
     </div>
   );
 }

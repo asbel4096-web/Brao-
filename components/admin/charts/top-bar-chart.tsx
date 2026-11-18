@@ -51,7 +51,7 @@ export function TopBarChart({
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">
       <div className="mb-3">
-        <h3 className="text-sm font-black text-slate-900 dark:text-white">
+        <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
           {title}
         </h3>
         {description && (
@@ -110,7 +110,7 @@ export function TopBarChart({
                   padding: "6px 10px",
                 }}
                 formatter={(value: any) => [
-                  `${Number(value).toLocaleString("ar-LY")}`,
+                  `${Number(value).toLocaleString("en-US")}`,
                   "العدد",
                 ]}
               />

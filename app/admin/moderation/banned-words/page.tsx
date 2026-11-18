@@ -129,7 +129,7 @@ export default function BannedWordsPage() {
           <Filter size={20} strokeWidth={2.2} />
         </div>
         <div>
-          <h1 className="text-lg font-black text-slate-900 dark:text-white sm:text-xl">
+          <h1 className="text-lg font-extrabold text-slate-900 dark:text-white sm:text-xl">
             الكلمات المحظورة
           </h1>
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
@@ -140,7 +140,7 @@ export default function BannedWordsPage() {
 
       {/* Add form */}
       <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-        <p className="mb-2 text-xs font-black text-slate-700 dark:text-slate-300">
+        <p className="mb-2 text-xs font-extrabold text-slate-700 dark:text-slate-300">
           إضافة كلمة جديدة
         </p>
         <div className="flex flex-col gap-2 sm:flex-row">
@@ -167,7 +167,7 @@ export default function BannedWordsPage() {
             type="button"
             onClick={handleAdd}
             disabled={adding || !newWord.trim()}
-            className="inline-flex h-10 items-center gap-1.5 rounded-2xl bg-rose-600 px-4 text-xs font-black text-white transition hover:bg-rose-700 active:scale-95 disabled:opacity-60"
+            className="inline-flex h-10 items-center gap-1.5 rounded-2xl bg-rose-600 px-4 text-xs font-extrabold text-white transition hover:bg-rose-700 active:scale-95 disabled:opacity-60"
           >
             {adding ? (
               <>
@@ -204,7 +204,7 @@ export default function BannedWordsPage() {
             size={36}
             className="mx-auto mb-2 text-slate-300 dark:text-slate-600"
           />
-          <p className="text-sm font-black text-slate-700 dark:text-slate-200">
+          <p className="text-sm font-extrabold text-slate-700 dark:text-slate-200">
             لا توجد كلمات محظورة بعد
           </p>
           <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
@@ -222,11 +222,11 @@ export default function BannedWordsPage() {
               className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900"
             >
               <div className="flex min-w-0 items-center gap-2">
-                <span className="font-mono text-sm font-black text-slate-900 dark:text-white">
+                <span className="font-mono text-sm font-extrabold text-slate-900 dark:text-white">
                   {w.word}
                 </span>
                 <span
-                  className={`rounded-full px-2 py-0.5 text-[9px] font-black ${
+                  className={`rounded-full px-2 py-0.5 text-[9px] font-extrabold ${
                     w.severity === "block"
                       ? "bg-rose-500 text-white"
                       : "bg-amber-500 text-white"

@@ -173,7 +173,7 @@ export function ImageEditTab({ kind }: Props) {
           className="
             absolute bottom-3 left-3 inline-flex items-center gap-1.5
             rounded-full bg-black/70 px-3 py-1.5 text-[11px]
-            font-black text-white backdrop-blur transition
+            font-extrabold text-white backdrop-blur transition
             hover:bg-black/85 active:scale-95
             disabled:opacity-50
           "
@@ -189,7 +189,7 @@ export function ImageEditTab({ kind }: Props) {
 
       {/* Help text */}
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-[11px] leading-5 text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-        <p className="font-black text-slate-700 dark:text-slate-200">
+        <p className="font-extrabold text-slate-700 dark:text-slate-200">
           💡 نصائح:
         </p>
         <ul className="mt-1 list-inside list-disc space-y-0.5">
@@ -220,9 +220,9 @@ export function ImageEditTab({ kind }: Props) {
           whileTap={{ scale: 0.97 }}
           className="
             inline-flex items-center justify-center gap-1.5
-            rounded-2xl bg-blue-600 py-3 text-sm font-black text-white
-            shadow-lg shadow-blue-500/30 transition
-            hover:bg-blue-700 disabled:opacity-60
+            rounded-2xl bg-brand-600 py-3 text-sm font-extrabold text-white
+            shadow-lg shadow-brand-500/30 transition
+            hover:bg-brand-700 disabled:opacity-60
           "
         >
           <Upload size={14} />
@@ -238,7 +238,7 @@ export function ImageEditTab({ kind }: Props) {
             className="
               inline-flex items-center justify-center gap-1.5
               rounded-2xl border border-rose-300 bg-rose-50 py-3
-              text-sm font-black text-rose-700 transition
+              text-sm font-extrabold text-rose-700 transition
               hover:bg-rose-100 disabled:opacity-60
               dark:border-rose-900/40 dark:bg-rose-900/20 dark:text-rose-300
             "

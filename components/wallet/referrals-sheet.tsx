@@ -151,22 +151,22 @@ export function ReferralsSheet({ open, onClose }: Props) {
             onDragEnd={(_, info) => {
               if (info.offset.y > 100) onClose();
             }}
-            className="fixed inset-x-0 bottom-0 z-[60] max-h-[92vh] overflow-hidden rounded-t-[28px] bg-slate-950 shadow-2xl"
+            className="fixed inset-x-0 bottom-0 z-[60] max-h-[92vh] overflow-hidden rounded-t-3xl bg-white dark:bg-slate-950 shadow-2xl"
             dir="rtl"
           >
             <div className="flex justify-center pt-2.5 pb-1">
-              <div className="h-1 w-10 rounded-full bg-slate-700" />
+              <div className="h-1 w-10 rounded-full bg-slate-200 dark:bg-slate-700" />
             </div>
 
             <div className="relative flex items-center justify-between px-5 pb-2 pt-2">
-              <h2 className="absolute left-1/2 -translate-x-1/2 text-base font-black text-white">
+              <h2 className="absolute left-1/2 -translate-x-1/2 text-base font-extrabold text-slate-950 dark:text-white">
                 ادعُ أصدقاءك
               </h2>
               <button
                 type="button"
                 onClick={onClose}
                 aria-label="إغلاق"
-                className="grid h-9 w-9 place-items-center rounded-full bg-slate-800 text-slate-300 transition hover:bg-slate-700"
+                className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 transition hover:bg-slate-200 dark:hover:bg-slate-700"
               >
                 <X size={16} />
               </button>
@@ -208,12 +208,12 @@ export function ReferralsSheet({ open, onClose }: Props) {
 
 function ComingSoon() {
   return (
-    <div className="rounded-3xl bg-slate-900 p-10 text-center">
-      <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600">
+    <div className="rounded-3xl bg-slate-50 dark:bg-slate-900 p-10 text-center">
+      <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-brand-500 to-brand-800">
         <Sparkles size={24} className="text-white" />
       </div>
-      <h3 className="text-lg font-black text-white">نظام الإحالات قريباً</h3>
-      <p className="mt-1 text-[12px] text-slate-400">
+      <h3 className="text-lg font-extrabold text-slate-950 dark:text-white">نظام الإحالات قريباً</h3>
+      <p className="mt-1 text-[12px] text-slate-500 dark:text-slate-400">
         ستحصل على {REFERRAL_REWARD_BC} BC عن كل صديق تدعوه
       </p>
     </div>
@@ -230,7 +230,7 @@ function NotActivated({
   return (
     <div className="mt-2 space-y-4">
       {/* Hero */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-600 p-6 text-center">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-ink via-brand-900 to-brand-700 p-6 text-center">
         <div className="absolute -right-4 -top-4 opacity-20">
           <Gift size={140} className="text-white" />
         </div>
@@ -238,7 +238,7 @@ function NotActivated({
           <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
             <Gift size={24} className="text-white" />
           </div>
-          <h3 className="text-xl font-black text-white">
+          <h3 className="text-xl font-extrabold text-white">
             ادعُ أصدقاءك واربح
           </h3>
           <p className="mt-1 text-sm text-white/90">
@@ -249,7 +249,7 @@ function NotActivated({
 
       {/* How it works */}
       <div className="space-y-2">
-        <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-500">
+        <h4 className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
           كيف يعمل؟
         </h4>
         <StepRow
@@ -281,8 +281,8 @@ function NotActivated({
         disabled={busy}
         className="
           mt-2 inline-flex w-full items-center justify-center gap-2
-          rounded-2xl bg-gradient-to-br from-purple-600 to-blue-600
-          py-3.5 text-sm font-black text-white shadow-lg transition
+          rounded-2xl bg-gradient-to-br from-brand-700 to-brand-500
+          py-3.5 text-sm font-extrabold text-white shadow-lg transition
           hover:brightness-110 active:scale-[0.98] disabled:opacity-60
         "
       >
@@ -314,13 +314,13 @@ function StepRow({
   isLast?: boolean;
 }) {
   return (
-    <div className="flex items-start gap-3 rounded-2xl bg-slate-900 p-3">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-blue-600 text-[11px] font-black text-white">
+    <div className="flex items-start gap-3 rounded-2xl bg-slate-50 dark:bg-slate-900 p-3">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-[11px] font-extrabold text-white">
         {num}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[13px] font-black text-white">{title}</p>
-        <p className="mt-0.5 text-[11px] text-slate-400">{desc}</p>
+        <p className="text-[13px] font-extrabold text-slate-950 dark:text-white">{title}</p>
+        <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">{desc}</p>
       </div>
     </div>
   );
@@ -358,21 +358,21 @@ function ActivatedView({
   return (
     <div className="mt-2 space-y-4">
       {/* Stats card */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-700 p-5">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-ink via-brand-900 to-brand-700 p-5">
         <div className="absolute -right-4 -top-4 opacity-20">
           <UsersIcon size={120} className="text-white" />
         </div>
         <div className="relative">
-          <p className="text-[11px] font-bold text-blue-100">دعواتك المكتملة</p>
+          <p className="text-[11px] font-bold text-brand-100">دعواتك المكتملة</p>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-4xl font-black tabular-nums text-white">
-              {completedCount.toLocaleString("ar-LY")}
+              {completedCount.toLocaleString("en-US")}
             </span>
-            <span className="text-sm font-black text-blue-200">
+            <span className="text-sm font-extrabold text-brand-200">
               من {referrals.length}
             </span>
           </div>
-          <p className="mt-1 text-[11px] text-blue-200">
+          <p className="mt-1 text-[11px] text-brand-200">
             ربحت {completedCount * REFERRAL_REWARD_BC} BC من الإحالات
           </p>
         </div>
@@ -380,7 +380,7 @@ function ActivatedView({
 
       {/* Code card */}
       <div className="space-y-2">
-        <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">
+        <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
           كودك
         </p>
         <button
@@ -388,14 +388,14 @@ function ActivatedView({
           onClick={onCopyCode}
           className="
             flex w-full items-center justify-between gap-3 rounded-2xl
-            border-2 border-dashed border-purple-500/40 bg-purple-500/10
-            p-4 transition hover:border-purple-500/60 hover:bg-purple-500/15
+            border-2 border-dashed border-brand-500/40 bg-brand-500/10
+            p-4 transition hover:border-brand-500/60 hover:bg-brand-500/15
           "
         >
-          <span className="font-mono text-base font-black tabular-nums text-white" dir="ltr">
+          <span className="font-mono text-base font-extrabold tabular-nums text-slate-950 dark:text-white" dir="ltr">
             {code}
           </span>
-          <span className="grid h-9 w-9 place-items-center rounded-xl bg-purple-500/30 text-purple-300">
+          <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand-500/15 text-brand-700 dark:bg-brand-500/30 dark:text-brand-300">
             {copiedCode ? <Check size={14} /> : <Copy size={14} />}
           </span>
         </button>
@@ -403,12 +403,12 @@ function ActivatedView({
 
       {/* Link + share */}
       <div className="space-y-2">
-        <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">
+        <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
           رابط الدعوة
         </p>
-        <div className="flex items-center gap-2 rounded-2xl bg-slate-900 p-2 ps-3">
+        <div className="flex items-center gap-2 rounded-2xl bg-slate-50 dark:bg-slate-900 p-2 ps-3">
           <span
-            className="flex-1 truncate font-mono text-[12px] text-slate-300"
+            className="flex-1 truncate font-mono text-[12px] text-slate-600 dark:text-slate-300"
             dir="ltr"
           >
             {link}
@@ -416,7 +416,7 @@ function ActivatedView({
           <button
             type="button"
             onClick={onCopyLink}
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-slate-800 text-slate-300 transition hover:bg-slate-700"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 transition hover:bg-slate-200 dark:hover:bg-slate-700"
             aria-label="نسخ"
           >
             {copiedLink ? <Check size={14} /> : <Copy size={14} />}
@@ -427,7 +427,7 @@ function ActivatedView({
           <button
             type="button"
             onClick={onWhatsApp}
-            className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-emerald-600 py-2.5 text-xs font-black text-white shadow-sm transition hover:bg-emerald-700 active:scale-95"
+            className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-emerald-600 py-2.5 text-xs font-extrabold text-white shadow-sm transition hover:bg-emerald-700 active:scale-95"
           >
             <MessageCircle size={14} />
             WhatsApp
@@ -435,7 +435,7 @@ function ActivatedView({
           <button
             type="button"
             onClick={onShare}
-            className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-slate-800 py-2.5 text-xs font-black text-white shadow-sm transition hover:bg-slate-700 active:scale-95"
+            className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-slate-100 dark:bg-slate-800 py-2.5 text-xs font-extrabold text-slate-950 dark:text-white shadow-sm transition hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95"
           >
             <Share2 size={14} />
             مشاركة
@@ -446,11 +446,11 @@ function ActivatedView({
       {/* Referrals list */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">
+          <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
             دعواتك ({formatReferralsCount(referrals.length)})
           </p>
           {pendingCount > 0 && (
-            <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[9px] font-black text-amber-300">
+            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-extrabold text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">
               {pendingCount} في الانتظار
             </span>
           )}
@@ -461,17 +461,17 @@ function ActivatedView({
             {[...Array(2)].map((_, i) => (
               <div
                 key={i}
-                className="h-14 animate-pulse rounded-2xl bg-slate-800/50"
+                className="h-14 animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800/50"
               />
             ))}
           </div>
         ) : referrals.length === 0 ? (
-          <div className="rounded-2xl bg-slate-900 p-6 text-center">
+          <div className="rounded-2xl bg-slate-50 dark:bg-slate-900 p-6 text-center">
             <UsersIcon
               size={28}
               className="mx-auto mb-2 text-slate-600"
             />
-            <p className="text-[12px] text-slate-400">
+            <p className="text-[12px] text-slate-500 dark:text-slate-400">
               لم تدعُ أحداً بعد
             </p>
             <p className="mt-1 text-[10px] text-slate-500">
@@ -502,14 +502,14 @@ function ReferralRow({ referral }: { referral: any }) {
     : "";
 
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-slate-800/40 p-3">
+    <div className="flex items-center gap-3 rounded-2xl bg-slate-100 dark:bg-slate-800/40 p-3">
       <div
         className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${
           isCompleted
-            ? "bg-emerald-900/40 text-emerald-400"
+            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
             : isPending
-            ? "bg-amber-900/40 text-amber-400"
-            : "bg-slate-700 text-slate-400"
+            ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
+            : "bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
         }`}
       >
         {isCompleted ? (
@@ -522,10 +522,10 @@ function ReferralRow({ referral }: { referral: any }) {
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[12px] font-black text-white" dir="ltr">
+        <p className="truncate text-[12px] font-extrabold text-slate-950 dark:text-white" dir="ltr">
           {referral.referredEmail || referral.referredUid.slice(0, 8) + "..."}
         </p>
-        <p className="mt-0.5 text-[10px] text-slate-400">
+        <p className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400">
           {date}
           {" · "}
           {isCompleted
@@ -540,7 +540,7 @@ function ReferralRow({ referral }: { referral: any }) {
 
       {isCompleted && (
         <div className="text-end">
-          <p className="text-[11px] font-black tabular-nums text-emerald-400">
+          <p className="text-[11px] font-extrabold tabular-nums text-emerald-400">
             +{REFERRAL_REWARD_BC} BC
           </p>
         </div>

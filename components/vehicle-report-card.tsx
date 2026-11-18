@@ -131,7 +131,7 @@ function HeroStat({
         <Icon size={11} />
         {label}
       </div>
-      <div className="mt-1 truncate text-sm font-black sm:text-base">
+      <div className="mt-1 truncate text-sm font-extrabold sm:text-base">
         {value || <span className="text-white/40">—</span>}
       </div>
     </div>
@@ -335,7 +335,7 @@ function AccidentItem({ accident }: { accident: AccidentRecord }) {
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800">
       <div className="flex flex-wrap items-center gap-2">
         {accident.severity && (
-          <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-black ${sevColor}`}>
+          <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-extrabold ${sevColor}`}>
             {severityLabel(accident.severity)}
           </span>
         )}
@@ -363,10 +363,10 @@ function OwnershipItem({ owner }: { owner: OwnershipRecord }) {
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
-        <span className="text-sm font-black">#{owner.ownerNumber}</span>
+        <span className="text-sm font-extrabold">#{owner.ownerNumber}</span>
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-black text-slate-900 dark:text-white">
+        <p className="text-sm font-extrabold text-slate-900 dark:text-white">
           {ownerTypeLabel(owner.type)}
           {owner.region && <span className="font-bold text-slate-500"> - {owner.region}</span>}
         </p>
@@ -414,7 +414,7 @@ function SectionTitle({
         <Icon size={18} />
       </div>
       <div>
-        <h3 className="text-base font-black text-slate-900 dark:text-white sm:text-lg">
+        <h3 className="text-base font-extrabold text-slate-900 dark:text-white sm:text-lg">
           {title}
         </h3>
         {subtitle && (
@@ -435,7 +435,7 @@ function SpecRow({
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-[11px] text-slate-500 dark:text-slate-400">{label}</p>
-        <p className="mt-0.5 truncate text-sm font-black text-slate-900 dark:text-white">
+        <p className="mt-0.5 truncate text-sm font-extrabold text-slate-900 dark:text-white">
           {value}
         </p>
       </div>
@@ -464,7 +464,7 @@ function StatBox({
         <Icon size={18} />
       </div>
       <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">{label}</p>
-      <p className="mt-0.5 text-base font-black text-slate-900 dark:text-white sm:text-lg">
+      <p className="mt-0.5 text-base font-extrabold text-slate-900 dark:text-white sm:text-lg">
         {value}
       </p>
     </div>
@@ -497,7 +497,7 @@ function formatPlant(d: DecodedVehicleData): string | undefined {
 function formatMileage(value: number, unit?: "km" | "mi"): string {
   const safeUnit = unit || "km";
   const label = safeUnit === "mi" ? "ميل" : "كم";
-  return `${value.toLocaleString("ar-LY")} ${label}`;
+  return `${value.toLocaleString("en-US")} ${label}`;
 }
 
 function titleStatusLabel(status: TitleStatus): string {

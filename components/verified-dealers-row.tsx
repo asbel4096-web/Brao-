@@ -120,7 +120,7 @@ export function VerifiedDealersRow() {
       <div className="container">
         {/* رأس القسم */}
         <div className="mb-3 flex items-center justify-between gap-3 px-1">
-          <h2 className="inline-flex items-center gap-2 text-base font-black text-slate-900 dark:text-white sm:text-lg">
+          <h2 className="inline-flex items-center gap-2 text-xl font-extrabold leading-[30px] text-slate-950 dark:text-white">
             <BadgeCheck
               size={18}
               className="text-brand-700 dark:text-brand-300"
@@ -129,7 +129,7 @@ export function VerifiedDealersRow() {
           </h2>
           <Link
             href="/traders"
-            className="inline-flex items-center gap-0.5 text-xs font-black text-brand-700 transition hover:text-brand-600 dark:text-brand-300 dark:hover:text-brand-200"
+            className="inline-flex items-center gap-0.5 text-xs font-extrabold text-brand-700 transition hover:text-brand-600 dark:text-brand-300 dark:hover:text-brand-200"
           >
             عرض الكل
             <ChevronLeft size={14} />
@@ -143,9 +143,9 @@ export function VerifiedDealersRow() {
       */}
       <div
         className="
-          flex gap-3 overflow-x-auto px-4 pb-2
-          scrollbar-hide [&::-webkit-scrollbar]:hidden
-          sm:px-6
+          mx-auto flex max-w-7xl gap-3 overflow-x-auto px-4 pb-3
+          [&::-webkit-scrollbar]:hidden
+          sm:px-6 lg:px-8
         "
         style={{ scrollbarWidth: "none" }}
       >
@@ -207,7 +207,7 @@ function DealerCard({ dealer }: { dealer: UserProfile }) {
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand-700 to-brand-500 text-2xl font-black text-white">
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand-700 to-brand-500 text-2xl font-extrabold text-white">
                 {initial}
               </div>
             )}
@@ -230,7 +230,7 @@ function DealerCard({ dealer }: { dealer: UserProfile }) {
       </div>
 
       {/* الاسم */}
-      <p className="line-clamp-1 w-full text-center text-[12px] font-black text-slate-900 dark:text-white sm:text-[13px]">
+      <p className="line-clamp-1 w-full text-center text-[12px] font-extrabold text-slate-900 dark:text-white sm:text-[13px]">
         {name}
       </p>
 

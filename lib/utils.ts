@@ -7,16 +7,27 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatPrice(value: number | string | null | undefined): string {
+// Bratsho DS 1.0 (قرار ق٧): أرقام لاتينية بفاصل آلاف «,» — 58,855 — مطابق لتطبيق Flutter
+// (NumberFormat.decimalPattern('en')). كان "ar-LY" يكتب 58.855 فتلتبس النقطة بالكسر العشري (2.7).
+const NUM_FMT = new Intl.NumberFormat("en-US");
+
+/** الرقم وحده (بدون العملة) — للعرض داخل span.num مع «د.ل» منفصلة. */
+export function formatAmount(value: number | string | null | undefined): string | null {
   const n = Number(value);
-  if (!isFinite(n) || n <= 0) return "السعر عند الطلب";
-  return new Intl.NumberFormat("ar-LY").format(n) + " د.ل";
+  if (!isFinite(n) || n <= 0) return null;
+  return NUM_FMT.format(n);
+}
+
+export function formatPrice(value: number | string | null | undefined): string {
+  const amount = formatAmount(value);
+  if (amount === null) return "السعر عند الطلب";
+  return amount + " د.ل";
 }
 
 export function formatNumber(value: number | string | null | undefined): string {
   const n = Number(value);
   if (!isFinite(n)) return "0";
-  return new Intl.NumberFormat("ar-LY").format(n);
+  return NUM_FMT.format(n);
 }
 
 export function normalizeLibyanPhone(input: string): string {

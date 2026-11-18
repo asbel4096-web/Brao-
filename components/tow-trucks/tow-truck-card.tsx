@@ -83,7 +83,7 @@ function TowTruckCardImpl({
                عندما لا يرفع المالك صورة لخدمته. */
             <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-gradient-to-br from-brand-700 via-brand-600 to-action-500 text-white">
               <Truck size={40} strokeWidth={2} className="opacity-90" />
-              <span className="text-[10px] font-black opacity-90">
+              <span className="text-[10px] font-extrabold opacity-90">
                 ساحبة سيارات
               </span>
             </div>
@@ -95,7 +95,7 @@ function TowTruckCardImpl({
               className="
                 absolute right-3 top-3 inline-flex items-center gap-1
                 rounded-full bg-emerald-500 px-2.5 py-1
-                text-[10px] font-black text-white shadow-md
+                text-[10px] font-extrabold text-white shadow-md
               "
             >
               <span className="relative flex h-1.5 w-1.5">
@@ -112,7 +112,7 @@ function TowTruckCardImpl({
               className="
                 absolute left-3 top-3 inline-flex items-center gap-1
                 rounded-full bg-brand-700 px-2.5 py-1
-                text-[10px] font-black text-white shadow-md
+                text-[10px] font-extrabold text-white shadow-md
               "
             >
               <Navigation size={10} />
@@ -133,7 +133,7 @@ function TowTruckCardImpl({
       <div className="flex flex-1 flex-col p-3">
         <Link
           href={`/tow-trucks/${listing.id}`}
-          className="line-clamp-1 text-sm font-black text-slate-900 hover:text-brand-700 dark:text-white dark:hover:text-brand-300"
+          className="line-clamp-1 text-sm font-extrabold text-slate-900 hover:text-brand-700 dark:text-white dark:hover:text-brand-300"
         >
           {listing.title || "ساحبة سيارات"}
         </Link>
@@ -147,8 +147,8 @@ function TowTruckCardImpl({
 
         {/* السعر إذا موجود */}
         {Number(listing.price) > 0 && (
-          <p className="mt-1.5 text-xs font-black text-action-600 dark:text-action-300">
-            {formatPrice(listing.price)} د.ل
+          <p className="mt-1.5 text-xs font-extrabold text-brand-700 dark:text-brand-300">
+            {formatPrice(listing.price)}
           </p>
         )}
 
@@ -160,7 +160,7 @@ function TowTruckCardImpl({
               aria-label="اتصال"
               className="
                 inline-flex h-9 flex-1 items-center justify-center gap-1
-                rounded-2xl bg-brand-700 text-[11px] font-black text-white
+                rounded-2xl bg-brand-700 text-[11px] font-extrabold text-white
                 transition active:scale-95 hover:bg-brand-600
               "
             >

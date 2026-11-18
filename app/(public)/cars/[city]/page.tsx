@@ -171,7 +171,7 @@ export default async function CityPage({ params }: Params) {
           </p>
           <Link
             href="/listings"
-            className="mt-3 inline-block text-sm font-black text-brand-700 dark:text-brand-300"
+            className="mt-3 inline-block text-sm font-extrabold text-brand-700 dark:text-brand-300"
           >
             تصفّح كل الإعلانات ←
           </Link>
@@ -180,7 +180,7 @@ export default async function CityPage({ params }: Params) {
 
       {/* روابط داخلية: مدن أخرى */}
       <div className="mt-10 border-t border-slate-100 pt-6 dark:border-slate-800">
-        <h2 className="mb-3 text-base font-black text-slate-900 dark:text-white">
+        <h2 className="mb-3 text-base font-extrabold text-slate-900 dark:text-white">
           مدن أخرى
         </h2>
         <div className="flex flex-wrap gap-2">

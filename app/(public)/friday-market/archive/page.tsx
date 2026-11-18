@@ -22,7 +22,7 @@ export default function FridayArchivePage() {
         >
           <ArrowRight size={22} />
         </button>
-        <h1 className="flex items-center gap-2 text-lg font-black text-slate-900 dark:text-white">
+        <h1 className="flex items-center gap-2 text-lg font-extrabold text-slate-900 dark:text-white">
           <Archive size={20} /> أرشيف سوق الجمعة
         </h1>
       </div>
@@ -47,11 +47,11 @@ export default function FridayArchivePage() {
                   prefetch={false}
                   className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100 active:scale-[0.99] dark:bg-slate-900 dark:ring-slate-800"
                 >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-100 text-xl dark:bg-orange-950/40">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-action-100 text-xl dark:bg-action-950/40">
                     🛒
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-black text-slate-800 dark:text-slate-100">
+                    <p className="truncate text-sm font-extrabold text-slate-800 dark:text-slate-100">
                       {w.label}
                       {isCurrent && (
                         <span className="mr-2 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
@@ -59,7 +59,7 @@ export default function FridayArchivePage() {
                         </span>
                       )}
                     </p>
-                    <p className="text-xs font-semibold text-slate-400">
+                    <p className="text-xs font-bold text-slate-400">
                       {formatNumber(w.count || 0)} إعلان
                     </p>
                   </div>

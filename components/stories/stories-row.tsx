@@ -77,7 +77,7 @@ export function StoriesRow() {
         <div className="container">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-black text-slate-900 dark:text-white sm:text-base">
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-white sm:text-base">
                 قصص براتشو كار
               </h2>
               <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400 sm:text-xs">
@@ -103,7 +103,7 @@ export function StoriesRow() {
               <span className="grid h-12 w-12 place-items-center rounded-full bg-brand-600 text-white shadow-lg shadow-brand-600/30 transition group-active:scale-90">
                 <Plus size={24} strokeWidth={2.5} />
               </span>
-              <span className="text-[12px] font-black text-brand-700 dark:text-brand-300">
+              <span className="text-[12px] font-extrabold text-brand-700 dark:text-brand-300">
                 أضف قصة
               </span>
             </button>

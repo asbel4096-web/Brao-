@@ -86,7 +86,7 @@ export function MarketGrid({
       )}
 
       {!hasMore && items.length > 0 && (
-        <p className="py-4 text-center text-xs font-semibold text-slate-400">
+        <p className="py-4 text-center text-xs font-bold text-slate-400">
           — وصلت إلى نهاية القائمة —
         </p>
       )}

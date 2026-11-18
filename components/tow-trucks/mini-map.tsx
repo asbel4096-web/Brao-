@@ -415,7 +415,7 @@ export function TowTrucksMiniMap({
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-700 text-white">
               <Truck size={20} />
             </div>
-            <p className="text-sm font-black text-slate-700 dark:text-slate-200">
+            <p className="text-sm font-extrabold text-slate-700 dark:text-slate-200">
               تعذّر تحميل الخريطة
             </p>
             <p className="text-[11px] text-slate-500 dark:text-slate-400">

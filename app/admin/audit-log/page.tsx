@@ -98,7 +98,7 @@ export default function AuditLogPage() {
           <ArrowRight size={20} />
         </Link>
         <div>
-          <h1 className="flex items-center gap-2 text-xl font-black text-slate-900 dark:text-white sm:text-2xl">
+          <h1 className="flex items-center gap-2 text-xl font-extrabold text-slate-900 dark:text-white sm:text-2xl">
             <ScrollText size={22} className="text-brand-600 dark:text-brand-300" />
             سجلّ التدقيق
           </h1>
@@ -121,7 +121,7 @@ export default function AuditLogPage() {
       ) : items.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-slate-200 bg-white p-12 text-center dark:border-slate-700 dark:bg-slate-900">
           <ScrollText size={40} className="mx-auto mb-2 text-slate-300 dark:text-slate-600" />
-          <p className="text-base font-black text-slate-900 dark:text-white">السجلّ فارغ</p>
+          <p className="text-base font-extrabold text-slate-900 dark:text-white">السجلّ فارغ</p>
           <p className="mt-1 text-sm text-slate-400">ستظهر هنا إجراءات الأدمن.</p>
         </div>
       ) : (
@@ -142,7 +142,7 @@ export default function AuditLogPage() {
                   <Icon size={16} className={meta.tone} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-black text-slate-900 dark:text-white">
+                  <p className="text-sm font-extrabold text-slate-900 dark:text-white">
                     {meta.label}
                   </p>
                   <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">

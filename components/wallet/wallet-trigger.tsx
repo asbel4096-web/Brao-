@@ -55,19 +55,18 @@ export function WalletTrigger({ variant = "full", className = "" }: WalletTrigge
     <Link
       href="/wallet"
       className={`
-        inline-flex items-center gap-1.5 rounded-full
-        bg-gradient-to-l from-blue-600 to-blue-700
-        text-white shadow-sm
-        transition active:scale-95 hover:shadow-md
-        ${isCompact ? "px-2.5 py-1" : "px-3 py-1.5"}
+        inline-flex items-center gap-1.5 text-white transition active:scale-95
+        ${isCompact
+          ? "h-10 rounded-2xl border border-white/15 bg-white/[0.07] px-3 hover:bg-white/15"
+          : "rounded-full bg-gradient-to-l from-brand-600 to-brand-700 px-3 py-1.5 shadow-sm hover:shadow-md"}
         ${className}
       `}
       aria-label="المحفظة"
     >
-      <span className={`font-black tabular-nums ${isCompact ? "text-[12px]" : "text-[13px]"}`}>
+      <span className={`num font-extrabold ${isCompact ? "text-[13px]" : "text-[13px]"}`}>
         {balance.toLocaleString("en-US")}
       </span>
-      <span className="text-[11px] font-bold text-blue-100">BC</span>
+      <span className="text-[11px] font-bold text-brand-100">BC</span>
       <Wallet size={isCompact ? 14 : 15} strokeWidth={2.2} />
     </Link>
   );

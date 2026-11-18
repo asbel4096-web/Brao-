@@ -534,7 +534,7 @@ export default function ListingComments({
               <div
                 className={`
                   grid flex-none place-items-center rounded-full
-                  bg-brand-700 font-black text-white
+                  bg-brand-700 font-extrabold text-white
                   ${isReply ? "h-8 w-8 text-sm" : "h-10 w-10"}
                 `}
               >
@@ -668,7 +668,7 @@ export default function ListingComments({
     <div className="card p-5 sm:p-6">
       <div className="mb-4 flex items-center gap-2">
         <MessageCircle size={18} className="text-brand-700 dark:text-brand-300" />
-        <h3 className="text-base font-black dark:text-white">
+        <h3 className="text-base font-extrabold dark:text-white">
           التعليقات ({comments.length})
         </h3>
       </div>

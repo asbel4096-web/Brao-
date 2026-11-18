@@ -64,7 +64,7 @@ const TONE_CHIP: Record<Tone, string> = {
   amber: "bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300",
   action: "bg-action-50 text-action-600 dark:bg-action-500/15 dark:text-action-300",
   slate: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
-  pink: "bg-pink-50 text-pink-600 dark:bg-pink-500/15 dark:text-pink-300",
+  pink: "bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300",
 };
 
 const arNum = (v: number) => Math.abs(v).toLocaleString("en-US");
@@ -137,7 +137,7 @@ export default function TransactionsPage() {
           >
             <ArrowRight size={20} />
           </button>
-          <h1 className="text-xl font-black text-slate-900 dark:text-white sm:text-2xl">
+          <h1 className="text-xl font-extrabold text-slate-900 dark:text-white sm:text-2xl">
             سجلّ المعاملات
           </h1>
         </div>
@@ -173,7 +173,7 @@ export default function TransactionsPage() {
               key={key}
               type="button"
               onClick={() => setFilter(key)}
-              className={`rounded-full px-4 py-1.5 text-xs font-black transition ${
+              className={`rounded-full px-4 py-1.5 text-xs font-extrabold transition ${
                 filter === key
                   ? "bg-brand-600 text-white shadow-sm"
                   : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
@@ -189,7 +189,7 @@ export default function TransactionsPage() {
           {filtered.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-slate-200 bg-white p-12 text-center dark:border-slate-700 dark:bg-slate-900">
               <WalletIcon size={36} className="mx-auto mb-2 text-slate-300 dark:text-slate-600" />
-              <p className="text-sm font-black text-slate-700 dark:text-white">
+              <p className="text-sm font-extrabold text-slate-700 dark:text-white">
                 لا توجد معاملات
               </p>
               <p className="mt-1 text-xs text-slate-400">
@@ -228,7 +228,7 @@ function SummaryTile({
         {icon}
         <span className="text-[11px] font-bold text-white/60">{label}</span>
       </div>
-      <div className="text-xl font-black tabular-nums">
+      <div className="text-xl font-extrabold tabular-nums">
         {value} <span className="text-xs font-bold text-white/50">BC</span>
       </div>
     </div>
@@ -262,7 +262,7 @@ function TxRow({ tx }: { tx: any }) {
         <Icon size={18} />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-black text-slate-900 dark:text-white">
+        <p className="truncate text-[13px] font-extrabold text-slate-900 dark:text-white">
           {meta.label}
         </p>
         {tx.reason && (
@@ -274,7 +274,7 @@ function TxRow({ tx }: { tx: any }) {
       </div>
       <div className="shrink-0 text-end">
         <p
-          className={`text-sm font-black tabular-nums ${
+          className={`text-sm font-extrabold tabular-nums ${
             positive
               ? "text-emerald-600 dark:text-emerald-400"
               : "text-rose-600 dark:text-rose-400"

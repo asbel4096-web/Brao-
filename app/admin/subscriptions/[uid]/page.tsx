@@ -97,7 +97,7 @@ export default function AdminSubscriptionDetailPage() {
   if (!user) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center dark:border-slate-800 dark:bg-slate-900">
-        <p className="text-sm font-black text-slate-700">المستخدم غير موجود</p>
+        <p className="text-sm font-extrabold text-slate-700">المستخدم غير موجود</p>
       </div>
     );
   }
@@ -127,7 +127,7 @@ export default function AdminSubscriptionDetailPage() {
       <div className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-start gap-3">
           <div
-            className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-lg font-black text-white ${
+            className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-lg font-extrabold text-white ${
               isActive
                 ? "bg-gradient-to-br from-emerald-500 to-emerald-600"
                 : "bg-slate-400 dark:bg-slate-700"
@@ -139,7 +139,7 @@ export default function AdminSubscriptionDetailPage() {
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
-              <h1 className="truncate text-lg font-black text-slate-900 dark:text-white">
+              <h1 className="truncate text-lg font-extrabold text-slate-900 dark:text-white">
                 {user.businessName || user.name || user.email || user.id}
               </h1>
               {isActive && (
@@ -187,7 +187,7 @@ export default function AdminSubscriptionDetailPage() {
           ) : (
             <XCircle size={20} className="text-white" />
           )}
-          <p className="text-xl font-black text-white">
+          <p className="text-xl font-extrabold text-white">
             {!user.verificationStatus
               ? "غير موثَّق"
               : user.verificationStatus === "active"
@@ -204,19 +204,19 @@ export default function AdminSubscriptionDetailPage() {
           <div className="mt-3 grid grid-cols-2 gap-2 rounded-2xl bg-white/10 p-3 backdrop-blur-sm">
             <div>
               <p className="text-[10px] text-white/70">الخطة</p>
-              <p className="mt-0.5 text-sm font-black text-white">
+              <p className="mt-0.5 text-sm font-extrabold text-white">
                 {plan.label}
               </p>
             </div>
             <div>
               <p className="text-[10px] text-white/70">الباقي</p>
-              <p className="mt-0.5 text-sm font-black text-white">
+              <p className="mt-0.5 text-sm font-extrabold text-white">
                 {formatRemainingDays(days)}
               </p>
             </div>
             <div className="col-span-2">
               <p className="text-[10px] text-white/70">ينتهي في</p>
-              <p className="mt-0.5 text-sm font-black text-white">{expiresDate}</p>
+              <p className="mt-0.5 text-sm font-extrabold text-white">{expiresDate}</p>
             </div>
           </div>
         )}
@@ -227,7 +227,7 @@ export default function AdminSubscriptionDetailPage() {
         <button
           type="button"
           onClick={() => setDialog("grant")}
-          className="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-emerald-500 bg-emerald-50 px-4 py-3 text-xs font-black text-emerald-700 transition hover:bg-emerald-100 active:scale-95 dark:bg-emerald-900/20 dark:text-emerald-300"
+          className="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-emerald-500 bg-emerald-50 px-4 py-3 text-xs font-extrabold text-emerald-700 transition hover:bg-emerald-100 active:scale-95 dark:bg-emerald-900/20 dark:text-emerald-300"
         >
           <Gift size={14} />
           {isActive ? "تمديد / منح" : "إعطاء توثيق مجاني"}
@@ -236,7 +236,7 @@ export default function AdminSubscriptionDetailPage() {
           type="button"
           onClick={() => setDialog("cancel")}
           disabled={!isActive}
-          className="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-rose-300 bg-rose-50 px-4 py-3 text-xs font-black text-rose-700 transition hover:bg-rose-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-rose-900/20 dark:text-rose-300"
+          className="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-rose-300 bg-rose-50 px-4 py-3 text-xs font-extrabold text-rose-700 transition hover:bg-rose-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-rose-900/20 dark:text-rose-300"
         >
           <XCircle size={14} />
           إلغاء الاشتراك
@@ -330,7 +330,7 @@ function GrantDialog({ uid, onClose }: { uid: string; onClose: () => void }) {
       <div className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-md -translate-y-1/2 rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-800 dark:bg-slate-950">
         <div className="mb-4 flex items-start justify-between">
           <div>
-            <h2 className="text-base font-black text-slate-900 dark:text-white">
+            <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
               منح توثيق مجاني
             </h2>
             <p className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-400">
@@ -350,7 +350,7 @@ function GrantDialog({ uid, onClose }: { uid: string; onClose: () => void }) {
 
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-black text-slate-700 dark:text-slate-300">
+            <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
               الخطة
             </label>
             <select
@@ -368,7 +368,7 @@ function GrantDialog({ uid, onClose }: { uid: string; onClose: () => void }) {
           </div>
 
           <div>
-            <label className="block text-xs font-black text-slate-700 dark:text-slate-300">
+            <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
               عدد الأيام (اختياري)
             </label>
             <input
@@ -386,7 +386,7 @@ function GrantDialog({ uid, onClose }: { uid: string; onClose: () => void }) {
           </div>
 
           <div>
-            <label className="block text-xs font-black text-slate-700 dark:text-slate-300">
+            <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
               السبب
             </label>
             <textarea
@@ -406,7 +406,7 @@ function GrantDialog({ uid, onClose }: { uid: string; onClose: () => void }) {
             type="button"
             onClick={onClose}
             disabled={busy}
-            className="h-10 rounded-2xl border border-slate-200 px-4 text-xs font-black text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+            className="h-10 rounded-2xl border border-slate-200 px-4 text-xs font-extrabold text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             إلغاء
           </button>
@@ -414,7 +414,7 @@ function GrantDialog({ uid, onClose }: { uid: string; onClose: () => void }) {
             type="button"
             onClick={handleSubmit}
             disabled={busy}
-            className="inline-flex h-10 items-center gap-1.5 rounded-2xl bg-emerald-600 px-4 text-xs font-black text-white shadow-sm transition hover:bg-emerald-700 active:scale-95 disabled:opacity-60"
+            className="inline-flex h-10 items-center gap-1.5 rounded-2xl bg-emerald-600 px-4 text-xs font-extrabold text-white shadow-sm transition hover:bg-emerald-700 active:scale-95 disabled:opacity-60"
           >
             {busy ? (
               <>
@@ -485,7 +485,7 @@ function CancelDialog({ uid, onClose }: { uid: string; onClose: () => void }) {
       <div className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-md -translate-y-1/2 rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-800 dark:bg-slate-950">
         <div className="mb-4 flex items-start justify-between">
           <div>
-            <h2 className="text-base font-black text-slate-900 dark:text-white">
+            <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
               إلغاء الاشتراك؟
             </h2>
             <p className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-400">
@@ -505,7 +505,7 @@ function CancelDialog({ uid, onClose }: { uid: string; onClose: () => void }) {
 
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-black text-slate-700 dark:text-slate-300">
+            <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
               السبب
             </label>
             <textarea
@@ -528,7 +528,7 @@ function CancelDialog({ uid, onClose }: { uid: string; onClose: () => void }) {
               className="h-4 w-4 cursor-pointer rounded text-rose-600"
             />
             <div className="flex-1">
-              <p className="text-xs font-black text-slate-900 dark:text-white">
+              <p className="text-xs font-extrabold text-slate-900 dark:text-white">
                 استرداد الرصيد
               </p>
               <p className="text-[10px] text-slate-500 dark:text-slate-400">
@@ -543,7 +543,7 @@ function CancelDialog({ uid, onClose }: { uid: string; onClose: () => void }) {
             type="button"
             onClick={onClose}
             disabled={busy}
-            className="h-10 rounded-2xl border border-slate-200 px-4 text-xs font-black text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+            className="h-10 rounded-2xl border border-slate-200 px-4 text-xs font-extrabold text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             تراجع
           </button>
@@ -551,7 +551,7 @@ function CancelDialog({ uid, onClose }: { uid: string; onClose: () => void }) {
             type="button"
             onClick={handleSubmit}
             disabled={busy}
-            className="inline-flex h-10 items-center gap-1.5 rounded-2xl bg-rose-600 px-4 text-xs font-black text-white shadow-sm transition hover:bg-rose-700 active:scale-95 disabled:opacity-60"
+            className="inline-flex h-10 items-center gap-1.5 rounded-2xl bg-rose-600 px-4 text-xs font-extrabold text-white shadow-sm transition hover:bg-rose-700 active:scale-95 disabled:opacity-60"
           >
             {busy ? (
               <>

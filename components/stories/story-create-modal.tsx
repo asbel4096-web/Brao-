@@ -408,7 +408,7 @@ export function StoryCreateModal({ open, onClose }: Props) {
                   <ArrowRight size={18} />
                 </button>
                 <div>
-                  <h3 className="text-lg font-black text-slate-900 dark:text-white">
+                  <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">
                     {step === "media" ? `إنشاء قصة ${previewTitle}` : `معاينة قصة ${previewTitle}`}
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -451,7 +451,7 @@ export function StoryCreateModal({ open, onClose }: Props) {
                   <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/50">
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <h4 className="text-sm font-black text-slate-900 dark:text-white">
+                        <h4 className="text-sm font-extrabold text-slate-900 dark:text-white">
                           الوسائط
                         </h4>
                         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
@@ -564,13 +564,13 @@ export function StoryCreateModal({ open, onClose }: Props) {
                         <span className="grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-lg shadow-brand-600/30">
                           <Upload size={26} />
                         </span>
-                        <span className="mt-3 text-sm font-black text-slate-900 dark:text-white">
+                        <span className="mt-3 text-sm font-extrabold text-slate-900 dark:text-white">
                           اضغط لإضافة صور أو فيديو
                         </span>
                         <span className="mt-1 text-xs leading-6 text-slate-500 dark:text-slate-400">
                           صور متعددة كشرائح، أو فيديو واحد قصير يظهر داخل القصة
                         </span>
-                        <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-brand-600 px-4 py-2 text-xs font-black text-white shadow-sm">
+                        <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-brand-600 px-4 py-2 text-xs font-extrabold text-white shadow-sm">
                           <Upload size={14} />
                           اختر من الجهاز
                         </span>
@@ -646,7 +646,7 @@ export function StoryCreateModal({ open, onClose }: Props) {
                         <div className="flex items-center justify-between gap-2">
                           <div>
                             <div className="text-xs font-bold text-white/75">{previewTitle}</div>
-                            <div className="text-sm font-black">
+                            <div className="text-sm font-extrabold">
                               {profile?.businessName || profile?.name || user?.displayName || "براتشو كار"}
                             </div>
                           </div>
@@ -687,29 +687,29 @@ export function StoryCreateModal({ open, onClose }: Props) {
 
                 <div className="space-y-4">
                   <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/40">
-                    <h4 className="text-sm font-black text-slate-900 dark:text-white">ملخص القصة</h4>
+                    <h4 className="text-sm font-extrabold text-slate-900 dark:text-white">ملخص القصة</h4>
                     <div className="mt-3 space-y-2 text-sm text-slate-600 dark:text-slate-300">
                       <div className="flex items-center justify-between gap-3">
                         <span>نوع القصة</span>
-                        <span className="font-black text-slate-900 dark:text-white">{previewTitle}</span>
+                        <span className="font-extrabold text-slate-900 dark:text-white">{previewTitle}</span>
                       </div>
                       <div className="flex items-center justify-between gap-3">
                         <span>نوع الوسائط</span>
-                        <span className="font-black text-slate-900 dark:text-white">
+                        <span className="font-extrabold text-slate-900 dark:text-white">
                           {mediaKind === "video" ? "فيديو" : "صور"}
                         </span>
                       </div>
                       <div className="flex items-center justify-between gap-3">
                         <span>عدد العناصر</span>
-                        <span className="font-black text-slate-900 dark:text-white">{drafts.length}</span>
+                        <span className="font-extrabold text-slate-900 dark:text-white">{drafts.length}</span>
                       </div>
                       <div className="flex items-center justify-between gap-3">
                         <span>ظهور المشاهدات</span>
-                        <span className="font-black text-slate-900 dark:text-white">لصاحب القصة فقط</span>
+                        <span className="font-extrabold text-slate-900 dark:text-white">لصاحب القصة فقط</span>
                       </div>
                       <div className="flex items-center justify-between gap-3">
                         <span>مدة الظهور</span>
-                        <span className="font-black text-slate-900 dark:text-white">24 ساعة</span>
+                        <span className="font-extrabold text-slate-900 dark:text-white">24 ساعة</span>
                       </div>
                     </div>
                   </div>
@@ -755,9 +755,9 @@ function PreviewPayloadContent({
     const data = payload as Partial<CarStoryPayload>;
     return (
       <div>
-        <div className="text-lg font-black leading-tight">{data.title || "عنوان السيارة"}</div>
+        <div className="text-lg font-extrabold leading-tight">{data.title || "عنوان السيارة"}</div>
         <div className="mt-1 text-xs text-white/80">
-          {[data.city, typeof data.price === "number" ? `${data.price.toLocaleString("ar-LY")} د.ل` : null]
+          {[data.city, typeof data.price === "number" ? `${data.price.toLocaleString("en-US")} د.ل` : null]
             .filter(Boolean)
             .join(" • ")}
         </div>
@@ -769,7 +769,7 @@ function PreviewPayloadContent({
     const data = payload as Partial<ServiceStoryPayload>;
     return (
       <div>
-        <div className="text-lg font-black leading-tight">{data.serviceName || "اسم الخدمة"}</div>
+        <div className="text-lg font-extrabold leading-tight">{data.serviceName || "اسم الخدمة"}</div>
         <div className="mt-1 line-clamp-2 text-xs text-white/80">{data.description || "وصف قصير للخدمة"}</div>
       </div>
     );
@@ -778,7 +778,7 @@ function PreviewPayloadContent({
   const data = payload as Partial<OfferStoryPayload>;
   return (
     <div>
-      <div className="text-lg font-black leading-tight">{data.title || "عنوان العرض"}</div>
+      <div className="text-lg font-extrabold leading-tight">{data.title || "عنوان العرض"}</div>
       <div className="mt-1 text-xs text-white/80">{data.discount || "تفاصيل الخصم أو العرض"}</div>
     </div>
   );

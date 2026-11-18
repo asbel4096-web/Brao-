@@ -191,12 +191,12 @@ export function ImageGallery({ images, alt }: Props) {
           {list.length > 1 && (
             <div
               className="
-                absolute right-3 top-3 inline-flex items-center
-                rounded-full border border-white/20 bg-black/50 px-2.5 py-1
-                text-[11px] font-black text-white backdrop-blur-md
+                absolute right-3 top-3 inline-flex h-[26px] items-center
+                rounded-full bg-ink/60 px-2.5
+                text-xs font-bold text-white backdrop-blur-md
               "
             >
-              {idx + 1} / {list.length}
+              <span className="num">{idx + 1} / {list.length}</span>
             </div>
           )}
 
@@ -212,7 +212,7 @@ export function ImageGallery({ images, alt }: Props) {
               "
             >
               <span className="h-1.5 w-1.5 rounded-full bg-action-500" />
-              <span className="text-[10px] font-black tracking-wider text-white/95">
+              <span className="text-[10px] font-extrabold tracking-wider text-white/95">
                 BRATSHO CAR
               </span>
             </div>
@@ -226,9 +226,9 @@ export function ImageGallery({ images, alt }: Props) {
                 onClick={() => setLightbox(true)}
                 aria-label="تكبير"
                 className="
-                  inline-flex h-9 w-9
+                  inline-flex h-11 w-11
                   items-center justify-center rounded-full border
-                  border-white/20 bg-black/50 text-white backdrop-blur-md
+                  border-white/20 bg-ink/60 text-white backdrop-blur-md
                   transition hover:bg-black/70 active:scale-95
                 "
               >
@@ -248,9 +248,9 @@ export function ImageGallery({ images, alt }: Props) {
                 rel="noreferrer"
                 aria-label="حفظ الصورة"
                 className="
-                  inline-flex h-9 w-9
+                  inline-flex h-11 w-11
                   items-center justify-center rounded-full border
-                  border-white/20 bg-black/50 text-white backdrop-blur-md
+                  border-white/20 bg-ink/60 text-white backdrop-blur-md
                   transition hover:bg-black/70 active:scale-95
                 "
               >
@@ -269,7 +269,7 @@ export function ImageGallery({ images, alt }: Props) {
                 className="
                   absolute right-3 top-1/2 -translate-y-1/2
                   hidden h-11 w-11 items-center justify-center
-                  rounded-full border border-white/20 bg-black/50
+                  rounded-full border border-white/20 bg-ink/60
                   text-white opacity-0 backdrop-blur-md
                   transition-all hover:bg-black/70
                   group-hover:opacity-100 sm:inline-flex
@@ -284,7 +284,7 @@ export function ImageGallery({ images, alt }: Props) {
                 className="
                   absolute left-3 top-1/2 -translate-y-1/2
                   hidden h-11 w-11 items-center justify-center
-                  rounded-full border border-white/20 bg-black/50
+                  rounded-full border border-white/20 bg-ink/60
                   text-white opacity-0 backdrop-blur-md
                   transition-all hover:bg-black/70
                   group-hover:opacity-100 sm:inline-flex
@@ -340,12 +340,12 @@ export function ImageGallery({ images, alt }: Props) {
                 aria-label={`صورة ${i + 1}`}
                 aria-current={i === idx}
                 className={`
-                  relative h-16 w-16 shrink-0 overflow-hidden
-                  rounded-2xl border-2 transition-all duration-200
-                  sm:h-20 sm:w-20
+                  relative h-12 w-16 shrink-0 overflow-hidden
+                  rounded-xl border-2 transition-all duration-200
+                  sm:h-[60px] sm:w-20
                   ${
                     i === idx
-                      ? "border-brand-600 ring-2 ring-brand-600/30 scale-105"
+                      ? "border-brand-500 ring-2 ring-brand-500/30"
                       : "border-slate-200 opacity-70 hover:opacity-100 dark:border-slate-700"
                   }
                 `}
@@ -390,8 +390,8 @@ export function ImageGallery({ images, alt }: Props) {
               <Download size={18} />
             </a>
 
-            <div className="text-sm font-black text-white sm:text-base">
-              {list.length.toLocaleString("ar-LY")} صور
+            <div className="text-sm font-extrabold text-white sm:text-base">
+              {list.length.toLocaleString("en-US")} صور
             </div>
 
             <button
@@ -419,8 +419,8 @@ export function ImageGallery({ images, alt }: Props) {
                   className="relative w-full border-b border-white/5 last:border-b-0"
                 >
                   {/* رقم الصورة في الزاوية */}
-                  <div className="pointer-events-none absolute right-3 top-3 z-10 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-black text-white backdrop-blur-md sm:right-4 sm:top-4">
-                    {(i + 1).toLocaleString("ar-LY")} / {list.length.toLocaleString("ar-LY")}
+                  <div className="pointer-events-none absolute right-3 top-3 z-10 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-extrabold text-white backdrop-blur-md sm:right-4 sm:top-4">
+                    <span className="num">{i + 1} / {list.length}</span>
                   </div>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img

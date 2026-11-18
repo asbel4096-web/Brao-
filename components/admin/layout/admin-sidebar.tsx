@@ -351,7 +351,7 @@ export function AdminSidebar({
               <Shield size={16} strokeWidth={2.5} />
             </div>
             <div className="flex flex-col leading-none">
-              <span className="text-[13px] font-black text-slate-900 dark:text-white">
+              <span className="text-[13px] font-extrabold text-slate-900 dark:text-white">
                 لوحة الإدارة
               </span>
               <span className="mt-0.5 text-[9px] font-bold tracking-wider text-slate-400 dark:text-slate-500">
@@ -385,7 +385,7 @@ export function AdminSidebar({
           <div key={group.label} className={idx > 0 ? "mt-4" : ""}>
             {/* Group label - يُخفى عند الطي */}
             {!isCollapsed && (
-              <p className="px-2 pb-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              <p className="px-2 pb-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                 {group.label}
               </p>
             )}

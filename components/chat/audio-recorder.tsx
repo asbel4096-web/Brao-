@@ -237,7 +237,7 @@ export function AudioRecorder({
           )}
           <span className="relative inline-flex h-3 w-3 rounded-full bg-rose-600" />
         </div>
-        <span className="font-mono text-sm font-black tabular-nums text-slate-900 dark:text-white">
+        <span className="font-mono text-sm font-extrabold tabular-nums text-slate-900 dark:text-white">
           {formatted}
         </span>
         <div className="flex flex-1 items-center justify-center gap-0.5">

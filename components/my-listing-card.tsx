@@ -15,7 +15,9 @@ import {
   Sparkles,
 } from "lucide-react";
 import type { Listing } from "@/lib/types";
-import { formatPrice, isListingFeatured, timeAgo } from "@/lib/utils";
+import { isListingFeatured, timeAgo } from "@/lib/utils";
+import { listingHeadline } from "@/lib/listing-display";
+import { NoImage, PriceLine, SpecRow } from "@/components/vehicle-card-parts";
 import { BoostButton } from "@/components/wallet/boost-button";
 
 const FALLBACK = "/icons/car-card.svg";
@@ -41,25 +43,25 @@ const STATUS_CONFIG = {
   approved: {
     label: "معتمد",
     icon: CheckCircle2,
-    badgeClass: "bg-emerald-500/95 text-white border-emerald-400",
+    badgeClass: "bg-emerald-600 text-white",
     pillClass: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800",
   },
   pending: {
     label: "قيد المراجعة",
     icon: Clock,
-    badgeClass: "bg-amber-500/95 text-white border-amber-400",
+    badgeClass: "bg-amber-500 text-white",
     pillClass: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800",
   },
   rejected: {
     label: "مرفوض",
     icon: AlertCircle,
-    badgeClass: "bg-rose-500/95 text-white border-rose-400",
+    badgeClass: "bg-rose-600 text-white",
     pillClass: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800",
   },
   draft: {
     label: "مسودة",
     icon: Clock,
-    badgeClass: "bg-slate-500/95 text-white border-slate-400",
+    badgeClass: "bg-slate-600 text-white",
     pillClass: "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-900/30 dark:text-slate-300 dark:border-slate-800",
   },
 } as const;
@@ -88,18 +90,14 @@ export function MyListingCard({
     >
       {/* الصورة */}
       <div className="relative aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-800">
-        <Image
+        {isFallback ? <NoImage /> : <Image
           src={img}
-          alt={listing.title}
+          alt={listingHeadline(listing)}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           loading="lazy"
-          className={
-            isFallback
-              ? "object-contain p-10 opacity-50"
-              : "object-cover transition duration-500 group-hover:scale-105"
-          }
-        />
+          className="object-cover transition duration-500 group-hover:scale-105"
+        />}
 
         {/* تظليل تدريجي علوي */}
         <div
@@ -109,18 +107,13 @@ export function MyListingCard({
 
         {/* شارة الحالة */}
         <span
-          className={`absolute right-3 top-3 inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[11px] font-black backdrop-blur-md ${status.badgeClass}`}
+          className={`absolute right-2.5 top-2.5 inline-flex h-6 items-center gap-1 rounded-full px-2.5 text-[11px] font-extrabold shadow-sm ${status.badgeClass}`}
         >
           <StatusIcon size={12} />
           {status.label}
         </span>
 
-        {/* السعر */}
-        <div className="absolute bottom-3 left-3 rounded-2xl border border-white/20 bg-brand-700/90 px-3 py-1.5 shadow-blue backdrop-blur-md">
-          <span className="text-sm font-black text-white">
-            {formatPrice(listing.price)}
-          </span>
-        </div>
+        
       </div>
 
       {/* محتوى البطاقة */}
@@ -129,14 +122,16 @@ export function MyListingCard({
         <div className="mb-2 flex items-center justify-between gap-2">
           <span className="badge truncate">{listing.category}</span>
           <span className="inline-flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
-            <Eye size={11} /> {listing.views || 0}
+            <Eye size={11} /> <span className="num">{listing.views || 0}</span>
           </span>
         </div>
 
         {/* العنوان */}
-        <h3 className="line-clamp-2 min-h-[2.75rem] text-base font-black leading-snug text-slate-950 dark:text-white">
-          {listing.title}
+        <h3 className="truncate text-[15px] font-bold leading-[22px] text-slate-950 dark:text-white" title={listingHeadline(listing)}>
+          {listingHeadline(listing)}
         </h3>
+        <div className="mt-1.5"><PriceLine price={listing.price} negotiable={(listing as any).negotiable === true} /></div>
+        <div className="mt-1.5"><SpecRow listing={listing} /></div>
 
         {/* الموقع والوقت */}
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
@@ -157,7 +152,7 @@ export function MyListingCard({
           >
             <AlertCircle size={14} className="mt-0.5 shrink-0" />
             <span>
-              <span className="font-black">سبب الرفض:</span> {listing.rejectionReason}
+              <span className="font-extrabold">سبب الرفض:</span> {listing.rejectionReason}
             </span>
           </div>
         )}
@@ -202,7 +197,7 @@ export function MyListingCard({
         <div className="mt-3 grid grid-cols-3 gap-2 pt-1">
           <Link
             href={`/listings/${listing.id}`}
-            className="btn-secondary !py-2 !px-2 !text-xs"
+            className="btn-secondary btn-sm !px-2"
             aria-label="عرض التفاصيل"
           >
             <Eye size={14} />
@@ -210,7 +205,7 @@ export function MyListingCard({
           </Link>
           <Link
             href={`/my-listings/${listing.id}/edit`}
-            className="btn-primary !py-2 !px-2 !text-xs"
+            className="btn-primary btn-sm !px-2"
             aria-label="تعديل"
           >
             <Edit2 size={14} />
@@ -219,7 +214,7 @@ export function MyListingCard({
           <button
             type="button"
             onClick={() => onDelete(listing.id)}
-            className="btn-danger !py-2 !px-2 !text-xs"
+            className="btn-danger btn-sm !px-2"
             aria-label="حذف"
           >
             <Trash2 size={14} />
@@ -265,7 +260,7 @@ function FeaturedActionBar({
       <div
         className="
           mt-3 flex items-center gap-2 rounded-2xl border border-action-200
-          bg-action-50 px-3 py-2 text-xs font-black text-action-700
+          bg-action-50 px-3 py-2 text-xs font-extrabold text-action-700
           dark:border-action-800/40 dark:bg-action-900/20 dark:text-action-300
         "
       >
@@ -284,7 +279,7 @@ function FeaturedActionBar({
         className="
           mt-3 inline-flex w-full items-center justify-center gap-1.5
           rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2
-          text-xs font-black text-amber-700
+          text-xs font-extrabold text-amber-700
           dark:border-amber-800/40 dark:bg-amber-900/20 dark:text-amber-300
         "
       >
@@ -303,7 +298,7 @@ function FeaturedActionBar({
       className="
         mt-3 inline-flex w-full items-center justify-center gap-1.5
         rounded-2xl border border-action-300 bg-action-50 px-3 py-2
-        text-xs font-black text-action-700 transition
+        text-xs font-extrabold text-action-700 transition
         active:scale-[0.98] hover:bg-action-100
         disabled:opacity-60
         dark:border-action-800/40 dark:bg-action-900/20 dark:text-action-300

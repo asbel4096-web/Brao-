@@ -356,7 +356,7 @@ export default function ProfilePage() {
                     items-center gap-1.5 sm:flex
                   "
                 >
-                  <span className="text-[11px] font-black tracking-wider text-white/70">
+                  <span className="text-[11px] font-extrabold tracking-wider text-white/70">
                     BRATSHO CAR
                   </span>
                   <span className="h-1 w-1 rounded-full bg-action-500" />
@@ -391,7 +391,7 @@ export default function ProfilePage() {
                 <Camera size={13} />
               )}
               {/* النص يظهر على sm+ فقط حتى لا يزاحم الغلاف على الهاتف */}
-              <span className="hidden text-[11px] font-black sm:inline">
+              <span className="hidden text-[11px] font-extrabold sm:inline">
                 {uploadingCover ? "جارٍ الرفع..." : profile?.coverURL ? "تغيير الغلاف" : "إضافة غلاف"}
               </span>
             </button>
@@ -440,7 +440,7 @@ export default function ProfilePage() {
             {/* الاسم + الشارات - قريب من الصورة */}
             <div className="mt-3">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl font-black text-slate-950 dark:text-white sm:text-2xl">
+                <h1 className="text-xl font-extrabold text-slate-950 dark:text-white sm:text-2xl">
                   {name}
                 </h1>
                 {isPhoneVerified && (
@@ -454,7 +454,7 @@ export default function ProfilePage() {
                   <span
                     className="
                       inline-flex items-center gap-1 rounded-full
-                      bg-action-500 px-2.5 py-0.5 text-[10px] font-black
+                      bg-action-500 px-2.5 py-0.5 text-[10px] font-extrabold
                       text-white shadow-action
                     "
                   >
@@ -472,7 +472,7 @@ export default function ProfilePage() {
                     className="fill-current text-amber-500"
                     aria-hidden="true"
                   />
-                  <span className="font-black text-slate-900 dark:text-white">
+                  <span className="font-extrabold text-slate-900 dark:text-white">
                     {rating.toFixed(1)}
                   </span>
                   <span className="text-slate-500 dark:text-slate-400">
@@ -508,7 +508,7 @@ export default function ProfilePage() {
                   </div>
                   <div
                     dir="ltr"
-                    className="truncate text-right font-mono text-xs font-black text-slate-900 dark:text-white"
+                    className="truncate text-right num text-xs font-extrabold text-slate-900 dark:text-white"
                   >
                     {accountNumber}
                   </div>
@@ -524,7 +524,7 @@ export default function ProfilePage() {
                 <div className="text-[10px] text-slate-500 dark:text-slate-400">
                   عضو منذ
                 </div>
-                <div className="text-xs font-black text-slate-900 dark:text-white">
+                <div className="text-xs font-extrabold text-slate-900 dark:text-white">
                   {memberSince}
                 </div>
               </div>
@@ -537,7 +537,7 @@ export default function ProfilePage() {
                 className="
                   inline-flex items-center justify-center gap-1.5
                   rounded-2xl border border-slate-200 bg-white
-                  px-3 py-2.5 text-xs font-black text-slate-700
+                  px-3 py-2.5 text-xs font-extrabold text-slate-700
                   transition active:scale-[0.98]
                   hover:border-brand-300 hover:bg-brand-50/30
                   dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100
@@ -551,7 +551,7 @@ export default function ProfilePage() {
                 className="
                   inline-flex items-center justify-center gap-1.5
                   rounded-2xl border border-slate-200 bg-white
-                  px-3 py-2.5 text-xs font-black text-slate-700
+                  px-3 py-2.5 text-xs font-extrabold text-slate-700
                   transition active:scale-[0.98]
                   hover:border-brand-300 hover:bg-brand-50/30
                   dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100
@@ -589,7 +589,7 @@ export default function ProfilePage() {
                 <ShieldCheck size={18} />
               </div>
               <div>
-                <div className="text-sm font-black text-slate-950 dark:text-white">
+                <div className="text-sm font-extrabold text-slate-950 dark:text-white">
                   وثّق رقم هاتفك
                 </div>
                 <div className="text-[11px] text-slate-600 dark:text-slate-300">
@@ -647,7 +647,7 @@ export default function ProfilePage() {
               📢
             </span>
             <div>
-              <div className="text-sm font-black text-slate-900 dark:text-white">
+              <div className="text-sm font-extrabold text-slate-900 dark:text-white">
                 مدير إعلاناتي
               </div>
               <div className="text-xs font-medium text-slate-500">
@@ -683,7 +683,7 @@ export default function ProfilePage() {
                 <Shield size={20} />
               </div>
               <div>
-                <div className="text-sm font-black text-slate-950 dark:text-white">
+                <div className="text-sm font-extrabold text-slate-950 dark:text-white">
                   لوحة الإدارة
                 </div>
                 <div className="text-[11px] text-slate-600 dark:text-slate-300">
@@ -708,31 +708,31 @@ export default function ProfilePage() {
             href={`/traders/${user.uid}`}
             className="
               group relative flex items-center gap-3 overflow-hidden
-              rounded-3xl border-2 border-blue-500/30 bg-gradient-to-l
-              from-blue-50 via-blue-50/40 to-white p-3.5
-              transition active:scale-[0.99] hover:border-blue-500
-              dark:border-blue-800/50 dark:from-blue-900/30
-              dark:via-blue-900/10 dark:to-slate-900
-              dark:hover:border-blue-700
+              rounded-3xl border-2 border-brand-500/30 bg-gradient-to-l
+              from-brand-50 via-brand-50/40 to-white p-3.5
+              transition active:scale-[0.99] hover:border-brand-500
+              dark:border-brand-800/50 dark:from-brand-900/30
+              dark:via-brand-900/10 dark:to-slate-900
+              dark:hover:border-brand-700
             "
           >
             <div
               className="
                 flex h-11 w-11 shrink-0 items-center justify-center
-                rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700
-                text-white shadow-lg shadow-blue-500/30
+                rounded-2xl bg-gradient-to-br from-brand-600 to-brand-700
+                text-white shadow-lg shadow-brand-500/30
               "
             >
               <Store size={20} strokeWidth={2.2} />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                <span className="text-sm font-black text-slate-950 dark:text-white">
+                <span className="text-sm font-extrabold text-slate-950 dark:text-white">
                   صفحة معرضي
                 </span>
                 <BadgeCheck
                   size={14}
-                  className="text-blue-600 dark:text-blue-400"
+                  className="text-brand-600 dark:text-brand-400"
                 />
               </div>
               <div className="mt-0.5 text-[11px] leading-5 text-slate-600 dark:text-slate-300">
@@ -744,8 +744,8 @@ export default function ProfilePage() {
               bg-white/80 px-2.5 py-1
               dark:bg-slate-900/80
             ">
-              <Eye size={11} className="text-blue-700 dark:text-blue-300" />
-              <span className="text-[10px] font-black text-blue-700 dark:text-blue-300">
+              <Eye size={11} className="text-brand-700 dark:text-brand-300" />
+              <span className="text-[10px] font-extrabold text-brand-700 dark:text-brand-300">
                 معاينة
               </span>
             </div>
@@ -759,19 +759,19 @@ export default function ProfilePage() {
             className="
               flex items-center gap-3 rounded-3xl border border-slate-200
               bg-white p-3.5 transition active:scale-[0.99]
-              hover:border-blue-300 hover:bg-blue-50/30
-              dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-700
+              hover:border-brand-300 hover:bg-brand-50/30
+              dark:border-slate-700 dark:bg-slate-900 dark:hover:border-brand-700
             "
           >
             <div className="
               flex h-11 w-11 shrink-0 items-center justify-center
-              rounded-2xl bg-blue-50 text-blue-600
-              dark:bg-blue-900/30 dark:text-blue-400
+              rounded-2xl bg-brand-50 text-brand-600
+              dark:bg-brand-900/30 dark:text-brand-400
             ">
               <Pencil size={18} strokeWidth={2.2} />
             </div>
             <div className="min-w-0 flex-1">
-              <span className="text-sm font-black text-slate-950 dark:text-white">
+              <span className="text-sm font-extrabold text-slate-950 dark:text-white">
                 تعديل المعرض
               </span>
               <div className="mt-0.5 text-[11px] leading-5 text-slate-600 dark:text-slate-300">
@@ -809,7 +809,7 @@ export default function ProfilePage() {
               <BadgeCheck size={22} strokeWidth={2.5} />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-sm font-black text-slate-950 dark:text-white">
+              <div className="text-sm font-extrabold text-slate-950 dark:text-white">
                 وثّق معرضك
               </div>
               <div className="text-[11px] leading-5 text-slate-600 dark:text-slate-300">
@@ -853,7 +853,7 @@ export default function ProfilePage() {
           <MenuRow
             href="/vehicle-report"
             icon={FileText}
-            label="تقرير المركبة (VIN)"
+            label="تقرير السيارة"
           />
           <MenuRow
             href="/contact"
@@ -872,7 +872,7 @@ export default function ProfilePage() {
           className="
             inline-flex w-full items-center justify-center gap-2
             rounded-3xl border-2 border-rose-200 bg-rose-50/50
-            px-4 py-3.5 text-sm font-black text-rose-700
+            px-4 py-3.5 text-sm font-extrabold text-rose-700
             transition active:scale-[0.99]
             hover:border-rose-300 hover:bg-rose-50
             dark:border-rose-800 dark:bg-rose-950/20 dark:text-rose-300
@@ -933,8 +933,8 @@ function StatCard({
       >
         <Icon size={18} />
       </div>
-      <div className="text-xl font-black text-slate-900 dark:text-white sm:text-2xl">
-        {value.toLocaleString("ar-LY")}
+      <div className="text-xl font-extrabold text-slate-900 dark:text-white sm:text-2xl">
+        {value.toLocaleString("en-US")}
       </div>
       <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 sm:text-[11px]">
         {label}
@@ -966,18 +966,18 @@ function MenuRow({
   color?: "neutral" | "action" | "brand";
   isLast?: boolean;
 }) {
+  // Bratsho DS 1.0 — صف القائمة الموحّد (نفس صفوف الإعدادات والتطبيق):
+  // 56px، أيقونة 36 في مربع ملوّن بحواف 12، نص 15/500، سهم 16.
   const iconColor =
     color === "action"
       ? "text-action-600 bg-action-50 dark:bg-action-900/40 dark:text-action-300"
-      : color === "brand"
-      ? "text-brand-700 bg-brand-50 dark:bg-brand-900/40 dark:text-brand-300"
-      : "text-slate-700 bg-slate-100 dark:bg-slate-800 dark:text-slate-300";
+      : "text-brand-700 bg-brand-50 dark:bg-brand-900/40 dark:text-brand-300";
 
   return (
     <Link
       href={href}
       className={`
-        flex items-center gap-3 px-4 py-3.5 transition
+        flex min-h-[56px] items-center gap-3 px-4 py-2.5 transition
         hover:bg-slate-50 active:bg-slate-100
         dark:hover:bg-slate-950/40 dark:active:bg-slate-950/60
         ${!isLast ? "border-b border-slate-100 dark:border-slate-800" : ""}
@@ -991,7 +991,7 @@ function MenuRow({
       >
         <Icon size={16} />
       </div>
-      <span className="flex-1 text-sm font-bold text-slate-900 dark:text-white">
+      <span className="flex-1 text-[15px] font-medium text-slate-900 dark:text-white">
         {label}
       </span>
       <ChevronLeft

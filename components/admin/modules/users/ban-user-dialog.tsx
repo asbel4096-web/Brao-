@@ -48,7 +48,7 @@ export function BanUserDialog({
             <Ban size={20} strokeWidth={2.2} />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-base font-black text-slate-900 dark:text-white">
+            <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
               حظر المستخدم
             </h2>
             <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
@@ -72,7 +72,7 @@ export function BanUserDialog({
           )}
         </div>
 
-        <label htmlFor="ban-reason" className="block text-xs font-black text-slate-700 dark:text-slate-300">
+        <label htmlFor="ban-reason" className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
           السبب (اختياري)
         </label>
         <textarea
@@ -100,7 +100,7 @@ export function BanUserDialog({
             onClick={onCancel}
             disabled={busy}
             className="
-              h-10 rounded-2xl border border-slate-200 px-4 text-xs font-black
+              h-10 rounded-2xl border border-slate-200 px-4 text-xs font-extrabold
               text-slate-700 transition hover:bg-slate-50
               dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800
               disabled:opacity-60
@@ -114,7 +114,7 @@ export function BanUserDialog({
             disabled={busy}
             className="
               inline-flex h-10 items-center gap-1.5 rounded-2xl bg-rose-600 px-4
-              text-xs font-black text-white shadow-sm transition
+              text-xs font-extrabold text-white shadow-sm transition
               hover:bg-rose-700 active:scale-95
               disabled:opacity-60
             "

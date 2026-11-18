@@ -1,6 +1,6 @@
 "use client";
 
-import { Bookmark } from "lucide-react";
+import { Heart } from "lucide-react";
 import { memo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useFavoriteState } from "@/hooks/useFavorites";
@@ -17,10 +17,10 @@ interface Props {
 }
 
 /**
- * FavoriteButton - أيقونة Bookmark (حفظ).
- * - بدون خلفية ولا حدود في variant=button (تصميم أيقوني نظيف).
- * - liked: أزرق brand + ممتلئ.
- * - hover: brand.
+ * FavoriteButton — Bratsho DS 1.0: قلب في كل مكان (كان Bookmark على البطاقات وقلباً في الشريط).
+ * - variant=icon (فوق الصور): دائرة بيضاء 36px داخل منطقة لمس 44px.
+ * - variant=button: أيقونة بلا خلفية (صفحة التفاصيل).
+ * - liked: وردي (rose-600) ممتلئ — نفس التطبيق.
  */
 function FavoriteButtonImpl({
   listing,
@@ -72,14 +72,14 @@ function FavoriteButtonImpl({
         aria-pressed={liked}
         aria-label={liked ? "إزالة من المفضلة" : "إضافة للمفضلة"}
         className={cn(
-          "group inline-flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200 active:scale-95",
+          "group inline-flex h-11 w-11 items-center justify-center rounded-xl transition-all duration-200 active:scale-95",
           liked
-            ? "text-brand-700 dark:text-brand-300"
-            : "text-slate-600 hover:text-brand-700 dark:text-slate-300 dark:hover:text-brand-300",
+            ? "text-rose-600 dark:text-rose-400"
+            : "text-slate-600 hover:text-rose-600 dark:text-slate-300 dark:hover:text-rose-400",
           className
         )}
       >
-        <Bookmark
+        <Heart
           size={size + 2}
           className={cn("transition-transform", liked && "fill-current")}
         />
@@ -95,14 +95,18 @@ function FavoriteButtonImpl({
       aria-pressed={liked}
       aria-label={liked ? "إزالة من المفضلة" : "إضافة للمفضلة"}
       className={cn(
-        "inline-flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed",
-        liked
-          ? "border-brand-300 bg-brand-700/95 text-white shadow-blue"
-          : "border-white/30 bg-black/40 text-white hover:bg-black/60",
+        "grid h-11 w-11 place-items-center transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-60",
         className
       )}
     >
-      <Bookmark size={size + 2} className={liked ? "fill-current" : ""} />
+      <span
+        className={cn(
+          "grid h-9 w-9 place-items-center rounded-full bg-white/90 shadow-sm transition-colors",
+          liked ? "text-rose-600" : "text-slate-900 hover:text-rose-600"
+        )}
+      >
+        <Heart size={size} className={liked ? "fill-current" : ""} />
+      </span>
     </button>
   );
 }

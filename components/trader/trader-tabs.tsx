@@ -91,9 +91,9 @@ export function TraderTabs({
                 onClick={() => setActive(tab.id)}
                 className={`
                   relative shrink-0 whitespace-nowrap px-5 pb-3 pt-3
-                  text-sm font-black transition
+                  text-sm font-extrabold transition
                   ${isActive
-                    ? "text-blue-600 dark:text-blue-400"
+                    ? "text-brand-600 dark:text-brand-400"
                     : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                   }
                 `}
@@ -104,7 +104,7 @@ export function TraderTabs({
                     layoutId="tab-underline"
                     className="
                       absolute inset-x-3 -bottom-px h-0.5
-                      rounded-full bg-blue-600 dark:bg-blue-400
+                      rounded-full bg-brand-600 dark:bg-brand-400
                     "
                   />
                 )}
@@ -138,7 +138,7 @@ export function TraderTabs({
                   h-11 w-full rounded-2xl border border-slate-200
                   bg-slate-50 pe-9 ps-3 text-sm text-slate-900
                   placeholder:text-slate-400
-                  outline-none focus:border-blue-500/40
+                  outline-none focus:border-brand-500/40
                   dark:border-slate-800 dark:bg-slate-900 dark:text-white
                 "
               />
@@ -149,8 +149,8 @@ export function TraderTabs({
               className="
                 inline-flex h-11 shrink-0 items-center gap-1.5
                 rounded-2xl border border-slate-200 bg-white
-                px-4 text-[12px] font-black text-slate-700
-                transition hover:border-blue-500/40
+                px-4 text-[12px] font-extrabold text-slate-700
+                transition hover:border-brand-500/40
                 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200
               "
             >
@@ -172,10 +172,10 @@ export function TraderTabs({
                     whileTap={{ scale: 0.95 }}
                     className={`
                       shrink-0 whitespace-nowrap rounded-full px-4 py-2
-                      text-[12px] font-black transition
+                      text-[12px] font-extrabold transition
                       ${isActive
-                        ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
-                        : "border border-slate-200 bg-white text-slate-700 hover:border-blue-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                        ? "bg-brand-600 text-white shadow-md shadow-brand-500/20"
+                        : "border border-slate-200 bg-white text-slate-700 hover:border-brand-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                       }
                     `}
                   >
@@ -358,8 +358,8 @@ function GalleryTab({ profile }: { profile: UserProfile }) {
               />
             </motion.div>
             {/* Counter */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white/15 px-3 py-1 text-[12px] font-black text-white backdrop-blur">
-              {lightbox + 1} / {images.length}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white/15 px-3 py-1 text-[12px] font-extrabold text-white backdrop-blur">
+              <span className="num">{lightbox + 1} / {images.length}</span>
             </div>
           </motion.div>
         )}
@@ -475,7 +475,7 @@ function ReviewForm({ traderUid }: { traderUid: string }) {
       <div className="rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-sm font-black text-slate-950 dark:text-white">تقييمك</div>
+            <div className="text-sm font-extrabold text-slate-950 dark:text-white">تقييمك</div>
             <div className="mt-1">
               <StarRow value={myReview.rating} />
             </div>
@@ -543,7 +543,7 @@ function ReviewForm({ traderUid }: { traderUid: string }) {
 
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-      <div className="text-sm font-black text-slate-950 dark:text-white">
+      <div className="text-sm font-extrabold text-slate-950 dark:text-white">
         {myReview ? "تعديل تقييمك" : "أضف تقييمك"}
       </div>
 
@@ -638,10 +638,10 @@ function ReviewsList({ items }: { items: TraderReview[] }) {
         <div key={review.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950/40">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <div className="text-sm font-black text-slate-950 dark:text-white">{review.reviewerName || "مستخدم"}</div>
+              <div className="text-sm font-extrabold text-slate-950 dark:text-white">{review.reviewerName || "مستخدم"}</div>
               <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{timeAgo(review.updatedAt || review.createdAt)}</div>
             </div>
-            <div className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+            <div className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-extrabold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
               <Star size={12} className="fill-current" />
               {review.rating}/5
             </div>
@@ -684,11 +684,11 @@ function AboutTrader({
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950/40">
-        <h3 className="text-base font-black text-slate-950 dark:text-white">نبذة</h3>
+        <h3 className="text-base font-extrabold text-slate-950 dark:text-white">نبذة</h3>
         <p className="mt-3 text-sm leading-8 text-slate-600 dark:text-slate-200">{profile.bio || "هذا التاجر يعرض منتجاته وخدماته داخل براتشو كار مع واجهة احترافية وسريعة."}</p>
       </div>
       <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950/40">
-        <h3 className="text-base font-black text-slate-950 dark:text-white">بيانات عامة</h3>
+        <h3 className="text-base font-extrabold text-slate-950 dark:text-white">بيانات عامة</h3>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <AboutItem label="المدينة" value={profile.city || "غير مذكور"} />
           <AboutItem label="رقم الهاتف" value={profile.phone || "غير مذكور"} />
@@ -723,7 +723,7 @@ function DealerAbout({
     <div className="grid gap-4 md:grid-cols-2">
       {/* ===================== نبذة عن المعرض ===================== */}
       <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950/40">
-        <h3 className="inline-flex items-center gap-2 text-base font-black text-slate-950 dark:text-white">
+        <h3 className="inline-flex items-center gap-2 text-base font-extrabold text-slate-950 dark:text-white">
           <BadgeCheck size={18} className="text-brand-700 dark:text-brand-300" />
           نبذة عن المعرض
         </h3>
@@ -757,7 +757,7 @@ function DealerAbout({
       <div className="space-y-4">
         {/* ساعات العمل */}
         <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950/40">
-          <h3 className="inline-flex items-center gap-2 text-base font-black text-slate-950 dark:text-white">
+          <h3 className="inline-flex items-center gap-2 text-base font-extrabold text-slate-950 dark:text-white">
             <Clock3 size={18} className="text-brand-700 dark:text-brand-300" />
             ساعات العمل
           </h3>
@@ -766,7 +766,7 @@ function DealerAbout({
 
         {/* معلومات التواصل */}
         <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950/40">
-          <h3 className="inline-flex items-center gap-2 text-base font-black text-slate-950 dark:text-white">
+          <h3 className="inline-flex items-center gap-2 text-base font-extrabold text-slate-950 dark:text-white">
             <Phone size={18} className="text-brand-700 dark:text-brand-300" />
             معلومات التواصل
           </h3>
@@ -882,7 +882,7 @@ function WorkingHoursList({
             key={day}
             className="flex items-center justify-between rounded-2xl bg-white px-3.5 py-2 text-sm dark:bg-slate-900"
           >
-            <span className="font-black text-slate-700 dark:text-slate-200">
+            <span className="font-extrabold text-slate-700 dark:text-slate-200">
               {label}
             </span>
             {isClosed ? (
@@ -938,7 +938,7 @@ function ContactRow({
           {label}
         </div>
         <div
-          className="truncate text-sm font-black text-slate-900 dark:text-white"
+          className="truncate text-sm font-extrabold text-slate-900 dark:text-white"
           dir={dir}
         >
           {value}
@@ -958,7 +958,7 @@ function AboutItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl bg-white px-4 py-3 text-sm dark:bg-slate-900">
       <div className="text-xs font-bold text-slate-500 dark:text-slate-400">{label}</div>
-      <div className="mt-1 font-black text-slate-950 dark:text-white">{value}</div>
+      <div className="mt-1 font-extrabold text-slate-950 dark:text-white">{value}</div>
     </div>
   );
 }

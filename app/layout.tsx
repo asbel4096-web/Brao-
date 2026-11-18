@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Inter, Tajawal } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -71,6 +72,23 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
+// Bratsho DS 1.0: نفس الخطين المضمّنين في تطبيق Flutter.
+// next/font يستضيفهما ذاتياً وقت البناء (لا طلبات لـ Google وقت التصفح، ولا قفز في التخطيط).
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+  // بدون خط بديل (Arial) لـInter: البديل التلقائي لا يحمل unicode-range فيلتقط الحروف العربية
+  // قبل Tajawal في سلسلة الخطوط، فيظهر العربي بخط Arial. هكذا يذهب العربي إلى Tajawal دائماً.
+  adjustFontFallback: false,
+});
+const tajawal = Tajawal({
+  subsets: ["arabic", "latin"],
+  weight: ["400", "500", "700", "800", "900"],
+  display: "swap",
+  variable: "--font-tajawal",
+});
+
 const noFlashScript = `
 (function(){try{var t=localStorage.getItem('bratsho-theme');if(t==='dark')document.documentElement.classList.add('dark');}catch(e){}})();
 `;
@@ -79,7 +97,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ar" dir="rtl" suppressHydrationWarning>
+    <html lang="ar" dir="rtl" className={`${inter.variable} ${tajawal.variable}`} suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://firestore.googleapis.com" crossOrigin="" />
         <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossOrigin="" />
@@ -97,7 +115,8 @@ export default function RootLayout({
                 <MaintenanceGate>
                   <ReferralFlowProvider />
                   <SiteHeader />
-                  <main className="pb-20 md:pb-12">
+                  {/* الشريط السفلي يظهر حتى 1024px (كان يختفي من 768 فتبقى الأجهزة اللوحية بلا تنقّل) */}
+                  <main className="pb-24 lg:pb-12">
                     <GuestGate>{children}</GuestGate>
                   </main>
                   <BottomNav />
