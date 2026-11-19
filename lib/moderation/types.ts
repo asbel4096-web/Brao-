@@ -20,7 +20,7 @@ export const TARGET_TYPE_LABELS: Record<ReportTargetType, string> = {
   listing: "إعلان",
   comment: "تعليق",
   user: "مستخدم",
-  fridayMarket: "عرض سوق الجمعة",
+  fridayMarket: "منشورات المجتمع",
 };
 
 // ============================================================

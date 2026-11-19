@@ -141,7 +141,7 @@ export default function ReportDetailPage() {
     targetLinkLabel = "فتح ملف المستخدم";
   } else if (report.targetType === "fridayMarket") {
     targetLink = `/friday-market/${report.targetId}`;
-    targetLinkLabel = "فتح عرض سوق الجمعة";
+    targetLinkLabel = "فتح المنشور";
   }
 
   const handleAction = async (resolution: ResolutionKey) => {

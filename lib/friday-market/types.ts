@@ -121,7 +121,7 @@ export const DEFAULT_FRIDAY_SETTINGS: FridayMarketSettings = {
   openDay: 5, // الجمعة
   openHour: 0, // منتصف الليل
   durationHours: 24, // طوال يوم الجمعة
-  bannerTitle: "🛒 سوق الجمعة",
+  bannerTitle: "منشورات المجتمع",
   bannerSubtitle: "عروض الجمعة فقط — انشر واشترِ بسرعة",
   showArchive: true,
 };

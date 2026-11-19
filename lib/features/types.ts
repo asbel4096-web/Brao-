@@ -112,7 +112,7 @@ export const FLAG_METADATA: Record<
     defaultEnabled: true,
   },
   friday_market: {
-    label: "سوق الجمعة",
+    label: "منشورات المجتمع",
     description: "حدث أسبوعي يفتح يوم الجمعة فقط للنشر السريع + بانر الصفحة الرئيسية",
     defaultEnabled: true,
   },

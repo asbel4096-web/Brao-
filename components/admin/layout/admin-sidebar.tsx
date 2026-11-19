@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   ListChecks,
   ShoppingCart,
+  MessagesSquare,
   Clapperboard,
   Users,
   Shield,
@@ -113,10 +114,10 @@ const NAV_GROUPS: NavGroup[] = [
         permission: "listings.feature",
       },
       {
-        href: "/admin/friday-market",
-        label: "سوق الجمعة",
-        Icon: ShoppingCart,
-        permission: "settings.edit",
+        href: "/admin/friday-posts",
+        label: "منشورات المجتمع",
+        Icon: MessagesSquare,
+        permission: "listings.approve",
       },
       {
         href: "/admin/stories",

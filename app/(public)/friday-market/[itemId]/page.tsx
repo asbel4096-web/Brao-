@@ -251,7 +251,7 @@ export default function FridayItemPage() {
               targetMeta={{
                 title: item.title,
                 ownerId: item.ownerId,
-                snapshot: `سوق الجمعة — ${item.title} — ${formatPrice(item.price)}`,
+                snapshot: `منشورات المجتمع — ${item.title} — ${formatPrice(item.price)}`,
               }}
               variant="text"
             />
