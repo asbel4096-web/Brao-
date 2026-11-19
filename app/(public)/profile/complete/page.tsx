@@ -2,7 +2,7 @@
 
 import { Suspense, ChangeEvent, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { updateProfile, signOut } from "firebase/auth";
 import { Camera, Eye, EyeOff, Check, X, AtSign, Lock } from "lucide-react";
@@ -12,6 +12,7 @@ import { useToast } from "@/contexts/ToastContext";
 import { useFeatureFlag } from "@/hooks/features/use-feature-flag";
 import { AuthLayout } from "@/components/auth/auth-layout";
 import {
+  LOGIN_EMAIL_DOMAIN,
   normalizeUsername,
   validateUsername,
   validatePassword,
@@ -21,13 +22,47 @@ import { safeRedirect } from "@/lib/safe-redirect";
 
 type Step = "name" | "credentials" | "photo" | "contact" | "review";
 
-const STEPS: { key: Step; n: number; total: number }[] = [
-  { key: "name", n: 1, total: 5 },
-  { key: "credentials", n: 2, total: 5 },
-  { key: "photo", n: 3, total: 5 },
-  { key: "contact", n: 4, total: 5 },
-  { key: "review", n: 5, total: 5 },
-];
+const STEPS: Step[] = ["name", "credentials", "photo", "contact", "review"];
+
+/**
+ * وضع التعديل (?mode=edit) — زر "تعديل البيانات" في صفحة الملف الشخصي.
+ * نفس شاشات المعالج لكن بدون خطوة اسم المستخدم/كلمة المرور: تلك تُدار
+ * من الإعدادات (CredentialsManager) مع إعادة التحقق من الهوية.
+ */
+const EDIT_STEPS: Step[] = STEPS.filter((s) => s !== "credentials");
+
+/**
+ * هل أكمل المستخدم الـonboarding؟ (نفس منطق LoginClient): العلامة الصريحة
+ * profileCompleted، و fallback للحسابات القديمة قبل إضافة الـflag: وجود name.
+ */
+function isOnboardingComplete(
+  profile: { profileCompleted?: boolean; name?: string } | null | undefined
+): boolean {
+  return (
+    profile?.profileCompleted === true ||
+    (profile?.profileCompleted === undefined && Boolean(profile?.name?.trim()))
+  );
+}
+
+/**
+ * أول بريد صالح للعرض. البريد الداخلي لاسم المستخدم (@login.bratsho-car.app)
+ * لا يُعرض للمستخدم ولا يُحفظ كبريد تواصل.
+ */
+function visibleEmail(...candidates: (string | null | undefined)[]): string {
+  for (const c of candidates) {
+    const e = (c || "").trim();
+    if (e && !e.toLowerCase().endsWith(`@${LOGIN_EMAIL_DOMAIN}`)) return e;
+  }
+  return "";
+}
+
+/** يرفع الصورة الشخصية إلى users/{uid}/… ويُعيد رابط التنزيل. */
+async function uploadProfilePhoto(uid: string, file: File): Promise<string> {
+  const safeName = file.name.replace(/\s+/g, "-");
+  const fileRef = ref(storage, `users/${uid}/${Date.now()}-${safeName}`);
+  await uploadBytes(fileRef, file, { contentType: file.type });
+  return getDownloadURL(fileRef);
+}
 
 /**
  * صفحة إكمال الحساب - تجربة onboarding متدرّجة.
@@ -79,9 +114,13 @@ function CompleteProfilePageInner() {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoURL, setPhotoURL] = useState("");
   const [saving, setSaving] = useState(false);
+  // يُحدَّد مرة واحدة عند أول تحميل للملف: "edit" أو "onboarding".
+  const [mode, setMode] = useState<"edit" | "onboarding" | null>(null);
+  const editMode = mode === "edit";
 
-  // W0: only same-site relative paths
+  // W0: only same-site relative paths (shared guard in lib/safe-redirect.ts)
   const redirectTo = safeRedirect(params.get("redirect"), "/profile");
+  const wantsEdit = params.get("mode") === "edit";
 
   /* ----------------------------------------------------------
    * تهيئة من profile (لو موجود) + redirect لو مكتمل
@@ -93,13 +132,29 @@ function CompleteProfilePageInner() {
       return;
     }
 
+    // وضع التعديل متاح فقط لحساب أكمل الـonboarding؛ غير المكتمل يمرّ
+    // بالمعالج كاملاً (مع اسم المستخدم وكلمة المرور) كما هو.
+    if (mode === null) {
+      const next =
+        wantsEdit && isOnboardingComplete(profile) ? "edit" : "onboarding";
+      setMode(next);
+      if (next === "edit") {
+        // pre-fill مرة واحدة فقط: مستمع الملف الحي (ونبضة الحضور كل
+        // دقيقتين) يجب ألا يمسح ما يكتبه المستخدم أثناء التعديل.
+        setName(profile?.name || user.displayName || "");
+        setEmail(visibleEmail(profile?.email, user.email));
+        setPhone(profile?.phone || user.phoneNumber || "");
+        setBio(profile?.bio || "");
+        setPhotoURL(profile?.photoURL || user.photoURL || "");
+        return;
+      }
+    }
+    if (mode === "edit") return;
+
     // لو المستخدم أكمل الـonboarding سابقاً، لا تعرض الصفحة - وجّهه
     // مباشرة. fallback للحسابات القديمة (قبل إضافة الـflag): اعتبر
     // وجود name كافياً للاكتمال حتى لا نعطّل أحداً.
-    if (
-      profile?.profileCompleted === true ||
-      (profile?.profileCompleted === undefined && profile?.name?.trim())
-    ) {
+    if (isOnboardingComplete(profile)) {
       router.replace(redirectTo);
       return;
     }
@@ -110,7 +165,7 @@ function CompleteProfilePageInner() {
     setPhone(profile?.phone || user.phoneNumber || "");
     setBio(profile?.bio || "");
     setPhotoURL(profile?.photoURL || user.photoURL || "");
-  }, [user, profile, authLoading, router, redirectTo]);
+  }, [user, profile, authLoading, router, redirectTo, wantsEdit, mode]);
 
   /* ----------------------------------------------------------
    * Image preview
@@ -166,9 +221,9 @@ function CompleteProfilePageInner() {
   /* ----------------------------------------------------------
    * التنقل بين الخطوات
    * ---------------------------------------------------------- */
-  const currentStep = STEPS.find((s) => s.key === step)!;
-  const stepIndex = STEPS.findIndex((s) => s.key === step);
-  const isLast = stepIndex === STEPS.length - 1;
+  const steps = editMode ? EDIT_STEPS : STEPS;
+  const stepIndex = Math.max(0, steps.indexOf(step));
+  const isLast = stepIndex === steps.length - 1;
   const isFirst = stepIndex === 0;
 
   const goNext = () => {
@@ -196,13 +251,65 @@ function CompleteProfilePageInner() {
         return;
       }
     }
-    const next = STEPS[stepIndex + 1];
-    if (next) setStep(next.key);
+    const next = steps[stepIndex + 1];
+    if (next) setStep(next);
   };
 
   const goPrev = () => {
-    const prev = STEPS[stepIndex - 1];
-    if (prev) setStep(prev.key);
+    const prev = steps[stepIndex - 1];
+    if (prev) setStep(prev);
+  };
+
+  /* ----------------------------------------------------------
+   * حفظ التعديلات (وضع التعديل لحساب مكتمل)
+   * - وثيقة المستخدم الحالي فقط: users/{auth.uid} عبر updateDoc
+   *   (لا يُنشئ وثيقة أبداً).
+   * - كل الحقول ضمن قائمة الحقول التي تسمح القواعد للمالك بتعديلها.
+   * - لا يلمس اسم المستخدم/كلمة المرور ولا علم إغلاق التسجيل.
+   * ---------------------------------------------------------- */
+  const saveProfileEdits = async () => {
+    if (!user) return;
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      toast.error("الاسم مطلوب.");
+      setStep("name");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const finalPhotoURL = photoFile
+        ? await uploadProfilePhoto(user.uid, photoFile)
+        : photoURL;
+
+      await updateDoc(doc(db, "users", user.uid), {
+        name: trimmedName,
+        email: visibleEmail(email),
+        phone: phone.trim(),
+        bio: bio.trim(),
+        photoURL: finalPhotoURL,
+        updatedAt: serverTimestamp(),
+      });
+
+      try {
+        await updateProfile(user, {
+          displayName: trimmedName,
+          photoURL: finalPhotoURL || null,
+        });
+      } catch {
+        /* non-fatal */
+      }
+
+      await refreshProfile();
+      toast.success("تم حفظ التغييرات.");
+      router.replace(redirectTo);
+    } catch (err: any) {
+      // eslint-disable-next-line no-console
+      console.error("[EditProfile] save failed:", err?.code, err?.message);
+      toast.error(err?.message || "حدث خطأ أثناء الحفظ.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   /* ----------------------------------------------------------
@@ -210,6 +317,10 @@ function CompleteProfilePageInner() {
    * ---------------------------------------------------------- */
   const handleSave = async () => {
     if (!user) return;
+    if (editMode) {
+      await saveProfileEdits();
+      return;
+    }
     // التسجيل الجديد مغلق من لوحة الأدمن → نمنع إكمال إنشاء الحساب.
     if (!registrationOn) {
       toast.error("التسجيل الجديد مغلق مؤقتاً. نعتذر، حاول لاحقاً.");
@@ -252,15 +363,7 @@ function CompleteProfilePageInner() {
       // رفع الصورة لو موجودة
       let finalPhotoURL = photoURL;
       if (photoFile) {
-        const safeName = photoFile.name.replace(/\s+/g, "-");
-        const fileRef = ref(
-          storage,
-          `users/${user.uid}/${Date.now()}-${safeName}`
-        );
-        await uploadBytes(fileRef, photoFile, {
-          contentType: photoFile.type,
-        });
-        finalPhotoURL = await getDownloadURL(fileRef);
+        finalPhotoURL = await uploadProfilePhoto(user.uid, photoFile);
       }
 
       const userRef = doc(db, "users", user.uid);
@@ -376,7 +479,7 @@ function CompleteProfilePageInner() {
   /* ----------------------------------------------------------
    * Loading
    * ---------------------------------------------------------- */
-  if (authLoading || !user) {
+  if (authLoading || !user || mode === null) {
     return (
       <AuthLayout title="جارٍ التحميل..." showLegalFooter={false}>
         <div className="space-y-3">
@@ -393,12 +496,12 @@ function CompleteProfilePageInner() {
   return (
     <AuthLayout
       title={getStepTitle(step)}
-      description={getStepDescription(step)}
+      description={getStepDescription(step, editMode)}
       onBack={isFirst ? () => router.push(redirectTo) : goPrev}
       backType={isFirst ? "close" : "back"}
     >
       <div className="space-y-5">
-        <StepProgress current={currentStep.n} total={currentStep.total} />
+        <StepProgress current={stepIndex + 1} total={steps.length} />
 
         {step === "name" && <StepName name={name} onChange={setName} />}
 
@@ -463,7 +566,11 @@ function CompleteProfilePageInner() {
                 disabled:opacity-60
               "
             >
-              {saving ? "جارٍ الحفظ..." : "حفظ وإكمال"}
+              {saving
+                ? "جارٍ الحفظ..."
+                : editMode
+                  ? "حفظ التغييرات"
+                  : "حفظ وإكمال"}
             </button>
           ) : (
             <button
@@ -1007,7 +1114,7 @@ function getStepTitle(step: Step): string {
   }
 }
 
-function getStepDescription(step: Step): string {
+function getStepDescription(step: Step, editMode = false): string {
   switch (step) {
     case "name":
       return "هذا الاسم سيظهر على إعلاناتك للمشترين.";
@@ -1018,6 +1125,8 @@ function getStepDescription(step: Step): string {
     case "contact":
       return "كل هذه الحقول اختيارية. يمكنك إكمالها لاحقاً.";
     case "review":
-      return "راجع بياناتك ثم اضغط حفظ لإكمال التسجيل.";
+      return editMode
+        ? "راجع بياناتك ثم اضغط حفظ التغييرات."
+        : "راجع بياناتك ثم اضغط حفظ لإكمال التسجيل.";
   }
 }

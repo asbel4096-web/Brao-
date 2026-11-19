@@ -533,7 +533,7 @@ export default function ProfilePage() {
             {/* CTAs */}
             <div className="mt-4 grid grid-cols-2 gap-2">
               <Link
-                href="/profile/complete?redirect=/profile"
+                href="/profile/complete?mode=edit&redirect=/profile"
                 className="
                   inline-flex items-center justify-center gap-1.5
                   rounded-2xl border border-slate-200 bg-white
