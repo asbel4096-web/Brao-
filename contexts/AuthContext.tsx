@@ -205,20 +205,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // لاحق على الوثيقة — مثل إضافة رصيد عند الموافقة على طلب شحن،
   // أو خصم عند شراء باقة — لا ينعكس على الواجهة حتى إعادة تحميل.
   //
-  // هذا المستمع يبقي الـprofile (ومنه الرصيد) محدّثاً لحظياً. يُفعّل
-  // فقط بعد أن يكون لدينا profile مُحمّل (أي مستخدم موجود وغير معطّل)،
-  // كي لا يتعارض مع منطق loadProfile للحالات الخاصة (جديد/معطّل).
+  // هذا المستمع يبقي الـprofile (ومنه الرصيد) محدّثاً لحظياً. يعمل لكل
+  // مستخدم مسجّل، ومنهم المستخدم الجديد الذي ليست له وثيقة بعد: غيابها
+  // في البداية طبيعي (تُنشئها /profile/complete عند الحفظ) وليس حذفاً.
+  // نعتبره "حُذف من لوحة الإدارة" فقط إذا أكّد الخادم وجود الوثيقة خلال
+  // هذه الجلسة ثم اختفت.
   // ----------------------------------------------------------------
+  // هل أكّد الخادم وجود users/{uid} في هذه الجلسة؟ (يقرؤه الـheartbeat أيضاً)
+  const userDocOnServerRef = useRef(false);
+
   useEffect(() => {
     if (!user) return;
+    userDocOnServerRef.current = false;
     const userRef = doc(db, "users", user.uid);
     const unsub = onSnapshot(
       userRef,
       (snap) => {
+        const { fromCache, hasPendingWrites } = snap.metadata;
         if (!snap.exists()) {
-          // الحساب حُذف من لوحة الإدارة → تسجيل خروج فوري.
-          signOut(auth).catch(() => {});
+          const existedOnServer = userDocOnServerRef.current;
+          userDocOnServerRef.current = false;
+          // كانت موجودة على الخادم ثم اختفت → الحساب حُذف من لوحة الإدارة
+          // → تسجيل خروج فوري. أمّا مستخدم جديد لم تُنشأ وثيقته بعد فيبقى
+          // مسجّلاً حتى يُكمل /profile/complete.
+          if (existedOnServer && !fromCache) {
+            signOut(auth).catch(() => {});
+          }
           return;
+        }
+        // وجود مؤكَّد من الخادم (لا من الكاش ولا من كتابة محلية لم تُعتمد بعد).
+        if (!fromCache && !hasPendingWrites) {
+          userDocOnServerRef.current = true;
         }
         const data = snap.data() as UserProfile;
         // حُظر/عُطّل/حُذف أثناء الجلسة → تسجيل خروج فوري وإيقاف الصلاحيات.
@@ -249,6 +266,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    *   tracking.
    * - Best-effort flip to `isOnline: false` when the tab is hidden/closed.
    * Only ever writes the user's OWN document, with the field-scoped rule.
+   * - Never creates that document: it writes only after the listener above
+   *   has seen users/{uid} on the server. For a brand-new user this merge
+   *   write would be a create without `uid`, which the rules deny; the doc
+   *   is created by /profile/complete (which sets isOnline/lastSeenAt itself).
    */
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -258,6 +279,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const userRef = doc(db, "users", user.uid);
 
     const beat = (online: boolean) => {
+      if (!userDocOnServerRef.current) return;
       // Fire-and-forget; never block the UI on presence writes.
       setDoc(
         userRef,
