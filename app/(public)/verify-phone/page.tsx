@@ -24,6 +24,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { AuthLayout } from "@/components/auth/auth-layout";
 import { safeRedirect } from "@/lib/safe-redirect";
+import { isSmsBackendFailure } from "@/lib/phone-auth-errors";
 
 declare global {
   interface Window {
@@ -195,6 +196,11 @@ function VerifyPhoneClient() {
         setError("فشل تحقق الأمان. أعد المحاولة.");
       } else if (code === "auth/invalid-app-credential") {
         setError("تعذر تهيئة التحقق الأمني. حدّث الصفحة وأعد المحاولة.");
+      } else if (isSmsBackendFailure(err)) {
+        // 503 «Error code: 39»: خادم Google لم يستطع إرسال الرسالة (ليس خطأ في الرقم).
+        setError(
+          "تعذّر إرسال رمز التحقق إلى رقمك حالياً بسبب عطل لدى مزوّد الرسائل، وليس في رقمك. حاول لاحقاً."
+        );
       } else {
         setError(err?.code || err?.message || "فشل إرسال الرمز.");
       }

@@ -27,6 +27,10 @@ import { signInWithUsername } from "@/lib/auth-credentials";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthLayout } from "@/components/auth/auth-layout";
 import { safeRedirect } from "@/lib/safe-redirect";
+import {
+  isSmsBackendFailure,
+  SMS_BACKEND_FAILURE_MESSAGE,
+} from "@/lib/phone-auth-errors";
 
 declare global {
   interface Window {
@@ -205,6 +209,10 @@ export default function LoginClient() {
       } else if (code === "auth/unauthorized-domain") {
         setPhoneAuthUnavailable(true);
         setError("الدومين غير مصرّح به في Firebase.");
+      } else if (isSmsBackendFailure(err)) {
+        // 503 «Error code: 39»: خادم Google لم يستطع إرسال الرسالة (ليس خطأ في الرقم).
+        setPhoneAuthUnavailable(true);
+        setError(SMS_BACKEND_FAILURE_MESSAGE);
       } else {
         setError(err?.code || err?.message || "فشل إرسال الرمز.");
       }
@@ -533,7 +541,7 @@ export default function LoginClient() {
                 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200
               "
             >
-              ⚠️ تسجيل الدخول برقم الهاتف غير متاح حالياً. استخدم Google.
+              ⚠️ تسجيل الدخول برقم الهاتف غير متاح حالياً. استخدم Google أو اسم المستخدم.
             </div>
           )}
 
