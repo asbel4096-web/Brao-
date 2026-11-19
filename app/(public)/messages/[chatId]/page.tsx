@@ -191,7 +191,8 @@ export default function ChatRoomPage() {
     const otherUid = thread.participants.find((p) => p !== user.uid);
     if (!otherUid) return;
     const unsub = onSnapshot(
-      doc(db, "users", otherUid),
+      // Privacy: other users are read from publicProfiles (no e-mail/phone/wallet). See functions/src/publicProfile.ts.
+      doc(db, "publicProfiles", otherUid),
       (snap) => {
         if (snap.exists()) {
           setOtherProfile({ uid: snap.id, ...(snap.data() as any) });

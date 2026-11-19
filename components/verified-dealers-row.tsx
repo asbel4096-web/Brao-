@@ -72,7 +72,7 @@ export function VerifiedDealersRow() {
         // استعلام بسيط بحقل واحد - لا يحتاج فهرساً مركّباً.
         const snap = await getDocs(
           query(
-            collection(db, "users"),
+            collection(db, "publicProfiles"),
             where("isVerifiedDealer", "==", true),
             limit(MAX_DEALERS)
           )

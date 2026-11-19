@@ -108,7 +108,8 @@ export function usePlatformStats() {
         // 2) احتياطي: عدّ مباشر عبر getCountFromServer (يتطلب القواعد
         //    والفهارس الصحيحة - status==approved على listings).
         const listingsCol = collection(db, "listings");
-        const usersCol = collection(db, "users");
+        // Privacy: other users are read from publicProfiles (no e-mail/phone/wallet). See functions/src/publicProfile.ts.
+        const usersCol = collection(db, "publicProfiles");
 
         const thirtyDaysAgo = Timestamp.fromMillis(
           Date.now() - 30 * 24 * 60 * 60 * 1000
@@ -137,13 +138,13 @@ export function usePlatformStats() {
             )
           ),
           getCountFromServer(
-            query(usersCol, where("verificationType", "==", "dealer"))
+            query(usersCol, where("isVerifiedDealer", "==", true))
           ),
           getCountFromServer(
-            query(usersCol, where("verificationType", "==", "showroom"))
+            query(usersCol, where("accountType", "==", "__none__")) // folded into isVerifiedDealer above
           ),
           getCountFromServer(
-            query(usersCol, where("lastLoginAt", ">=", thirtyDaysAgo))
+            query(usersCol, where("lastSeenAt", ">=", thirtyDaysAgo)) // public presence only
           ),
         ]);
 

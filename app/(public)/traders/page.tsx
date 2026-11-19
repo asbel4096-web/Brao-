@@ -62,7 +62,7 @@ export default function VerifiedDealersIndexPage() {
         const [legacySnap, newSnap] = await Promise.all([
           getDocs(
             query(
-              collection(db, "users"),
+              collection(db, "publicProfiles"),
               where("isVerifiedDealer", "==", true),
               limit(MAX_DEALERS)
             )
@@ -70,7 +70,7 @@ export default function VerifiedDealersIndexPage() {
           // verifiedUntil != null → كل من له اشتراك (نفلتر الصلاحية client-side)
           getDocs(
             query(
-              collection(db, "users"),
+              collection(db, "publicProfiles"),
               where("verifiedUntil", ">", new Date()),
               limit(MAX_DEALERS)
             )

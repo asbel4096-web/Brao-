@@ -100,7 +100,8 @@ export default function ListingDetailsPage() {
         } catch {}
 
         try {
-          const sellerSnap = await getDoc(doc(db, "users", data.ownerId));
+          // Privacy: other users are read from publicProfiles (no e-mail/phone/wallet). See functions/src/publicProfile.ts.
+          const sellerSnap = await getDoc(doc(db, "publicProfiles", data.ownerId));
           if (sellerSnap.exists()) {
             const sellerData = sellerSnap.data() as UserProfile;
             setSeller({ ...sellerData, uid: sellerSnap.id });

@@ -52,7 +52,8 @@ export function useTraderProfile(uid: string): TraderProfileState {
     setMissing(false);
     setListingsError(null);
 
-    getDoc(doc(db, "users", uid))
+    // Privacy: other users are read from publicProfiles (no e-mail/phone/wallet). See functions/src/publicProfile.ts.
+    getDoc(doc(db, "publicProfiles", uid))
       .then((snap) => {
         if (!mounted) return;
         if (!snap.exists()) {
