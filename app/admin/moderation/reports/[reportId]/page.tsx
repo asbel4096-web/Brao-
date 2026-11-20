@@ -25,7 +25,7 @@ import { useConfirm } from "@/components/confirm-dialog";
 import {
   getReasonLabel,
   STATUS_LABELS,
-  TARGET_TYPE_LABELS,
+  targetTypeLabel,
   RESOLUTIONS,
   type ReportDoc,
   type ResolutionKey,
@@ -237,7 +237,7 @@ export default function ReportDetailPage() {
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[11px] font-black text-slate-500 dark:text-slate-400">
-                بلاغ على {TARGET_TYPE_LABELS[report.targetType]}
+                بلاغ على {targetTypeLabel(report.targetType)}
               </span>
               <span
                 className={`rounded-full px-2 py-0.5 text-[10px] font-black ${

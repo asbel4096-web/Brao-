@@ -23,6 +23,22 @@ export const TARGET_TYPE_LABELS: Record<ReportTargetType, string> = {
   fridayMarket: "منشورات المجتمع",
 };
 
+/**
+ * 2026-11-20: أنواع لا يُنشئها حوار البلاغ في الموقع لكن تصل من التطبيق
+ * (منشور، قصة، «الإبلاغ عن مشكلة») ومن نموذج «تواصل معنا» — تُعرض بتسميتها
+ * بدل أن تُكسر صفحة الإدارة.
+ */
+const EXTRA_TARGET_LABELS: Record<string, string> = {
+  app: "تواصل / مشكلة في التطبيق",
+  post: "منشور مجتمع",
+  story: "قصة",
+};
+
+/** تسمية نوع البلاغ لأي قيمة (المعروفة وغير المعروفة). */
+export function targetTypeLabel(type: string): string {
+  return (TARGET_TYPE_LABELS as Record<string, string>)[type] ?? EXTRA_TARGET_LABELS[type] ?? type;
+}
+
 // ============================================================
 // Report reasons - مختلفة حسب نوع الـtarget
 // ============================================================
@@ -81,6 +97,10 @@ export function getReasonsFor(type: ReportTargetType): ReportReason[] {
       return USER_REASONS;
     case "fridayMarket":
       return FRIDAY_MARKET_REASONS;
+    default:
+      // 2026-11-20: نوع غير معروف هنا (من التطبيق أو نموذج التواصل) — كانت الدالة
+      // تُرجع undefined فينكسر getReasonLabel وتسقط صفحة البلاغات كلها.
+      return [];
   }
 }
 

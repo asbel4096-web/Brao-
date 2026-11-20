@@ -24,7 +24,7 @@ import {
 import {
   getReasonLabel,
   STATUS_LABELS,
-  TARGET_TYPE_LABELS,
+  targetTypeLabel,
   type ReportDoc,
   type ReportStatus,
   type ReportTargetType,
@@ -256,7 +256,7 @@ function ReportRow({ report }: { report: ReportDoc }) {
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-[11px] font-black text-slate-500 dark:text-slate-400">
-            {TARGET_TYPE_LABELS[report.targetType]}
+            {targetTypeLabel(report.targetType)}
           </span>
           <StatusBadge status={report.status} />
         </div>

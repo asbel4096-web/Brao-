@@ -33,6 +33,12 @@ import { useContactSettings } from "@/hooks/useContactSettings";
 
 type ContactType = "suggestion" | "issue" | "other";
 
+const CONTACT_TYPE_LABEL: Record<ContactType, string> = {
+  issue: "مشكلة",
+  suggestion: "اقتراح",
+  other: "أخرى",
+};
+
 export default function ContactPage() {
   const { user, profile } = useAuth();
   const toast = useToast();
@@ -63,17 +69,25 @@ export default function ContactPage() {
       return;
     }
 
+    if (!user) {
+      toast.warning("سجّل الدخول لإرسال رسالة.");
+      return;
+    }
+
     setSending(true);
     try {
-      await addDoc(collection(db, "support_messages"), {
-        type,
-        name: name.trim(),
-        contact: contact.trim(),
-        message: message.trim(),
-        userId: user?.uid || null,
-        userEmail: user?.email || null,
+      // 2026-11-20: كانت تُكتب في support_messages — لا قاعدة تسمح بها فتفشل دائماً، ولا
+      // صفحة إدارة تقرؤها. الآن تصل كبلاغ من نوع «app» (نفس ما يرسله «الإبلاغ عن مشكلة»
+      // في التطبيق) فتظهر في صفحة البلاغات بلوحة الإدارة، ضمن قواعد reports الحالية.
+      await addDoc(collection(db, "reports"), {
+        reporterId: user.uid,
+        targetType: "app",
+        listingId: "",
+        reason: `رسالة تواصل: ${CONTACT_TYPE_LABEL[type]}`,
+        description: `${message.trim()}\n\n— الاسم: ${name.trim()}\n— للتواصل: ${contact.trim()}`.slice(0, 2000),
+        source: "website_contact",
+        status: "pending",
         createdAt: serverTimestamp(),
-        status: "open",
       });
       setSuccess(true);
       setMessage("");
@@ -244,6 +258,19 @@ export default function ContactPage() {
 
           {success ? (
             <SuccessState onReset={() => setSuccess(false)} />
+          ) : !user ? (
+            <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-700 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-200">
+              <p>
+                سجّل الدخول لإرسال رسالة إلى فريق براتشو كار، أو تواصل معنا مباشرة
+                عبر الهاتف أو واتساب أو البريد أعلاه.
+              </p>
+              <Link
+                href={`/login?redirect=${encodeURIComponent("/contact")}`}
+                className="inline-flex rounded-2xl bg-brand-700 px-4 py-2.5 text-sm font-black text-white hover:bg-brand-800"
+              >
+                تسجيل الدخول
+              </Link>
+            </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* نوع الرسالة */}
@@ -309,6 +336,7 @@ export default function ContactPage() {
                     value={contact}
                     onChange={(e) => setContact(e.target.value)}
                     placeholder="هاتف أو بريد إلكتروني"
+                    maxLength={100}
                     className="
                       w-full rounded-2xl border-2 border-slate-200 bg-white
                       py-3 pl-3 pr-10 text-sm outline-none transition
