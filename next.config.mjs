@@ -50,6 +50,14 @@ const nextConfig = {
     optimizePackageImports: ["lucide-react", "framer-motion"],
   },
 
+  // 2026-11-19: روابط المشاركة القديمة من التطبيق كانت بصيغة /listing/{id} (لا توجد
+  // صفحة بهذا المسار) — تُحوَّل إلى صفحة الإعلان الصحيحة /listings/{id}.
+  async redirects() {
+    return [
+      { source: "/listing/:id", destination: "/listings/:id", permanent: true },
+    ];
+  },
+
   // Security headers (أفضل ممارسة)
   async headers() {
     return [

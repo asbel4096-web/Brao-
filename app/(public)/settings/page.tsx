@@ -191,13 +191,13 @@ export default function SettingsPage() {
                 حذف الحساب
               </h3>
               <p className="mt-1 text-xs text-rose-600/90 dark:text-rose-200/80">
-                لحذف حسابك نهائياً مع كل بياناتك، تواصل مع الدعم.
+                اطلب حذف حسابك وبياناتك نهائياً. يُعطَّل فوراً ويُحذف بعد 30 يوماً.
               </p>
               <Link
-                href="/contact"
+                href="/delete-account"
                 className="mt-2 inline-block text-xs font-black text-rose-700 underline dark:text-rose-300"
               >
-                تواصل مع الدعم
+                حذف الحساب
               </Link>
             </div>
           </div>

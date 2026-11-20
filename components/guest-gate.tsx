@@ -16,13 +16,15 @@ import { useAuth } from "@/contexts/AuthContext";
  *   - "/login"       تسجيل الدخول
  *   - "/verify-phone" تأكيد الهاتف
  *   - "/terms" "/privacy"  صفحات قانونية (مرتبطة من صفحة الدخول)
+ *   - "/delete-account"    صفحة حذف الحساب (شرط Google Play: رابط عام يُقرأ دون دخول)
+ *   - "/contact"           التواصل — لمن لا يستطيع الدخول (مرتبطة من صفحة الحذف)
  *
  * ملاحظة: البوّابة عميل-side لأن حالة Firebase Auth تُقرأ في المتصفح.
  * المستخدم المسجَّل يمرّ في كل الصفحات بشكل طبيعي.
  */
 
 // عدّل هذه القائمة للتحكّم فيما يراه الزائر دون تسجيل دخول.
-const GUEST_ALLOWED_EXACT = ["/", "/login", "/verify-phone", "/terms", "/privacy"];
+const GUEST_ALLOWED_EXACT = ["/", "/login", "/verify-phone", "/terms", "/privacy", "/delete-account", "/contact"];
 // أي مسار يبدأ بهذه البادئات يُسمح به أيضاً (للمسارات الفرعية).
 const GUEST_ALLOWED_PREFIXES = ["/login/", "/verify-phone/", "/terms/", "/privacy/"];
 
