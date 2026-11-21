@@ -36,6 +36,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useDealerStories } from "@/hooks/dealer/use-dealer-stories";
 import { STORY_CATEGORIES, type StoryCategory } from "@/lib/dealer/stories";
+import { OfficialAlbumsRow } from "@/components/trader/official-albums-row";
 
 /**
  * Trader Profile Header v3 - تصميم احترافي مطابق للصورة.
@@ -449,6 +450,9 @@ export function TraderProfileHeader({
           onOpen={onStoryOpen}
           onAdd={onAddStory}
         />
+
+        {/* 2026-11-21: ألبومات القصص الدائمة — للحساب الرسمي فقط */}
+        {isOfficial && <OfficialAlbumsRow ownerId={profile.uid} />}
       </div>
     </article>
   );
