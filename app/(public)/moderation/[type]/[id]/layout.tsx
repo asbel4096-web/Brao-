@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import { SITE_NAME } from "@/lib/seo";
 
-/** صفحة خاصة بصاحب المحتوى (قرار الإدارة) — لا تُفهرس. */
+/** صفحة خاصة بصاحب المحتوى (قرار الإدارة) — لا تُفهرس. القالب في app/layout.tsx يضيف اسم الموقع. */
 export const metadata: Metadata = {
-  title: `قرار الإدارة | ${SITE_NAME}`,
+  title: "قرار الإدارة",
   robots: { index: false, follow: false },
 };
 
