@@ -212,9 +212,35 @@ export default function ListingDetailsPage() {
   const longDesc = (listing.description || "").length > 180;
   const joinDate = (seller as any)?.createdAt;
 
+  // 2026-11-21: إعلان حذفته/أوقفته «إدارة المحتوى» — لا يصل هنا إلا صاحبه أو الإدارة (القواعد).
+  const modState = listing.moderation?.state ?? null;
+
   return (
     <div dir="rtl" className="min-h-screen bg-[#F8FAFC] pb-28">
       <div className="mx-auto max-w-2xl px-3 py-3 sm:px-4">
+        {modState && (
+          <div
+            className={`mb-3 rounded-2xl border p-3 text-xs font-bold leading-6 ${
+              modState === "removed"
+                ? "border-rose-200 bg-rose-50 text-rose-800"
+                : "border-amber-200 bg-amber-50 text-amber-800"
+            }`}
+          >
+            <p className="font-black">
+              {modState === "removed"
+                ? "حذفت الإدارة هذا الإعلان، ولا يظهر للعامة."
+                : "أوقفت الإدارة هذا الإعلان مؤقتاً، ولا يظهر للعامة حتى تستأنفه."}
+            </p>
+            <p>
+              السبب: {listing.moderation?.reason || "مخالفة شروط الاستخدام"}
+              {listing.moderation?.note ? ` — ${listing.moderation.note}` : ""}
+            </p>
+            <Link href={`/moderation/listing/${listing.id}`} className="font-black underline underline-offset-2">
+              تفاصيل القرار والتواصل مع الدعم
+            </Link>
+          </div>
+        )}
+
         {/* ============ 1. معرض الصور الرئيسي ============ */}
         <motion.div
           initial={{ opacity: 0 }}

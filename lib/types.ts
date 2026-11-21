@@ -1,6 +1,40 @@
 import type { Timestamp } from "firebase/firestore";
 
-export type ListingStatus = "pending" | "approved" | "rejected" | "draft";
+/**
+ * "removed" / "paused": حذف (قابل للاستعادة) أو إيقاف مؤقت من «إدارة المحتوى» (moderateContent)،
+ * والسبب في `moderation`. "archived": أرشفة قديمة من البلاغات/حظر المستخدم.
+ */
+export type ListingStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "draft"
+  | "removed"
+  | "paused"
+  | "archived";
+
+/**
+ * خريطة `moderation` على الإعلان/المنشور/القصة — تكتبها الدالة moderateContent فقط
+ * (القواعد تمنع العميل). state = null بعد الاستعادة/الاستئناف.
+ */
+export interface ContentModerationDoc {
+  state?: "removed" | "paused" | null;
+  action?: "remove" | "pause" | "restore" | "resume";
+  reasonCode?: string;
+  /** التسمية العربية للسبب. */
+  reason?: string;
+  note?: string;
+  by?: string;
+  byName?: string;
+  byRole?: string;
+  at?: Timestamp | null;
+  since?: Timestamp | null;
+  prevStatus?: string;
+  paid?: boolean;
+  notified?: boolean;
+  lastState?: string | null;
+  lastReason?: string;
+}
 export type ListingEntityType = "listing" | "service";
 
 export interface Listing {
@@ -49,6 +83,8 @@ export interface Listing {
   createdAt?: Timestamp | null;
   updatedAt?: Timestamp | null;
   rejectionReason?: string;
+  /** قرار «إدارة المحتوى» (حذف/إيقاف + السبب) — للقراءة فقط. */
+  moderation?: ContentModerationDoc | null;
 
   // حقول إضافية خاصة بخدمات الساحبات (tow-truck) - كلها اختيارية
   // ويمكن استخدامها مستقبلاً لخدمات أخرى تحتاج موقعاً جغرافياً.
@@ -283,7 +319,18 @@ export type NotificationType =
   /** حملة ترويجية أو خصم */
   | "broadcast_campaign"
   /** إعلان عام من الإدارة */
-  | "broadcast_general";
+  | "broadcast_general"
+  // ============================================================
+  // «إدارة المحتوى» (moderateContent) — الرابط /moderation/{type}/{id}
+  // ============================================================
+  | "moderation_remove"
+  | "moderation_pause"
+  | "moderation_restore"
+  | "moderation_resume"
+  // تذكيرات صيانة السيارة (التطبيق) — الرابط /my-cars/{id} للتطبيق فقط
+  | "maintenance_soon"
+  | "maintenance_due"
+  | "maintenance_overdue";
 
 /**
  * أنواع broadcast التي يستطيع الأدمن إرسالها. يُستخدم في صفحة

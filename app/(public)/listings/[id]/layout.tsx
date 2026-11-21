@@ -46,8 +46,10 @@ export async function generateMetadata({
 }: Params): Promise<Metadata> {
   const listing = await fetchListing(params.id);
 
-  // إعلان غير موجود → metadata افتراضية + noindex
-  if (!listing) {
+  // إعلان غير موجود، أو غير منشور (قيد المراجعة/مرفوض/محذوف أو موقوف من الإدارة/مؤرشف)
+  // → metadata عامة + noindex. 2026-11-21: كان الجلب عبر Admin SDK يتجاوز القواعد فيكشف
+  // عنوان/سعر/صورة الإعلانات المحذوفة أو المرفوضة في معاينات الروابط (واتساب/فيسبوك).
+  if (!listing || listing.status !== "approved") {
     return {
       title: `إعلان غير متوفر | ${SITE_NAME}`,
       description: DEFAULT_DESCRIPTION,

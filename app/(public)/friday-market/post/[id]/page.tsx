@@ -140,14 +140,38 @@ export default function CommunityPostDetailPage() {
           منشورات المجتمع
         </Link>
 
-        {post.status !== "approved" && (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs font-bold text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-            {post.status === "pending"
-              ? "منشورك قيد المراجعة، ولا يراه غيرك حتى يُعتمد."
-              : post.status === "rejected"
-                ? `لم يُعتمد هذا المنشور${post.rejectionReason ? `: ${post.rejectionReason}` : "."}`
-                : "هذا المنشور غير ظاهر للعامة حالياً."}
+        {post.moderation?.state ? (
+          // 2026-11-21: قرار «إدارة المحتوى» مع السبب (لا يراه إلا صاحبه والإدارة).
+          <div
+            className={`rounded-2xl border p-3 text-xs font-bold leading-6 ${
+              post.moderation.state === "removed"
+                ? "border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200"
+                : "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200"
+            }`}
+          >
+            <p className="font-black">
+              {post.moderation.state === "removed"
+                ? "حذفت الإدارة هذا المنشور، ولا يظهر لأحد غيرك."
+                : "أوقفت الإدارة هذا المنشور مؤقتاً، ولا يظهر للعامة حتى تستأنفه."}
+            </p>
+            <p>
+              السبب: {post.moderation.reason || "مخالفة شروط الاستخدام"}
+              {post.moderation.note ? ` — ${post.moderation.note}` : ""}
+            </p>
+            <Link href={`/moderation/post/${post.id}`} className="font-black underline underline-offset-2">
+              تفاصيل القرار والتواصل مع الدعم
+            </Link>
           </div>
+        ) : (
+          post.status !== "approved" && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs font-bold text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+              {post.status === "pending"
+                ? "منشورك قيد المراجعة، ولا يراه غيرك حتى يُعتمد."
+                : post.status === "rejected"
+                  ? `لم يُعتمد هذا المنشور${post.rejectionReason ? `: ${post.rejectionReason}` : "."}`
+                  : "هذا المنشور غير ظاهر للعامة حالياً."}
+            </div>
+          )
         )}
 
         <PostCard post={post} inDetail />

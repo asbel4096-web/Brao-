@@ -33,6 +33,7 @@ import {
 import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import { compressImage } from "@/lib/dealer/storage";
+import { parseModeration, type ContentModeration } from "@/lib/moderation/content";
 
 export const POSTS = "posts";
 export const MAX_IMAGES = 10;
@@ -123,6 +124,11 @@ export interface CommunityPost {
   createdAt?: Timestamp | null;
   submittedAt?: Timestamp | null;
   rejectionReason?: string;
+  /** ترويج المنشور (يُمنح خادمياً) — يجعل حذفه «محتوى مدفوعاً» في إدارة المحتوى. */
+  isPinned?: boolean;
+  isSponsored?: boolean;
+  /** قرار «إدارة المحتوى» (moderateContent): state = removed/paused، أو null بعد الاستعادة. */
+  moderation?: ContentModeration | null;
 }
 
 const str = (v: unknown) => (v == null ? "" : String(v));
@@ -160,6 +166,9 @@ export function postFromData(id: string, d: DocumentData): CommunityPost {
     createdAt: (d.createdAt as Timestamp) ?? null,
     submittedAt: (d.submittedAt as Timestamp) ?? null,
     rejectionReason: strOrUndef(d.rejectionReason),
+    isPinned: d.isPinned === true,
+    isSponsored: d.isSponsored === true,
+    moderation: parseModeration(d.moderation),
   };
 }
 

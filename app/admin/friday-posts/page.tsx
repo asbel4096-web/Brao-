@@ -7,8 +7,10 @@
  */
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ExternalLink, Loader2, MessagesSquare } from "lucide-react";
+import { ExternalLink, Gavel, Loader2, MessagesSquare, Trash2 } from "lucide-react";
 import { AdminPermissionGate } from "@/components/admin/ui/admin-permission-gate";
+import { ModerationActionDialog } from "@/components/admin/modules/content/moderation-action-dialog";
+import { MODERATED_LOCK_MESSAGE, contentAdminHref, isPermissionDenied } from "@/lib/moderation/content";
 import { useToast } from "@/contexts/ToastContext";
 import { formatPrice, timeAgo } from "@/lib/utils";
 import { Avatar } from "@/components/community/post-card";
@@ -41,6 +43,8 @@ function AdminCommunityPostsContent() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState<CommunityPost | null>(null);
   const [reason, setReason] = useState("");
+  // 2026-11-21: «حذف (قابل للاستعادة)» مع السبب عبر moderateContent.
+  const [moderating, setModerating] = useState<CommunityPost | null>(null);
 
   useEffect(() => {
     setPosts(null);
@@ -57,8 +61,8 @@ function AdminCommunityPostsContent() {
     try {
       await setPostStatus(p.id, target, why);
       toast.success("تم تحديث حالة المنشور");
-    } catch {
-      toast.error("تعذّر تنفيذ الإجراء");
+    } catch (e) {
+      toast.error(isPermissionDenied(e) ? MODERATED_LOCK_MESSAGE : "تعذّر تنفيذ الإجراء");
     } finally {
       setBusyId(null);
     }
@@ -70,10 +74,16 @@ function AdminCommunityPostsContent() {
         <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
           <MessagesSquare size={20} />
         </div>
-        <div>
+        <div className="min-w-0 flex-1">
           <h1 className="text-lg font-black text-slate-900 dark:text-white sm:text-xl">منشورات المجتمع</h1>
           <p className="text-xs font-semibold text-slate-500">مراجعة منشورات الأعضاء — نفس قائمة التطبيق</p>
         </div>
+        <Link
+          href={contentAdminHref("post")}
+          className="inline-flex shrink-0 items-center gap-1 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 hover:border-brand-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+        >
+          <Gavel size={14} /> المحذوفة والموقوفة إدارياً
+        </Link>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -144,26 +154,52 @@ function AdminCommunityPostsContent() {
                 <p className="mt-2 rounded-xl bg-rose-50 p-2 text-[12px] font-bold text-rose-700">سبب الرفض: {p.rejectionReason}</p>
               )}
 
-              <div className="mt-3 flex flex-wrap gap-2">
-                {reviewActionsFor(p.status).map((a) => (
+              {p.moderation?.state ? (
+                // تحت «إدارة المحتوى»: القواعد ترفض تغيير الحالة من هنا — الاستعادة/الاستئناف من هناك.
+                <div className="mt-3 flex flex-wrap items-center gap-2 rounded-2xl bg-amber-50 p-2.5 text-[12px] font-bold text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
+                  <span className="min-w-0 flex-1">
+                    {p.moderation.state === "removed" ? "محذوف من الإدارة" : "موقوف مؤقتاً من الإدارة"} — السبب:{" "}
+                    {p.moderation.reason || "—"}
+                    {p.moderation.note ? ` — ${p.moderation.note}` : ""}
+                  </span>
+                  <Link
+                    href={contentAdminHref("post", p.id)}
+                    className="inline-flex h-8 items-center gap-1 rounded-xl bg-white px-3 text-[12px] font-black text-slate-800 ring-1 ring-amber-200 dark:bg-slate-900 dark:text-slate-100 dark:ring-amber-800"
+                  >
+                    <Gavel size={13} /> إدارة المحتوى
+                  </Link>
+                </div>
+              ) : (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {reviewActionsFor(p.status).map((a) => (
+                    <button
+                      key={a.label}
+                      type="button"
+                      disabled={busyId === p.id}
+                      onClick={() => {
+                        if (a.reason) {
+                          setReason("");
+                          setRejecting(p);
+                        } else void apply(p, a.target);
+                      }}
+                      className={`inline-flex h-9 items-center rounded-2xl px-3 text-xs font-black transition disabled:opacity-50 ${
+                        a.filled ? TONE[a.tone].filled : TONE[a.tone].outline
+                      }`}
+                    >
+                      {a.label}
+                    </button>
+                  ))}
                   <button
-                    key={a.label}
                     type="button"
                     disabled={busyId === p.id}
-                    onClick={() => {
-                      if (a.reason) {
-                        setReason("");
-                        setRejecting(p);
-                      } else void apply(p, a.target);
-                    }}
-                    className={`inline-flex h-9 items-center rounded-2xl px-3 text-xs font-black transition disabled:opacity-50 ${
-                      a.filled ? TONE[a.tone].filled : TONE[a.tone].outline
-                    }`}
+                    onClick={() => setModerating(p)}
+                    title="يختفي المنشور مع السبب ويُبلَّغ صاحبه — قابل للاستعادة"
+                    className="inline-flex h-9 items-center gap-1 rounded-2xl border border-rose-200 px-3 text-xs font-black text-rose-700 transition hover:bg-rose-50 disabled:opacity-50"
                   >
-                    {a.label}
+                    <Trash2 size={13} /> حذف (قابل للاستعادة)
                   </button>
-                ))}
-              </div>
+                </div>
+              )}
             </li>
           ))}
         </ul>
@@ -198,6 +234,21 @@ function AdminCommunityPostsContent() {
             </div>
           </div>
         </div>
+      )}
+
+      {moderating && (
+        <ModerationActionDialog
+          target={{
+            type: "post",
+            id: moderating.id,
+            title: moderating.title.trim() || moderating.text.trim().slice(0, 80) || "منشور",
+            paid: moderating.isPinned === true || moderating.isSponsored === true,
+          }}
+          action="remove"
+          onClose={() => setModerating(null)}
+          // القائمة لحظية (onSnapshot) — المنشور المحذوف يخرج من التبويب تلقائياً.
+          onDone={() => setModerating(null)}
+        />
       )}
     </div>
   );

@@ -33,6 +33,7 @@ import {
   Rocket,
   ShieldAlert,
   Loader2,
+  Gavel,
   type LucideIcon,
 } from "lucide-react";
 import { auth } from "@/lib/firebase";
@@ -358,6 +359,7 @@ function ControlCenter({
     {
       title: "المحتوى",
       items: [
+        { href: "/admin/content", label: "إدارة المحتوى", desc: "حذف وإيقاف واستعادة المحتوى مع السبب", Icon: Gavel, tone: "rose", show: can("listings.approve") },
         { href: "/admin/listings", label: "الإعلانات", desc: "مراجعة واعتماد الإعلانات", Icon: ListChecks, tone: "brand", show: can("listings.view"), badge: stats.listingsPending },
         { href: "/admin/featured-requests", label: "طلبات التمييز", desc: "اعتماد طلبات تمييز الإعلانات", Icon: Sparkles, tone: "amber", show: can("listings.feature"), badge: stats.featuredRequestsPending },
         { href: "/admin/dealer-stories", label: "قصص المعارض", desc: "إدارة قصص المعارض", Icon: Rocket, tone: "brand", show: can("content.edit") },

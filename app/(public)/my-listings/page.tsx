@@ -264,7 +264,8 @@ export default function MyListingsPage() {
                 onRequestFeatured={handleRequestFeatured}
                 requestingFeatured={requestingFeaturedId === it.id}
               />
-              <CampaignManager listing={it} />
+              {/* إعلان محذوف/موقوف من الإدارة: مدة الترويج مجمّدة وتُعاد عند الاستعادة — لا تحكّم بالحملة. */}
+              {!it.moderation?.state && <CampaignManager listing={it} />}
             </div>
           ))}
         </div>

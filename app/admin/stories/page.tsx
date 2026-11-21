@@ -28,6 +28,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/components/confirm-dialog";
 import { AdminPermissionGate } from "@/components/admin/ui/admin-permission-gate";
+import { useAdminRole } from "@/hooks/admin/use-admin-role";
+import { ModerationActionDialog } from "@/components/admin/modules/content/moderation-action-dialog";
+import {
+  MODERATED_LOCK_MESSAGE,
+  isPaidContent,
+  isPermissionDenied,
+  moderationStateOf,
+} from "@/lib/moderation/content";
 
 interface AdminStory {
   id: string;
@@ -41,6 +49,10 @@ interface AdminStory {
   mediaKind: "image" | "video";
   createdAtMs: number;
   expiresAtMs: number;
+  /** ممولة/مثبّتة (نفس شرط الخادم) — حذفها يتطلّب تأكيداً. */
+  paid: boolean;
+  /** تحت «إدارة المحتوى» (محذوفة إدارياً). */
+  moderated: boolean;
 }
 
 function fmt(ms: number): string {
@@ -63,6 +75,10 @@ function AdminStoriesPageContent() {
   const [stories, setStories] = useState<AdminStory[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  // 2026-11-21: «حذف (قابل للاستعادة)» مع السبب عبر moderateContent.
+  const [moderating, setModerating] = useState<AdminStory | null>(null);
+  const { can } = useAdminRole();
+  const canModerate = can("listings.approve");
 
   async function load() {
     setLoading(true);
@@ -91,6 +107,8 @@ function AdminStoriesPageContent() {
           mediaKind: media[0]?.kind === "video" ? "video" : "image",
           createdAtMs: x.createdAt?.toMillis ? x.createdAt.toMillis() : 0,
           expiresAtMs: x.expiresAt?.toMillis ? x.expiresAt.toMillis() : 0,
+          paid: isPaidContent("story", x),
+          moderated: moderationStateOf(x) !== null,
         };
       });
       setStories(items);
@@ -147,7 +165,7 @@ function AdminStoriesPageContent() {
       );
       toast.success(s.hidden ? "تم إظهار القصة." : "تم إخفاء القصة.");
     } catch (err: any) {
-      toast.error(err?.message || "تعذّر التحديث.");
+      toast.error(isPermissionDenied(err) ? MODERATED_LOCK_MESSAGE : err?.message || "تعذّر التحديث.");
     } finally {
       setBusyId(null);
     }
@@ -244,7 +262,18 @@ function AdminStoriesPageContent() {
                   ينتهي: {fmt(s.expiresAtMs)}
                 </p>
 
-                <div className="mt-2 flex gap-1.5">
+                {canModerate && !s.moderated && (
+                  <button
+                    type="button"
+                    onClick={() => setModerating(s)}
+                    disabled={busyId === s.id}
+                    title="تختفي القصة مع السبب ويُبلَّغ صاحبها — قابلة للاستعادة من «إدارة المحتوى»"
+                    className="mt-2 flex w-full items-center justify-center gap-1 rounded-xl bg-rose-600 px-2 py-2 text-[11px] font-black text-white hover:bg-rose-700 disabled:opacity-60"
+                  >
+                    <Trash2 size={13} /> حذف (قابل للاستعادة)
+                  </button>
+                )}
+                <div className="mt-1.5 flex gap-1.5">
                   <button
                     type="button"
                     onClick={() => handleToggleHide(s)}
@@ -260,13 +289,31 @@ function AdminStoriesPageContent() {
                     disabled={busyId === s.id}
                     className="flex flex-1 items-center justify-center gap-1 rounded-xl bg-rose-50 px-2 py-2 text-[11px] font-bold text-rose-600 hover:bg-rose-100 disabled:opacity-60 dark:bg-rose-500/10"
                   >
-                    <Trash2 size={13} /> حذف
+                    <Trash2 size={13} /> حذف نهائي
                   </button>
                 </div>
               </div>
             </div>
           ))}
         </div>
+      )}
+
+      {moderating && (
+        <ModerationActionDialog
+          target={{
+            type: "story",
+            id: moderating.id,
+            title: `قصة ${moderating.ownerName}`,
+            paid: moderating.paid,
+          }}
+          action="remove"
+          onClose={() => setModerating(null)}
+          onDone={() => {
+            setModerating(null);
+            // القصة المحذوفة إدارياً تنتهي فوراً (expiresAt = الآن) فتخرج من القائمة النشطة.
+            void load();
+          }}
+        />
       )}
     </div>
   );

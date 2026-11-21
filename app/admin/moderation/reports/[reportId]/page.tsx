@@ -16,6 +16,9 @@ import {
   XCircle,
   AlertTriangle,
   ExternalLink,
+  Gavel,
+  Clapperboard,
+  MessagesSquare,
 } from "lucide-react";
 import { doc, getDoc } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
@@ -30,6 +33,11 @@ import {
   type ReportDoc,
   type ResolutionKey,
 } from "@/lib/moderation/types";
+import {
+  CONTENT_RESOLUTION_LABELS,
+  contentAdminHref,
+  isContentType,
+} from "@/lib/moderation/content";
 
 /**
  * صفحة تفاصيل بلاغ + الإجراءات.
@@ -142,7 +150,19 @@ export default function ReportDetailPage() {
   } else if (report.targetType === "fridayMarket") {
     targetLink = `/friday-market/${report.targetId}`;
     targetLinkLabel = "فتح المنشور";
+  } else if (String(report.targetType) === "post") {
+    // بلاغات «منشورات المجتمع» من التطبيق (posts/{id}).
+    targetLink = `/friday-market/post/${report.targetId}`;
+    targetLinkLabel = "فتح المنشور";
   }
+
+  // 2026-11-21: الإعلانات/المنشورات/القصص تُدار من «إدارة المحتوى» (حذف قابل للاستعادة/إيقاف مع السبب)،
+  // ويُمرَّر reportId للدالة فيُغلق البلاغ تلقائياً.
+  const contentType = String(report.targetType);
+  const contentManageHref =
+    isContentType(contentType) && report.targetId && can("listings.approve")
+      ? contentAdminHref(contentType, report.targetId, isPending ? report.id : null)
+      : null;
 
   const handleAction = async (resolution: ResolutionKey) => {
     // confirm messages مخصّصة
@@ -216,6 +236,10 @@ export default function ReportDetailPage() {
       ? ListChecks
       : report.targetType === "comment"
       ? MessageCircle
+      : contentType === "post"
+      ? MessagesSquare
+      : contentType === "story"
+      ? Clapperboard
       : UserIcon;
 
   return (
@@ -304,8 +328,13 @@ export default function ReportDetailPage() {
               الإجراء المتخذ
             </p>
             <p className="mt-1 text-sm font-black text-emerald-900 dark:text-emerald-100">
-              {RESOLUTIONS.find((r) => r.key === report.resolution)?.label || report.resolution}
+              {RESOLUTIONS.find((r) => r.key === report.resolution)?.label ||
+                CONTENT_RESOLUTION_LABELS[report.resolution] ||
+                report.resolution}
             </p>
+            {report.resolutionNote && (
+              <p className="mt-0.5 text-[12px] text-emerald-800 dark:text-emerald-200">{report.resolutionNote}</p>
+            )}
             <div className="mt-1 flex flex-wrap gap-x-3 text-[10px] text-emerald-700 dark:text-emerald-300">
               {report.handledByEmail && <span dir="ltr">بواسطة: {report.handledByEmail}</span>}
               {report.handledAt && <span>{formatDate(report.handledAt)}</span>}
@@ -322,6 +351,25 @@ export default function ReportDetailPage() {
         >
           <ExternalLink size={14} />
           {targetLinkLabel}
+        </Link>
+      )}
+
+      {/* إدارة المحتوى (حذف قابل للاستعادة / إيقاف مؤقت مع السبب) */}
+      {contentManageHref && (
+        <Link
+          href={contentManageHref}
+          className="flex items-start gap-3 rounded-2xl border border-rose-200 bg-white p-3 transition hover:border-rose-300 dark:border-rose-900/40 dark:bg-slate-900"
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-900/30 dark:text-rose-300">
+            <Gavel size={16} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-black text-slate-900 dark:text-white">إدارة المحتوى</span>
+            <span className="mt-0.5 block text-[11px] leading-5 text-slate-500 dark:text-slate-400">
+              معاينة {targetTypeLabel(report.targetType)} ثم حذفه (قابل للاستعادة) أو إيقافه مؤقتاً مع السبب وإشعار صاحبه
+              {isPending ? " — يُغلق هذا البلاغ تلقائياً." : "."}
+            </span>
+          </span>
         </Link>
       )}
 

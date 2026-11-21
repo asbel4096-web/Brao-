@@ -12,6 +12,10 @@ import {
   BadgeCheck,
   Tag,
   Activity,
+  Trash2,
+  CirclePause,
+  RotateCcw,
+  CirclePlay,
   type LucideIcon,
 } from "lucide-react";
 import { auth } from "@/lib/firebase";
@@ -34,6 +38,11 @@ const ACTION_META: Record<string, { label: string; icon: LucideIcon; tone: strin
   user_verify: { label: "توثيق مستخدم", icon: BadgeCheck, tone: "text-emerald-600 dark:text-emerald-300" },
   user_unverify: { label: "إلغاء توثيق", icon: BadgeCheck, tone: "text-amber-600 dark:text-amber-300" },
   promo_pricing_update: { label: "تعديل أسعار الباقات", icon: Tag, tone: "text-action-600 dark:text-action-300" },
+  // 2026-11-21: «إدارة المحتوى» (moderateContent).
+  content_remove: { label: "حذف محتوى (قابل للاستعادة)", icon: Trash2, tone: "text-rose-600 dark:text-rose-300" },
+  content_pause: { label: "إيقاف محتوى مؤقتاً", icon: CirclePause, tone: "text-amber-600 dark:text-amber-300" },
+  content_restore: { label: "استعادة محتوى", icon: RotateCcw, tone: "text-emerald-600 dark:text-emerald-300" },
+  content_resume: { label: "استئناف محتوى", icon: CirclePlay, tone: "text-emerald-600 dark:text-emerald-300" },
 };
 
 function fmt(ms: number) {

@@ -13,6 +13,10 @@ import {
   Clock,
   Loader2,
   Sparkles,
+  ShieldX,
+  CirclePause,
+  Archive,
+  Info,
 } from "lucide-react";
 import type { Listing } from "@/lib/types";
 import { formatPrice, isListingFeatured, timeAgo } from "@/lib/utils";
@@ -62,6 +66,25 @@ const STATUS_CONFIG = {
     badgeClass: "bg-slate-500/95 text-white border-slate-400",
     pillClass: "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-900/30 dark:text-slate-300 dark:border-slate-800",
   },
+  // 2026-11-21: «إدارة المحتوى» — كانت هذه الحالات تظهر خطأً «قيد المراجعة».
+  removed: {
+    label: "محذوف من الإدارة",
+    icon: ShieldX,
+    badgeClass: "bg-rose-600/95 text-white border-rose-500",
+    pillClass: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800",
+  },
+  paused: {
+    label: "موقوف مؤقتاً",
+    icon: CirclePause,
+    badgeClass: "bg-amber-500/95 text-white border-amber-400",
+    pillClass: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800",
+  },
+  archived: {
+    label: "مؤرشف",
+    icon: Archive,
+    badgeClass: "bg-slate-500/95 text-white border-slate-400",
+    pillClass: "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-900/30 dark:text-slate-300 dark:border-slate-800",
+  },
 } as const;
 
 export function MyListingCard({
@@ -73,8 +96,12 @@ export function MyListingCard({
 }: MyListingCardProps) {
   const img = listing.images?.[0] || FALLBACK;
   const isFallback = !listing.images?.length;
-  const status = STATUS_CONFIG[listing.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.pending;
+  // حالة «إدارة المحتوى» تتقدّم على الحالة المخزّنة (المصدر: moderation.state).
+  const modState = listing.moderation?.state ?? null;
+  const statusKey = modState ?? listing.status;
+  const status = STATUS_CONFIG[statusKey as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.pending;
   const StatusIcon = status.icon;
+  const modWhy = [listing.moderation?.reason, listing.moderation?.note].filter(Boolean).join(" — ");
 
   return (
     <article
@@ -150,6 +177,29 @@ export function MyListingCard({
           </span>
         </div>
 
+        {/* قرار الإدارة (محذوف/موقوف) + السبب */}
+        {modState && (
+          <div
+            className={`mt-3 rounded-2xl border px-3 py-2 text-xs leading-relaxed ${status.pillClass}`}
+          >
+            <div className="flex items-start gap-2">
+              <Info size={14} className="mt-0.5 shrink-0" />
+              <span>
+                <span className="font-black">
+                  {modState === "removed" ? "حذفت الإدارة هذا الإعلان" : "أوقفت الإدارة هذا الإعلان مؤقتاً"}
+                </span>
+                {modWhy ? <> — السبب: {modWhy}</> : null}
+              </span>
+            </div>
+            <Link
+              href={`/moderation/listing/${listing.id}`}
+              className="mt-1.5 inline-flex font-black underline underline-offset-2"
+            >
+              تفاصيل القرار والتواصل مع الدعم
+            </Link>
+          </div>
+        )}
+
         {/* سبب الرفض */}
         {listing.status === "rejected" && listing.rejectionReason && (
           <div
@@ -208,14 +258,26 @@ export function MyListingCard({
             <Eye size={14} />
             <span>عرض</span>
           </Link>
-          <Link
-            href={`/my-listings/${listing.id}/edit`}
-            className="btn-primary !py-2 !px-2 !text-xs"
-            aria-label="تعديل"
-          >
-            <Edit2 size={14} />
-            <span>تعديل</span>
-          </Link>
+          {modState ? (
+            // إعلان تحت الإدارة لا يُعدَّل (القواعد ترفض) — نعرض القرار بدل التعديل.
+            <Link
+              href={`/moderation/listing/${listing.id}`}
+              className="btn-primary !py-2 !px-2 !text-xs"
+              aria-label="تفاصيل قرار الإدارة"
+            >
+              <Info size={14} />
+              <span>القرار</span>
+            </Link>
+          ) : (
+            <Link
+              href={`/my-listings/${listing.id}/edit`}
+              className="btn-primary !py-2 !px-2 !text-xs"
+              aria-label="تعديل"
+            >
+              <Edit2 size={14} />
+              <span>تعديل</span>
+            </Link>
+          )}
           <button
             type="button"
             onClick={() => onDelete(listing.id)}

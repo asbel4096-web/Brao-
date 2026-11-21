@@ -9,6 +9,7 @@ import {
 import {
   Bell, CheckCheck, MessageCircle, Check, X, Trash2, AlertCircle,
   UserPlus, Heart, Star, Sparkles, Wrench, Tag, Megaphone,
+  ShieldX, CirclePause, RotateCcw, CirclePlay, Smartphone,
 } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -138,7 +139,16 @@ export default function NotificationsPage() {
         ) : (
           <div className="space-y-2">
             {items.map((n) => {
+              // 2026-11-21: إشعارات «إدارة المحتوى» (moderation_*) وتذكيرات الصيانة (maintenance_*).
+              const isMaintenance = String(n.type).startsWith("maintenance_");
+              // روابط صفحات موجودة في التطبيق فقط (مثل /my-cars/{id}).
+              const appOnlyLink = !!n.link && n.link.startsWith("/my-cars");
               const Icon =
+                n.type === "moderation_remove" ? ShieldX :
+                n.type === "moderation_pause" ? CirclePause :
+                n.type === "moderation_restore" ? RotateCcw :
+                n.type === "moderation_resume" ? CirclePlay :
+                isMaintenance ? Wrench :
                 n.type === "new_message" ? MessageCircle :
                 n.type === "listing_approved" ? Check :
                 n.type === "listing_rejected" ? X :
@@ -154,6 +164,11 @@ export default function NotificationsPage() {
                 n.type === "broadcast_general" ? Megaphone :
                 AlertCircle;
               const tone =
+                n.type === "moderation_remove" ? "text-rose-700 dark:text-rose-300" :
+                n.type === "moderation_pause" ? "text-amber-700 dark:text-amber-300" :
+                n.type === "moderation_restore" || n.type === "moderation_resume" ? "text-emerald-700 dark:text-emerald-300" :
+                n.type === "maintenance_overdue" ? "text-rose-700 dark:text-rose-300" :
+                isMaintenance ? "text-amber-700 dark:text-amber-300" :
                 n.type === "listing_approved" ? "text-emerald-700 dark:text-emerald-300" :
                 n.type === "listing_rejected" ? "text-rose-700 dark:text-rose-300" :
                 n.type === "new_like" ? "text-rose-600 dark:text-rose-300" :
@@ -165,6 +180,11 @@ export default function NotificationsPage() {
                 n.type === "broadcast_campaign" ? "text-rose-700 dark:text-rose-300" :
                 "text-brand-700 dark:text-brand-300";
               const iconBg =
+                n.type === "moderation_remove" ? "bg-rose-50 dark:bg-rose-900/30" :
+                n.type === "moderation_pause" ? "bg-amber-50 dark:bg-amber-900/30" :
+                n.type === "moderation_restore" || n.type === "moderation_resume" ? "bg-emerald-50 dark:bg-emerald-900/30" :
+                n.type === "maintenance_overdue" ? "bg-rose-50 dark:bg-rose-900/30" :
+                isMaintenance ? "bg-amber-50 dark:bg-amber-900/30" :
                 n.type === "listing_approved" ? "bg-emerald-50 dark:bg-emerald-900/30" :
                 n.type === "listing_rejected" ? "bg-rose-50 dark:bg-rose-900/30" :
                 n.type === "new_like" ? "bg-rose-50 dark:bg-rose-900/30" :
@@ -207,15 +227,19 @@ export default function NotificationsPage() {
                         {n.body}
                       </p>
                       <div className="mt-2 flex flex-wrap gap-2">
-                        {n.link && (
+                        {n.link && appOnlyLink ? (
+                          <span className="inline-flex items-center gap-1 rounded-xl px-2 py-1 text-xs font-bold text-slate-500 dark:text-slate-400">
+                            <Smartphone size={12} /> متاح في التطبيق
+                          </span>
+                        ) : n.link ? (
                           <Link
                             href={n.link}
                             onClick={() => markRead(n.id)}
                             className="btn-ghost !px-2 !py-1 !text-xs"
                           >
-                            فتح
+                            {String(n.type).startsWith("moderation_") ? "عرض القرار" : "فتح"}
                           </Link>
-                        )}
+                        ) : null}
                         {!n.read && (
                           <button
                             type="button"

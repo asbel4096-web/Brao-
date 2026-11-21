@@ -5,13 +5,22 @@ import { useEffect, useState } from "react";
 import {
   collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, updateDoc,
 } from "firebase/firestore";
-import { CheckCircle, XCircle, Trash2, ExternalLink, X, ThumbsUp, MessageSquare, Eye } from "lucide-react";
+import { CheckCircle, XCircle, Trash2, ExternalLink, X, ThumbsUp, MessageSquare, Eye, Gavel } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { createNotification } from "@/lib/notifications";
 import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/components/confirm-dialog";
 import { formatPrice, timeAgo } from "@/lib/utils";
 import { AdminPermissionGate } from "@/components/admin/ui/admin-permission-gate";
+import { useAdminRole } from "@/hooks/admin/use-admin-role";
+import { ModerationActionDialog } from "@/components/admin/modules/content/moderation-action-dialog";
+import {
+  MODERATED_LOCK_MESSAGE,
+  contentAdminHref,
+  isPaidContent,
+  isPermissionDenied,
+  parseModeration,
+} from "@/lib/moderation/content";
 
 function AdminListingsPageContent() {
   const toast = useToast();
@@ -20,6 +29,10 @@ function AdminListingsPageContent() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"pending" | "approved" | "rejected" | "all">("pending");
   const [rejectingItem, setRejectingItem] = useState<any | null>(null);
+  // 2026-11-21: «حذف (قابل للاستعادة)» مع السبب عبر moderateContent.
+  const [moderatingItem, setModeratingItem] = useState<any | null>(null);
+  const { can } = useAdminRole();
+  const canModerate = can("listings.approve");
 
   useEffect(() => {
     const q = query(collection(db, "listings"), orderBy("createdAt", "desc"));
@@ -78,7 +91,7 @@ function AdminListingsPageContent() {
       }
       toast.success("تم اعتماد الإعلان.");
     } catch (e: any) {
-      toast.error(e?.message || "تعذّر اعتماد الإعلان.");
+      toast.error(isPermissionDenied(e) ? MODERATED_LOCK_MESSAGE : e?.message || "تعذّر اعتماد الإعلان.");
     }
   };
 
@@ -101,7 +114,7 @@ function AdminListingsPageContent() {
       toast.success("تم رفض الإعلان.");
       setRejectingItem(null);
     } catch (e: any) {
-      toast.error(e?.message || "تعذّر رفض الإعلان.");
+      toast.error(isPermissionDenied(e) ? MODERATED_LOCK_MESSAGE : e?.message || "تعذّر رفض الإعلان.");
     }
   };
 
@@ -192,7 +205,11 @@ function AdminListingsPageContent() {
         <div className="card p-8 text-center text-slate-500">لا توجد عناصر.</div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((it) => (
+          {filtered.map((it) => {
+            // 2026-11-21: تحت «إدارة المحتوى» (محذوف/موقوف) — القواعد ترفض تغيير الحالة من هنا.
+            const mod = parseModeration(it.moderation);
+            const modState = mod?.state ?? null;
+            return (
             <div key={it.id} className="card p-4 sm:p-5">
               <div className="flex flex-col gap-4 lg:flex-row">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -206,13 +223,24 @@ function AdminListingsPageContent() {
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="text-base font-black dark:text-white">{it.title}</h3>
                     <span className={
+                      modState === "removed" ? "badge-status-rejected" :
+                      modState === "paused" ? "badge-status-pending" :
                       it.status === "approved" ? "badge-status-approved" :
                       it.status === "rejected" ? "badge-status-rejected" :
                       "badge-status-pending"
                     }>
-                      {it.status === "approved" ? "معتمد" : it.status === "rejected" ? "مرفوض" : "معلّق"}
+                      {modState === "removed" ? "محذوف (إدارة المحتوى)" :
+                       modState === "paused" ? "موقوف مؤقتاً" :
+                       it.status === "approved" ? "معتمد" : it.status === "rejected" ? "مرفوض" :
+                       it.status === "archived" ? "مؤرشف" : "معلّق"}
                     </span>
                   </div>
+                  {modState && (
+                    <p className="mt-2 rounded-xl bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:bg-rose-900/30 dark:text-rose-300">
+                      {modState === "removed" ? "حذفته الإدارة" : "أوقفته الإدارة مؤقتاً"} — السبب: {mod?.reason || "—"}
+                      {mod?.note ? ` — ${mod.note}` : ""}. الاستعادة/الاستئناف من «إدارة المحتوى».
+                    </p>
+                  )}
                   <p className="mt-1 text-sm text-slate-500">
                     {it.city} • {it.category} • {it.sellerName} • {timeAgo(it.createdAt)}
                   </p>
@@ -248,12 +276,12 @@ function AdminListingsPageContent() {
                     >
                       <ExternalLink size={12} /> معاينة
                     </Link>
-                    {it.status !== "approved" && (
+                    {!modState && it.status !== "approved" && (
                       <button onClick={() => approve(it)} className="btn-success !py-2 !px-3 !text-xs">
                         <CheckCircle size={14} /> اعتماد
                       </button>
                     )}
-                    {it.status !== "rejected" && (
+                    {!modState && it.status !== "rejected" && (
                       <button
                         onClick={() => setRejectingItem(it)}
                         className="btn-secondary !py-2 !px-3 !text-xs !border-amber-300 !text-amber-700"
@@ -261,8 +289,28 @@ function AdminListingsPageContent() {
                         <XCircle size={14} /> رفض
                       </button>
                     )}
-                    <button onClick={() => remove(it)} className="btn-danger !py-2 !px-3 !text-xs">
-                      <Trash2 size={14} /> حذف
+                    {canModerate && modState !== "removed" && (
+                      <button
+                        onClick={() => setModeratingItem(it)}
+                        className="btn-danger !py-2 !px-3 !text-xs"
+                        title="يختفي الإعلان مع السبب ويُبلَّغ صاحبه — قابل للاستعادة"
+                      >
+                        <Trash2 size={14} /> حذف (قابل للاستعادة)
+                      </button>
+                    )}
+                    {canModerate && (
+                      <Link
+                        href={contentAdminHref("listing", it.id)}
+                        className="btn-secondary !py-2 !px-3 !text-xs"
+                      >
+                        <Gavel size={13} /> إدارة المحتوى
+                      </Link>
+                    )}
+                    <button
+                      onClick={() => remove(it)}
+                      className="btn-secondary !py-2 !px-3 !text-xs !border-rose-300 !text-rose-700"
+                    >
+                      <Trash2 size={14} /> حذف نهائي
                     </button>
                     {(it.likesCount || 0) > 0 && (
                       <button
@@ -276,7 +324,8 @@ function AdminListingsPageContent() {
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -285,6 +334,21 @@ function AdminListingsPageContent() {
           item={rejectingItem}
           onClose={() => setRejectingItem(null)}
           onSubmit={submitRejection}
+        />
+      )}
+
+      {moderatingItem && (
+        <ModerationActionDialog
+          target={{
+            type: "listing",
+            id: moderatingItem.id,
+            title: moderatingItem.title || "إعلان",
+            paid: isPaidContent("listing", moderatingItem),
+          }}
+          action="remove"
+          onClose={() => setModeratingItem(null)}
+          // القائمة لحظية (onSnapshot) فتتحدّث الحالة تلقائياً.
+          onDone={() => setModeratingItem(null)}
         />
       )}
     </div>

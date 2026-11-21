@@ -34,6 +34,7 @@ import {
   ArrowLeftRight,
   ChevronLeft,
   ChevronRight,
+  Gavel,
   type LucideIcon,
 } from "lucide-react";
 import { useAdminRole } from "@/hooks/admin/use-admin-role";
@@ -59,6 +60,8 @@ interface NavLink {
   permission?: string;
   /** Permissions متعدّدة (أي واحدة كافية). */
   anyPermissions?: string[];
+  /** نشِط عند تطابق المسار حرفياً فقط (لـ/admin/content كي لا يتلوّن مع /admin/content/pages). */
+  exact?: boolean;
 }
 
 interface NavGroup {
@@ -101,6 +104,14 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "المحتوى",
     links: [
+      {
+        href: "/admin/content",
+        label: "إدارة المحتوى",
+        Icon: Gavel,
+        // نفس أدوار الخادم (moderateContent): مدير عام/أدمن/مشرف.
+        permission: "listings.approve",
+        exact: true,
+      },
       {
         href: "/admin/listings",
         label: "الإعلانات",
@@ -393,9 +404,10 @@ export function AdminSidebar({
 
             <ul className="space-y-0.5">
               {group.links.map((link) => {
-                const active =
-                  pathname === link.href ||
-                  (link.href !== "/admin" && pathname.startsWith(link.href));
+                const active = link.exact
+                  ? pathname === link.href
+                  : pathname === link.href ||
+                    (link.href !== "/admin" && pathname.startsWith(link.href));
                 return (
                   <li key={link.href}>
                     <Link

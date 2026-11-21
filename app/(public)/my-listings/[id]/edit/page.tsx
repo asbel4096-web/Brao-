@@ -1,11 +1,13 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
   doc, getDoc, serverTimestamp, updateDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { isPermissionDenied } from "@/lib/moderation/content";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBannedWordsCheck } from "@/hooks/admin/use-banned-words-check";
 import {
@@ -24,6 +26,8 @@ export default function EditListingPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [form, setForm] = useState<any>(null);
+  /** إعلان محذوف/موقوف من «إدارة المحتوى» — لا يُعدَّل (القواعد ترفض تغيير حالته). */
+  const [moderated, setModerated] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -42,6 +46,16 @@ export default function EditListingPage() {
         const data = { id: snap.id, ...(snap.data() as any) };
         if (data.ownerId !== user.uid) {
           setError("ليس لديك صلاحية تعديل هذا الإعلان.");
+          setLoading(false);
+          return;
+        }
+        if (data.moderation?.state === "removed" || data.moderation?.state === "paused") {
+          setModerated(true);
+          setError(
+            data.moderation.state === "removed"
+              ? "حذفت الإدارة هذا الإعلان، ولا يمكن تعديله الآن."
+              : "أوقفت الإدارة هذا الإعلان مؤقتاً، ولا يمكن تعديله حتى تستأنفه."
+          );
           setLoading(false);
           return;
         }
@@ -114,7 +128,11 @@ export default function EditListingPage() {
       setMessage("تم حفظ التعديلات. سيتم إعادة مراجعة الإعلان.");
       setTimeout(() => router.push("/my-listings"), 1200);
     } catch (err: any) {
-      setError(err?.message || "تعذّر حفظ التعديلات.");
+      setError(
+        isPermissionDenied(err)
+          ? "تعذّر الحفظ: ربما حذفت الإدارة هذا الإعلان أو أوقفته. راجع «إعلاناتي» لمعرفة السبب."
+          : err?.message || "تعذّر حفظ التعديلات."
+      );
     } finally {
       setSaving(false);
     }
@@ -135,7 +153,12 @@ export default function EditListingPage() {
       <section className="container py-10">
         <div className="card mx-auto max-w-md p-8 text-center">
           <p className="text-rose-700 font-bold">{error}</p>
-          <button onClick={() => router.push("/my-listings")} className="btn-secondary mt-4">
+          {moderated && (
+            <Link href={`/moderation/listing/${params.id}`} className="btn-primary mt-4 inline-flex">
+              تفاصيل قرار الإدارة
+            </Link>
+          )}
+          <button onClick={() => router.push("/my-listings")} className={`btn-secondary mt-4 ${moderated ? "ms-2" : ""}`}>
             العودة
           </button>
         </div>
