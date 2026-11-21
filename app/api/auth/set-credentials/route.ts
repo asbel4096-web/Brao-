@@ -69,6 +69,14 @@ export async function POST(req: NextRequest) {
   if (!USERNAME_RE.test(username)) {
     return jsonError("اسم مستخدم غير صالح.", 400);
   }
+  // 2026-11-21: أسماء محجوزة للمنصّة (الحساب الرسمي bratsho_official وما يشبهه) —
+  // تطابق isReservedUsername في functions/src/lib/official.ts.
+  if (
+    /^brat?sh?o/.test(username) ||
+    ["official", "admin", "administrator", "support", "help", "moderator", "staff"].includes(username)
+  ) {
+    return jsonError("اسم المستخدم هذا محجوز.", 409);
+  }
   if (
     hasPassword &&
     (password.length < 8 || !/[a-zA-Z]/.test(password) || !/[0-9]/.test(password))

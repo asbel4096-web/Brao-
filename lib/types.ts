@@ -86,6 +86,14 @@ export interface UserProfile {
    */
   isVerifiedDealer?: boolean;
   /**
+   * 2026-11-21: الحساب الرسمي «براتشو الرسمي» (bratsho_official) — يكتبه الخادم فقط
+   * (provisionOfficialAccount)، ولا يظهر في النسخة العامة لأي حساب آخر.
+   */
+  isOfficial?: boolean;
+  /** إعدادات الخصوصية (من publicProfiles). غيابها = مسموح. */
+  allowMessages?: boolean;
+  allowFollow?: boolean;
+  /**
    * نوع التوثيق: "account" (حساب موثق) | "dealer" (تاجر موثق) |
    * "showroom" (معرض موثق). اختياري للتوافق مع الحسابات القديمة —
    * لو غير موجود، يُستنتَج من البيانات (businessName/dealerName).

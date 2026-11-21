@@ -8,6 +8,7 @@ import {
   FieldValue,
 } from "@/lib/admin/api-helpers";
 import { ALL_ROLES, type AdminRole } from "@/lib/admin/roles";
+import { getAuth } from "firebase-admin/auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -93,6 +94,19 @@ export async function POST(
     }
   }
 
+  // 2026-11-21 (المرحلة 0): Custom Claim `role` هو مصدر الحقيقة الجديد (مثل setStaffRole في
+  // Cloud Functions). يُعيَّن أولاً — إن فشل لا يتغيّر شيء — ثم نسخة الوثيقة.
+  const auth = getAuth(app);
+  try {
+    const target = await auth.getUser(targetUid);
+    const claims: Record<string, unknown> = { ...(target.customClaims ?? {}) };
+    if (newRole) claims.role = newRole;
+    else delete claims.role;
+    await auth.setCustomUserClaims(targetUid, claims);
+  } catch (err: any) {
+    return jsonError(err?.message || "فشل تحديث صلاحيات الحساب", 500);
+  }
+
   // التنفيذ
   try {
     if (newRole === null) {
@@ -119,5 +133,12 @@ export async function POST(
     after: { role: newRole, isAdmin: newRole !== null },
   });
 
-  return NextResponse.json({ ok: true, role: newRole });
+  // خفض الصلاحية يسري فوراً: إبطال الجلسات (الترقية تسري عند تحديث الرمز).
+  const rank = (r: string | null) =>
+    r === "super_admin" ? 5 : r === "admin" ? 4 : r === "moderator" ? 3 : r ? 2 : 0;
+  const wasRole = targetData.isAdmin === true ? (oldRole || "admin") : null;
+  const demoted = rank(newRole) < rank(wasRole);
+  if (demoted) await auth.revokeRefreshTokens(targetUid).catch(() => undefined);
+
+  return NextResponse.json({ ok: true, role: newRole, revokedSessions: demoted });
 }

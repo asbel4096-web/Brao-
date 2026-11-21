@@ -91,8 +91,12 @@ export function TraderProfileHeader({
   const coverY = useTransform(scrollY, [0, 300], [0, 60]);
   const coverScale = useTransform(scrollY, [-100, 0], [1.15, 1]);
 
+  // 2026-11-21: الحساب الرسمي (isOfficial يكتبه الخادم وحده) يظهر موثّقاً بشارة «الحساب الرسمي».
+  const isOfficial = profile.isOfficial === true;
   const isVerified =
-    isVerifiedNow(profile as any) || profile.isVerifiedDealer === true;
+    isOfficial || isVerifiedNow(profile as any) || profile.isVerifiedDealer === true;
+  // الحساب الرسمي بلا «مراسلة» حتى صندوق الدعم (المرحلة 1).
+  const canMessage = !(isOfficial && profile.allowMessages === false);
   const displayName = getTraderDisplayName(profile);
   const phone = profile.phone || "";
   // رقم الواتساب (يقع على phone لو لم يُحدَّد واتساب منفصل)
@@ -214,7 +218,14 @@ export function TraderProfileHeader({
         {isVerified && (
           <div className="absolute bottom-4 right-4 z-10">
             <div className="rounded-full bg-white/95 px-1 py-0.5 shadow-lg backdrop-blur">
-              <VerificationBadge user={profile} size="md" />
+              {isOfficial ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-blue-600 px-2.5 py-1 text-[11px] font-black text-white">
+                  <BadgeCheck size={13} strokeWidth={2.5} aria-hidden="true" />
+                  الحساب الرسمي
+                </span>
+              ) : (
+                <VerificationBadge user={profile} size="md" />
+              )}
             </div>
           </div>
         )}
@@ -299,7 +310,11 @@ export function TraderProfileHeader({
         {!isOwnProfile ? (
           <div
             className={`mt-4 grid gap-2 ${
-              waNumber ? "grid-cols-3" : "grid-cols-2"
+              [true, canMessage, Boolean(waNumber)].filter(Boolean).length === 3
+                ? "grid-cols-3"
+                : [true, canMessage, Boolean(waNumber)].filter(Boolean).length === 2
+                  ? "grid-cols-2"
+                  : "grid-cols-1"
             }`}
           >
             <motion.button
@@ -329,6 +344,7 @@ export function TraderProfileHeader({
               {busy ? "..." : isFollowing ? "تتم المتابعة" : "متابعة"}
             </motion.button>
 
+            {canMessage && (
             <motion.button
               type="button"
               onClick={onMessage}
@@ -345,6 +361,7 @@ export function TraderProfileHeader({
               <MessageCircle size={14} />
               مراسلة
             </motion.button>
+            )}
 
             {/* زر واتساب (أخضر) - يظهر فقط لو الرقم متاح */}
             {waNumber && (

@@ -33,6 +33,7 @@ import {
   ShieldCheck,
   Star,
   Store,
+  Users,
   Eye,
 } from "lucide-react";
 import { auth, db, storage } from "@/lib/firebase";
@@ -849,6 +850,11 @@ export default function ProfilePage() {
             href="/notifications"
             icon={Bell}
             label="الإشعارات"
+          />
+          <MenuRow
+            href="/profile/following"
+            icon={Users}
+            label="أتابعهم"
           />
           <MenuRow
             href="/vehicle-report"

@@ -273,16 +273,14 @@ export function useFollowTraderState(traderId: string) {
 
     const followingRef = doc(db, "users", user.uid, "following", traderId);
     const followerRef = doc(db, "users", traderId, "followers", user.uid);
-    const meRef = doc(db, "users", user.uid);
-    const traderRef = doc(db, "users", traderId);
 
+    // 2026-11-21 (المرحلة 0): وثيقتا العلاقة فقط. العدّادان followersCount/followingCount
+    // يحرّكهما الخادم (onFollowerWritten)، والقواعد تمنع العميل منهما — كالتطبيق.
     await runTransaction(db, async (tx) => {
       const existing = await tx.get(followingRef);
       if (existing.exists()) {
         tx.delete(followingRef);
         tx.delete(followerRef);
-        tx.update(meRef, { followingCount: increment(-1) });
-        tx.update(traderRef, { followersCount: increment(-1) });
       } else {
         tx.set(followingRef, {
           traderId,
@@ -300,8 +298,6 @@ export function useFollowTraderState(traderId: string) {
           followerPhoto: profile?.photoURL || user.photoURL || "",
           createdAt: serverTimestamp(),
         });
-        tx.update(meRef, { followingCount: increment(1) });
-        tx.update(traderRef, { followersCount: increment(1) });
       }
     });
   }, [
